@@ -1,8 +1,9 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonInput, IonItem, IonItemGroup, IonItemDivider, IonLabel, IonFab, IonFabButton, IonIcon, IonReorderGroup } from '@ionic/react';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonSelectOption, NavContext } from '@ionic/react';
 import { add } from 'ionicons/icons';
 import { RouteComponentProps } from 'react-router-dom';
 import { useDoc, useFind } from 'use-pouchdb';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
+import { useUpdateItem } from '../components/itemhooks';
 import './Item.css';
 
 interface ItemPageProps
@@ -12,8 +13,8 @@ interface ItemPageProps
 
 const Item: React.FC<ItemPageProps> = ({ match }) => {
 
-  const [inputName,setInputName] = useState("");
-  const [inputQuantity,setInputQuantity] = useState(0);
+  const [stateItemDoc,setStateItemDoc] = useState({});
+  const updateItem  = useUpdateItem();
 
   const { doc: itemDoc, loading: itemLoading, state: itemState, error: itemError } = useDoc(match.params.id);
 
@@ -29,10 +30,11 @@ const Item: React.FC<ItemPageProps> = ({ match }) => {
       sort: [ "type","name"]
   });
 
+  const {goBack} = useContext(NavContext);
+
   useEffect( () => {
     if (!itemLoading) {
-      setInputName((itemDoc as any).name);
-      setInputQuantity((itemDoc as any).quantity);  
+      setStateItemDoc(itemDoc as any);
     }
   },[itemLoading]);
 
@@ -40,6 +42,17 @@ const Item: React.FC<ItemPageProps> = ({ match }) => {
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader></IonPage>
   )};
   
+  function updateThisItem() {
+    updateItem(stateItemDoc);
+    goBack("/lists");
+  }
+
+  function updateCategory(catID: string) {
+    setStateItemDoc({
+      ...stateItemDoc,
+      categoryID: catID
+    });
+  }
   
   return (
     <IonPage>
@@ -57,13 +70,26 @@ const Item: React.FC<ItemPageProps> = ({ match }) => {
           <IonList>
             <IonItem key="name">
               <IonLabel position="stacked">Name</IonLabel>
-              <IonInput type="text" onIonChange={(e: any) => setInputName(e.detail.value)} value={inputName}></IonInput>
+              <IonInput type="text" onIonChange={(e: any) => setStateItemDoc({...stateItemDoc, name: e.detail.value})} value={(stateItemDoc as any).name}></IonInput>
             </IonItem>
             <IonItem key="quantity">
               <IonLabel position="stacked">Quantity</IonLabel>
-              <IonInput type="number" min="0" max="9999" onIonChange={(e: any) => setInputQuantity(e.detail.value)} value={inputQuantity}></IonInput>
+              <IonInput type="number" min="0" max="9999" onIonChange={(e: any) => setStateItemDoc({...stateItemDoc, quantity: e.detail.value})} value={(stateItemDoc as any).quantity}></IonInput>
+            </IonItem>
+            <IonItem key="category">
+              <IonLabel position="stacked">Category</IonLabel>
+              <IonSelect onIonChange={(ev) => updateCategory(ev.detail.value)} value={(stateItemDoc as any).categoryID}>
+                {categoryDocs.map((cat) => (
+                    <IonSelectOption key={cat._id} value={(cat as any)._id}>
+                      {(cat as any).name}
+                    </IonSelectOption>
+                ))}
+
+              </IonSelect>
             </IonItem>
           </IonList>
+          <IonButton onClick={() => updateThisItem()}>Update</IonButton>
+          <IonButton onClick={() => goBack("/lists")}>Cancel</IonButton>
       </IonContent>
     </IonPage>
   );
