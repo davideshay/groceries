@@ -14,6 +14,7 @@ import { useEffect, useState } from 'react';
 import { albumsOutline, listOutline, settingsOutline, nutritionOutline } from 'ionicons/icons';
 import Lists from './pages/Lists';
 import Items from './pages/Items';
+import Item from './pages/Item';
 import Categories from './pages/Categories';
 import Settings from './pages/Settings';
 
@@ -75,6 +76,8 @@ const App: React.FC = () => {
             <Lists />
           </Route>
           <Route path="/items/:id" component={Items}>
+          </Route>
+          <Route path="/item/:id" component={Item}>
           </Route>
           <Route path="/categories/:id" component={Categories}>
           </Route>
