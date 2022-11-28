@@ -55,7 +55,8 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
       categorySeq: 0,
       quantity: 0,
       completed: false
-    }
+    };
+  
     itemRow.itemID = itemDoc._id;
     itemRow.itemName = itemDoc.name;
     itemRow.categoryID = itemDoc.categoryID;
@@ -63,13 +64,12 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
       itemRow.categoryName = "Uncategorized";
       itemRow.categorySeq = -1
     } else {
-      itemRow.categoryName = (categoryDocs.find(element => (element._id == itemDoc.categoryID)) as any).name;
-      itemRow.categorySeq = ((listDoc as any).categories.findIndex((element: any) => (element == itemDoc.categoryID)));  
+      itemRow.categoryName = (categoryDocs.find(element => (element._id === itemDoc.categoryID)) as any).name;
+      itemRow.categorySeq = ((listDoc as any).categories.findIndex((element: any) => (element === itemDoc.categoryID)));  
     }
-    
-
+    itemRow.quantity = itemDoc.quantity;
+    itemRow.completed = itemDoc.completed;
     itemRows.push(itemRow);
-
   })
 
   itemRows.sort((a,b) => {
@@ -79,9 +79,25 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
     }
   )
   
-  console.log("Sorted ItemRows");
-  console.log(itemRows);
+  let listContent=[];
+  let lastCategoryID="";
+  for (let i = 0; i < itemRows.length; i++) {
+    const item = itemRows[i];
+    if (lastCategoryID != item.categoryID) {      
+      listContent.push(
+        <IonItem key={item.categoryID}>
+          <IonLabel>{item.categoryName}</IonLabel>
+        </IonItem>);
+      lastCategoryID=item.categoryID;  
+    }
+    listContent.push(
+      <IonItem key={item.itemID} routerLink={("/item/"+item.itemID)}>
+        <IonLabel>{item.itemName + " " + item.quantity}</IonLabel>
+      </IonItem>);
+  }
+  let contentElem=(<IonList lines="full">{listContent}</IonList>)
 
+  console.log("ItemRows:",itemRows);
 
   return (
     <IonPage>
@@ -96,15 +112,7 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
             <IonTitle size="large">Items On List: {(listDoc as any).name}</IonTitle>
           </IonToolbar>
         </IonHeader>
-          <IonList lines="full">
-
-
-                {itemDocs.map((doc) => (
-                    <IonItem key={(doc as any)._id} routerLink={("/item/" + (doc as any)._id)}>
-                      <IonLabel>{(doc as any).name}</IonLabel>
-                    </IonItem>  
-              ))}
-          </IonList>
+          {contentElem}
       </IonContent>
       <IonFab slot="fixed" vertical="bottom" horizontal="end">
         <IonFabButton>

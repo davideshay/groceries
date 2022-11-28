@@ -36,7 +36,9 @@ const Lists: React.FC = () => {
                {docs.map((doc) => (
                   <IonItem key={(doc as any)._id} routerLink={("/items/" + (doc as any)._id)}>
                     <IonLabel>{(doc as any).name}</IonLabel>
-                    <IonButton href="/categories" slot="end"></IonButton>
+                    <IonButton routerLink={"/categories/" + (doc as any)._id} slot="end">
+                      Categories
+                    </IonButton>
                   </IonItem>  
             ))}
         </IonList>
