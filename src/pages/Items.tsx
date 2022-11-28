@@ -41,33 +41,6 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
       completed: boolean
     }
 
-/*     interface ItemList {
-      listID: string,
-      boughtCount: number,
-      active: boolean,
-      completed: boolean
-    }
-
-    interface ItemDoc {
-      _id: string,
-      type: string,
-      name: string,
-      quantity: number,
-      categoryID: string,
-      lists: Array<ItemList>
-    }
- */
-    
-
-
-/*     itemDocs.forEach(itemDoc => {
-      let itemRow={};
-      itemRow.itemID = 
-
-
-    });
- */
-
   if (itemLoading || listLoading || categoryLoading )  {return(
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader></IonPage>
   )};  
@@ -99,11 +72,13 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
 
   })
 
-  console.log("ItemRows");
-  console.log(itemRows);
-
-  // itemRows.sort(((a as ItemRow) , (b as ItemRow))  => a.categorySeq - b.categorySeq)
-  itemRows.sort((a,b) => a.categorySeq - b.categorySeq)
+  itemRows.sort((a,b) => {
+    if (a.categorySeq < b.categorySeq) {return -1}
+    else if (a.categorySeq > b.categorySeq) { return 1}
+    else { return a.itemName.localeCompare(b.itemName)}
+    }
+  )
+  
   console.log("Sorted ItemRows");
   console.log(itemRows);
 
@@ -122,6 +97,8 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
           </IonToolbar>
         </IonHeader>
           <IonList lines="full">
+
+
                 {itemDocs.map((doc) => (
                     <IonItem key={(doc as any)._id} routerLink={("/item/" + (doc as any)._id)}>
                       <IonLabel>{(doc as any).name}</IonLabel>
