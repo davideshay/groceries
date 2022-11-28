@@ -10,10 +10,12 @@ import {
   setupIonicReact
 } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
-import { ellipse, square, triangle } from 'ionicons/icons';
-import Tab1 from './pages/Tab1';
-import Tab2 from './pages/Tab2';
-import Tab3 from './pages/Tab3';
+import { useEffect, useState } from 'react';
+import { albumsOutline, listOutline, settingsOutline, nutritionOutline } from 'ionicons/icons';
+import Lists from './pages/Lists';
+import Items from './pages/Items';
+import Categories from './pages/Categories';
+import Settings from './pages/Settings';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -34,43 +36,79 @@ import '@ionic/react/css/display.css';
 /* Theme variables */
 import './theme/variables.css';
 
+
+import { Provider } from 'use-pouchdb';
+import PouchDB from 'pouchdb';
+import find from 'pouchdb-find';
+
 setupIonicReact();
 
-const App: React.FC = () => (
+const App: React.FC = () => {
+  PouchDB.plugin(find);
+//  PouchDB.plugin(require('pouchdb-find'));
+  const [db, setDB] = useState(() => new PouchDB('local'))
+  const [remotedb,setRemotedb] = useState(() => new PouchDB(process.env.REACT_APP_COUCHDB_URL))
+  const [isSyncing, setIsSyncing] = useState(false)
+
+  
+
+  useEffect( () =>
+  {
+    const sync = db
+      .sync(remotedb, {live: true, retry: true})
+      .on('paused', () => { setIsSyncing(false)})
+      .on('active', () => { setIsSyncing(true)})
+      .on('denied', () => { console.log("permission error")})
+  
+    return () =>  { sync.cancel()}
+  
+  }, [db, remotedb])
+
+
+  return (
   <IonApp>
+    <Provider pouchdb={db}>
     <IonReactRouter>
       <IonTabs>
         <IonRouterOutlet>
-          <Route exact path="/tab1">
-            <Tab1 />
+          <Route exact path="/lists">
+            <Lists />
           </Route>
-          <Route exact path="/tab2">
-            <Tab2 />
+          <Route path="/items/:id" component={Items}>
           </Route>
-          <Route path="/tab3">
-            <Tab3 />
+          <Route exact path="/categories">
+            <Categories />
+          </Route>
+          <Route path="/settings">
+            <Settings />
           </Route>
           <Route exact path="/">
-            <Redirect to="/tab1" />
+            <Redirect to="/lists" />
           </Route>
         </IonRouterOutlet>
         <IonTabBar slot="bottom">
-          <IonTabButton tab="tab1" href="/tab1">
-            <IonIcon icon={triangle} />
-            <IonLabel>Tab 1</IonLabel>
+          <IonTabButton tab="lists" href="/lists">
+            <IonIcon icon={albumsOutline} />
+            <IonLabel>Lists</IonLabel>
           </IonTabButton>
-          <IonTabButton tab="tab2" href="/tab2">
-            <IonIcon icon={ellipse} />
-            <IonLabel>Tab 2</IonLabel>
+          <IonTabButton tab="items" href="/items">
+            <IonIcon icon={listOutline} />
+            <IonLabel>Items</IonLabel>
           </IonTabButton>
-          <IonTabButton tab="tab3" href="/tab3">
-            <IonIcon icon={square} />
-            <IonLabel>Tab 3</IonLabel>
+          <IonTabButton tab="categories" href="/categories">
+            <IonIcon icon={nutritionOutline} />
+            <IonLabel>Categories</IonLabel>
+          </IonTabButton>
+          <IonTabButton tab="settings" href="/settings">
+            <IonIcon icon={settingsOutline} />
+            <IonLabel>Settings</IonLabel>
           </IonTabButton>
         </IonTabBar>
       </IonTabs>
     </IonReactRouter>
+    </Provider>    
   </IonApp>
-);
+  )
+};
 
 export default App;

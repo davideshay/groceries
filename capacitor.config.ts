@@ -1,7 +1,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'io.ionic.starter',
+  appId: 'net.shaytech.groceries',
   appName: 'groceries',
   webDir: 'build',
   bundledWebRuntime: false

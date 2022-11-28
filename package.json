@@ -3,11 +3,14 @@
   "version": "0.0.1",
   "private": true,
   "dependencies": {
+    "@capacitor/android": "4.5.0",
     "@capacitor/app": "4.1.1",
     "@capacitor/core": "4.5.0",
     "@capacitor/haptics": "4.1.0",
     "@capacitor/keyboard": "4.1.0",
+    "@capacitor/preferences": "^4.0.2",
     "@capacitor/status-bar": "4.1.0",
+    "@ionic/pwa-elements": "^3.1.1",
     "@ionic/react": "^6.0.0",
     "@ionic/react-router": "^6.0.0",
     "@testing-library/jest-dom": "^5.11.9",
@@ -15,12 +18,15 @@
     "@testing-library/user-event": "^12.6.3",
     "@types/jest": "^26.0.20",
     "@types/node": "^12.19.15",
+    "@types/pouchdb": "^6.4.0",
     "@types/react": "^18.0.17",
     "@types/react-dom": "^18.0.6",
     "@types/react-router": "^5.1.11",
     "@types/react-router-dom": "^5.1.7",
     "history": "^4.9.0",
     "ionicons": "^6.0.3",
+    "pouchdb": "^7.3.1",
+    "pouchdb-selector-core": "^7.3.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router": "^5.2.0",
@@ -66,7 +72,10 @@
     ]
   },
   "devDependencies": {
-    "@capacitor/cli": "4.5.0"
+    "@capacitor/cli": "4.5.0",
+    "pouchdb-browser": "^7.3.1",
+    "pouchdb-find": "^7.3.1",
+    "use-pouchdb": "^1.4.0"
   },
   "description": "An Ionic project"
 }
