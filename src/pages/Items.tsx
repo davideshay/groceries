@@ -1,4 +1,4 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonLabel, IonFab, IonFabButton, IonIcon } from '@ionic/react';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonItemGroup, IonItemDivider, IonLabel, IonFab, IonFabButton, IonIcon, IonReorderGroup } from '@ionic/react';
 import { add } from 'ionicons/icons';
 import { RouteComponentProps } from 'react-router-dom';
 import { useDoc, useFind } from 'use-pouchdb';
@@ -68,7 +68,8 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
       itemRow.categorySeq = ((listDoc as any).categories.findIndex((element: any) => (element === itemDoc.categoryID)));  
     }
     itemRow.quantity = itemDoc.quantity;
-    itemRow.completed = itemDoc.completed;
+    itemRow.completed = itemDoc.lists.find((element: any) => (element.listID === match.params.id)).completed;
+//    itemRow.completed = itemDoc.completed;
     itemRows.push(itemRow);
   })
 
@@ -80,24 +81,45 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
   )
   
   let listContent=[];
-  let lastCategoryID="";
+  let lastCategoryID="<INITIAL>";
+  let lastCategoryName="<INITIAL>";
+  let currentRows=[];
   for (let i = 0; i < itemRows.length; i++) {
     const item = itemRows[i];
-    if (lastCategoryID != item.categoryID) {      
-      listContent.push(
-        <IonItem key={item.categoryID}>
-          <IonLabel>{item.categoryName}</IonLabel>
-        </IonItem>);
-      lastCategoryID=item.categoryID;  
+    if (lastCategoryID != item.categoryID) { 
+      if (currentRows.length > 0) {
+        listContent.push(
+          <IonReorderGroup key={lastCategoryID + "-group"} disabled={false}>
+            <IonItemGroup key={lastCategoryID}>
+            <IonItemDivider key={lastCategoryName}>{lastCategoryName}</IonItemDivider>
+              {currentRows}
+            </IonItemGroup>
+          </IonReorderGroup>
+        )
+        currentRows=[];
+      }
+      if (item.categoryID === null) {
+        lastCategoryID = "Uncategorized"
+      }
+      else {
+        lastCategoryID = item.categoryID;
+      }
+      lastCategoryName=item.categoryName;   
     }
-    listContent.push(
+    currentRows.push(
       <IonItem key={item.itemID} routerLink={("/item/"+item.itemID)}>
         <IonLabel>{item.itemName + " " + item.quantity}</IonLabel>
       </IonItem>);
   }
+  listContent.push(
+    <IonReorderGroup key={lastCategoryID + "-group"} disabled={false}>
+      <IonItemGroup key={lastCategoryID}>
+      <IonItemDivider key={lastCategoryName}>{lastCategoryName}</IonItemDivider>
+        {currentRows}
+      </IonItemGroup>
+    </IonReorderGroup>
+  )
   let contentElem=(<IonList lines="full">{listContent}</IonList>)
-
-  console.log("ItemRows:",itemRows);
 
   return (
     <IonPage>
