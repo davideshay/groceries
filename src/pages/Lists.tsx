@@ -17,7 +17,9 @@ const Lists: React.FC = () => {
     sort: [ "type", "name" ]
     })
 
-  if (loading) { console.log("Loading...")}
+  if (loading) { return (
+    <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader></IonPage>
+  )}
 
   return (
     <IonPage>

@@ -1,5 +1,7 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonItemGroup, IonItemDivider, IonLabel, IonFab, IonFabButton, IonIcon, IonReorderGroup } from '@ionic/react';
-import { add } from 'ionicons/icons';
+import { add, list } from 'ionicons/icons';
+import { stringify } from 'querystring';
+import { useState } from 'react';
 import { RouteComponentProps } from 'react-router-dom';
 import { useDoc, useFind } from 'use-pouchdb';
 import './Items.css';
@@ -11,16 +13,28 @@ interface ItemsPageProps
 
 const Items: React.FC<ItemsPageProps> = ({ match }) => {
 
+  interface ItemRow {
+    itemID: string,
+    itemName: string,
+    categoryID: string,
+    categoryName: string,
+    categorySeq: number,
+    quantity: number,
+    completed: boolean
+  }
+
+  const [stateItemRows,setStateItemRows] = useState<ItemRow[]>([]);
+
   const { docs: itemDocs, loading: itemLoading, error: itemError } = useFind({
     index: {
-      fields: ["lists","type","name"]
+      fields: ["type","name","lists"]
     },
     selector: {
-      lists: { $elemMatch: { "listID": match.params.id , "active" : true} },
       type: "item",
-      name: { $exists: true }
+      name: { $exists: true },
+      lists: { $elemMatch: { "listID": match.params.id , "active" : true} }
     },
-    sort: [ "lists", "type", "name" ]
+    sort: [ "type", "name", "lists" ]
     })
 
     const { doc: listDoc, loading: listLoading, state: listState, error: listError } = useDoc(match.params.id);
@@ -31,15 +45,6 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
       sort: [ "type","name"]
     })
 
-   interface ItemRow {
-      itemID: string,
-      itemName: string,
-      categoryID: string,
-      categoryName: string,
-      categorySeq: number,
-      quantity: number,
-      completed: boolean
-    }
 
   if (itemLoading || listLoading || categoryLoading )  {return(
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader></IonPage>
@@ -69,33 +74,51 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
     }
     itemRow.quantity = itemDoc.quantity;
     itemRow.completed = itemDoc.lists.find((element: any) => (element.listID === match.params.id)).completed;
-//    itemRow.completed = itemDoc.completed;
     itemRows.push(itemRow);
   })
 
-  itemRows.sort((a,b) => {
-    if (a.categorySeq < b.categorySeq) {return -1}
-    else if (a.categorySeq > b.categorySeq) { return 1}
-    else { return a.itemName.localeCompare(b.itemName)}
-    }
-  )
+  // itemRows.sort((a,b) => {
+  //   if (Number(a.completed) - Number(b.completed))
+  //   if (a.categorySeq < b.categorySeq) {return -1}
+  //   else if (a.categorySeq > b.categorySeq) { return 1}
+  //   else { return a.itemName.localeCompare(b.itemName)}
+  //   }
+  // )
   
+  itemRows.sort((a,b) => (
+    (Number(a.completed) - Number(b.completed)) || (a.categorySeq - b.categorySeq) ||
+    (a.itemName.localeCompare(b.itemName))
+  ))
+
+  setStateItemRows(itemRows);
+
   let listContent=[];
+
+  function addCurrentRows(listCont: any, curRows: any, catID: string, catName: string) {
+    listCont.push(
+      <IonReorderGroup key={catID + "-group"} disabled={false}>
+        <IonItemGroup key={catID}>
+        <IonItemDivider key={catName}>{catName}</IonItemDivider>
+          {curRows}
+        </IonItemGroup>
+      </IonReorderGroup>
+    )
+  }
+
   let lastCategoryID="<INITIAL>";
   let lastCategoryName="<INITIAL>";
   let currentRows=[];
+  let createdFinished=false;
+  const completedDivider=(<IonItemDivider key="Completed">Completed</IonItemDivider>);
   for (let i = 0; i < itemRows.length; i++) {
     const item = itemRows[i];
+    if (item.completed && !createdFinished) {
+      listContent.push(completedDivider);
+      createdFinished=true;
+    }
     if (lastCategoryID != item.categoryID) { 
       if (currentRows.length > 0) {
-        listContent.push(
-          <IonReorderGroup key={lastCategoryID + "-group"} disabled={false}>
-            <IonItemGroup key={lastCategoryID}>
-            <IonItemDivider key={lastCategoryName}>{lastCategoryName}</IonItemDivider>
-              {currentRows}
-            </IonItemGroup>
-          </IonReorderGroup>
-        )
+        addCurrentRows(listContent,currentRows,lastCategoryID,lastCategoryName);
         currentRows=[];
       }
       if (item.categoryID === null) {
@@ -107,18 +130,13 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
       lastCategoryName=item.categoryName;   
     }
     currentRows.push(
-      <IonItem key={item.itemID} routerLink={("/item/"+item.itemID)}>
-        <IonLabel>{item.itemName + " " + item.quantity}</IonLabel>
+      <IonItem key={stateItemRows[i].itemID} routerLink={("/item/"+stateItemRows[i].itemID)}>
+        <IonLabel>{stateItemRows[i].itemName + " "+ stateItemRows[i].quantity.toString() }</IonLabel>
       </IonItem>);
   }
-  listContent.push(
-    <IonReorderGroup key={lastCategoryID + "-group"} disabled={false}>
-      <IonItemGroup key={lastCategoryID}>
-      <IonItemDivider key={lastCategoryName}>{lastCategoryName}</IonItemDivider>
-        {currentRows}
-      </IonItemGroup>
-    </IonReorderGroup>
-  )
+
+  addCurrentRows(listContent,currentRows,lastCategoryID,lastCategoryName);
+  if (!createdFinished) {listContent.push(completedDivider)};
   let contentElem=(<IonList lines="full">{listContent}</IonList>)
 
   return (
