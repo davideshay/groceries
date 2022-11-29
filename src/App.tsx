@@ -46,7 +46,7 @@ setupIonicReact();
 
 const App: React.FC = () => {
   PouchDB.plugin(find);
-  const [db, setDB] = useState(() => new PouchDB('local'))
+  const [db, setDB] = useState(() => new PouchDB('local', {revs_limit: 10, auto_compaction: true}))
   const [remotedb,setRemotedb] = useState(() => new PouchDB(process.env.REACT_APP_COUCHDB_URL))
   const [isSyncing, setIsSyncing] = useState(false)
 

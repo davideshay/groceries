@@ -1,6 +1,6 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonItemGroup, IonItemDivider, IonLabel, IonButton, IonFab, IonFabButton, IonIcon, IonReorderGroup, IonCheckbox, NavContext } from '@ionic/react';
-import { add, list } from 'ionicons/icons';
-import { useState, useEffect, useContext, useCallback } from 'react';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonItemGroup, IonItemDivider, IonButton, IonFab, IonFabButton, IonIcon, IonCheckbox } from '@ionic/react';
+import { add } from 'ionicons/icons';
+import { useState, useEffect } from 'react';
 import { RouteComponentProps } from 'react-router-dom';
 import { useDoc, useFind } from 'use-pouchdb';
 import { cloneDeep } from 'lodash';
@@ -24,7 +24,6 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
     completed: boolean | null
   }
 
-  const {navigate} = useContext(NavContext);
   const [stateItemRows,setStateItemRows] = useState<ItemRow[]>([]);
   const updateCompleted = useUpdateCompleted();
   const { docs: itemDocs, loading: itemLoading, error: itemError } = useFind({
@@ -92,10 +91,8 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
   )};  
 
   function completeItemRow(id: String, newStatus: boolean | null) {
-    console.log("completeItemRow id: ", id, " to new status: ",newStatus)
     let newItemRows: Array<ItemRow>=cloneDeep(stateItemRows);
     let itemSeq = newItemRows.findIndex(element => (element.itemID === id))
-    console.log("gotItemSeq:", itemSeq)
     newItemRows[itemSeq].completed = newStatus;
     // get itemdoc from itemDocs
     let itemDoc = itemDocs.find(element => (element._id === id))
@@ -105,9 +102,7 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
       newStatus: newStatus,
       listID: match.params.id
     }
-    console.log( { updateInfo });
     updateCompleted(updateInfo);
-    console.log( "newItemRows:", newItemRows);
     newItemRows.sort((a,b) => (
       (Number(a.completed) - Number(b.completed)) || (a.categorySeq - b.categorySeq) ||
       (a.itemName.localeCompare(b.itemName))
@@ -126,11 +121,6 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
     )
   }
 
-  function mynav(dest:string) {
-    console.log(dest)
-    navigate(dest);
-  }
-
   let lastCategoryID="<INITIAL>";
   let lastCategoryName="<INITIAL>";
   let lastCategoryFinished: boolean | null = null;
@@ -139,7 +129,7 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
   const completedDivider=(<IonItemDivider key="Completed">Completed</IonItemDivider>);
   for (let i = 0; i < stateItemRows.length; i++) {
     const item = stateItemRows[i];
-    if ((lastCategoryID != item.categoryID )||(lastCategoryFinished != item.completed)) { 
+    if ((lastCategoryID !== item.categoryID )||(lastCategoryFinished !== item.completed)) { 
       if (currentRows.length > 0) {
         addCurrentRows(listContent,currentRows,lastCategoryID,lastCategoryName,lastCategoryFinished);
         currentRows=[];
@@ -156,7 +146,7 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
     currentRows.push(
       <IonItem key={stateItemRows[i].itemID} >
         <IonCheckbox slot="start" onIonChange={(e: any) => completeItemRow(stateItemRows[i].itemID,e.detail.checked)} checked={Boolean(stateItemRows[i].completed)}></IonCheckbox>
-        <IonButton fill="clear" class="textButton" onClick={() => mynav("/item/"+stateItemRows[i].itemID)}>{stateItemRows[i].itemName + " "+ stateItemRows[i].quantity.toString() }</IonButton>
+        <IonButton fill="clear" class="textButton" routerLink= {"/item/"+stateItemRows[i].itemID}>{stateItemRows[i].itemName + " "+ stateItemRows[i].quantity.toString() }</IonButton>
       </IonItem>);
     if (lastCategoryFinished && !createdFinished) {
       listContent.push(completedDivider);

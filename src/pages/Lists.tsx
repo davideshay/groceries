@@ -6,16 +6,16 @@ import './Lists.css';
 
 const Lists: React.FC = () => {
 
-   const { docs, loading, error } = useFind({
-    index: {
-      fields: ["type","name"]
-    },
-    selector: {
-      type: "list",
-      name: { $exists: true }
-    },
-    sort: [ "type", "name" ]
-    })
+  const { docs, loading, error } = useFind({
+  index: {
+    fields: ["type","name"]
+  },
+  selector: {
+    type: "list",
+    name: { $exists: true }
+  },
+  sort: [ "type", "name" ]
+  })
 
   if (loading) { return (
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader></IonPage>
@@ -36,8 +36,8 @@ const Lists: React.FC = () => {
         </IonHeader>
         <IonList lines="full">
                {docs.map((doc) => (
-                  <IonItem key={(doc as any)._id} routerLink={("/items/" + (doc as any)._id)}>
-                    <IonLabel>{(doc as any).name}</IonLabel>
+                  <IonItem key={(doc as any)._id} >
+                    <IonButton slot="start" class="textButton" fill="clear" routerLink={("/items/" + (doc as any)._id)}>{(doc as any).name}</IonButton>
                     <IonButton routerLink={"/categories/" + (doc as any)._id} slot="end">
                       Categories
                     </IonButton>
