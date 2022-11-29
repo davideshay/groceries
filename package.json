@@ -25,6 +25,7 @@
     "@types/react-router-dom": "^5.1.7",
     "history": "^4.9.0",
     "ionicons": "^6.0.3",
+    "lodash": "^4.17.21",
     "pouchdb": "^7.3.1",
     "pouchdb-selector-core": "^7.3.1",
     "react": "^18.2.0",
@@ -73,6 +74,7 @@
   },
   "devDependencies": {
     "@capacitor/cli": "4.5.0",
+    "@types/lodash": "^4.14.190",
     "pouchdb-browser": "^7.3.1",
     "pouchdb-find": "^7.3.1",
     "use-pouchdb": "^1.4.0"

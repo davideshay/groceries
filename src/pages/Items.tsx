@@ -1,10 +1,11 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonItemGroup, IonItemDivider, IonLabel, IonFab, IonFabButton, IonIcon, IonReorderGroup } from '@ionic/react';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonItemGroup, IonItemDivider, IonLabel, IonButton, IonFab, IonFabButton, IonIcon, IonReorderGroup, IonCheckbox, NavContext } from '@ionic/react';
 import { add, list } from 'ionicons/icons';
-import { stringify } from 'querystring';
-import { useState } from 'react';
+import { useState, useEffect, useContext, useCallback } from 'react';
 import { RouteComponentProps } from 'react-router-dom';
 import { useDoc, useFind } from 'use-pouchdb';
+import { cloneDeep } from 'lodash';
 import './Items.css';
+import { useUpdateCompleted } from '../components/itemhooks';
 
 interface ItemsPageProps
   extends RouteComponentProps<{
@@ -20,11 +21,12 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
     categoryName: string,
     categorySeq: number,
     quantity: number,
-    completed: boolean
+    completed: boolean | null
   }
 
+  const {navigate} = useContext(NavContext);
   const [stateItemRows,setStateItemRows] = useState<ItemRow[]>([]);
-
+  const updateCompleted = useUpdateCompleted();
   const { docs: itemDocs, loading: itemLoading, error: itemError } = useFind({
     index: {
       fields: ["type","name","lists"]
@@ -36,89 +38,110 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
     },
     sort: [ "type", "name", "lists" ]
     })
-
     const { doc: listDoc, loading: listLoading, state: listState, error: listError } = useDoc(match.params.id);
-
     const { docs: categoryDocs, loading: categoryLoading, error: categoryError } = useFind({
       index: { fields: [ "type","name"] },
       selector: { type: "category", name: { $exists: true}},
       sort: [ "type","name"]
     })
 
+    function getItemRows() {
+      let itemRows: Array<ItemRow> =[];
+      itemDocs.forEach((itemDoc: any) => {
+        let itemRow: ItemRow = {
+          itemID:"",
+          itemName:"",
+          categoryID: "",
+          categoryName: "",
+          categorySeq: 0,
+          quantity: 0,
+          completed: false
+        };
+      
+        itemRow.itemID = itemDoc._id;
+        itemRow.itemName = itemDoc.name;
+        itemRow.categoryID = itemDoc.categoryID;
+        if (itemRow.categoryID == null) {
+          itemRow.categoryName = "Uncategorized";
+          itemRow.categorySeq = -1
+        } else {
+          itemRow.categoryName = (categoryDocs.find(element => (element._id === itemDoc.categoryID)) as any).name;
+          itemRow.categorySeq = ((listDoc as any).categories.findIndex((element: any) => (element === itemDoc.categoryID)));  
+        }
+        itemRow.quantity = itemDoc.quantity;
+        itemRow.completed = itemDoc.lists.find((element: any) => (element.listID === match.params.id)).completed;
+        itemRows.push(itemRow);
+      })
+    
+      itemRows.sort((a,b) => (
+        (Number(a.completed) - Number(b.completed)) || (a.categorySeq - b.categorySeq) ||
+        (a.itemName.localeCompare(b.itemName))
+      ))
+      return (itemRows)
+    }
 
-  if (itemLoading || listLoading || categoryLoading )  {return(
+  useEffect( () => {
+    if (!itemLoading && !listLoading && !categoryLoading) {
+      setStateItemRows(getItemRows());
+    }
+  },[itemLoading, listLoading, categoryLoading, itemDocs, listDoc, categoryDocs]);
+
+
+  if (itemLoading || listLoading || categoryLoading || stateItemRows.length <=0 )  {return(
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader></IonPage>
   )};  
 
-  let itemRows: Array<ItemRow> =[];
-  itemDocs.forEach((itemDoc: any) => {
-    let itemRow: ItemRow = {
-      itemID:"",
-      itemName:"",
-      categoryID: "",
-      categoryName: "",
-      categorySeq: 0,
-      quantity: 0,
-      completed: false
-    };
-  
-    itemRow.itemID = itemDoc._id;
-    itemRow.itemName = itemDoc.name;
-    itemRow.categoryID = itemDoc.categoryID;
-    if (itemRow.categoryID == null) {
-      itemRow.categoryName = "Uncategorized";
-      itemRow.categorySeq = -1
-    } else {
-      itemRow.categoryName = (categoryDocs.find(element => (element._id === itemDoc.categoryID)) as any).name;
-      itemRow.categorySeq = ((listDoc as any).categories.findIndex((element: any) => (element === itemDoc.categoryID)));  
+  function completeItemRow(id: String, newStatus: boolean | null) {
+    console.log("completeItemRow id: ", id, " to new status: ",newStatus)
+    let newItemRows: Array<ItemRow>=cloneDeep(stateItemRows);
+    let itemSeq = newItemRows.findIndex(element => (element.itemID === id))
+    console.log("gotItemSeq:", itemSeq)
+    newItemRows[itemSeq].completed = newStatus;
+    // get itemdoc from itemDocs
+    let itemDoc = itemDocs.find(element => (element._id === id))
+    let updateInfo = {
+      itemDoc: itemDoc,
+      updateAll: true,
+      newStatus: newStatus,
+      listID: match.params.id
     }
-    itemRow.quantity = itemDoc.quantity;
-    itemRow.completed = itemDoc.lists.find((element: any) => (element.listID === match.params.id)).completed;
-    itemRows.push(itemRow);
-  })
-
-  // itemRows.sort((a,b) => {
-  //   if (Number(a.completed) - Number(b.completed))
-  //   if (a.categorySeq < b.categorySeq) {return -1}
-  //   else if (a.categorySeq > b.categorySeq) { return 1}
-  //   else { return a.itemName.localeCompare(b.itemName)}
-  //   }
-  // )
-  
-  itemRows.sort((a,b) => (
-    (Number(a.completed) - Number(b.completed)) || (a.categorySeq - b.categorySeq) ||
-    (a.itemName.localeCompare(b.itemName))
-  ))
-
-  setStateItemRows(itemRows);
+    console.log( { updateInfo });
+    updateCompleted(updateInfo);
+    console.log( "newItemRows:", newItemRows);
+    newItemRows.sort((a,b) => (
+      (Number(a.completed) - Number(b.completed)) || (a.categorySeq - b.categorySeq) ||
+      (a.itemName.localeCompare(b.itemName))
+    ))
+    setStateItemRows(newItemRows);
+  }
 
   let listContent=[];
 
-  function addCurrentRows(listCont: any, curRows: any, catID: string, catName: string) {
+  function addCurrentRows(listCont: any, curRows: any, catID: string, catName: string, completed: boolean | null) {
     listCont.push(
-      <IonReorderGroup key={catID + "-group"} disabled={false}>
-        <IonItemGroup key={catID}>
-        <IonItemDivider key={catName}>{catName}</IonItemDivider>
+        <IonItemGroup key={catID+Boolean(completed).toString()}>
+        <IonItemDivider key={catID+Boolean(completed).toString()}>{catName}</IonItemDivider>
           {curRows}
-        </IonItemGroup>
-      </IonReorderGroup>
+      </IonItemGroup>
     )
+  }
+
+  function mynav(dest:string) {
+    console.log(dest)
+    navigate(dest);
   }
 
   let lastCategoryID="<INITIAL>";
   let lastCategoryName="<INITIAL>";
+  let lastCategoryFinished: boolean | null = null;
   let currentRows=[];
   let createdFinished=false;
   const completedDivider=(<IonItemDivider key="Completed">Completed</IonItemDivider>);
-  for (let i = 0; i < itemRows.length; i++) {
-    const item = itemRows[i];
-    if (item.completed && !createdFinished) {
-      listContent.push(completedDivider);
-      createdFinished=true;
-    }
-    if (lastCategoryID != item.categoryID) { 
+  for (let i = 0; i < stateItemRows.length; i++) {
+    const item = stateItemRows[i];
+    if ((lastCategoryID != item.categoryID )||(lastCategoryFinished != item.completed)) { 
       if (currentRows.length > 0) {
-        addCurrentRows(listContent,currentRows,lastCategoryID,lastCategoryName);
+        addCurrentRows(listContent,currentRows,lastCategoryID,lastCategoryName,lastCategoryFinished);
         currentRows=[];
       }
       if (item.categoryID === null) {
@@ -127,15 +150,20 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
       else {
         lastCategoryID = item.categoryID;
       }
-      lastCategoryName=item.categoryName;   
+      lastCategoryName=item.categoryName;
+      lastCategoryFinished=item.completed;   
     }
     currentRows.push(
-      <IonItem key={stateItemRows[i].itemID} routerLink={("/item/"+stateItemRows[i].itemID)}>
-        <IonLabel>{stateItemRows[i].itemName + " "+ stateItemRows[i].quantity.toString() }</IonLabel>
+      <IonItem key={stateItemRows[i].itemID} >
+        <IonCheckbox slot="start" onIonChange={(e: any) => completeItemRow(stateItemRows[i].itemID,e.detail.checked)} checked={Boolean(stateItemRows[i].completed)}></IonCheckbox>
+        <IonButton fill="clear" class="textButton" onClick={() => mynav("/item/"+stateItemRows[i].itemID)}>{stateItemRows[i].itemName + " "+ stateItemRows[i].quantity.toString() }</IonButton>
       </IonItem>);
+    if (lastCategoryFinished && !createdFinished) {
+      listContent.push(completedDivider);
+      createdFinished=true;
+    }    
   }
-
-  addCurrentRows(listContent,currentRows,lastCategoryID,lastCategoryName);
+  addCurrentRows(listContent,currentRows,lastCategoryID,lastCategoryName,lastCategoryFinished);
   if (!createdFinished) {listContent.push(completedDivider)};
   let contentElem=(<IonList lines="full">{listContent}</IonList>)
 
