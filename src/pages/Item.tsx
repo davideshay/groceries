@@ -1,9 +1,10 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonSelectOption, NavContext } from '@ionic/react';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonSelectOption, NavContext } from '@ionic/react';
 import { add } from 'ionicons/icons';
 import { RouteComponentProps } from 'react-router-dom';
 import { useDoc, useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext } from 'react';
 import { useUpdateItem } from '../components/itemhooks';
+import { cloneDeep } from 'lodash';
 import './Item.css';
 
 interface ItemPageProps
@@ -36,7 +37,7 @@ const Item: React.FC<ItemPageProps> = ({ match }) => {
     if (!itemLoading) {
       setStateItemDoc(itemDoc as any);
     }
-  },[itemLoading]);
+  },[itemLoading,itemDoc]);
 
   if (itemLoading || listLoading || categoryLoading )  {return(
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader></IonPage>
@@ -53,18 +54,57 @@ const Item: React.FC<ItemPageProps> = ({ match }) => {
       categoryID: catID
     });
   }
+
+  function selectList(listID: string, updateVal: boolean) {
+    let newItemDoc=cloneDeep(stateItemDoc);
+    let listFound=false
+    for (let i = 0; i < newItemDoc.lists.length; i++) {
+      if (newItemDoc.lists[i].listID == listID) {
+        newItemDoc.lists[i].active = updateVal;
+        listFound=true;
+        if(updateVal) {newItemDoc.lists[i].boughtCount++}
+      }    
+    }
+    if (!listFound) {
+      let listobj={
+        listID: listID,
+        boughtCount: 0,
+        active: updateVal,
+        checked: false
+      }
+      newItemDoc.lists.push(listobj);
+    }
+    setStateItemDoc(newItemDoc);
+  }
+
+  let listsElem=[];
+  listsElem.push(<IonItemDivider key="listdivider">Item is on these lists:</IonItemDivider>)
+  for (let i = 0; i < (stateItemDoc as any).lists.length; i++) {
+    let listID = (stateItemDoc as any).lists[i].listID;
+    let itemFoundIdx=listDocs.findIndex(element => (element._id === listID))
+    let itemActive=((itemFoundIdx !== -1) && ((stateItemDoc as any).lists[i].active))
+    let listName=(listDocs as any)[itemFoundIdx].name
+//    console.log ({listID, itemFoundIdx, itemActive, listName});
+    listsElem.push(
+      <IonItem key={listID}>
+        <IonCheckbox slot="start" onIonChange={(e: any) => selectList(listID,Boolean(e.detail.checked))} checked={itemActive}></IonCheckbox>
+        <IonLabel>{listName}</IonLabel>
+      </IonItem>
+    )
+  }
+
   
   return (
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Editing Item: {(itemDoc as any).name}</IonTitle>
+          <IonTitle>Editing Item: {(stateItemDoc as any).name}</IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>
         <IonHeader collapse="condense">
           <IonToolbar>
-            <IonTitle size="large">Editing Item: {(itemDoc as any).name}</IonTitle>
+            <IonTitle size="large">Editing Item: {(stateItemDoc as any).name}</IonTitle>
           </IonToolbar>
         </IonHeader>
           <IonList>
@@ -84,9 +124,9 @@ const Item: React.FC<ItemPageProps> = ({ match }) => {
                       {(cat as any).name}
                     </IonSelectOption>
                 ))}
-
               </IonSelect>
             </IonItem>
+            {listsElem}
           </IonList>
           <IonButton onClick={() => updateThisItem()}>Update</IonButton>
           <IonButton onClick={() => goBack("/lists")}>Cancel</IonButton>

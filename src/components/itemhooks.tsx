@@ -23,9 +23,11 @@ export function useUpdateCompleted() {
       for (let i = 0; i < newItemDoc.lists.length; i++) {
         if (updateInfo.updateAll) {
           newItemDoc.lists[i].completed = updateInfo.newStatus;
+          if (updateInfo.newStatus) {newItemDoc.lists[i].boughtCount++};
         } else {
           if (newItemDoc.lists[i].listID == updateInfo.listID) {
-            newItemDoc.lists[i].completed = true;
+            newItemDoc.lists[i].completed = updateInfo.newStatus;
+            if (updateInfo.newStatus) {newItemDoc.lists[i].boughtCount++};
           }
         }   
       }
