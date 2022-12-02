@@ -1,4 +1,4 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonItemGroup, IonItemDivider, IonButton, IonFab, IonFabButton, IonIcon, IonCheckbox } from '@ionic/react';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonItemGroup, IonItemDivider, IonButton, IonFab, IonFabButton, IonIcon, IonCheckbox, IonSelect, IonSelectOption } from '@ionic/react';
 import { add } from 'ionicons/icons';
 import { useState, useEffect } from 'react';
 import { RouteComponentProps } from 'react-router-dom';
@@ -26,6 +26,7 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
 
   const [stateItemRows,setStateItemRows] = useState<ItemRow[]>([]);
   const [doingUpdate,setDoingUpdate] = useState(false);
+  const [selectedListID,setSelectedListID] = useState(match.params.id);
   const updateCompleted = useUpdateCompleted();
   const { docs: itemDocs, loading: itemLoading, error: itemError } = useFind({
     index: {
@@ -34,11 +35,15 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
     selector: {
       type: "item",
       name: { $exists: true },
-      lists: { $elemMatch: { "listID": match.params.id , "active" : true} }
+      lists: { $elemMatch: { "listID": selectedListID , "active" : true} }
     },
     sort: [ "type", "name", "lists" ]
     })
-    const { doc: listDoc, loading: listLoading, state: listState, error: listError } = useDoc(match.params.id);
+    const { docs: listDocs, loading: listLoading, error: listError } = useFind({
+      index: { fields: [ "type","name"] },
+      selector: { type: "list", name: { $exists: true}},
+      sort: [ "type","name"]
+    })
     const { docs: categoryDocs, loading: categoryLoading, error: categoryError } = useFind({
       index: { fields: [ "type","name"] },
       selector: { type: "category", name: { $exists: true}},
@@ -46,14 +51,16 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
     })
 
     useEffect( () => {
+      console.log("useEffectTriggered, listID:",{selectedListID});
       if (!itemLoading && !listLoading && !categoryLoading) {
         setStateItemRows(getItemRows());
         setDoingUpdate(false);
       }
-    },[itemLoading, listLoading, categoryLoading, itemDocs, listDoc, categoryDocs]);
+    },[itemLoading, listLoading, categoryLoading, itemDocs, listDocs, categoryDocs, selectedListID]);
     
     function getItemRows() {
       let itemRows: Array<ItemRow> =[];
+      let listDoc=listDocs.find(el => el._id === selectedListID);
       itemDocs.forEach((itemDoc: any) => {
         let itemRow: ItemRow = {
           itemID:"",
@@ -76,7 +83,7 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
           itemRow.categorySeq = ((listDoc as any).categories.findIndex((element: any) => (element === itemDoc.categoryID)));  
         }
         itemRow.quantity = itemDoc.quantity;
-        itemRow.completed = itemDoc.lists.find((element: any) => (element.listID === match.params.id)).completed;
+        itemRow.completed = itemDoc.lists.find((element: any) => (element.listID === selectedListID)).completed;
         itemRows.push(itemRow);
       })
     
@@ -101,11 +108,18 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
       itemDoc: itemDoc,
       updateAll: true,
       newStatus: newStatus,
-      listID: match.params.id
+      listID: selectedListID
     }
     setDoingUpdate(true);
     updateCompleted(updateInfo);
   }
+
+  function selectList(listID: string) {
+    console.log("new list selected:", {listID});
+    setSelectedListID(listID);
+  }
+
+
 
   let listContent=[];
 
@@ -153,20 +167,25 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
   addCurrentRows(listContent,currentRows,lastCategoryID,lastCategoryName,lastCategoryFinished);
   if (!createdFinished) {listContent.push(completedDivider)};
   let contentElem=(<IonList lines="full">{listContent}</IonList>)
+  let listDoc=listDocs.find(el => el._id === selectedListID);
 
   return (
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Items on List : {(listDoc as any).name}</IonTitle>
+          <IonTitle>
+            <IonSelect onIonChange={(ev) => selectList(ev.detail.value)} value={selectedListID}>
+                Items on :
+                {listDocs.map((list) => (
+                    <IonSelectOption key={list._id} value={(list as any)._id}>
+                      {(list as any).name}
+                    </IonSelectOption>
+                ))}
+              </IonSelect>
+          </IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar>
-            <IonTitle size="large">Items On List: {(listDoc as any).name}</IonTitle>
-          </IonToolbar>
-        </IonHeader>
           {contentElem}
       </IonContent>
       <IonFab slot="fixed" vertical="bottom" horizontal="end">

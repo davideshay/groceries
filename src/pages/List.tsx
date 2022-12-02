@@ -16,9 +16,14 @@ const List: React.FC<ListPageProps> = ({ match }) => {
 
   const [stateListDoc,setStateListDoc] = useState<any>({});
   const [doingUpdate,setDoingUpdate] = useState(false);
+  const [selectedListID,setSelectedListID] = useState(match.params.id);
   const updateListWhole  = useUpdateListWhole();
 
-  const { doc: listDoc, loading: listLoading, state: listState, error: listError } = useDoc(match.params.id);
+  const { docs: listDocs, loading: listLoading, error: listError} = useFind({
+    index: { fields: ["type","name"] },
+    selector: { type: "list", name: { $exists: true} },
+    sort: [ "type","name"]
+  });
   const { docs: userDocs, loading: userLoading, error: userError} = useFind({
     index: { fields: ["type","name"] },
     selector: { type: "user", name: { $exists: true} },
@@ -34,10 +39,11 @@ const List: React.FC<ListPageProps> = ({ match }) => {
 
   useEffect( () => {
     if (!listLoading && !userLoading && !categoryLoading) {
+      let listDoc=listDocs.find(el => el._id === selectedListID);
       setStateListDoc(listDoc as any);
       setDoingUpdate(false);
     }
-  },[listLoading,listDoc,userLoading,userDocs,categoryLoading,categoryDocs]);
+  },[listLoading,listDocs,userLoading,userDocs,categoryLoading,categoryDocs,selectedListID]);
 
   if (listLoading || userLoading || categoryLoading || doingUpdate || isEmpty(stateListDoc))  {return(
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader></IonPage>
@@ -91,6 +97,10 @@ const List: React.FC<ListPageProps> = ({ match }) => {
     setStateListDoc(newListDoc);
 //    setDoingUpdate(true);
 //    updateList(newListDoc);
+  }
+
+  function selectList(listID: string) {
+    setSelectedListID(listID);
   }
 
   function selectUser(userID: string, updateVal: boolean) {
@@ -190,15 +200,18 @@ const List: React.FC<ListPageProps> = ({ match }) => {
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Editing List: {(stateListDoc as any).name}</IonTitle>
+          <IonTitle>
+          <IonSelect onIonChange={(ev) => selectList(ev.detail.value)} value={selectedListID}>
+                {listDocs.map((list) => (
+                    <IonSelectOption key={list._id} value={(list as any)._id}>
+                      {(list as any).name}
+                    </IonSelectOption>
+                ))}
+              </IonSelect>
+          </IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar>
-            <IonTitle size="large">Editing List: {(stateListDoc as any).name}</IonTitle>
-          </IonToolbar>
-        </IonHeader>
           <IonList>
             <IonItem key="name">
               <IonLabel position="stacked">Name</IonLabel>
