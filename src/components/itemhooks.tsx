@@ -14,6 +14,32 @@ export function useUpdateItem() {
   )
 }
 
+export function useUpdateCategory() {
+  const db = usePouch();
+
+  return useCallback(
+    async (updatedDoc: any) => {
+      const result = await db.put(updatedDoc)
+      return result
+    },
+    [db]
+  )
+}
+
+
+export function useUpdateListWhole() {
+  const db = usePouch();
+
+  return useCallback(
+    async (updatedDoc: any) => {
+      const result = await db.put(updatedDoc)
+      return result
+    },
+    [db]
+  )
+}
+
+
 export function useUpdateCompleted() {
   const db = usePouch();
 

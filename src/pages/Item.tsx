@@ -4,7 +4,7 @@ import { RouteComponentProps } from 'react-router-dom';
 import { useDoc, useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext } from 'react';
 import { useUpdateItem } from '../components/itemhooks';
-import { cloneDeep } from 'lodash';
+import { cloneDeep, isEmpty } from 'lodash';
 import './Item.css';
 
 interface ItemPageProps
@@ -34,12 +34,35 @@ const Item: React.FC<ItemPageProps> = ({ match }) => {
   const {goBack} = useContext(NavContext);
 
   useEffect( () => {
-    if (!itemLoading) {
-      setStateItemDoc(itemDoc as any);
+    if (!itemLoading && !listLoading) {
+      let newItemDoc=cloneDeep(itemDoc);
+      let listsUpdated=false;
+      for (let i = 0; i < listDocs.length; i++) {
+        let checkListID=(listDocs[i] as any)._id;
+        let foundInList=false;
+        for (let j = 0; j < newItemDoc.lists.length; j++) {
+          if (checkListID === newItemDoc.lists[j].listID) {foundInList=true};
+        }      
+        if (!foundInList) {
+          newItemDoc.lists.push({
+            listID: checkListID,
+            completed: false,
+            active: false,
+            boughtCount: 0
+          })
+          listsUpdated=true;
+        }  
+      }
+      if (listsUpdated) {
+        console.log("Updated List:", {itemDoc}, {newItemDoc});
+        updateItem(newItemDoc);
+      }
+      setStateItemDoc(newItemDoc as any);
     }
-  },[itemLoading,itemDoc]);
+  },[itemLoading,itemDoc,listLoading,listDocs]);
 
-  if (itemLoading || listLoading || categoryLoading )  {return(
+  if (itemLoading || listLoading || categoryLoading || isEmpty(stateItemDoc))  {
+    return(
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader></IonPage>
   )};
   
@@ -81,10 +104,9 @@ const Item: React.FC<ItemPageProps> = ({ match }) => {
   listsElem.push(<IonItemDivider key="listdivider">Item is on these lists:</IonItemDivider>)
   for (let i = 0; i < (stateItemDoc as any).lists.length; i++) {
     let listID = (stateItemDoc as any).lists[i].listID;
-    let itemFoundIdx=listDocs.findIndex(element => (element._id === listID))
-    let itemActive=((itemFoundIdx !== -1) && ((stateItemDoc as any).lists[i].active))
-    let listName=(listDocs as any)[itemFoundIdx].name
-//    console.log ({listID, itemFoundIdx, itemActive, listName});
+    let itemFoundIdx=listDocs.findIndex(element => (element._id === listID));
+    let itemActive=((itemFoundIdx !== -1) && ((stateItemDoc as any).lists[i].active));
+    let listName=(itemFoundIdx !== -1) ? (listDocs as any)[itemFoundIdx].name : "Undefined list: "+listID;
     listsElem.push(
       <IonItem key={listID}>
         <IonCheckbox slot="start" onIonChange={(e: any) => selectList(listID,Boolean(e.detail.checked))} checked={itemActive}></IonCheckbox>

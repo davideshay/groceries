@@ -25,6 +25,7 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
   }
 
   const [stateItemRows,setStateItemRows] = useState<ItemRow[]>([]);
+  const [doingUpdate,setDoingUpdate] = useState(false);
   const updateCompleted = useUpdateCompleted();
   const { docs: itemDocs, loading: itemLoading, error: itemError } = useFind({
     index: {
@@ -44,6 +45,13 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
       sort: [ "type","name"]
     })
 
+    useEffect( () => {
+      if (!itemLoading && !listLoading && !categoryLoading) {
+        setStateItemRows(getItemRows());
+        setDoingUpdate(false);
+      }
+    },[itemLoading, listLoading, categoryLoading, itemDocs, listDoc, categoryDocs]);
+    
     function getItemRows() {
       let itemRows: Array<ItemRow> =[];
       itemDocs.forEach((itemDoc: any) => {
@@ -79,19 +87,12 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
       return (itemRows)
     }
 
-  useEffect( () => {
-    if (!itemLoading && !listLoading && !categoryLoading) {
-      setStateItemRows(getItemRows());
-    }
-  },[itemLoading, listLoading, categoryLoading, itemDocs, listDoc, categoryDocs]);
-
-
-  if (itemLoading || listLoading || categoryLoading || stateItemRows.length <=0 )  {return(
+  if (itemLoading || listLoading || categoryLoading || doingUpdate || stateItemRows.length <=0 )  {return(
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader></IonPage>
   )};  
 
   function completeItemRow(id: String, newStatus: boolean | null) {
-    let newItemRows: Array<ItemRow>=cloneDeep(stateItemRows);
+     let newItemRows: Array<ItemRow>=cloneDeep(stateItemRows);
     let itemSeq = newItemRows.findIndex(element => (element.itemID === id))
     newItemRows[itemSeq].completed = newStatus;
     // get itemdoc from itemDocs
@@ -102,12 +103,8 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
       newStatus: newStatus,
       listID: match.params.id
     }
+    setDoingUpdate(true);
     updateCompleted(updateInfo);
-    newItemRows.sort((a,b) => (
-      (Number(a.completed) - Number(b.completed)) || (a.categorySeq - b.categorySeq) ||
-      (a.itemName.localeCompare(b.itemName))
-    ))
-    setStateItemRows(newItemRows);
   }
 
   let listContent=[];

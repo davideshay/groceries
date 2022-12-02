@@ -13,9 +13,12 @@ import { IonReactRouter } from '@ionic/react-router';
 import { useEffect, useState } from 'react';
 import { albumsOutline, listOutline, settingsOutline, nutritionOutline } from 'ionicons/icons';
 import Lists from './pages/Lists';
+import List from "./pages/List";
 import Items from './pages/Items';
 import Item from './pages/Item';
+import CategoriesSeqList from './pages/CategoriesSeqList';
 import Categories from './pages/Categories';
+import Category from './pages/Category';
 import Settings from './pages/Settings';
 
 /* Core CSS required for Ionic components to work properly */
@@ -50,8 +53,6 @@ const App: React.FC = () => {
   const [remotedb,setRemotedb] = useState(() => new PouchDB(process.env.REACT_APP_COUCHDB_URL))
   const [isSyncing, setIsSyncing] = useState(false)
 
-  
-
   useEffect( () =>
   {
     const sync = db
@@ -63,7 +64,6 @@ const App: React.FC = () => {
     return () =>  { sync.cancel()}
   
   }, [db, remotedb])
-
 
   return (
   <IonApp>
@@ -78,13 +78,20 @@ const App: React.FC = () => {
           </Route>
           <Route path="/item/:id" component={Item}>
           </Route>
-          <Route path="/categories/:id" component={Categories}>
+          <Route exact path="/categories">
+            <Categories />
+          </Route>
+          <Route path="/category/:id" component={Category}>
+          </Route>
+          <Route path="/categoriesseqlist/:id" component={CategoriesSeqList}>
           </Route>
           <Route path="/settings">
             <Settings />
           </Route>
           <Route exact path="/">
             <Redirect to="/lists" />
+          </Route>
+          <Route path="/list/:id" component={List}>
           </Route>
         </IonRouterOutlet>
         <IonTabBar slot="bottom">
