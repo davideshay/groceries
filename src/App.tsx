@@ -91,7 +91,7 @@ const App: React.FC = () => {
           <Route exact path="/">
             <Redirect to="/lists" />
           </Route>
-          <Route path="/list/:id" component={List}>
+          <Route path="/list/:mode/:id?" component={List}>
           </Route>
         </IonRouterOutlet>
         <IonTabBar slot="bottom">

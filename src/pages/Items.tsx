@@ -174,7 +174,7 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
       <IonHeader>
         <IonToolbar>
           <IonTitle>
-            <IonSelect onIonChange={(ev) => selectList(ev.detail.value)} value={selectedListID}>
+            <IonSelect interface="popover" onIonChange={(ev) => selectList(ev.detail.value)} value={selectedListID}>
                 Items on :
                 {listDocs.map((list) => (
                     <IonSelectOption key={list._id} value={(list as any)._id}>

@@ -1,9 +1,10 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonSelectOption, IonReorder, IonReorderGroup,ItemReorderEventDetail, NavContext } from '@ionic/react';
-import { add } from 'ionicons/icons';
-import { RouteComponentProps } from 'react-router-dom';
-import { useDoc, useFind } from 'use-pouchdb';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput,
+   IonItem, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonSelectOption,
+   IonReorder, IonReorderGroup,ItemReorderEventDetail, IonModal, useIonAlert, NavContext } from '@ionic/react';
+import { RouteComponentProps, useParams } from 'react-router-dom';
+import { useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext } from 'react';
-import { useUpdateListWhole } from '../components/itemhooks';
+import { useUpdateListWhole, useCreateList } from '../components/itemhooks';
 import { cloneDeep, isEmpty } from 'lodash';
 import './List.css';
 
@@ -12,12 +13,20 @@ interface ListPageProps
     id: string;
   }> {}
 
-const List: React.FC<ListPageProps> = ({ match }) => {
+const List: React.FC<ListPageProps> = () => {
 
+  let { mode, id: routeID } = useParams<{mode: string, id: string}>();
+  const initListDoc = false;
+  if ( mode === "new" ) { routeID = "<new>"};
   const [stateListDoc,setStateListDoc] = useState<any>({});
   const [doingUpdate,setDoingUpdate] = useState(false);
-  const [selectedListID,setSelectedListID] = useState(match.params.id);
+  const [selectedListID,setSelectedListID] = useState(routeID);
+  const [changesMade,setChangesMade] = useState(false);
+  const [presentChangesWarning] = useIonAlert();
+  const [isModalOpen,setIsModalOpen] = useState(false);
+  const [nextListID,setNextListID] = useState("");
   const updateListWhole  = useUpdateListWhole();
+  const createList = useCreateList();
 
   const { docs: listDocs, loading: listLoading, error: listError} = useFind({
     index: { fields: ["type","name"] },
@@ -39,8 +48,20 @@ const List: React.FC<ListPageProps> = ({ match }) => {
 
   useEffect( () => {
     if (!listLoading && !userLoading && !categoryLoading) {
-      let listDoc=listDocs.find(el => el._id === selectedListID);
-      setStateListDoc(listDoc as any);
+      if (mode === "new" && !initListDoc) {
+        let initCategories=categoryDocs.map(cat => cat._id);
+        let initListDoc = {
+          type: "list",
+          name: "",
+          sharedWith: [],
+          categories: initCategories
+        }
+        setStateListDoc(initListDoc);
+      }
+      else {
+        let listDoc=listDocs.find(el => el._id === selectedListID);
+        setStateListDoc(listDoc as any);
+      }
       setDoingUpdate(false);
     }
   },[listLoading,listDocs,userLoading,userDocs,categoryLoading,categoryDocs,selectedListID]);
@@ -49,11 +70,15 @@ const List: React.FC<ListPageProps> = ({ match }) => {
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader></IonPage>
   )};
   
-  console.log("proceeding to load with:",{stateListDoc});
-
   function updateThisItem() {
     setDoingUpdate(true);
-    updateListWhole(stateListDoc);
+    if (mode === "new") {
+      const result = createList(stateListDoc);
+      console.log(result);
+    }
+    else {
+      updateListWhole(stateListDoc);
+    }
     goBack("/lists");
   }
 
@@ -63,6 +88,7 @@ const List: React.FC<ListPageProps> = ({ match }) => {
     let newListDoc=cloneDeep(stateListDoc);
     newListDoc.categories.splice(event.detail.to,0,newListDoc.categories.splice(event.detail.from,1)[0]);
     setStateListDoc(newListDoc);
+    setChangesMade(true);
 
     // Finish the reorder and position the item in the DOM based on
     // where the gesture ended. This method can also be called directly
@@ -71,7 +97,6 @@ const List: React.FC<ListPageProps> = ({ match }) => {
   }
 
   function updateCat(categoryID: string, updateVal: boolean) {
-    console.log("updateCat:", {categoryID, updateVal});
     const currCategories=[];
     let foundIt=false;
     for (let i = 0; i < stateListDoc.categories.length; i++) {
@@ -93,14 +118,33 @@ const List: React.FC<ListPageProps> = ({ match }) => {
     }
     let newListDoc=cloneDeep(stateListDoc);
     newListDoc.categories = currCategories;
-    console.log("old",{stateListDoc},"new",{newListDoc});
     setStateListDoc(newListDoc);
-//    setDoingUpdate(true);
-//    updateList(newListDoc);
+    setChangesMade(true);
   }
 
-  function selectList(listID: string) {
-    setSelectedListID(listID);
+  function selectList(ev: Event,listID: string) {
+    if (changesMade) {
+      ev.stopImmediatePropagation();
+      presentChangesWarning({
+        header:"Warning!",
+        message:"Changes made and not yet saved",
+        buttons: [ {
+          text: "Switch Lists Without Saving",
+          role: "switch",
+          handler: () => {setSelectedListID(listID)}
+        }, {
+          text: "Cancel Switch",
+          role: "cancel",
+          handler: () => {}
+        }
+
+        ]
+      })
+      return (false);
+    } else {
+      setSelectedListID(listID);
+      return (true);
+    }
   }
 
   function selectUser(userID: string, updateVal: boolean) {
@@ -125,8 +169,12 @@ const List: React.FC<ListPageProps> = ({ match }) => {
     let newListDoc=cloneDeep(stateListDoc);
     newListDoc.sharedWith = currUsers;
     setStateListDoc(newListDoc);
-//    setDoingUpdate(true);
-//    updateListWhole(newListDoc);
+    setChangesMade(true);
+  }
+
+  function updateName(updName: string) {
+    setStateListDoc({...stateListDoc, name: updName});
+    setChangesMade(true);
   }
 
   let usersElem=[];
@@ -152,7 +200,7 @@ const List: React.FC<ListPageProps> = ({ match }) => {
     const categoryID = (stateListDoc as any).categories[i];
     const categoryName = (categoryDocs.find(element => (element._id === categoryID)) as any).name;
     categoryLines.push(
-      <IonItem key={categoryID}>
+      <IonItem key={"active-"+categoryID}>
         <IonCheckbox slot="start" onIonChange={(e: any) => updateCat(categoryID,Boolean(e.detail.checked))} checked={true}></IonCheckbox>
         <IonButton fill="clear" class="textButton">{categoryName}</IonButton>
         <IonReorder slot="end"></IonReorder>
@@ -177,7 +225,7 @@ const List: React.FC<ListPageProps> = ({ match }) => {
     const inList = (stateListDoc as any).categories.includes(categoryID);
     if (!inList) {
       categoryLines.push(
-        <IonItem key={categoryID}>
+        <IonItem key={"inactive-"+categoryID}>
           <IonCheckbox slot="start" onIonChange={(e: any) => updateCat(categoryID,Boolean(e.detail.checked))} checked={false}></IonCheckbox>
           <IonButton fill="clear" class="textButton">{categoryName}</IonButton>
           <IonReorder slot="end>"></IonReorder>
@@ -196,26 +244,45 @@ const List: React.FC<ListPageProps> = ({ match }) => {
     </div>
   )
   
+  let selectDropDown: any=[];
+    if (mode === "new") {
+      selectDropDown.push(<IonTitle key="createnew">Creating new list</IonTitle>)
+    } else {  
+      selectDropDown.push(
+        <IonTitle key="editexisting">
+        <IonItem key="editexistingitem">
+        <IonLabel key="editexisting">Editing List:</IonLabel>
+        <IonSelect key="list" interface="popover" onIonChange={(ev) => selectList(ev, ev.detail.value)} value={selectedListID}>
+        {listDocs.map((list) => (
+          <IonSelectOption key={"list-"+list._id} value={(list as any)._id}>
+            {(list as any).name}
+          </IonSelectOption>
+        ))}
+        </IonSelect>
+        </IonItem>
+        </IonTitle>
+    )
+  }
+
+  let updateButton=[];
+  if (mode === "new") {
+    updateButton.push(<IonButton key="add" onClick={() => updateThisItem()}>Add</IonButton>)
+  } else {
+    updateButton.push(<IonButton key="update" onClick={() => updateThisItem()}>Update</IonButton>)
+  }
+
   return (
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>
-          <IonSelect onIonChange={(ev) => selectList(ev.detail.value)} value={selectedListID}>
-                {listDocs.map((list) => (
-                    <IonSelectOption key={list._id} value={(list as any)._id}>
-                      {(list as any).name}
-                    </IonSelectOption>
-                ))}
-              </IonSelect>
-          </IonTitle>
+            {selectDropDown}
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>
           <IonList>
             <IonItem key="name">
               <IonLabel position="stacked">Name</IonLabel>
-              <IonInput type="text" onIonChange={(e: any) => setStateListDoc({...stateListDoc, name: e.detail.value})} value={(stateListDoc as any).name}></IonInput>
+              <IonInput type="text" placeholder="<New>" onIonChange={(e: any) => updateName(e.detail.value)} value={(stateListDoc as any).name}></IonInput>
             </IonItem>
             <IonItemGroup key="userlist">
             {usersElem}
@@ -224,8 +291,8 @@ const List: React.FC<ListPageProps> = ({ match }) => {
             {categoryElem}
             </IonItemGroup>
           </IonList>
-          <IonButton onClick={() => updateThisItem()}>Update</IonButton>
-          <IonButton onClick={() => goBack("/lists")}>Cancel</IonButton>
+          {updateButton}
+          <IonButton key="back" onClick={() => goBack("/lists")}>Cancel</IonButton>
       </IonContent>
     </IonPage>
   );

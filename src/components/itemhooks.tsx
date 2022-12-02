@@ -39,6 +39,20 @@ export function useUpdateListWhole() {
   )
 }
 
+export function useCreateList() {
+  const db = usePouch();
+
+  return useCallback(
+    async (updatedDoc: any) => {
+      const result = await db.post(updatedDoc)
+      return result
+    },
+    [db]
+  )
+}
+
+
+
 
 export function useUpdateCompleted() {
   const db = usePouch();

@@ -140,7 +140,7 @@ const Item: React.FC<ItemPageProps> = ({ match }) => {
             </IonItem>
             <IonItem key="category">
               <IonLabel position="stacked">Category</IonLabel>
-              <IonSelect onIonChange={(ev) => updateCategory(ev.detail.value)} value={(stateItemDoc as any).categoryID}>
+              <IonSelect interface="popover" onIonChange={(ev) => updateCategory(ev.detail.value)} value={(stateItemDoc as any).categoryID}>
                 {categoryDocs.map((cat) => (
                     <IonSelectOption key={cat._id} value={(cat as any)._id}>
                       {(cat as any).name}
