@@ -51,7 +51,6 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
     })
 
     useEffect( () => {
-      console.log("useEffectTriggered, listID:",{selectedListID});
       if (!itemLoading && !listLoading && !categoryLoading) {
         setStateItemRows(getItemRows());
         setDoingUpdate(false);
@@ -115,11 +114,8 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
   }
 
   function selectList(listID: string) {
-    console.log("new list selected:", {listID});
     setSelectedListID(listID);
   }
-
-
 
   let listContent=[];
 
@@ -167,7 +163,6 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
   addCurrentRows(listContent,currentRows,lastCategoryID,lastCategoryName,lastCategoryFinished);
   if (!createdFinished) {listContent.push(completedDivider)};
   let contentElem=(<IonList lines="full">{listContent}</IonList>)
-  let listDoc=listDocs.find(el => el._id === selectedListID);
 
   return (
     <IonPage>
