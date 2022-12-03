@@ -15,7 +15,6 @@ interface ListPageProps
 
 interface PageState {
   listDoc: any,
-  doingUpdate: Boolean,
   selectedListID: String,
   changesMade: Boolean
 }  
@@ -27,14 +26,9 @@ const List: React.FC<ListPageProps> = () => {
   if ( mode === "new" ) { routeID = "<new>"};
   const [pageState,setPageState] = useState<PageState>({
     listDoc: {},
-    doingUpdate: false,
     selectedListID: routeID,
     changesMade: false
   })
-//  const [stateListDoc,setStateListDoc] = useState<any>({});
-//  const [doingUpdate,setDoingUpdate] = useState(false);
-//  const [selectedListID,setSelectedListID] = useState(routeID);
-//  const [changesMade,setChangesMade] = useState(false);
   const updateListWhole  = useUpdateListWhole();
   const createList = useCreateList();
 
@@ -54,20 +48,18 @@ const List: React.FC<ListPageProps> = () => {
     sort: [ "type","name"]
   })
 
-  const {goBack} = useContext(NavContext);
+  const {goBack, navigate} = useContext(NavContext);
 
   function changeListUpdateState(listID: string) {
-    let newPageState=cloneDeep(pageState);
-    newPageState.selectedListID=listID;
-    let newListDoc = listDocs.find(el => el._id === listID);
-    newPageState.listDoc = newListDoc;
-    setPageState(newPageState);
+    setPageState({...pageState,
+        listDoc: listDocs.find(el => el._id === listID),
+        selectedListID: listID})
+    navigate('/list/edit/'+listID);    
   }
 
   useEffect( () => {
     let newPageState=cloneDeep(pageState);
     if (!listLoading && !userLoading && !categoryLoading) {
-      console.log("in useeffect:",{pageState});
       if (mode === "new" && !needInitListDoc) {
         let initCategories=categoryDocs.map(cat => cat._id);
         let initListDoc = {
@@ -83,22 +75,18 @@ const List: React.FC<ListPageProps> = () => {
         let newListDoc = listDocs.find(el => el._id === pageState.selectedListID);
         newPageState.listDoc = newListDoc;
       }
-      console.log("setting changes made to false");
       newPageState.changesMade=false;
-      newPageState.doingUpdate=false;
       setPageState(newPageState);
     }
   },[listLoading,listDocs,userLoading,userDocs,categoryLoading,categoryDocs,pageState.selectedListID]);
 
-  if (listLoading || userLoading || categoryLoading || pageState.doingUpdate || isEmpty(pageState.listDoc))  {return(
-    <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader></IonPage>
+  if (listLoading || userLoading || categoryLoading || isEmpty(pageState.listDoc))  {return(
+      <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
   )};
   
   function updateThisItem() {
-    setPageState({...pageState,doingUpdate:true});
     if (mode === "new") {
       const result = createList(pageState.listDoc);
-      console.log(result);
     }
     else {
       updateListWhole(pageState.listDoc);
@@ -112,7 +100,6 @@ const List: React.FC<ListPageProps> = () => {
     let newPageState=cloneDeep(pageState);
     newPageState.listDoc.categories.splice(event.detail.to,0,newPageState.listDoc.categories.splice(event.detail.from,1)[0]);
     newPageState.changesMade=true;
-    console.log("setting changesmade to true in handleReorder");
     setPageState(newPageState);
 
     // Finish the reorder and position the item in the DOM based on
@@ -130,27 +117,16 @@ const List: React.FC<ListPageProps> = () => {
         if (updateVal) {
           // shouldn't occur -- asking to change it to active but already in the list
           console.log("ERROR: Item already in list, cannot set to active");
-        } else {
-          // skipping item, should not be in list copy
         }
       } else {
         currCategories.push(pageState.listDoc.categories[i])
       }
     }
-    console.log({currCategories,foundIt});
     if (updateVal && !foundIt) {
       currCategories.push(categoryID);
     }
-    let newPageState=cloneDeep(pageState);
-    newPageState.listDoc.categories = currCategories;
-    newPageState.changesMade = true;
-    setPageState(newPageState);
-    console.log("updating changes made to true in UpdateCat");
-  }
+    setPageState({...pageState, changesMade: true, listDoc: {...pageState.listDoc, categories: currCategories}})
 
-  function selectList(ev: Event,listID: string) {
-//    console.log("select List... old one: ", selectedListID, " new one:", listID);
-    changeListUpdateState(listID);
   }
 
   function selectUser(userID: string, updateVal: boolean) {
@@ -162,9 +138,7 @@ const List: React.FC<ListPageProps> = () => {
         if (updateVal) {
           // shouldn't occur -- asking to change it to active but already in the list
           console.log("ERROR: User already in list, cannot set to active");
-        } else {
-          // skipping item, should not be in list copy
-        }
+        } 
       } else {
         currUsers.push(pageState.listDoc.sharedWith[i])
       }
@@ -172,29 +146,14 @@ const List: React.FC<ListPageProps> = () => {
     if (updateVal && !foundIt) {
       currUsers.push(userID);
     }
-    console.log("seluser: selectedlistid: ", pageState.selectedListID);
-    console.log("listDocs:",listDocs);
-    let maybeListSharedWith=(listDocs.find(el => el._id === pageState.selectedListID) as any)
-    console.log("diff lookup method shared:", maybeListSharedWith);
-    console.log("statelistdoc:",pageState.listDoc);
-    console.log("in selectUser, cur is:",pageState.listDoc.sharedWith," new is: ",currUsers);
-    console.log(isEqual(pageState.listDoc.sharedWith,currUsers));
     if (!isEqual(pageState.listDoc.sharedWith,currUsers)) {
-      let newPageState=cloneDeep(pageState);
-      newPageState.listDoc.sharedWith = currUsers;
-      newPageState.changesMade=true;
-      setPageState(newPageState);
-      console.log("updating changesMade to true in SelectUser");  
+      setPageState({...pageState, changesMade: true, listDoc: {...pageState.listDoc, sharedWith: currUsers}})
     }
   }
 
   function updateName(updName: string) {
     if (pageState.listDoc.name !== updName) {
-      console.log("updating changesMade to true in updateName. cur nane:",pageState.listDoc.name," new name:",updName);
-      let newPageState=cloneDeep(pageState);
-      newPageState.listDoc.name=updName;
-      newPageState.changesMade=true;
-      setPageState(newPageState);
+      setPageState({...pageState, changesMade: true, listDoc: {...pageState.listDoc, name: updName}});
     }  
   }
 
@@ -216,54 +175,43 @@ const List: React.FC<ListPageProps> = () => {
 
   let categoryElem=[];
   let categoryLines=[];
+
+  function catItem(id: string, active: boolean) {
+    const actname=active ? "active" : "inactive"
+    const name = (categoryDocs.find(element => (element._id === id)) as any).name
+    return (
+    <IonItem key={pageState.selectedListID+"-"+actname+"-"+id}>
+    <IonCheckbox key={pageState.selectedListID+"-"+actname+"-"+id} slot="start" onIonChange={(e: any) => updateCat(id,Boolean(e.detail.checked))} checked={active}></IonCheckbox>
+    <IonButton fill="clear" class="textButton">{name}</IonButton>
+    <IonReorder slot="end"></IonReorder>
+    </IonItem>)
+  }
+
+  function catItemDivider(active: boolean, lines: any) {
+    const actname=active ? "Active" : "Inactive"
+    return (
+      <div key={actname+"-"+"div"}>
+      <IonItemDivider key={actname}><IonLabel>{actname}</IonLabel></IonItemDivider>
+      <IonReorderGroup key={actname+"-reorder-group"} disabled={false} onIonItemReorder={handleReorder}>
+          {lines}
+      </IonReorderGroup>
+      </div>  
+    )   
+  }
   
   for (let i = 0; i < (pageState.listDoc as any).categories.length; i++) {
     const categoryID = (pageState.listDoc as any).categories[i];
-    const categoryName = (categoryDocs.find(element => (element._id === categoryID)) as any).name;
-    categoryLines.push(
-      <IonItem key={pageState.selectedListID+"-active-"+categoryID}>
-        <IonCheckbox key={pageState.selectedListID+"-active-"+categoryID} slot="start" onIonChange={(e: any) => updateCat(categoryID,Boolean(e.detail.checked))} checked={true}></IonCheckbox>
-        <IonButton fill="clear" class="textButton">{categoryName}</IonButton>
-        <IonReorder slot="end"></IonReorder>
-      </IonItem>
-    )
+    categoryLines.push(catItem((pageState.listDoc as any).categories[i],true));
   }
-  categoryElem.push(
-    <div key="active-div">
-    <IonItemDivider key="active">
-    <IonLabel>Active</IonLabel>
-    </IonItemDivider>
-    <IonReorderGroup key="active-reorder-group" disabled={false} onIonItemReorder={handleReorder}>
-        {categoryLines}
-    </IonReorderGroup>
-    </div>
-  )
+  categoryElem.push(catItemDivider(true,categoryLines));
   categoryLines=[];
   for (let i = 0; i < categoryDocs.length; i++) {
-    const category: any = categoryDocs[i];
-    const categoryID = category._id;
-    const categoryName = (categoryDocs.find(element => (element._id === categoryID)) as any).name;
-    const inList = (pageState.listDoc as any).categories.includes(categoryID);
+    const inList = (pageState.listDoc as any).categories.includes(categoryDocs[i]._id);
     if (!inList) {
-      categoryLines.push(
-        <IonItem key={pageState.selectedListID+"-inactive-"+categoryID}>
-          <IonCheckbox key={pageState.selectedListID+"-inactive-"+categoryID} slot="start" onIonChange={(e: any) => updateCat(categoryID,Boolean(e.detail.checked))} checked={false}></IonCheckbox>
-          <IonButton fill="clear" class="textButton">{categoryName}</IonButton>
-          <IonReorder slot="end>"></IonReorder>
-        </IonItem>
-      )
+      categoryLines.push(catItem(categoryDocs[i]._id,false))
     }
   }
-  categoryElem.push(
-    <div key="inactive-div">
-    <IonItemDivider key="inactive">
-    <IonLabel>Inactive</IonLabel>
-    </IonItemDivider>
-    <IonReorderGroup key="inactive-reorder-group" disabled={false} onIonItemReorder={handleReorder}>
-        {categoryLines}
-    </IonReorderGroup>
-    </div>
-  )
+  categoryElem.push(catItemDivider(false,categoryLines));
 
   let selectOptionListElem=(
     listDocs.map((list) => (
@@ -280,14 +228,14 @@ const List: React.FC<ListPageProps> = () => {
     }
     selectElem.push(
       <IonSelect key="list-changed" interface="alert" interfaceOptions={alertOptions}
-        onIonChange={(ev) => selectList(ev, ev.detail.value)} value={pageState.selectedListID}>
+        onIonChange={(ev) => changeListUpdateState(ev.detail.value)} value={pageState.selectedListID}>
         {selectOptionListElem}
       </IonSelect>
     )  
   } else {
     let iopts={};
     selectElem.push(
-      <IonSelect key="list-notchanged" interface="popover" interfaceOptions={iopts} onIonChange={(ev) => selectList(ev, ev.detail.value)} value={pageState.selectedListID}>
+      <IonSelect key="list-notchanged" interface="popover" interfaceOptions={iopts} onIonChange={(ev) => changeListUpdateState(ev.detail.value)} value={pageState.selectedListID}>
         {selectOptionListElem}
       </IonSelect>
     ) 

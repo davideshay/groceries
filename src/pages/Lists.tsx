@@ -46,7 +46,7 @@ const Lists: React.FC = () => {
         </IonList>
       </IonContent>
       <IonFab slot="fixed" vertical="bottom" horizontal="end">
-        <IonFabButton>
+        <IonFabButton routerLink={"/list/new/new"}>
           <IonIcon icon={add}></IonIcon>
         </IonFabButton>
       </IonFab>
