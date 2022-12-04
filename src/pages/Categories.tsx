@@ -17,7 +17,7 @@ const Categories: React.FC = () => {
   })
 
   if (loading) { return (
-    <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader></IonPage>
+    <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
   )}
 
   return (
@@ -36,13 +36,13 @@ const Categories: React.FC = () => {
         <IonList lines="full">
                {docs.map((doc) => (
                   <IonItem key={(doc as any)._id} >
-                    <IonButton slot="start" class="textButton" fill="clear" routerLink={("/category/" + (doc as any)._id)}>{(doc as any).name}</IonButton>
+                    <IonButton slot="start" class="textButton" fill="clear" routerLink={("/category/edit/" + (doc as any)._id)}>{(doc as any).name}</IonButton>
                   </IonItem>  
             ))}
         </IonList>
       </IonContent>
       <IonFab slot="fixed" vertical="bottom" horizontal="end">
-        <IonFabButton>
+        <IonFabButton routerLink={"/category/new/new"}>
           <IonIcon icon={add}></IonIcon>
         </IonFabButton>
       </IonFab>

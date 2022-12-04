@@ -53,6 +53,11 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
       selector: { type: "category", name: { $exists: true}},
       sort: [ "type","name"]
     })
+    const { docs: allItemDocs, loading: allItemsLoading, error: allItemsError } = useFind({
+      index: { fields: [ "type","name"] },
+      selector: { type: "item", name: { $exists: true}},
+      sort: [ "type","name"]
+    })
 
     const {navigate} = useContext(NavContext);
 
@@ -63,7 +68,7 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
           itemRows: getItemRows(pageState.selectedListID)
         })
       }
-    },[itemLoading, listLoading, categoryLoading, itemDocs, listDocs, categoryDocs, pageState.selectedListID, match.params.id]);
+    },[itemLoading, allItemsLoading, listLoading, categoryLoading, itemDocs, listDocs, allItemDocs, categoryDocs, pageState.selectedListID, match.params.id]);
     
     function getItemRows(listID: string) {
       console.log("in getItemRows, listid:", listID);
@@ -79,7 +84,6 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
           quantity: 0,
           completed: false
         };
-      
         itemRow.itemID = itemDoc._id;
         itemRow.itemName = itemDoc.name;
         itemRow.categoryID = itemDoc.categoryID;

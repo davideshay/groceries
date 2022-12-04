@@ -81,7 +81,7 @@ const App: React.FC = () => {
           <Route exact path="/categories">
             <Categories />
           </Route>
-          <Route path="/category/:id" component={Category}>
+          <Route path="/category/:mode/:id?" component={Category}>
           </Route>
           <Route path="/categoriesseqlist/:id" component={CategoriesSeqList}>
           </Route>

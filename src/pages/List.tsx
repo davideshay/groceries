@@ -22,7 +22,7 @@ interface PageState {
 const List: React.FC<ListPageProps> = () => {
 
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
-  let needInitListDoc = false;
+  let needInitListDoc = (mode === "new") ? true: false;
   if ( mode === "new" ) { routeID = "<new>"};
   const [pageState,setPageState] = useState<PageState>({
     listDoc: {},
@@ -60,7 +60,8 @@ const List: React.FC<ListPageProps> = () => {
   useEffect( () => {
     let newPageState=cloneDeep(pageState);
     if (!listLoading && !userLoading && !categoryLoading) {
-      if (mode === "new" && !needInitListDoc) {
+      if (mode === "new" && needInitListDoc) {
+        console.log("creating new list");
         let initCategories=categoryDocs.map(cat => cat._id);
         let initListDoc = {
           type: "list",
@@ -91,7 +92,7 @@ const List: React.FC<ListPageProps> = () => {
     else {
       updateListWhole(pageState.listDoc);
     }
-    goBack("/lists");
+    navigate("/lists");
   }
 
   function handleReorder(event: CustomEvent<ItemReorderEventDetail>) {
