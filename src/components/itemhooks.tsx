@@ -1,6 +1,25 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useLocation } from 'react-router-dom';
 import { usePouch } from 'use-pouchdb'
 import { cloneDeep } from 'lodash';
+
+export function useUpdateGenericDocument() {
+  const db = usePouch();
+  return useCallback(
+    async (updatedDoc: any) => {
+      const result = await db.put(updatedDoc)
+      return result
+    },[db])
+}
+
+export function useCreateGenericDocument() {
+  const db = usePouch();
+  return useCallback(
+    async (updatedDoc: any) => {
+      const result = await db.post(updatedDoc)
+      return result
+    },[db])
+}
 
 export function useUpdateItem() {
   const db = usePouch();
@@ -25,7 +44,6 @@ export function useUpdateCategory() {
     [db]
   )
 }
-
 
 export function useUpdateListWhole() {
   const db = usePouch();
@@ -85,4 +103,21 @@ export function useUpdateCompleted() {
     },
     [db]
   )
+}
+
+export function useUpdateItemInList() {
+  const db = usePouch()
+
+  return useCallback(
+    async (updatedDoc: any) => {
+      const result = await db.put(updatedDoc)
+      return result
+    },
+    [db]
+  )
+}
+
+export function useQuery() {
+  const { search } = useLocation();
+  return useMemo(() => new URLSearchParams(search), [search]);
 }

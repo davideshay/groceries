@@ -1,9 +1,10 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonSelectOption, NavContext } from '@ionic/react';
 import { add } from 'ionicons/icons';
-import { RouteComponentProps } from 'react-router-dom';
+import { RouteComponentProps, useParams } from 'react-router-dom';
 import { useDoc, useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext } from 'react';
-import { useUpdateItem } from '../components/itemhooks';
+import { useUpdateItem, useQuery, useCreateGenericDocument } from '../components/itemhooks';
+import { createEmptyItemDoc } from '../components/DefaultDocs';
 import { cloneDeep, isEmpty } from 'lodash';
 import './Item.css';
 
@@ -12,13 +13,18 @@ interface ItemPageProps
     id: string;
   }> {}
 
-const Item: React.FC<ItemPageProps> = ({ match }) => {
+const Item: React.FC<ItemPageProps> = () => {
 
+  let { mode, itemid: routeItemID, listid: routeListID  } = useParams<{mode: string, itemid: string, listid: string}>();
+  if ( mode === "new" ) { routeItemID = "<new>"};
+  let needInitItemDoc = (mode === "new") ? true: false;
   const [stateItemDoc,setStateItemDoc] = useState({});
   const updateItem  = useUpdateItem();
+  const addItem = useCreateGenericDocument();
+  let queryParams = useQuery();
+  const initItemName = queryParams.get("inititemname");
 
-  const { doc: itemDoc, loading: itemLoading, state: itemState, error: itemError } = useDoc(match.params.id);
-
+  const { doc: itemDoc, loading: itemLoading, state: itemState, error: itemError } = useDoc(routeItemID);
   const { docs: listDocs, loading: listLoading, error: listError} = useFind({
     index: { fields: ["type","name"] },
     selector: { type: "list", name: { $exists: true} },
@@ -33,29 +39,30 @@ const Item: React.FC<ItemPageProps> = ({ match }) => {
 
   const {goBack} = useContext(NavContext);
 
+  function addListsIfNotExist(itemDoc: any) {
+    let newItemDoc=cloneDeep(itemDoc);
+    for (let i = 0; i < listDocs.length; i++) {
+      let foundIdx=newItemDoc.lists.findIndex((el: any) => el.listID === listDocs[i]._id)
+      if (foundIdx === -1) {
+        newItemDoc.lists.push({
+          listID: listDocs[i]._id,
+          completed: false,
+          active: false,
+          boughtCount: 0
+        })
+      }  
+    }
+    return(newItemDoc);
+  }
+
+
   useEffect( () => {
+    let newItemDoc = cloneDeep(itemDoc);
     if (!itemLoading && !listLoading) {
-      let newItemDoc=cloneDeep(itemDoc);
-      let listsUpdated=false;
-      for (let i = 0; i < listDocs.length; i++) {
-        let checkListID=(listDocs[i] as any)._id;
-        let foundInList=false;
-        for (let j = 0; j < newItemDoc.lists.length; j++) {
-          if (checkListID === newItemDoc.lists[j].listID) {foundInList=true};
-        }      
-        if (!foundInList) {
-          newItemDoc.lists.push({
-            listID: checkListID,
-            completed: false,
-            active: false,
-            boughtCount: 0
-          })
-          listsUpdated=true;
-        }  
-      }
-      if (listsUpdated) {
-        console.log("Updated List:", {itemDoc}, {newItemDoc});
-        updateItem(newItemDoc);
+      if (mode === "new" && needInitItemDoc) {
+        newItemDoc = createEmptyItemDoc(listDocs,routeListID,initItemName)
+      } else {
+      newItemDoc=addListsIfNotExist(itemDoc);
       }
       setStateItemDoc(newItemDoc as any);
     }

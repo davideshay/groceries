@@ -76,7 +76,7 @@ const App: React.FC = () => {
           </Route>
           <Route path="/items/:id" component={Items}>
           </Route>
-          <Route path="/item/:id" component={Item}>
+          <Route path="/item/:mode/:itemid?/:listid?" component={Item}>
           </Route>
           <Route exact path="/categories">
             <Categories />

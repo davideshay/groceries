@@ -1,11 +1,14 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonItemGroup, IonItemDivider, IonButton, IonFab, IonFabButton, IonIcon, IonCheckbox, IonLabel, IonSelect, IonSelectOption, NavContext } from '@ionic/react';
-import { add } from 'ionicons/icons';
-import { useState, useEffect, useContext } from 'react';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonItemGroup,
+  IonItemDivider, IonButton, IonFab, IonFabButton, IonIcon, IonCheckbox, IonLabel, IonSelect,
+  IonSelectOption, IonSearchbar, IonPopover, NavContext} from '@ionic/react';
+import { add,checkmark } from 'ionicons/icons';
+import React, { useState, useEffect, useContext, useRef, KeyboardEvent } from 'react';
 import { RouteComponentProps } from 'react-router-dom';
 import { useDoc, useFind } from 'use-pouchdb';
 import { cloneDeep } from 'lodash';
 import './Items.css';
-import { useUpdateCompleted } from '../components/itemhooks';
+import { useUpdateCompleted, useUpdateGenericDocument, useCreateGenericDocument } from '../components/itemhooks';
+import { createEmptyItemDoc} from '../components/DefaultDocs';
 
 interface ItemsPageProps
   extends RouteComponentProps<{
@@ -24,14 +27,35 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
     completed: boolean | null
   }
 
+  interface ItemSearch {
+    itemID: string
+    itemName: string
+    quantity: number
+    boughtCount: number
+  }
+
+  interface SearchState {
+    searchCriteria: string,
+    isOpen: boolean,
+    event: Event | undefined,
+    filteredSearchRows: Array<ItemSearch>,
+    dismissEvent: CustomEvent | undefined
+  }
+
   interface PageState {
     selectedListID: string,
     doingUpdate: boolean,
-    itemRows: Array<ItemRow>
+    itemRows: Array<ItemRow>,
   }
 
+  const [searchRows,setSearchRows] = useState<ItemSearch[]>();
+  const [searchState,setSearchState] = useState<SearchState>({searchCriteria:"",isOpen: false,event: undefined, filteredSearchRows: [], dismissEvent: undefined});
   const [pageState, setPageState] = useState<PageState>({selectedListID: match.params.id, doingUpdate: false, itemRows: []});
+  const searchRef=useRef<HTMLIonSearchbarElement>(null);
+  
   const updateCompleted = useUpdateCompleted();
+  const updateItemInList = useUpdateGenericDocument();
+  const addNewItem = useCreateGenericDocument();
   const { docs: itemDocs, loading: itemLoading, error: itemError } = useFind({
     index: {
       fields: ["type","name","lists"]
@@ -62,16 +86,36 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
     const {navigate} = useContext(NavContext);
 
     useEffect( () => {
-      if (!itemLoading && !listLoading && !categoryLoading) {
+      if (!itemLoading && !listLoading && !categoryLoading && !allItemsLoading) {
         setPageState({ ...pageState,
           doingUpdate: false,
-          itemRows: getItemRows(pageState.selectedListID)
+          itemRows: getItemRows(pageState.selectedListID),
         })
       }
     },[itemLoading, allItemsLoading, listLoading, categoryLoading, itemDocs, listDocs, allItemDocs, categoryDocs, pageState.selectedListID, match.params.id]);
-    
+
+    useEffect( () => {
+      setSearchRows(getAllSearchRows());
+    },[allItemsLoading, allItemDocs, pageState.selectedListID])
+
+
+    function getAllSearchRows(): ItemSearch[] {
+      let searchRows: ItemSearch[] = [];
+      allItemDocs.forEach((itemDoc: any) => {
+        let searchRow: ItemSearch = {
+          itemID: itemDoc._id,
+          itemName: itemDoc.name,
+          quantity: itemDoc.quantity,
+          boughtCount: 0
+        }
+        let list=itemDoc.lists.find((el: any) => el.listID === pageState.selectedListID)
+        if (list) {searchRow.boughtCount=list.boughtCount}
+        searchRows.push(searchRow);
+      })
+      return searchRows;
+    }
+
     function getItemRows(listID: string) {
-      console.log("in getItemRows, listid:", listID);
       let itemRows: Array<ItemRow> =[];
       let listDoc=listDocs.find(el => el._id === listID);
       itemDocs.forEach((itemDoc: any) => {
@@ -108,10 +152,61 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
       ))
       return (itemRows)
     }
-
-  if (itemLoading || listLoading || categoryLoading || pageState.doingUpdate )  {return(
+  
+  if (itemLoading || listLoading || categoryLoading || allItemsLoading || pageState.doingUpdate )  {return(
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
   )};  
+
+  function updateSearchCriteria(event: CustomEvent) {
+    setSearchState({...searchState,isOpen: (event.detail.value === "") ? false: true , event: event, searchCriteria: event.detail.value});
+  }  
+
+  function addNewItemToList(itemName: string) {
+    let newItemDoc=createEmptyItemDoc(listDocs,pageState.selectedListID,itemName);
+    addNewItem(newItemDoc);
+  }
+
+  function searchKeyPress(event: KeyboardEvent<HTMLElement>) {
+    if (event.code === "Enter") {
+      addNewItemToList(searchState.searchCriteria)
+    } 
+  }
+
+  function addExistingItemToList(itemID: string) {
+    console.log("adding itemID to list", itemID);
+    let existingItem: any = cloneDeep(allItemDocs.find((el: any) => el._id === itemID));
+    let idxInLists=existingItem.lists.findIndex((el: any) => el.listID === pageState.selectedListID);
+    if (idxInLists === -1) {
+      const newListItem={
+        listID: pageState.selectedListID,
+        boughtCount: 0,
+        active: true,
+        completed: false
+      };
+      existingItem.lists.push(newListItem);
+    } else {
+      existingItem.lists[idxInLists].active = true;
+      existingItem.lists[idxInLists].completed = false;
+    }
+    updateItemInList(existingItem);
+  }
+
+  function chooseSearchItem(itemID: string) {
+    console.log("from list selected:", itemID)
+    addExistingItemToList(itemID);
+    setSearchState({...searchState, searchCriteria: "", isOpen: false})
+  }
+
+
+  let popOverElem = (
+    <IonPopover side="bottom" event={searchState.event} isOpen={searchState.isOpen} keyboardClose={false} onDidDismiss={() => {setSearchState({...searchState, isOpen: false, searchCriteria: ""}); console.log("dismissing")}}>
+    <IonContent><IonList key="popoverItemList">
+      {(searchRows as ItemSearch[]).map((item: ItemSearch) => (
+        <IonItem key={pageState.selectedListID+"-poilist-"+item.itemID} onClick={() => chooseSearchItem(item.itemID)}>{item.itemName+" ("+item.quantity+")"}</IonItem>
+      ))}
+    </IonList></IonContent>
+    </IonPopover>
+  )
 
   let headerElem=(
     <IonHeader><IonToolbar><IonTitle>
@@ -124,7 +219,13 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
                 </IonSelectOption>
             ))}
           </IonSelect>
-        </IonItem>  
+        </IonItem>
+        <IonItem key="searchbar">
+          <IonSearchbar ref={searchRef} value={searchState.searchCriteria} onKeyPress= {(e: any) => searchKeyPress(e)} onIonChange={(e: any) => updateSearchCriteria(e)}>
+          </IonSearchbar>
+          <IonButton><IonIcon icon={checkmark} /></IonButton>
+        </IonItem>
+        {popOverElem}
     </IonTitle></IonToolbar></IonHeader>)
 
   if (pageState.itemRows.length <=0 )  {return(
@@ -190,7 +291,7 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
         <IonCheckbox slot="start"
             onIonChange={(e: any) => completeItemRow(pageState.itemRows[i].itemID,e.detail.checked)}
             checked={Boolean(pageState.itemRows[i].completed)}></IonCheckbox>
-        <IonButton fill="clear" class="textButton" routerLink= {"/item/"+pageState.itemRows[i].itemID}>
+        <IonButton fill="clear" class="textButton" routerLink= {"/item/"+pageState.itemRows[i].itemID+"/"+pageState.selectedListID+"&inititemname="+encodeURIComponent(pageState.itemRows[i].itemName)}>
           {pageState.itemRows[i].itemName + " "+ pageState.itemRows[i].quantity.toString() }</IonButton>
       </IonItem>);
     if (lastCategoryFinished && !createdFinished) {
@@ -201,6 +302,10 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
   addCurrentRows(listContent,currentRows,lastCategoryID,lastCategoryName,lastCategoryFinished);
   if (!createdFinished) {listContent.push(completedDivider)};
   let contentElem=(<IonList lines="full">{listContent}</IonList>)
+
+  if (searchState.isOpen) {
+    searchRef.current?.focus();
+  }
 
   return (
     <IonPage>
