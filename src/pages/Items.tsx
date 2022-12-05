@@ -10,6 +10,8 @@ import './Items.css';
 import { useUpdateCompleted, useUpdateGenericDocument, useCreateGenericDocument } from '../components/itemhooks';
 import { createEmptyItemDoc} from '../components/DefaultDocs';
 import { GlobalStateContext } from '../components/GlobalState';
+import {ItemRow, ItemSearch, SearchState, PageState} from '../components/DataTypes'
+import { getAllSearchRows, getItemRows, filterSearchRows } from '../components/ItemUtilities';
 
 interface ItemsPageProps
   extends RouteComponentProps<{
@@ -17,37 +19,6 @@ interface ItemsPageProps
   }> {}
 
 const Items: React.FC<ItemsPageProps> = ({ match }) => {
-
-  interface ItemRow {
-    itemID: string,
-    itemName: string,
-    categoryID: string,
-    categoryName: string,
-    categorySeq: number,
-    quantity: number,
-    completed: boolean | null
-  }
-
-  interface ItemSearch {
-    itemID: string
-    itemName: string
-    quantity: number
-    boughtCount: number
-  }
-
-  interface SearchState {
-    searchCriteria: string,
-    isOpen: boolean,
-    event: Event | undefined,
-    filteredSearchRows: Array<ItemSearch>,
-    dismissEvent: CustomEvent | undefined
-  }
-
-  interface PageState {
-    selectedListID: string,
-    doingUpdate: boolean,
-    itemRows: Array<ItemRow>,
-  }
 
   const [searchRows,setSearchRows] = useState<ItemSearch[]>();
   const [searchState,setSearchState] = useState<SearchState>({searchCriteria:"",isOpen: false,event: undefined, filteredSearchRows: [], dismissEvent: undefined});
@@ -91,68 +62,19 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
       if (!itemLoading && !listLoading && !categoryLoading && !allItemsLoading) {
         setPageState({ ...pageState,
           doingUpdate: false,
-          itemRows: getItemRows(pageState.selectedListID),
+          itemRows: getItemRows(itemDocs, listDocs, categoryDocs, pageState.selectedListID),
         })
       }
     },[itemLoading, allItemsLoading, listLoading, categoryLoading, itemDocs, listDocs, allItemDocs, categoryDocs, pageState.selectedListID, match.params.id]);
 
     useEffect( () => {
-      setSearchRows(getAllSearchRows());
+      setSearchRows(getAllSearchRows(allItemDocs,pageState.selectedListID));
     },[allItemsLoading, allItemDocs, pageState.selectedListID])
 
-    function getAllSearchRows(): ItemSearch[] {
-      let searchRows: ItemSearch[] = [];
-      allItemDocs.forEach((itemDoc: any) => {
-        let searchRow: ItemSearch = {
-          itemID: itemDoc._id,
-          itemName: itemDoc.name,
-          quantity: itemDoc.quantity,
-          boughtCount: 0
-        }
-        let list=itemDoc.lists.find((el: any) => el.listID === pageState.selectedListID)
-        if (list) {searchRow.boughtCount=list.boughtCount}
-        searchRows.push(searchRow);
-      })
-      return searchRows;
-    }
+    useEffect( () => {
+      setSearchState({...searchState, filteredSearchRows: filterSearchRows(searchRows, searchState.searchCriteria)});
+    },[searchState.searchCriteria])
 
-    function getItemRows(listID: string) {
-      let itemRows: Array<ItemRow> =[];
-      let listDoc=listDocs.find(el => el._id === listID);
-      itemDocs.forEach((itemDoc: any) => {
-        let itemRow: ItemRow = {
-          itemID:"",
-          itemName:"",
-          categoryID: "",
-          categoryName: "",
-          categorySeq: 0,
-          quantity: 0,
-          completed: false
-        };
-        itemRow.itemID = itemDoc._id;
-        itemRow.itemName = itemDoc.name;
-        itemRow.categoryID = itemDoc.categoryID;
-        if (itemRow.categoryID == null) {
-          itemRow.categoryName = "Uncategorized";
-          itemRow.categorySeq = -1
-        } else {
-          itemRow.categoryName = (categoryDocs.find(element => (element._id === itemDoc.categoryID)) as any).name;
-          itemRow.categorySeq = ((listDoc as any).categories.findIndex((element: any) => (element === itemDoc.categoryID)));  
-        }
-        itemRow.quantity = itemDoc.quantity;
-        const listIdx = itemDoc.lists.findIndex((element: any) => (element.listID === listID))
-        if (listIdx === -1) {itemRow.completed=false} else {
-          itemRow.completed = itemDoc.lists[listIdx].completed;
-        }  
-        itemRows.push(itemRow);
-      })
-    
-      itemRows.sort((a,b) => (
-        (Number(a.completed) - Number(b.completed)) || (a.categorySeq - b.categorySeq) ||
-        (a.itemName.localeCompare(b.itemName))
-      ))
-      return (itemRows)
-    }
   
   if (itemLoading || listLoading || categoryLoading || allItemsLoading || pageState.doingUpdate )  {return(
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
@@ -171,7 +93,6 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
                                      newItemName: itemName})
     setSearchState({...searchState, isOpen: false})
     navigate("/item/new/");
-//    addNewItem(newItemDoc);
   }
 
   function searchKeyPress(event: KeyboardEvent<HTMLElement>) {
@@ -205,12 +126,11 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
     setSearchState({...searchState, searchCriteria: "", isOpen: false})
   }
 
-
   let popOverElem = (
     <IonPopover side="bottom" event={searchState.event} isOpen={searchState.isOpen} keyboardClose={false} onDidDismiss={() => {setSearchState({...searchState, isOpen: false, searchCriteria: ""}); console.log("dismissing")}}>
     <IonContent><IonList key="popoverItemList">
-      {(searchRows as ItemSearch[]).map((item: ItemSearch) => (
-        <IonItem key={pageState.selectedListID+"-poilist-"+item.itemID} onClick={() => chooseSearchItem(item.itemID)}>{item.itemName+" ("+item.quantity+")"}</IonItem>
+      {(searchState.filteredSearchRows as ItemSearch[]).map((item: ItemSearch) => (
+        <IonItem key={pageState.selectedListID+"-poilist-"+item.itemID} onClick={() => chooseSearchItem(item.itemID)}>{item.itemName + " " + item.boughtCount}</IonItem>
       ))}
     </IonList></IonContent>
     </IonPopover>
@@ -257,7 +177,7 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
   }
 
   function selectList(listID: string) {
-    setPageState({...pageState, selectedListID: listID, itemRows: getItemRows(listID)});
+    setPageState({...pageState, selectedListID: listID, itemRows: getItemRows(itemDocs, listDocs, categoryDocs, listID)});
     navigate('/items/'+listID);
   }
 
