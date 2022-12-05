@@ -3,8 +3,9 @@ import { add } from 'ionicons/icons';
 import { RouteComponentProps, useParams } from 'react-router-dom';
 import { useDoc, useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext } from 'react';
-import { useUpdateItem, useQuery, useCreateGenericDocument } from '../components/itemhooks';
+import { useCreateGenericDocument, useUpdateGenericDocument } from '../components/itemhooks';
 import { createEmptyItemDoc } from '../components/DefaultDocs';
+import { GlobalStateContext } from '../components/GlobalState';
 import { cloneDeep, isEmpty } from 'lodash';
 import './Item.css';
 
@@ -15,15 +16,12 @@ interface ItemPageProps
 
 const Item: React.FC<ItemPageProps> = () => {
 
-  let { mode, itemid: routeItemID, listid: routeListID  } = useParams<{mode: string, itemid: string, listid: string}>();
+  let { mode, itemid: routeItemID  } = useParams<{mode: string, itemid: string}>();
   if ( mode === "new" ) { routeItemID = "<new>"};
   let needInitItemDoc = (mode === "new") ? true: false;
   const [stateItemDoc,setStateItemDoc] = useState({});
-  const updateItem  = useUpdateItem();
+  const updateItem  = useUpdateGenericDocument();
   const addItem = useCreateGenericDocument();
-  let queryParams = useQuery();
-  const initItemName = queryParams.get("inititemname");
-
   const { doc: itemDoc, loading: itemLoading, state: itemState, error: itemError } = useDoc(routeItemID);
   const { docs: listDocs, loading: listLoading, error: listError} = useFind({
     index: { fields: ["type","name"] },
@@ -38,6 +36,8 @@ const Item: React.FC<ItemPageProps> = () => {
   });
 
   const {goBack} = useContext(NavContext);
+  const { globalState, setStateInfo} = useContext(GlobalStateContext);
+
 
   function addListsIfNotExist(itemDoc: any) {
     let newItemDoc=cloneDeep(itemDoc);
@@ -55,18 +55,20 @@ const Item: React.FC<ItemPageProps> = () => {
     return(newItemDoc);
   }
 
-
   useEffect( () => {
+    console.log("in useEffect, triggers:",{needInitItemDoc, itemLoading, itemDoc, listLoading, listDocs, globalState})
     let newItemDoc = cloneDeep(itemDoc);
     if (!itemLoading && !listLoading) {
-      if (mode === "new" && needInitItemDoc) {
-        newItemDoc = createEmptyItemDoc(listDocs,routeListID,initItemName)
+      console.log("no longer loading anything: ",itemDoc);
+      if (globalState.itemMode === "new" && needInitItemDoc) {
+        newItemDoc = createEmptyItemDoc(listDocs,globalState.callingListID,globalState.newItemName)
+        needInitItemDoc = false;
       } else {
       newItemDoc=addListsIfNotExist(itemDoc);
       }
       setStateItemDoc(newItemDoc as any);
     }
-  },[itemLoading,itemDoc,listLoading,listDocs]);
+  },[itemLoading,itemDoc,listLoading,listDocs,globalState.newItemName, globalState.callingListID]);
 
   if (itemLoading || listLoading || categoryLoading || isEmpty(stateItemDoc))  {
     return(
@@ -74,7 +76,12 @@ const Item: React.FC<ItemPageProps> = () => {
   )};
   
   function updateThisItem() {
-    updateItem(stateItemDoc);
+    if (mode === "new") {
+      addItem(stateItemDoc);
+    }  
+    else {
+      updateItem(stateItemDoc);
+    }
     goBack("/lists");
   }
 
@@ -114,6 +121,7 @@ const Item: React.FC<ItemPageProps> = () => {
     let itemFoundIdx=listDocs.findIndex(element => (element._id === listID));
     let itemActive=((itemFoundIdx !== -1) && ((stateItemDoc as any).lists[i].active));
     let listName=(itemFoundIdx !== -1) ? (listDocs as any)[itemFoundIdx].name : "Undefined list: "+listID;
+    console.log( {stateItemDoc, listID, itemFoundIdx, itemActive, listName})
     listsElem.push(
       <IonItem key={listID}>
         <IonCheckbox slot="start" onIonChange={(e: any) => selectList(listID,Boolean(e.detail.checked))} checked={itemActive}></IonCheckbox>
@@ -121,7 +129,6 @@ const Item: React.FC<ItemPageProps> = () => {
       </IonItem>
     )
   }
-
   
   return (
     <IonPage>
@@ -157,8 +164,8 @@ const Item: React.FC<ItemPageProps> = () => {
             </IonItem>
             {listsElem}
           </IonList>
-          <IonButton onClick={() => updateThisItem()}>Update</IonButton>
           <IonButton onClick={() => goBack("/lists")}>Cancel</IonButton>
+          <IonButton onClick={() => updateThisItem()}>{mode === "new" ? "Add": "Update"}</IonButton>
       </IonContent>
     </IonPage>
   );

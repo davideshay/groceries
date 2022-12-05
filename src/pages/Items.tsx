@@ -9,6 +9,7 @@ import { cloneDeep } from 'lodash';
 import './Items.css';
 import { useUpdateCompleted, useUpdateGenericDocument, useCreateGenericDocument } from '../components/itemhooks';
 import { createEmptyItemDoc} from '../components/DefaultDocs';
+import { GlobalStateContext } from '../components/GlobalState';
 
 interface ItemsPageProps
   extends RouteComponentProps<{
@@ -84,6 +85,7 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
     })
 
     const {navigate} = useContext(NavContext);
+    const { globalState,setGlobalState,setStateInfo} = useContext(GlobalStateContext);
 
     useEffect( () => {
       if (!itemLoading && !listLoading && !categoryLoading && !allItemsLoading) {
@@ -97,7 +99,6 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
     useEffect( () => {
       setSearchRows(getAllSearchRows());
     },[allItemsLoading, allItemDocs, pageState.selectedListID])
-
 
     function getAllSearchRows(): ItemSearch[] {
       let searchRows: ItemSearch[] = [];
@@ -163,7 +164,14 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
 
   function addNewItemToList(itemName: string) {
     let newItemDoc=createEmptyItemDoc(listDocs,pageState.selectedListID,itemName);
-    addNewItem(newItemDoc);
+    console.log("in add New Item To List, setting state");
+    let  newglobalState=cloneDeep(globalState);
+    setGlobalState({...globalState, itemMode: "new",
+                                     callingListID: pageState.selectedListID,
+                                     newItemName: itemName})
+    setSearchState({...searchState, isOpen: false})
+    navigate("/item/new/");
+//    addNewItem(newItemDoc);
   }
 
   function searchKeyPress(event: KeyboardEvent<HTMLElement>) {
@@ -291,7 +299,7 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
         <IonCheckbox slot="start"
             onIonChange={(e: any) => completeItemRow(pageState.itemRows[i].itemID,e.detail.checked)}
             checked={Boolean(pageState.itemRows[i].completed)}></IonCheckbox>
-        <IonButton fill="clear" class="textButton" routerLink= {"/item/"+pageState.itemRows[i].itemID+"/"+pageState.selectedListID+"&inititemname="+encodeURIComponent(pageState.itemRows[i].itemName)}>
+        <IonButton fill="clear" class="textButton" routerLink= {"/item/edit/"+pageState.itemRows[i].itemID}>
           {pageState.itemRows[i].itemName + " "+ pageState.itemRows[i].quantity.toString() }</IonButton>
       </IonItem>);
     if (lastCategoryFinished && !createdFinished) {

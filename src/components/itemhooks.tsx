@@ -116,8 +116,3 @@ export function useUpdateItemInList() {
     [db]
   )
 }
-
-export function useQuery() {
-  const { search } = useLocation();
-  return useMemo(() => new URLSearchParams(search), [search]);
-}

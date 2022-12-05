@@ -1,14 +1,15 @@
 
-export function createEmptyItemDoc(listDocs:any,listID: string, itemName: string | null) {
+export function createEmptyItemDoc(listDocs:any,listID: string | null | undefined, itemName: string | undefined) {
     let newItemLists: any =[];
+    console.log("creating empty doc:", {listDocs,listID, itemName })
     listDocs.forEach((listDoc: any) => {
       let newListDoc={
-        listID: listDoc.listID,
+        listID: listDoc._id,
         boughtCount: 0,
         active: true,
         completed: false
       };
-      if (listDoc.listID !== listID) {
+      if (listDoc._id !== listID) {
         newListDoc.active = false;
         newListDoc.completed = false;
       } 
@@ -17,7 +18,7 @@ export function createEmptyItemDoc(listDocs:any,listID: string, itemName: string
     let newItemDoc={
       type: "item",
       name: itemName,
-      quantity: 0,
+      quantity: 1,
       categoryID: null,
       lists: newItemLists
     }

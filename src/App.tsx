@@ -20,6 +20,7 @@ import CategoriesSeqList from './pages/CategoriesSeqList';
 import Categories from './pages/Categories';
 import Category from './pages/Category';
 import Settings from './pages/Settings';
+import { GlobalStateProvider } from './components/GlobalState';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -67,6 +68,7 @@ const App: React.FC = () => {
 
   return (
   <IonApp>
+    <GlobalStateProvider>
     <Provider pouchdb={db}>
     <IonReactRouter>
       <IonTabs>
@@ -76,7 +78,7 @@ const App: React.FC = () => {
           </Route>
           <Route path="/items/:id" component={Items}>
           </Route>
-          <Route path="/item/:mode/:itemid?/:listid?" component={Item}>
+          <Route path="/item/:mode/:itemid?" component={Item}>
           </Route>
           <Route exact path="/categories">
             <Categories />
@@ -115,6 +117,7 @@ const App: React.FC = () => {
       </IonTabs>
     </IonReactRouter>
     </Provider>    
+    </GlobalStateProvider>
   </IonApp>
   )
 };
