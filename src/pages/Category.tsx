@@ -16,7 +16,6 @@ const Category: React.FC<CategoryPageProps> = () => {
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
   if ( mode === "new" ) { routeID = "<new>"};
   let needInitCategoryDoc = (mode === "new") ? true: false;
-  console.log({mode,needInitCategoryDoc});
   const [stateCategoryDoc,setStateCategoryDoc] = useState<any>({});
   const updateCategory  = useUpdateCategory();
   const createCategory = useCreateCategory();
@@ -27,17 +26,13 @@ const Category: React.FC<CategoryPageProps> = () => {
 
   useEffect( () => {
     let newCategoryDoc = cloneDeep(stateCategoryDoc);
-    console.log("in useeffect, loading: ",{categoryLoading}, "needinit", {needInitCategoryDoc});
-    console.log("current state: ",{stateCategoryDoc}," curent catdoc: ", {categoryDoc});
     if (!categoryLoading) {
       if (mode === "new" && needInitCategoryDoc) {
-        console.log("mode is new, creating blank record");
         newCategoryDoc = {type: "category", name: ""}
         needInitCategoryDoc = false;
       } else {
         newCategoryDoc = categoryDoc;
       }
-      console.log("newCategoryDoc, about to update:",{newCategoryDoc});
       setStateCategoryDoc(newCategoryDoc);
     }
   },[categoryLoading,categoryDoc]);
@@ -53,7 +48,6 @@ const Category: React.FC<CategoryPageProps> = () => {
     } else {
       result = updateCategory(stateCategoryDoc);
     }
-    console.log("result of updating category",result);
     goBack("/categories");
   }
   

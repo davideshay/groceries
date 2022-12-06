@@ -21,19 +21,17 @@ export function filterSearchRows(searchRows: ItemSearch[] | undefined, searchCri
     let filteredSearchRows: ItemSearch[] = [];
     if (searchRows !== undefined) {
         searchRows.forEach(searchRow => {
-            filteredSearchRows.push(searchRow);
+            if (searchRow.itemName.toLowerCase().includes(searchCriteria.toLowerCase())) {
+                filteredSearchRows.push(searchRow);
+            }    
         });
         filteredSearchRows.sort((a,b) => (
-            (Number(a.itemName.startsWith(searchCriteria)) - Number(b.itemName.startsWith(searchCriteria))) 
+            (Number(b.itemName.toLowerCase().startsWith(searchCriteria.toLowerCase())) - Number(a.itemName.toLowerCase().startsWith(searchCriteria.toLowerCase()))) 
             || (b.boughtCount - a.boughtCount) ||
             (a.itemName.localeCompare(b.itemName))
-            ))
-        
-        
+            ))        
     }
-
     return filteredSearchRows;
-
 }
 
 export function getItemRows(itemDocs: any, listDocs: any, categoryDocs: any, listID: string) {
@@ -54,7 +52,7 @@ export function getItemRows(itemDocs: any, listDocs: any, categoryDocs: any, lis
     itemRow.categoryID = itemDoc.categoryID;
     if (itemRow.categoryID == null) {
         itemRow.categoryName = "Uncategorized";
-        itemRow.categorySeq = -1
+        itemRow.categorySeq = -1;
     } else {
         itemRow.categoryName = (categoryDocs.find((element: any) => (element._id === itemDoc.categoryID)) as any).name;
         itemRow.categorySeq = ((listDoc as any).categories.findIndex((element: any) => (element === itemDoc.categoryID)));  
@@ -66,7 +64,6 @@ export function getItemRows(itemDocs: any, listDocs: any, categoryDocs: any, lis
     }  
     itemRows.push(itemRow);
     })
-
     itemRows.sort((a,b) => (
     (Number(a.completed) - Number(b.completed)) || (a.categorySeq - b.categorySeq) ||
     (a.itemName.localeCompare(b.itemName))

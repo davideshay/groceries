@@ -56,10 +56,8 @@ const Item: React.FC<ItemPageProps> = () => {
   }
 
   useEffect( () => {
-    console.log("in useEffect, triggers:",{needInitItemDoc, itemLoading, itemDoc, listLoading, listDocs, globalState})
     let newItemDoc = cloneDeep(itemDoc);
     if (!itemLoading && !listLoading) {
-      console.log("no longer loading anything: ",itemDoc);
       if (globalState.itemMode === "new" && needInitItemDoc) {
         newItemDoc = createEmptyItemDoc(listDocs,globalState.callingListID,globalState.newItemName)
         needInitItemDoc = false;
@@ -121,7 +119,6 @@ const Item: React.FC<ItemPageProps> = () => {
     let itemFoundIdx=listDocs.findIndex(element => (element._id === listID));
     let itemActive=((itemFoundIdx !== -1) && ((stateItemDoc as any).lists[i].active));
     let listName=(itemFoundIdx !== -1) ? (listDocs as any)[itemFoundIdx].name : "Undefined list: "+listID;
-    console.log( {stateItemDoc, listID, itemFoundIdx, itemActive, listName})
     listsElem.push(
       <IonItem key={listID}>
         <IonCheckbox slot="start" onIonChange={(e: any) => selectList(listID,Boolean(e.detail.checked))} checked={itemActive}></IonCheckbox>
@@ -155,6 +152,7 @@ const Item: React.FC<ItemPageProps> = () => {
             <IonItem key="category">
               <IonLabel position="stacked">Category</IonLabel>
               <IonSelect interface="popover" onIonChange={(ev) => updateCategory(ev.detail.value)} value={(stateItemDoc as any).categoryID}>
+                <IonSelectOption key="cat-undefined" value={null}>Uncategorized</IonSelectOption>
                 {categoryDocs.map((cat) => (
                     <IonSelectOption key={cat._id} value={(cat as any)._id}>
                       {(cat as any).name}

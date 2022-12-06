@@ -86,7 +86,6 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
 
   function addNewItemToList(itemName: string) {
     let newItemDoc=createEmptyItemDoc(listDocs,pageState.selectedListID,itemName);
-    console.log("in add New Item To List, setting state");
     let  newglobalState=cloneDeep(globalState);
     setGlobalState({...globalState, itemMode: "new",
                                      callingListID: pageState.selectedListID,
@@ -102,7 +101,6 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
   }
 
   function addExistingItemToList(itemID: string) {
-    console.log("adding itemID to list", itemID);
     let existingItem: any = cloneDeep(allItemDocs.find((el: any) => el._id === itemID));
     let idxInLists=existingItem.lists.findIndex((el: any) => el.listID === pageState.selectedListID);
     if (idxInLists === -1) {
@@ -121,16 +119,15 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
   }
 
   function chooseSearchItem(itemID: string) {
-    console.log("from list selected:", itemID)
     addExistingItemToList(itemID);
     setSearchState({...searchState, searchCriteria: "", isOpen: false})
   }
 
   let popOverElem = (
-    <IonPopover side="bottom" event={searchState.event} isOpen={searchState.isOpen} keyboardClose={false} onDidDismiss={() => {setSearchState({...searchState, isOpen: false, searchCriteria: ""}); console.log("dismissing")}}>
+    <IonPopover side="bottom" event={searchState.event} isOpen={searchState.isOpen} keyboardClose={false} onDidDismiss={() => {setSearchState({...searchState, isOpen: false, searchCriteria: ""})}}>
     <IonContent><IonList key="popoverItemList">
       {(searchState.filteredSearchRows as ItemSearch[]).map((item: ItemSearch) => (
-        <IonItem key={pageState.selectedListID+"-poilist-"+item.itemID} onClick={() => chooseSearchItem(item.itemID)}>{item.itemName + " " + item.boughtCount}</IonItem>
+        <IonItem key={pageState.selectedListID+"-poilist-"+item.itemID} onClick={() => chooseSearchItem(item.itemID)}>{item.itemName}</IonItem>
       ))}
     </IonList></IonContent>
     </IonPopover>
@@ -205,12 +202,7 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
         addCurrentRows(listContent,currentRows,lastCategoryID,lastCategoryName,lastCategoryFinished);
         currentRows=[];
       }
-      if (item.categoryID === null) {
-        lastCategoryID = "Uncategorized"
-      }
-      else {
-        lastCategoryID = item.categoryID;
-      }
+      lastCategoryID = item.categoryID;
       lastCategoryName=item.categoryName;
       lastCategoryFinished=item.completed;   
     }
@@ -220,7 +212,7 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
             onIonChange={(e: any) => completeItemRow(pageState.itemRows[i].itemID,e.detail.checked)}
             checked={Boolean(pageState.itemRows[i].completed)}></IonCheckbox>
         <IonButton fill="clear" class="textButton" routerLink= {"/item/edit/"+pageState.itemRows[i].itemID}>
-          {pageState.itemRows[i].itemName + " "+ pageState.itemRows[i].quantity.toString() }</IonButton>
+          {pageState.itemRows[i].itemName + " ("+ pageState.itemRows[i].quantity.toString()+")"}</IonButton>
       </IonItem>);
     if (lastCategoryFinished && !createdFinished) {
       listContent.push(completedDivider);

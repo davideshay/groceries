@@ -61,7 +61,6 @@ const List: React.FC<ListPageProps> = () => {
     let newPageState=cloneDeep(pageState);
     if (!listLoading && !userLoading && !categoryLoading) {
       if (mode === "new" && needInitListDoc) {
-        console.log("creating new list");
         let initCategories=categoryDocs.map(cat => cat._id);
         let initListDoc = {
           type: "list",
@@ -117,7 +116,6 @@ const List: React.FC<ListPageProps> = () => {
         foundIt = true;
         if (updateVal) {
           // shouldn't occur -- asking to change it to active but already in the list
-          console.log("ERROR: Item already in list, cannot set to active");
         }
       } else {
         currCategories.push(pageState.listDoc.categories[i])
@@ -138,7 +136,6 @@ const List: React.FC<ListPageProps> = () => {
         foundIt = true;
         if (updateVal) {
           // shouldn't occur -- asking to change it to active but already in the list
-          console.log("ERROR: User already in list, cannot set to active");
         } 
       } else {
         currUsers.push(pageState.listDoc.sharedWith[i])
