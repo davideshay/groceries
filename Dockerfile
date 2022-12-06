@@ -8,7 +8,7 @@ RUN NODE_ENV=production npm ci --include=dev
 
 COPY * /usr/app/
 
-RUN ls -laRrt
+RUN ls -lat
 
 RUN npm run build
 
