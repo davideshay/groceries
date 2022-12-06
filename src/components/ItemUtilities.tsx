@@ -12,7 +12,9 @@ export function getAllSearchRows(allItemDocs: any, listID: string): ItemSearch[]
       }
       let list=itemDoc.lists.find((el: any) => el.listID === listID)
       if (list) {searchRow.boughtCount=list.boughtCount}
-      searchRows.push(searchRow);
+      if (!list || !list?.active) {
+        searchRows.push(searchRow);
+      }  
     })
     return searchRows;
   }
@@ -55,7 +57,8 @@ export function getItemRows(itemDocs: any, listDocs: any, categoryDocs: any, lis
         itemRow.categorySeq = -1;
     } else {
         itemRow.categoryName = (categoryDocs.find((element: any) => (element._id === itemDoc.categoryID)) as any).name;
-        itemRow.categorySeq = ((listDoc as any).categories.findIndex((element: any) => (element === itemDoc.categoryID)));  
+        const tmpIdx = ((listDoc as any).categories.findIndex((element: any) => (element === itemDoc.categoryID)));
+        if (tmpIdx === -1) {itemRow.categorySeq=Number.MAX_VALUE} else {itemRow.categorySeq=tmpIdx}
     }
     itemRow.quantity = itemDoc.quantity;
     const listIdx = itemDoc.lists.findIndex((element: any) => (element.listID === listID))
@@ -69,4 +72,4 @@ export function getItemRows(itemDocs: any, listDocs: any, categoryDocs: any, lis
     (a.itemName.localeCompare(b.itemName))
     ))
     return (itemRows)
-    }
+}

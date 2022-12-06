@@ -182,26 +182,45 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
 
   function addCurrentRows(listCont: any, curRows: any, catID: string, catName: string, completed: boolean | null) {
     listCont.push(
-        <IonItemGroup key={catID+Boolean(completed).toString()}>
-        <IonItemDivider key={catID+Boolean(completed).toString()}>{catName}</IonItemDivider>
+        <IonItemGroup key={"cat"+catID+Boolean(completed).toString()}>
+        <IonItemDivider key={"cat"+catID+Boolean(completed).toString()}>{catName}</IonItemDivider>
           {curRows}
       </IonItemGroup>
     )
   }
 
+  function deleteCompletedItems(itemDocs: any,listID: string) {
+    itemDocs.forEach((itemDoc: any) => {
+        let updatedItem=cloneDeep(itemDoc);
+        let listItemIdx=updatedItem.lists.findIndex((el: any) => el.listID === listID);
+        if ((listItemIdx !== -1)) {
+            if (updatedItem.lists[listItemIdx].completed) {
+                updatedItem.lists[listItemIdx].active = false;
+                updateItemInList(updatedItem);
+            }    
+        }
+    });
+  }
+
+  let lastCategorySeq=-2;
   let lastCategoryID="<INITIAL>";
   let lastCategoryName="<INITIAL>";
   let lastCategoryFinished: boolean | null = null;
   let currentRows=[];
   let createdFinished=false;
-  const completedDivider=(<IonItemDivider key="Completed">Completed</IonItemDivider>);
+  const completedDivider=(
+        <IonItemGroup key="completeddividergroup"><IonItemDivider key="Completed">
+        <IonLabel key="completed-divider-label">Completed</IonLabel>
+        <IonButton slot="end" onClick={() => deleteCompletedItems(itemDocs,pageState.selectedListID)}>DELETE COMPLETED ITEMS</IonButton>
+        </IonItemDivider></IonItemGroup>);
   for (let i = 0; i < pageState.itemRows.length; i++) {
     const item = pageState.itemRows[i];
-    if ((lastCategoryID !== item.categoryID )||(lastCategoryFinished !== item.completed)) { 
+    if ((lastCategorySeq !== item.categorySeq )||(lastCategoryFinished !== item.completed)) { 
       if (currentRows.length > 0) {
         addCurrentRows(listContent,currentRows,lastCategoryID,lastCategoryName,lastCategoryFinished);
         currentRows=[];
       }
+      lastCategorySeq = item.categorySeq;
       lastCategoryID = item.categoryID;
       lastCategoryName=item.categoryName;
       lastCategoryFinished=item.completed;   
