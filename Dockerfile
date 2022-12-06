@@ -8,6 +8,8 @@ RUN NODE_ENV=production npm ci --include=dev
 
 COPY * /usr/app/
 
+RUN ls -laRrt
+
 RUN npm run build
 
 FROM nginx:alpine
