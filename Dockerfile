@@ -6,7 +6,7 @@ COPY package.json package-lock.json /usr/app/
 
 RUN NODE_ENV=production npm ci --include=dev
 
-COPY * /usr/app
+COPY * /usr/app/
 
 RUN npm run build
 
