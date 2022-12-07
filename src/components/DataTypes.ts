@@ -15,9 +15,9 @@ export interface ItemRow {
   }
 
   export interface ItemSearch {
-    itemID: string
-    itemName: string
-    quantity: number
+    itemID: string,
+    itemName: string,
+    quantity: number,
     boughtCount: number
   }
 
@@ -33,4 +33,11 @@ export interface ItemRow {
     selectedListID: string,
     doingUpdate: boolean,
     itemRows: Array<ItemRow>,
+  }
+
+  export interface DBCreds {
+    baseURL: string | undefined,
+    database: string | undefined,
+    username: string | undefined,
+    password: string | undefined
   }

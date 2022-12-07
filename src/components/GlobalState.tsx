@@ -12,21 +12,20 @@ export interface GlobalStateContextType {
     setStateInfo: any 
 }
 
-enum StateActionKind {
-    SETITEMMODE = "setItemMode",
-    SETNEWITEMNAME = "setNewItemName",
-    SETCALLINGLISTID = "setCallingListID"
+export enum SyncStatus {
+    init = 0,
+    active = 1,
+    paused = 2,
+    error = 3,
+    denied = 4
   }
-
-interface StateAction {
-    type: StateActionKind,
-    payload: string
-} 
+  
 
 const initialState = {
     itemMode: "none",
     newItemName: undefined,
-    callingListID: undefined
+    callingListID: undefined,
+    syncStatus: SyncStatus.init
 }
 
 const initialContext = {
@@ -37,18 +36,6 @@ const initialContext = {
 
 export const GlobalStateContext = createContext(initialContext)
 
-function globalStateReducer(state: GlobalState , action: StateAction) {
-    switch(action.type) {
-        case "setItemMode" : {return { ...state, itemMode: action.payload}}
-            break;
-        case "setNewItemName" : {return { ...state, newItemName: action.payload}}
-            break;
-        case "setCallingListID" : {return { ...state, callingListID: action.payload}}
-            break;
-        default: return state;    
-        }
-    }
-
 type GlobalStateProviderProps = {
     children: React.ReactNode;
 }
@@ -58,7 +45,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
 
     function setStateInfo(key: string,value: any) {
         console.log("about to update state with",{key, value});
-        setGlobalState({ ...globalState, [key]: value})
+        setGlobalState(prevState => ({ ...prevState, [key]: value}))
     }
     let value: any = {globalState, setGlobalState, setStateInfo};
     return (

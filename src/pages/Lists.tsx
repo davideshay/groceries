@@ -5,7 +5,7 @@ import './Lists.css';
 //import { IToDoList } from '../components/DataTypes';
 
 const Lists: React.FC = () => {
-
+console.log("rendering lists");
   const { docs, loading, error } = useFind({
   index: {
     fields: ["type","name"]

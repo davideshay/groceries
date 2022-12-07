@@ -1,4 +1,4 @@
-import {ItemRow, ItemSearch, SearchState, PageState} from '../components/DataTypes';
+import {ItemRow, ItemSearch} from '../components/DataTypes';
 import { cloneDeep } from 'lodash';
 
 export function getAllSearchRows(allItemDocs: any, listID: string): ItemSearch[] {

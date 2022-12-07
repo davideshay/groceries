@@ -1,5 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react'
-import { useLocation } from 'react-router-dom';
+import { useCallback } from 'react'
 import { usePouch } from 'use-pouchdb'
 import { cloneDeep } from 'lodash';
 
@@ -92,7 +91,7 @@ export function useUpdateCompleted() {
           newItemDoc.lists[i].completed = updateInfo.newStatus;
           if (updateInfo.newStatus) {newItemDoc.lists[i].boughtCount++};
         } else {
-          if (newItemDoc.lists[i].listID == updateInfo.listID) {
+          if (newItemDoc.lists[i].listID === updateInfo.listID) {
             newItemDoc.lists[i].completed = updateInfo.newStatus;
             if (updateInfo.newStatus) {newItemDoc.lists[i].boughtCount++};
           }

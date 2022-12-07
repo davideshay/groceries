@@ -1,12 +1,7 @@
 import { Redirect, Route } from 'react-router-dom';
 import {
-  IonApp,
-  IonIcon,
-  IonLabel,
-  IonRouterOutlet,
-  IonTabBar,
-  IonTabButton,
-  IonTabs,
+  IonApp, IonIcon, IonLabel, IonRouterOutlet, IonTabBar, IonTabButton, IonTabs,
+  IonPage, IonHeader, IonToolbar, IonTitle,
   setupIonicReact
 } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
@@ -20,6 +15,7 @@ import CategoriesSeqList from './pages/CategoriesSeqList';
 import Categories from './pages/Categories';
 import Category from './pages/Category';
 import Settings from './pages/Settings';
+import RemoteDBLogin from './pages/RemoteDBLogin';
 import { GlobalStateProvider } from './components/GlobalState';
 
 /* Core CSS required for Ionic components to work properly */
@@ -49,22 +45,9 @@ import find from 'pouchdb-find';
 setupIonicReact();
 
 const App: React.FC = () => {
+
   PouchDB.plugin(find);
   const [db, setDB] = useState(() => new PouchDB('local', {revs_limit: 10, auto_compaction: true}))
-  const [remotedb,setRemotedb] = useState(() => new PouchDB(process.env.REACT_APP_COUCHDB_URL))
-  const [isSyncing, setIsSyncing] = useState(false)
-
-  useEffect( () =>
-  {
-    const sync = db
-      .sync(remotedb, {live: true, retry: true})
-      .on('paused', () => { setIsSyncing(false)})
-      .on('active', () => { setIsSyncing(true)})
-      .on('denied', () => { console.log("permission error")})
-  
-    return () =>  { sync.cancel()}
-  
-  }, [db, remotedb])
 
   return (
   <IonApp>
@@ -91,9 +74,11 @@ const App: React.FC = () => {
             <Settings />
           </Route>
           <Route exact path="/">
-            <Redirect to="/lists" />
+            <Redirect to="/login" />
           </Route>
           <Route path="/list/:mode/:id?" component={List}>
+          </Route>
+          <Route path="/login" component={RemoteDBLogin}>
           </Route>
         </IonRouterOutlet>
         <IonTabBar slot="bottom">

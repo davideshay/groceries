@@ -60,6 +60,7 @@ const Item: React.FC<ItemPageProps> = () => {
     if (!itemLoading && !listLoading) {
       if (globalState.itemMode === "new" && needInitItemDoc) {
         newItemDoc = createEmptyItemDoc(listDocs,globalState.callingListID,globalState.newItemName)
+        setStateInfo("newItemMode","none");
         needInitItemDoc = false;
       } else {
       newItemDoc=addListsIfNotExist(itemDoc);
