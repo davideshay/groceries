@@ -1,6 +1,6 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonSelectOption, NavContext } from '@ionic/react';
 import { useState, useEffect, useContext, useRef } from 'react';
-import { usePouch } from 'use-pouchdb';
+import { usePouch, useFind } from 'use-pouchdb';
 import PouchDB from 'pouchdb';
 import { DBCreds } from '../components/DataTypes';
 import { Preferences } from '@capacitor/preferences';
@@ -9,11 +9,19 @@ import { GlobalStateContext, SyncStatus } from '../components/GlobalState';
 
 type RemoteState = {
   dbCreds: DBCreds,
-  dbCredsLoading: boolean,
+  credsStatus: CredsStatus,
   connectionStatus: ConnectionStatus,
   syncStatus: SyncStatus,
   showLoginForm: boolean
   formSubmitted: boolean,
+  firstListID: string | null,
+  gotListID: boolean
+}
+
+enum CredsStatus {
+  needLoaded = 0,
+  loading = 1,
+  loaded = 2
 }
 
 enum ConnectionStatus {
@@ -21,36 +29,50 @@ enum ConnectionStatus {
   remoteDBNeedsAssigned = 1,
   remoteDBAssigned = 2,
   attemptToSync = 3,
+  loginComplete = 4
 }
-
 
 const RemoteDBLogin: React.FC = () => {
 
     const db=usePouch();
     const [remoteState,setRemoteState]=useState<RemoteState>({
       dbCreds: {baseURL: undefined, database: undefined, username: undefined, password: undefined},
-      dbCredsLoading: true,
+      credsStatus: CredsStatus.needLoaded,
       connectionStatus: ConnectionStatus.cannotStart,
       syncStatus: SyncStatus.init,
       showLoginForm: false,
-      formSubmitted: false
+      formSubmitted: false,
+      firstListID: null,
+      gotListID: false
     });
     const [remoteDB, setRemoteDB]=useState<any>();
 
     const {navigate} = useContext(NavContext);
     const { globalState, setStateInfo} = useContext(GlobalStateContext);
 
-    const remoteDBRef=useRef(null);
-    if (remoteDBRef.current == null) {
-    }
+    const { docs: listDocs, loading: listLoading, error: listError } = useFind({
+      index: { fields: ["type","name"] },
+      selector: { type: "list", name: { $exists: true }},
+      sort: [ "type", "name" ]})
 
     useEffect(() => {
       console.log("in dbCreds use effect,", {remoteState})
-      getPrefsDBCreds();
-    },[remoteState.dbCredsLoading])
+      if (remoteState.credsStatus === CredsStatus.needLoaded) {
+        getPrefsDBCreds();
+      } 
+    },[remoteState.credsStatus])
 
     useEffect(() => {
-      if (!remoteState.dbCredsLoading) {
+      console.log({listDocs, listLoading, remoteState});
+      if (!remoteState.gotListID && !listLoading && listDocs.length > 0) {
+        console.log("updating firstlistid");
+        setRemoteState(prevstate => ({...remoteState,firstListID: listDocs[0]._id, gotListID: true}));
+      }
+
+    },[listDocs, listLoading])
+
+    useEffect(() => {
+      if (remoteState.credsStatus == CredsStatus.loaded) {
         if (remoteState.dbCreds.baseURL == undefined || 
             remoteState.dbCreds.database == undefined || 
             remoteState.dbCreds.username == "" ||
@@ -61,7 +83,7 @@ const RemoteDBLogin: React.FC = () => {
             setRemoteState(prevstate => ({...prevstate,connectionStatus: ConnectionStatus.remoteDBNeedsAssigned}))
          }   
       }
-    },[remoteState.dbCredsLoading])
+    },[remoteState.credsStatus])
 
     useEffect(() => {
       // assign effect
@@ -100,10 +122,15 @@ const RemoteDBLogin: React.FC = () => {
     }, [db,remoteDB,remoteState.connectionStatus])
 
     useEffect(() => {
-      if (globalState.syncStatus == SyncStatus.active || globalState.syncStatus == SyncStatus.paused) {
-        navigate("/lists")
+      if ((globalState.syncStatus == SyncStatus.active || globalState.syncStatus == SyncStatus.paused) && (remoteState.connectionStatus != ConnectionStatus.loginComplete) && (remoteState.gotListID)) {
+        setRemoteState(prevState => ({...prevState, connectionStatus: ConnectionStatus.loginComplete}))
+        if (remoteState.firstListID == null) {
+          navigate("/lists")
+        } else {
+          navigate("/items/"+remoteState.firstListID)
+        }  
       }
-    }, [globalState.syncStatus])
+    }, [globalState.syncStatus,remoteState.gotListID])
 
 
 
@@ -119,7 +146,7 @@ const RemoteDBLogin: React.FC = () => {
     console.log("isJsonString:", isJsonString(String(credsStr)));
     if (isJsonString(String(credsStr))) {
       credsObj=JSON.parse(String(credsStr));
-      setRemoteState(prevstate => ({...prevstate,dbCreds: credsObj, dbCredsLoading: false}))
+      setRemoteState(prevstate => ({...prevstate,dbCreds: credsObj, credsStatus: CredsStatus.loaded}))
     }
     console.log("retrieved credsObj:",credsObj)
     if (credsObj == null || (credsObj as any).baseURL == undefined) {
@@ -128,7 +155,7 @@ const RemoteDBLogin: React.FC = () => {
             database: DEFAULT_DB_NAME,
             username:"",
             password:"",
-        }, dbCredsLoading: false}))
+        }, credsStatus: CredsStatus.loaded}))
     }
   }
 
@@ -141,14 +168,14 @@ const RemoteDBLogin: React.FC = () => {
     return (<></>)
   }
 
-  if (remoteState.dbCredsLoading || (!remoteState.showLoginForm)) return (
+  if ((remoteState.credsStatus != CredsStatus.loaded) || (!remoteState.showLoginForm)) return (
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading on the login page...</IonTitle></IonToolbar></IonHeader></IonPage>
   )
   
   return(
         <IonPage>
             <IonHeader><IonToolbar><IonTitle>
-            PUT THE LOGIN PAGE HERE
+            Login Page
             </IonTitle></IonToolbar></IonHeader>
             <IonContent>
             <IonItem>
@@ -172,7 +199,6 @@ const RemoteDBLogin: React.FC = () => {
                 <IonItem>
                   <IonButton onClick={() => submitForm()}>Login</IonButton>
                 </IonItem>
-                <IonItem><IonLabel>Is it Syncing:</IonLabel></IonItem>
             </IonList>
             </IonItem>
             </IonContent>

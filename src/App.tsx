@@ -1,7 +1,7 @@
 import { Redirect, Route } from 'react-router-dom';
 import {
   IonApp, IonIcon, IonLabel, IonRouterOutlet, IonTabBar, IonTabButton, IonTabs,
-  IonPage, IonHeader, IonToolbar, IonTitle,
+  IonPage, IonHeader, IonToolbar, IonTitle, IonSplitPane,
   setupIonicReact
 } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
@@ -16,6 +16,7 @@ import Categories from './pages/Categories';
 import Category from './pages/Category';
 import Settings from './pages/Settings';
 import RemoteDBLogin from './pages/RemoteDBLogin';
+import AppMenu from './components/AppMenu';
 import { GlobalStateProvider } from './components/GlobalState';
 
 /* Core CSS required for Ionic components to work properly */
@@ -54,8 +55,9 @@ const App: React.FC = () => {
     <GlobalStateProvider>
     <Provider pouchdb={db}>
     <IonReactRouter>
-      <IonTabs>
-        <IonRouterOutlet>
+      <IonSplitPane contentId="main">
+      <AppMenu />
+        <IonRouterOutlet id="main">
           <Route exact path="/lists">
             <Lists />
           </Route>
@@ -81,25 +83,7 @@ const App: React.FC = () => {
           <Route path="/login" component={RemoteDBLogin}>
           </Route>
         </IonRouterOutlet>
-        <IonTabBar slot="bottom">
-          <IonTabButton tab="lists" href="/lists">
-            <IonIcon icon={albumsOutline} />
-            <IonLabel>Lists</IonLabel>
-          </IonTabButton>
-          <IonTabButton tab="items" href="/items">
-            <IonIcon icon={listOutline} />
-            <IonLabel>Items</IonLabel>
-          </IonTabButton>
-          <IonTabButton tab="categories" href="/categories">
-            <IonIcon icon={nutritionOutline} />
-            <IonLabel>Categories</IonLabel>
-          </IonTabButton>
-          <IonTabButton tab="settings" href="/settings">
-            <IonIcon icon={settingsOutline} />
-            <IonLabel>Settings</IonLabel>
-          </IonTabButton>
-        </IonTabBar>
-      </IonTabs>
+      </IonSplitPane>
     </IonReactRouter>
     </Provider>    
     </GlobalStateProvider>
