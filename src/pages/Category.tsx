@@ -1,4 +1,5 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonSelectOption, NavContext } from '@ionic/react';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, 
+  IonButtons, IonMenuButton, IonItem, IonLabel, IonSelect, IonCheckbox, IonSelectOption, NavContext } from '@ionic/react';
 import { add, compassSharp } from 'ionicons/icons';
 import { RouteComponentProps,useParams } from 'react-router-dom';
 import { useDoc, useFind } from 'use-pouchdb';
@@ -55,6 +56,7 @@ const Category: React.FC<CategoryPageProps> = () => {
     <IonPage>
       <IonHeader>
         <IonToolbar>
+        <IonButtons slot="start"><IonMenuButton /></IonButtons>
           <IonTitle>Editing Category: {(stateCategoryDoc as any).name}</IonTitle>
         </IonToolbar>
       </IonHeader>

@@ -1,4 +1,5 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonLabel, IonButton, IonFab, IonFabButton, IonIcon } from '@ionic/react';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonMenuButton, IonButtons, IonFab, 
+  IonFabButton, IonIcon } from '@ionic/react';
 import { add } from 'ionicons/icons';
 import { useFind } from 'use-pouchdb';
 import './Lists.css';
@@ -6,7 +7,7 @@ import ListsAll from '../components/ListsAll'
 //import { IToDoList } from '../components/DataTypes';
 
 const Lists: React.FC = () => {
-console.log("rendering lists");
+
   const { docs, loading, error } = useFind({
   index: {
     fields: ["type","name"]
@@ -26,11 +27,12 @@ console.log("rendering lists");
     <IonPage>
       <IonHeader>
         <IonToolbar>
+        <IonButtons slot="start"><IonMenuButton /></IonButtons>
           <IonTitle>Shopping Lists</IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>
-        <ListsAll />
+        <ListsAll separatePage={true} />
       </IonContent>
       <IonFab slot="fixed" vertical="bottom" horizontal="end">
         <IonFabButton routerLink={"/list/new/new"}>

@@ -1,17 +1,14 @@
 import { Redirect, Route } from 'react-router-dom';
 import {
-  IonApp, IonIcon, IonLabel, IonRouterOutlet, IonTabBar, IonTabButton, IonTabs,
-  IonPage, IonHeader, IonToolbar, IonTitle, IonSplitPane,
+  IonApp,  IonRouterOutlet, IonSplitPane,
   setupIonicReact
 } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
-import { useEffect, useState } from 'react';
-import { albumsOutline, listOutline, settingsOutline, nutritionOutline } from 'ionicons/icons';
+import { useState } from 'react';
 import Lists from './pages/Lists';
 import List from "./pages/List";
 import Items from './pages/Items';
 import Item from './pages/Item';
-import CategoriesSeqList from './pages/CategoriesSeqList';
 import Categories from './pages/Categories';
 import Category from './pages/Category';
 import Settings from './pages/Settings';
@@ -69,8 +66,6 @@ const App: React.FC = () => {
             <Categories />
           </Route>
           <Route path="/category/:mode/:id?" component={Category}>
-          </Route>
-          <Route path="/categoriesseqlist/:id" component={CategoriesSeqList}>
           </Route>
           <Route path="/settings">
             <Settings />

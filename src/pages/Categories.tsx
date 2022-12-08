@@ -1,4 +1,5 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonLabel, IonButton, IonFab, IonFabButton, IonIcon } from '@ionic/react';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonButtons, 
+  IonMenuButton, IonButton, IonFab, IonFabButton, IonIcon } from '@ionic/react';
 import { add } from 'ionicons/icons';
 import { useFind } from 'use-pouchdb';
 import './Categories.css';
@@ -24,6 +25,7 @@ const Categories: React.FC = () => {
     <IonPage>
       <IonHeader>
         <IonToolbar>
+          <IonButtons slot="start"><IonMenuButton /></IonButtons>
           <IonTitle>Categories</IonTitle>
         </IonToolbar>
       </IonHeader>

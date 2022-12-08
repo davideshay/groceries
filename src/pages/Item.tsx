@@ -1,4 +1,6 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonSelectOption, NavContext } from '@ionic/react';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
+  IonButtons, IonMenuButton, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonCheckbox, 
+  IonSelectOption, NavContext } from '@ionic/react';
 import { add } from 'ionicons/icons';
 import { RouteComponentProps, useParams } from 'react-router-dom';
 import { useDoc, useFind } from 'use-pouchdb';
@@ -132,6 +134,7 @@ const Item: React.FC<ItemPageProps> = () => {
     <IonPage>
       <IonHeader>
         <IonToolbar>
+        <IonButtons slot="start"><IonMenuButton /></IonButtons>
           <IonTitle>Editing Item: {(stateItemDoc as any).name}</IonTitle>
         </IonToolbar>
       </IonHeader>

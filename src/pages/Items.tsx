@@ -1,9 +1,9 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonItemGroup,
-  IonItemDivider, IonButton, IonFab, IonFabButton, IonIcon, IonCheckbox, IonLabel, IonSelect,
-  IonSelectOption, IonSearchbar, IonPopover, NavContext} from '@ionic/react';
+  IonItemDivider, IonButton, IonButtons, IonFab, IonFabButton, IonIcon, IonCheckbox, IonLabel, IonSelect,
+  IonSelectOption, IonSearchbar, IonPopover, IonMenuButton, NavContext} from '@ionic/react';
 import { add,checkmark } from 'ionicons/icons';
 import React, { useState, useEffect, useContext, useRef, KeyboardEvent } from 'react';
-import { RouteComponentProps } from 'react-router-dom';
+import { RouteComponentProps, useParams } from 'react-router-dom';
 import { useDoc, useFind } from 'use-pouchdb';
 import { cloneDeep } from 'lodash';
 import './Items.css';
@@ -13,21 +13,17 @@ import { GlobalStateContext } from '../components/GlobalState';
 import {ItemRow, ItemSearch, SearchState, PageState} from '../components/DataTypes'
 import { getAllSearchRows, getItemRows, filterSearchRows } from '../components/ItemUtilities';
 
-interface ItemsPageProps
-  extends RouteComponentProps<{
-    id: string;
-  }> {}
+const Items: React.FC = () => {
 
-const Items: React.FC<ItemsPageProps> = ({ match }) => {
-
+  let { id: routeListID  } = useParams<{id: string}>();
   const [searchRows,setSearchRows] = useState<ItemSearch[]>();
   const [searchState,setSearchState] = useState<SearchState>({searchCriteria:"",isOpen: false,event: undefined, filteredSearchRows: [], dismissEvent: undefined});
-  const [pageState, setPageState] = useState<PageState>({selectedListID: match.params.id, doingUpdate: false, itemRows: []});
+  const [pageState, setPageState] = useState<PageState>({selectedListID: routeListID, doingUpdate: false, itemRows: []});
   const searchRef=useRef<HTMLIonSearchbarElement>(null);
   
   const updateCompleted = useUpdateCompleted();
   const updateItemInList = useUpdateGenericDocument();
-  const addNewItem = useCreateGenericDocument();
+
   const { docs: itemDocs, loading: itemLoading, error: itemError } = useFind({
     index: {
       fields: ["type","name","lists"]
@@ -59,13 +55,18 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
     const { globalState,setGlobalState,setStateInfo} = useContext(GlobalStateContext);
 
     useEffect( () => {
+      console.log("Route list ID changed");
+      setPageState(prevState => ({...prevState,selectedListID: routeListID}))
+    },[routeListID])
+
+    useEffect( () => {
       if (!itemLoading && !listLoading && !categoryLoading && !allItemsLoading) {
         setPageState({ ...pageState,
           doingUpdate: false,
           itemRows: getItemRows(itemDocs, listDocs, categoryDocs, pageState.selectedListID),
         })
       }
-    },[itemLoading, allItemsLoading, listLoading, categoryLoading, itemDocs, listDocs, allItemDocs, categoryDocs, pageState.selectedListID, match.params.id]);
+    },[itemLoading, allItemsLoading, listLoading, categoryLoading, itemDocs, listDocs, allItemDocs, categoryDocs, pageState.selectedListID]);
 
     useEffect( () => {
       setSearchRows(getAllSearchRows(allItemDocs,pageState.selectedListID));
@@ -134,7 +135,8 @@ const Items: React.FC<ItemsPageProps> = ({ match }) => {
   )
 
   let headerElem=(
-    <IonHeader><IonToolbar><IonTitle>
+    <IonHeader><IonToolbar><IonButtons slot="start"><IonMenuButton /></IonButtons>
+    <IonTitle>
         <IonItem key="listselector">
         <IonLabel key="listselectlabel">Items on List:</IonLabel>
         <IonSelect interface="popover" onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListID}>

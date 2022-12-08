@@ -1,6 +1,6 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput,
    IonItem, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonSelectOption,
-   IonReorder, IonReorderGroup,ItemReorderEventDetail, IonModal, useIonAlert, NavContext } from '@ionic/react';
+   IonReorder, IonReorderGroup,ItemReorderEventDetail, IonButtons, IonMenuButton, NavContext } from '@ionic/react';
 import { RouteComponentProps, useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext } from 'react';
@@ -8,18 +8,13 @@ import { useUpdateListWhole, useCreateList } from '../components/itemhooks';
 import { cloneDeep, isEmpty, isEqual } from 'lodash';
 import './List.css';
 
-interface ListPageProps
-  extends RouteComponentProps<{
-    id: string;
-  }> {}
-
 interface PageState {
   listDoc: any,
   selectedListID: String,
   changesMade: Boolean
 }  
 
-const List: React.FC<ListPageProps> = () => {
+const List: React.FC = () => {
 
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
   let needInitListDoc = (mode === "new") ? true: false;
@@ -51,9 +46,9 @@ const List: React.FC<ListPageProps> = () => {
   const {goBack, navigate} = useContext(NavContext);
 
   function changeListUpdateState(listID: string) {
-    setPageState({...pageState,
+    setPageState(prevState => ({...prevState,
         listDoc: listDocs.find(el => el._id === listID),
-        selectedListID: listID})
+        selectedListID: listID}))
     navigate('/list/edit/'+listID);    
   }
 
@@ -91,7 +86,7 @@ const List: React.FC<ListPageProps> = () => {
     else {
       updateListWhole(pageState.listDoc);
     }
-    navigate("/lists");
+    goBack("/lists");
   }
 
   function handleReorder(event: CustomEvent<ItemReorderEventDetail>) {
@@ -109,7 +104,7 @@ const List: React.FC<ListPageProps> = () => {
   }
 
   function updateCat(categoryID: string, updateVal: boolean) {
-    const currCategories=[];
+    const currCategories: any=[];
     let foundIt=false;
     for (let i = 0; i < pageState.listDoc.categories.length; i++) {
       if (pageState.listDoc.categories[i] === categoryID) {
@@ -124,12 +119,13 @@ const List: React.FC<ListPageProps> = () => {
     if (updateVal && !foundIt) {
       currCategories.push(categoryID);
     }
-    setPageState({...pageState, changesMade: true, listDoc: {...pageState.listDoc, categories: currCategories}})
+    setPageState(prevState => (
+      {...prevState, changesMade: true, listDoc: {...prevState.listDoc, categories: currCategories}}))
 
   }
 
   function selectUser(userID: string, updateVal: boolean) {
-    const currUsers=[];
+    const currUsers: any=[];
     let foundIt=false;
     for (let i = 0; i < pageState.listDoc.sharedWith.length; i++) {
       if (pageState.listDoc.sharedWith[i] === userID) {
@@ -145,13 +141,15 @@ const List: React.FC<ListPageProps> = () => {
       currUsers.push(userID);
     }
     if (!isEqual(pageState.listDoc.sharedWith,currUsers)) {
-      setPageState({...pageState, changesMade: true, listDoc: {...pageState.listDoc, sharedWith: currUsers}})
+      setPageState(prevState => (
+        {...prevState, changesMade: true, listDoc: {...prevState.listDoc, sharedWith: currUsers}}))
     }
   }
 
   function updateName(updName: string) {
     if (pageState.listDoc.name !== updName) {
-      setPageState({...pageState, changesMade: true, listDoc: {...pageState.listDoc, name: updName}});
+      setPageState(prevState => (
+        {...prevState, changesMade: true, listDoc: {...prevState.listDoc, name: updName}}));
     }  
   }
 
@@ -264,6 +262,7 @@ const List: React.FC<ListPageProps> = () => {
     <IonPage>
       <IonHeader>
         <IonToolbar>
+        <IonButtons slot="start"><IonMenuButton /></IonButtons>
             {selectDropDown}
         </IonToolbar>
       </IonHeader>

@@ -1,6 +1,5 @@
-import { IonMenu, IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonList, IonInput,
-    IonItem, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonSelectOption,
-    IonReorder, IonReorderGroup,ItemReorderEventDetail, IonModal, useIonAlert, NavContext } from '@ionic/react';
+import { IonMenu, IonContent, IonMenuToggle, IonList, 
+    IonItem, IonItemDivider, IonListHeader } from '@ionic/react';
 import ListsAll from './ListsAll';
 
 const AppMenu: React.FC = () => {
@@ -10,24 +9,22 @@ const listHeader = (headerName: string) => {
 }
 
 const listItem = (listItem: string,link: string) => {
-  return (<IonList key={listItem}><IonItem key={"item-"+listItem} routerLink={link}>{listItem}</IonItem></IonList>)
+  return (<IonList key={listItem}><IonMenuToggle key={listItem} autoHide={false}>
+            <IonItem key={"item-"+listItem} routerLink={link}>{listItem}</IonItem>
+        </IonMenuToggle></IonList>)
 }
 
   return (
-    <IonMenu contentId="main">
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Groceries Menu</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+  <IonMenu contentId="main" type="overlay">
     <IonContent className="ion-padding">
-        {listHeader("Lists")}
-        <ListsAll />
-        {listHeader("Other Actions")}
-        {listItem("Manage Categories","/categories")}
+      <IonList><IonListHeader>Groceries Menu</IonListHeader></IonList>
+      {listHeader("Lists")}
+      <ListsAll separatePage={false}/>
+      {listItem("Create New List","/list/new/new")}
+      {listHeader("Other Actions")}
+      {listItem("Manage Categories","/categories")}
     </IonContent>
   </IonMenu>
-
   );
 };
 

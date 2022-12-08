@@ -1,4 +1,6 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonSelectOption, NavContext } from '@ionic/react';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
+  IonButtons, IonMenuButton, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonSelectOption, 
+  NavContext } from '@ionic/react';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { usePouch, useFind } from 'use-pouchdb';
 import PouchDB from 'pouchdb';
@@ -174,7 +176,7 @@ const RemoteDBLogin: React.FC = () => {
   
   return(
         <IonPage>
-            <IonHeader><IonToolbar><IonTitle>
+            <IonHeader><IonToolbar><IonButtons slot="start"><IonMenuButton /></IonButtons><IonTitle>
             Login Page
             </IonTitle></IonToolbar></IonHeader>
             <IonContent>
