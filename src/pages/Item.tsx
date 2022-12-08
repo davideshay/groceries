@@ -1,7 +1,6 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
-  IonButtons, IonMenuButton, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonCheckbox, 
+  IonButtons, IonMenuButton, IonItemDivider, IonLabel, IonSelect, IonCheckbox, 
   IonSelectOption, NavContext } from '@ionic/react';
-import { add } from 'ionicons/icons';
 import { RouteComponentProps, useParams } from 'react-router-dom';
 import { useDoc, useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext } from 'react';
@@ -20,7 +19,7 @@ const Item: React.FC<ItemPageProps> = () => {
 
   let { mode, itemid: routeItemID  } = useParams<{mode: string, itemid: string}>();
   if ( mode === "new" ) { routeItemID = "<new>"};
-  let needInitItemDoc = (mode === "new") ? true: false;
+  const [needInitItemDoc,setNeedInitItemDoc] = useState((mode === "new") ? true: false);
   const [stateItemDoc,setStateItemDoc] = useState({});
   const updateItem  = useUpdateGenericDocument();
   const addItem = useCreateGenericDocument();
@@ -63,13 +62,13 @@ const Item: React.FC<ItemPageProps> = () => {
       if (globalState.itemMode === "new" && needInitItemDoc) {
         newItemDoc = createEmptyItemDoc(listDocs,globalState.callingListID,globalState.newItemName)
         setStateInfo("newItemMode","none");
-        needInitItemDoc = false;
+        setNeedInitItemDoc(false);
       } else {
       newItemDoc=addListsIfNotExist(itemDoc);
       }
       setStateItemDoc(newItemDoc as any);
     }
-  },[itemLoading,itemDoc,listLoading,listDocs,globalState.newItemName, globalState.callingListID]);
+  },[itemLoading,itemDoc,listLoading,listDocs,globalState.itemMode,globalState.newItemName, globalState.callingListID]);
 
   if (itemLoading || listLoading || categoryLoading || isEmpty(stateItemDoc))  {
     return(
@@ -97,7 +96,7 @@ const Item: React.FC<ItemPageProps> = () => {
     let newItemDoc=cloneDeep(stateItemDoc);
     let listFound=false
     for (let i = 0; i < newItemDoc.lists.length; i++) {
-      if (newItemDoc.lists[i].listID == listID) {
+      if (newItemDoc.lists[i].listID === listID) {
         newItemDoc.lists[i].active = updateVal;
         listFound=true;
         if(updateVal) {newItemDoc.lists[i].boughtCount++}

@@ -44,7 +44,6 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
     const [globalState,setGlobalState] = useState(initialState);
 
     function setStateInfo(key: string,value: any) {
-        console.log("about to update state with",{key, value});
         setGlobalState(prevState => ({ ...prevState, [key]: value}))
     }
     let value: any = {globalState, setGlobalState, setStateInfo};

@@ -3,12 +3,11 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
   IonSelectOption, IonSearchbar, IonPopover, IonMenuButton, NavContext} from '@ionic/react';
 import { add,checkmark } from 'ionicons/icons';
 import React, { useState, useEffect, useContext, useRef, KeyboardEvent } from 'react';
-import { RouteComponentProps, useParams } from 'react-router-dom';
-import { useDoc, useFind } from 'use-pouchdb';
+import { useParams } from 'react-router-dom';
+import { useFind } from 'use-pouchdb';
 import { cloneDeep } from 'lodash';
 import './Items.css';
-import { useUpdateCompleted, useUpdateGenericDocument, useCreateGenericDocument } from '../components/itemhooks';
-import { createEmptyItemDoc} from '../components/DefaultDocs';
+import { useUpdateCompleted, useUpdateGenericDocument } from '../components/itemhooks';
 import { GlobalStateContext } from '../components/GlobalState';
 import {ItemRow, ItemSearch, SearchState, PageState} from '../components/DataTypes'
 import { getAllSearchRows, getItemRows, filterSearchRows } from '../components/ItemUtilities';
@@ -52,10 +51,9 @@ const Items: React.FC = () => {
     })
 
     const {navigate} = useContext(NavContext);
-    const { globalState,setGlobalState,setStateInfo} = useContext(GlobalStateContext);
+    const { globalState,setGlobalState} = useContext(GlobalStateContext);
 
     useEffect( () => {
-      console.log("Route list ID changed");
       setPageState(prevState => ({...prevState,selectedListID: routeListID}))
     },[routeListID])
 
@@ -86,8 +84,8 @@ const Items: React.FC = () => {
   }  
 
   function addNewItemToList(itemName: string) {
-    let newItemDoc=createEmptyItemDoc(listDocs,pageState.selectedListID,itemName);
-    let  newglobalState=cloneDeep(globalState);
+//    let newItemDoc=createEmptyItemDoc(listDocs,pageState.selectedListID,itemName);
+//    let  newglobalState=cloneDeep(globalState);
     setGlobalState({...globalState, itemMode: "new",
                                      callingListID: pageState.selectedListID,
                                      newItemName: itemName})

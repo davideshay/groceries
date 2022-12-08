@@ -1,8 +1,7 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, 
-  IonButtons, IonMenuButton, IonItem, IonLabel, IonSelect, IonCheckbox, IonSelectOption, NavContext } from '@ionic/react';
-import { add, compassSharp } from 'ionicons/icons';
+  IonButtons, IonMenuButton, IonItem, IonLabel, NavContext } from '@ionic/react';
 import { RouteComponentProps,useParams } from 'react-router-dom';
-import { useDoc, useFind } from 'use-pouchdb';
+import { useDoc } from 'use-pouchdb';
 import { useState, useEffect, useContext } from 'react';
 import { useUpdateCategory,useCreateCategory } from '../components/itemhooks';
 import { cloneDeep } from 'lodash';
@@ -16,7 +15,7 @@ interface CategoryPageProps
 const Category: React.FC<CategoryPageProps> = () => {
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
   if ( mode === "new" ) { routeID = "<new>"};
-  let needInitCategoryDoc = (mode === "new") ? true: false;
+  const [needInitCategoryDoc,setNeedInitCategoryDoc] = useState((mode === "new") ? true: false);
   const [stateCategoryDoc,setStateCategoryDoc] = useState<any>({});
   const updateCategory  = useUpdateCategory();
   const createCategory = useCreateCategory();
@@ -30,7 +29,7 @@ const Category: React.FC<CategoryPageProps> = () => {
     if (!categoryLoading) {
       if (mode === "new" && needInitCategoryDoc) {
         newCategoryDoc = {type: "category", name: ""}
-        needInitCategoryDoc = false;
+        setNeedInitCategoryDoc(false);
       } else {
         newCategoryDoc = categoryDoc;
       }

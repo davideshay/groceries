@@ -1,5 +1,4 @@
 import {ItemRow, ItemSearch} from '../components/DataTypes';
-import { cloneDeep } from 'lodash';
 
 export function getAllSearchRows(allItemDocs: any, listID: string): ItemSearch[] {
     let searchRows: ItemSearch[] = [];

@@ -1,7 +1,7 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput,
    IonItem, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonSelectOption,
    IonReorder, IonReorderGroup,ItemReorderEventDetail, IonButtons, IonMenuButton, NavContext } from '@ionic/react';
-import { RouteComponentProps, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext } from 'react';
 import { useUpdateListWhole, useCreateList } from '../components/itemhooks';
@@ -9,6 +9,7 @@ import { cloneDeep, isEmpty, isEqual } from 'lodash';
 import './List.css';
 
 interface PageState {
+  needInitListDoc: boolean,
   listDoc: any,
   selectedListID: String,
   changesMade: Boolean
@@ -17,9 +18,9 @@ interface PageState {
 const List: React.FC = () => {
 
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
-  let needInitListDoc = (mode === "new") ? true: false;
   if ( mode === "new" ) { routeID = "<new>"};
   const [pageState,setPageState] = useState<PageState>({
+    needInitListDoc: (mode === "new") ? true : false,
     listDoc: {},
     selectedListID: routeID,
     changesMade: false
@@ -55,7 +56,7 @@ const List: React.FC = () => {
   useEffect( () => {
     let newPageState=cloneDeep(pageState);
     if (!listLoading && !userLoading && !categoryLoading) {
-      if (mode === "new" && needInitListDoc) {
+      if (mode === "new" && pageState.needInitListDoc) {
         let initCategories=categoryDocs.map(cat => cat._id);
         let initListDoc = {
           type: "list",
@@ -64,7 +65,7 @@ const List: React.FC = () => {
           categories: initCategories
         }
         newPageState.listDoc=initListDoc;
-        needInitListDoc=false;
+        newPageState.needInitListDoc=false;
       }
       else {
         let newListDoc = listDocs.find(el => el._id === pageState.selectedListID);
@@ -82,6 +83,7 @@ const List: React.FC = () => {
   function updateThisItem() {
     if (mode === "new") {
       const result = createList(pageState.listDoc);
+      console.log("result:", result, ": add error checking here")
     }
     else {
       updateListWhole(pageState.listDoc);
@@ -196,7 +198,6 @@ const List: React.FC = () => {
   }
   
   for (let i = 0; i < (pageState.listDoc as any).categories.length; i++) {
-    const categoryID = (pageState.listDoc as any).categories[i];
     categoryLines.push(catItem((pageState.listDoc as any).categories[i],true));
   }
   categoryElem.push(catItemDivider(true,categoryLines));

@@ -1,7 +1,6 @@
 
 export function createEmptyItemDoc(listDocs:any,listID: string | null | undefined, itemName: string | undefined) {
     let newItemLists: any =[];
-    console.log("creating empty doc:", {listDocs,listID, itemName })
     listDocs.forEach((listDoc: any) => {
       let newListDoc={
         listID: listDoc._id,
