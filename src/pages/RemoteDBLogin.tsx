@@ -12,7 +12,6 @@ type RemoteState = {
   dbCreds: DBCreds,
   credsStatus: CredsStatus,
   connectionStatus: ConnectionStatus,
-  syncStatus: SyncStatus,
   showLoginForm: boolean
   formSubmitted: boolean,
   firstListID: string | null,
@@ -40,7 +39,6 @@ const RemoteDBLogin: React.FC = () => {
       dbCreds: {baseURL: undefined, database: undefined, username: undefined, password: undefined},
       credsStatus: CredsStatus.needLoaded,
       connectionStatus: ConnectionStatus.cannotStart,
-      syncStatus: SyncStatus.init,
       showLoginForm: false,
       formSubmitted: false,
       firstListID: null,
@@ -71,10 +69,10 @@ const RemoteDBLogin: React.FC = () => {
 
     useEffect(() => {
       if (remoteState.credsStatus === CredsStatus.loaded) {
-        if (remoteState.dbCreds.baseURL === undefined || 
-            remoteState.dbCreds.database === undefined || 
-            remoteState.dbCreds.username === "" ||
-            remoteState.dbCreds.password === "") {
+        if (remoteState.dbCreds.baseURL == undefined || 
+            remoteState.dbCreds.database == undefined || 
+            remoteState.dbCreds.username == "" ||
+            remoteState.dbCreds.password == "") {
               setRemoteState(prevstate => ({...prevstate,showLoginForm: true}));
             }
          else {
@@ -85,7 +83,7 @@ const RemoteDBLogin: React.FC = () => {
 
     useEffect(() => {
       // assign effect
-      if (remoteDB === null && (remoteState.connectionStatus === ConnectionStatus.remoteDBNeedsAssigned)) {
+      if (remoteDB == null && (remoteState.connectionStatus === ConnectionStatus.remoteDBNeedsAssigned)) {
         setRemoteDB(new PouchDB(remoteState.dbCreds.baseURL+"/"+remoteState.dbCreds.database, {
          auth: {username: remoteState.dbCreds.username, password: remoteState.dbCreds.password}}));
         setRemoteState(prevstate => ({...prevstate,connectionStatus: ConnectionStatus.attemptToSync}));
@@ -116,7 +114,7 @@ const RemoteDBLogin: React.FC = () => {
     useEffect(() => {
       if ((globalState.syncStatus === SyncStatus.active || globalState.syncStatus === SyncStatus.paused) && (remoteState.connectionStatus !== ConnectionStatus.loginComplete) && (remoteState.gotListID)) {
         setRemoteState(prevState => ({...prevState, connectionStatus: ConnectionStatus.loginComplete}))
-        if (remoteState.firstListID === null) {
+        if (remoteState.firstListID == null) {
           navigate("/lists")
         } else {
           navigate("/items/"+remoteState.firstListID)
@@ -136,7 +134,7 @@ const RemoteDBLogin: React.FC = () => {
       credsObj=JSON.parse(String(credsStr));
       setRemoteState(prevstate => ({...prevstate,dbCreds: credsObj, credsStatus: CredsStatus.loaded}))
     }
-    if (credsObj === null || (credsObj as any).baseURL === undefined) {
+    if (credsObj == null || (credsObj as any).baseURL == undefined) {
         setRemoteState(prevstate => ({...prevstate, dbCreds: {
             baseURL: DEFAULT_DB_URL_PREFIX,
             database: DEFAULT_DB_NAME,
@@ -156,7 +154,7 @@ const RemoteDBLogin: React.FC = () => {
   }
 
   if ((remoteState.credsStatus !== CredsStatus.loaded) || (!remoteState.showLoginForm)) return (
-    <IonPage><IonHeader><IonToolbar><IonTitle><IonLoading isOpen={true} spinner="circular" message="Logging into Remote..."></IonLoading></IonTitle></IonToolbar></IonHeader></IonPage>
+    <IonPage><IonHeader><IonToolbar><IonTitle>Logging Into Remote...</IonTitle></IonToolbar></IonHeader></IonPage>
   )
   
   return(
