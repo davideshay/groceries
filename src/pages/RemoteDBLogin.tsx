@@ -165,20 +165,20 @@ const RemoteDBLogin: React.FC = () => {
             <IonContent>
             <IonItem>
             <IonList>
-                <IonItem><IonLabel>Base URL</IonLabel>
+                <IonItem><IonLabel position="stacked">Base URL</IonLabel>
                 <IonInput value={remoteState.dbCreds.baseURL} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, dbCreds: {...prevstate.dbCreds,baseURL: String(e.detail.value)}}))}}>
                 </IonInput>
                 </IonItem>
-                <IonItem><IonLabel>Database Name</IonLabel>
+                <IonItem><IonLabel position="stacked">Database Name</IonLabel>
                 <IonInput value={remoteState.dbCreds.database} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, dbCreds: {...prevstate.dbCreds,database: String(e.detail.value)}}))}}>
                 </IonInput>
                 </IonItem>
-                <IonItem><IonLabel>Username</IonLabel>
-                <IonInput value={remoteState.dbCreds.username} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, dbCreds: {...prevstate.dbCreds,username: String(e.detail.value)}}))}}>
+                <IonItem><IonLabel position="stacked">Username</IonLabel>
+                <IonInput type="text" autocomplete="username" value={remoteState.dbCreds.username} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, dbCreds: {...prevstate.dbCreds,username: String(e.detail.value)}}))}}>
                 </IonInput>
                 </IonItem>
-                <IonItem><IonLabel>Password</IonLabel>
-                <IonInput value={remoteState.dbCreds.password} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, dbCreds: {...prevstate.dbCreds,password: String(e.detail.value)}}))}}>
+                <IonItem><IonLabel position="stacked">Password</IonLabel>
+                <IonInput autocomplete="current-password" type="password" value={remoteState.dbCreds.password} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, dbCreds: {...prevstate.dbCreds,password: String(e.detail.value)}}))}}>
                 </IonInput>
                 </IonItem>
                 <IonItem>
