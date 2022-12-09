@@ -10,9 +10,11 @@ import { GlobalStateContext, SyncStatus } from '../components/GlobalState';
 
 type RemoteState = {
   dbCreds: DBCreds,
+  password: string | undefined,
   credsStatus: CredsStatus,
   connectionStatus: ConnectionStatus,
-  showLoginForm: boolean
+  showLoginForm: boolean,
+  formError: string,
   formSubmitted: boolean,
   firstListID: string | null,
   gotListID: boolean
@@ -26,6 +28,9 @@ enum CredsStatus {
 
 enum ConnectionStatus {
   cannotStart = 0,
+  cookieNeedsChecked = 1,
+  cookieInvalid = 2,
+  cookieValid = 3,
   remoteDBNeedsAssigned = 1,
   remoteDBAssigned = 2,
   attemptToSync = 3,
@@ -36,11 +41,13 @@ const RemoteDBLogin: React.FC = () => {
 
     const db=usePouch();
     const [remoteState,setRemoteState]=useState<RemoteState>({
-      dbCreds: {baseURL: undefined, database: undefined, username: undefined, password: undefined},
+      dbCreds: {baseURL: undefined, database: undefined, dbUsername: undefined, email: undefined, authCookie: undefined},
+      password: undefined,
       credsStatus: CredsStatus.needLoaded,
       connectionStatus: ConnectionStatus.cannotStart,
       showLoginForm: false,
       formSubmitted: false,
+      formError: "",
       firstListID: null,
       gotListID: false
     });
@@ -67,12 +74,86 @@ const RemoteDBLogin: React.FC = () => {
 
     },[listDocs, listLoading])
 
+    function urlPatternValidation(url: string) {
+      const regex = new RegExp('(https?://)?([\\da-z.-]+)\\.([a-z.]{2,6})[/\\w .-]*/?');    
+      return regex.test(url);
+    };
+
+    function emailPatternValidation(email: string) {
+      const regex = new RegExp('/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i');    
+      return regex.test(email);
+    };
+
+    function errorCheckCreds() {
+      if (remoteState.dbCreds.authCookie == undefined || remoteState.dbCreds.authCookie == "") {
+        setRemoteState(prevState => ({...prevState,formError: "No existing credentials found"}));
+        return false;
+      }
+      if (remoteState.dbCreds.baseURL == undefined || remoteState.dbCreds.baseURL == "") {
+        setRemoteState(prevState => ({...prevState,formError: "No Base URL entered"}));
+        return false;
+      }
+      if (!urlPatternValidation(remoteState.dbCreds.baseURL)) {
+        setRemoteState(prevState => ({...prevState,formError: "Invalid database URL"}));
+        return false;
+      }
+      if (remoteState.dbCreds.baseURL.endsWith("/")) {
+        setRemoteState(prevState => ({...prevState,dbCreds: {...prevState.dbCreds,baseURL: prevState.dbCreds.baseURL?.slice(0,-1)}}))
+      }
+      if (remoteState.dbCreds.database == undefined || remoteState.dbCreds.database == "") {
+        setRemoteState(prevState => ({...prevState,formError: "No database entered"}));
+        return false;
+      }
+      if (remoteState.dbCreds.dbUsername == undefined || remoteState.dbCreds.dbUsername == "") {
+        setRemoteState(prevState => ({...prevState,formError: "No database user name entered"}));
+        return false;
+      }
+      if (remoteState.dbCreds.email == undefined || remoteState.dbCreds.email == "") {
+        setRemoteState(prevState => ({...prevState,formError: "No email entered"}));
+        return false;
+      }
+      if (!emailPatternValidation(remoteState.dbCreds.email)) {
+        setRemoteState(prevState => ({...prevState,formError: "Invalid email format"}));
+        return false;
+      }
+      if (remoteState.password == undefined || remoteState.password == "") {
+        setRemoteState(prevState => ({...prevState,formError: "No password entered"}));
+        return false;
+      }
+      return true;
+    }
+
+    useEffect( () => {
+      if (remoteState.credsStatus === CredsStatus.loaded) {
+        if ( errorCheckCreds() ) {
+          setRemoteState(prevState => ({...prevState,connectionStatus: ConnectionStatus.cookieNeedsChecked}))
+        } else {
+          setRemoteState(prevState => ({...prevState,connectionStatus: ConnectionStatus.cookieInvalid, showLoginForm: true}))
+        }
+      }
+    },[remoteState.credsStatus])
+
+    useEffect( () => {
+      if (remoteState.connectionStatus === ConnectionStatus.cookieNeedsChecked) {
+        fetch(remoteState.dbCreds.baseURL+"/_session". {
+          method: 'POST',
+          headers: { "Content-Type": "application/json"},
+          
+          body: JSON.stringify({
+            "name" : remoteState.dbCreds.dbUsername,
+            "password"
+          })
+        })
+        .then(response)
+      }
+    },[remoteState.connectionStatus])
+
+
+
     useEffect(() => {
       if (remoteState.credsStatus === CredsStatus.loaded) {
-        if (remoteState.dbCreds.baseURL == undefined || 
-            remoteState.dbCreds.database == undefined || 
-            remoteState.dbCreds.username == "" ||
-            remoteState.dbCreds.password == "") {
+        if (remoteState.dbCreds.authCookie == undefined || 
+            remoteState.dbCreds.authCookie == "") {
               setRemoteState(prevstate => ({...prevstate,showLoginForm: true}));
             }
          else {
@@ -166,7 +247,7 @@ const RemoteDBLogin: React.FC = () => {
             <IonItem>
             <IonList>
                 <IonItem><IonLabel position="stacked">Base URL</IonLabel>
-                <IonInput value={remoteState.dbCreds.baseURL} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, dbCreds: {...prevstate.dbCreds,baseURL: String(e.detail.value)}}))}}>
+                <IonInput type="url" inputmode="url" value={remoteState.dbCreds.baseURL} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, dbCreds: {...prevstate.dbCreds,baseURL: String(e.detail.value)}}))}}>
                 </IonInput>
                 </IonItem>
                 <IonItem><IonLabel position="stacked">Database Name</IonLabel>
