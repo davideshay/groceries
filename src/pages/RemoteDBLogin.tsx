@@ -1,6 +1,7 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
-  IonButtons, IonMenuButton, IonLabel, IonLoading, NavContext } from '@ionic/react';
+  IonButtons, IonMenuButton, IonLabel, IonLoading, NavContext, IonText } from '@ionic/react';
 import { useState, useEffect, useContext } from 'react';
+import { CapacitorCookies, CapacitorHttp, HttpResponse } from '@capacitor/core';
 import { usePouch, useFind } from 'use-pouchdb';
 import PouchDB from 'pouchdb';
 import { DBCreds } from '../components/DataTypes';
@@ -13,7 +14,9 @@ type RemoteState = {
   password: string | undefined,
   credsStatus: CredsStatus,
   connectionStatus: ConnectionStatus,
+  httpResponse: HttpResponse | undefined,
   showLoginForm: boolean,
+  loginByPassword: boolean,
   formError: string,
   formSubmitted: boolean,
   firstListID: string | null,
@@ -28,13 +31,19 @@ enum CredsStatus {
 
 enum ConnectionStatus {
   cannotStart = 0,
-  cookieNeedsChecked = 1,
-  cookieInvalid = 2,
-  cookieValid = 3,
-  remoteDBNeedsAssigned = 1,
-  remoteDBAssigned = 2,
-  attemptToSync = 3,
-  loginComplete = 4
+  cookieNeedsSet = 1,
+  cookieSet = 2,
+  checkingCookie = 3,
+  cookieResponseFound = 4,
+  cookieInvalid = 5,
+  cookieValid = 6,
+  tryPasswordLogin = 7,
+  checkingPasswordLogin = 8,
+  passwordResponseFound = 9,
+  remoteDBNeedsAssigned = 10,
+  remoteDBAssigned = 11,
+  attemptToSync = 12,
+  loginComplete = 13
 }
 
 const RemoteDBLogin: React.FC = () => {
@@ -45,7 +54,9 @@ const RemoteDBLogin: React.FC = () => {
       password: undefined,
       credsStatus: CredsStatus.needLoaded,
       connectionStatus: ConnectionStatus.cannotStart,
+      httpResponse: undefined,
       showLoginForm: false,
+      loginByPassword: false,
       formSubmitted: false,
       formError: "",
       firstListID: null,
@@ -80,12 +91,12 @@ const RemoteDBLogin: React.FC = () => {
     };
 
     function emailPatternValidation(email: string) {
-      const regex = new RegExp('/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i');    
-      return regex.test(email);
+      const emailRegex=/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+      return emailRegex.test(email);
     };
 
     function errorCheckCreds() {
-      if (remoteState.dbCreds.authCookie == undefined || remoteState.dbCreds.authCookie == "") {
+      if ((remoteState.dbCreds.authCookie == undefined || remoteState.dbCreds.authCookie == "") && (!remoteState.loginByPassword)) {
         setRemoteState(prevState => ({...prevState,formError: "No existing credentials found"}));
         return false;
       }
@@ -126,35 +137,107 @@ const RemoteDBLogin: React.FC = () => {
     useEffect( () => {
       if (remoteState.credsStatus === CredsStatus.loaded) {
         if ( errorCheckCreds() ) {
-          setRemoteState(prevState => ({...prevState,connectionStatus: ConnectionStatus.cookieNeedsChecked}))
+          setRemoteState(prevState => ({...prevState,connectionStatus: ConnectionStatus.cookieNeedsSet}))
         } else {
-          setRemoteState(prevState => ({...prevState,connectionStatus: ConnectionStatus.cookieInvalid, showLoginForm: true}))
+          setRemoteState(prevState => ({...prevState,connectionStatus: ConnectionStatus.cookieInvalid, showLoginForm: true, loginByPassword: true}))
         }
       }
     },[remoteState.credsStatus])
 
+    const setCapacitorCookie = async () => {
+      await CapacitorCookies.setCookie({
+        url: remoteState.dbCreds.baseURL,
+        key: 'AuthSession',
+        value: String(remoteState.dbCreds.authCookie),
+      });
+      setRemoteState(prevState => ({...prevState, connectionStatus: ConnectionStatus.cookieSet}))
+    };
+
     useEffect( () => {
-      if (remoteState.connectionStatus === ConnectionStatus.cookieNeedsChecked) {
-        fetch(remoteState.dbCreds.baseURL+"/_session". {
-          method: 'POST',
-          headers: { "Content-Type": "application/json"},
-          
-          body: JSON.stringify({
-            "name" : remoteState.dbCreds.dbUsername,
-            "password"
-          })
-        })
-        .then(response)
+      if (remoteState.connectionStatus == ConnectionStatus.cookieNeedsSet) {
+        setCapacitorCookie();
+      }
+
+    },[remoteState.connectionStatus])
+
+    useEffect( () => {
+      let response: HttpResponse | undefined;
+      const checkCookies = async () => {
+        const options = {
+          url: String(remoteState.dbCreds.baseURL+"/_session"),
+          method: "GET",
+          headers: { 'Content-Type': 'application/json',
+                     'Accept': 'application/json' },
+          webFetchExtra: { credentials: "include" as RequestCredentials, },
+        };
+        console.log("about to execute httpget with options: ", {options})
+        response = await CapacitorHttp.get(options);
+        console.log("got httpget response: ",{response});
+        setRemoteState(prevState => ({...prevState, connectionStatus: ConnectionStatus.cookieResponseFound,
+                     httpResponse: response}))
+      }
+      if (remoteState.connectionStatus === ConnectionStatus.cookieSet) {
+        checkCookies();
+        setRemoteState(prevState => ({...prevState, connectionStatus: ConnectionStatus.checkingCookie}));
       }
     },[remoteState.connectionStatus])
 
+    useEffect( () => {
+      if (remoteState.connectionStatus === ConnectionStatus.cookieResponseFound) {
+        if ((remoteState.httpResponse?.status == 200) && (remoteState.httpResponse.data?.userCtx?.name != null)) {
+          setRemoteState(prevState => ({...prevState, connectionStatus: ConnectionStatus.attemptToSync}));
+        } else {
+          setRemoteState(prevState => ({...prevState,connectionStatus: ConnectionStatus.cookieInvalid,showLoginForm: true, formError: "Invalid Authentication provided"}));
+        }
+      }
+    },[remoteState.connectionStatus])
 
+    useEffect( () => {
+      let response: HttpResponse | undefined;
+      const checkPasswordLogin = async () => {
+        const options = {
+          url: String(remoteState.dbCreds.baseURL+"/_session"),
+          method: "POST",
+          headers: { 'Content-Type': 'application/json',
+                     'Accept': 'application/json' },
+          data: { username: remoteState.dbCreds.dbUsername,
+                  password: remoteState.password},           
+          webFetchExtra: { credentials: "include" as RequestCredentials, },
+        };
+        console.log("about to execute httpget with options: ", {options})
+        response = await CapacitorHttp.post(options);
+        console.log("got httpget response: ",{response});
+        let myCookies = await CapacitorCookies.getCookies()
+        console.log("Ma cookies: ",myCookies);
+        console.log("doc cookies: ", document.cookie);
+        setRemoteState(prevState => ({...prevState, connectionStatus: ConnectionStatus.passwordResponseFound,
+                httpResponse: response}))
+      }
+      if (remoteState.connectionStatus === ConnectionStatus.tryPasswordLogin) {
+        console.log("trying password login");
+        checkPasswordLogin();
+        setRemoteState(prevState => ({...prevState, connectionStatus: ConnectionStatus.checkingPasswordLogin}));
+      }
+
+    },[remoteState.connectionStatus])
+
+    useEffect( () => {
+      if (remoteState.connectionStatus === ConnectionStatus.passwordResponseFound) {
+        console.log("password response found: ", {remoteState})
+        if ((remoteState.httpResponse?.status == 200) && (remoteState.httpResponse.data?.name != null)) {
+          console.log("add code here to set the cookie in localstorage");
+          setRemoteState(prevState => ({...prevState, connectionStatus: ConnectionStatus.remoteDBNeedsAssigned}));
+        } else {
+          setRemoteState(prevState => ({...prevState,connectionStatus: ConnectionStatus.cookieInvalid,showLoginForm: true, formError: "Invalid Authentication provided"}));
+        }
+      }
+    },[remoteState.connectionStatus])
 
     useEffect(() => {
       if (remoteState.credsStatus === CredsStatus.loaded) {
         if (remoteState.dbCreds.authCookie == undefined || 
             remoteState.dbCreds.authCookie == "") {
-              setRemoteState(prevstate => ({...prevstate,showLoginForm: true}));
+              setRemoteState(prevstate => ({...prevstate,showLoginForm: true, loginByPassword: true}));
             }
          else {
             setRemoteState(prevstate => ({...prevstate,connectionStatus: ConnectionStatus.remoteDBNeedsAssigned}))
@@ -165,8 +248,8 @@ const RemoteDBLogin: React.FC = () => {
     useEffect(() => {
       // assign effect
       if (remoteDB == null && (remoteState.connectionStatus === ConnectionStatus.remoteDBNeedsAssigned)) {
-        setRemoteDB(new PouchDB(remoteState.dbCreds.baseURL+"/"+remoteState.dbCreds.database, {
-         auth: {username: remoteState.dbCreds.username, password: remoteState.dbCreds.password}}));
+        setRemoteDB(new PouchDB(remoteState.dbCreds.baseURL+"/"+remoteState.dbCreds.database, 
+        { fetch: (url, opts) => fetch(url, { ...opts, credentials: 'include'}) }));
         setRemoteState(prevstate => ({...prevstate,connectionStatus: ConnectionStatus.attemptToSync}));
       }
     }, [db,remoteDB,remoteState.connectionStatus])
@@ -210,7 +293,7 @@ const RemoteDBLogin: React.FC = () => {
     
   const getPrefsDBCreds = async() => {
     let { value: credsStr } = await Preferences.get({ key: 'dbcreds'});
-    let credsObj: DBCreds = {baseURL: undefined, database: undefined, username: undefined, password: undefined};
+    let credsObj: DBCreds = {baseURL: undefined, database: undefined, dbUsername: undefined, email: undefined, authCookie: undefined};
     if (isJsonString(String(credsStr))) {
       credsObj=JSON.parse(String(credsStr));
       setRemoteState(prevstate => ({...prevstate,dbCreds: credsObj, credsStatus: CredsStatus.loaded}))
@@ -219,15 +302,22 @@ const RemoteDBLogin: React.FC = () => {
         setRemoteState(prevstate => ({...prevstate, dbCreds: {
             baseURL: DEFAULT_DB_URL_PREFIX,
             database: DEFAULT_DB_NAME,
-            username:"",
-            password:"",
+            dbUsername:"",
+            authCookie:"",
+            email: ""
         }, credsStatus: CredsStatus.loaded}))
     }
   }
 
   function submitForm() {
+    console.log("In submit form...");
     setPrefsDBCreds();
-    setRemoteState(prevstate => ({...prevstate,formSubmitted: true, connectionStatus: ConnectionStatus.remoteDBNeedsAssigned}))
+    console.log("error check creds...", errorCheckCreds());
+    if (errorCheckCreds() ) {
+      setRemoteState(prevstate => ({...prevstate,formSubmitted: true, connectionStatus: ConnectionStatus.tryPasswordLogin}))
+    } else {
+      setRemoteState(prevState => ({...prevState,showLoginForm: true, connectionStatus: ConnectionStatus.cannotStart}))
+    } 
   } 
 
   if (globalState.syncStatus === SyncStatus.active || globalState.syncStatus === SyncStatus.paused) {
@@ -255,15 +345,22 @@ const RemoteDBLogin: React.FC = () => {
                 </IonInput>
                 </IonItem>
                 <IonItem><IonLabel position="stacked">Username</IonLabel>
-                <IonInput type="text" autocomplete="username" value={remoteState.dbCreds.username} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, dbCreds: {...prevstate.dbCreds,username: String(e.detail.value)}}))}}>
+                <IonInput type="text" autocomplete="username" value={remoteState.dbCreds.dbUsername} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, dbCreds: {...prevstate.dbCreds,dbUsername: String(e.detail.value)}}))}}>
+                </IonInput>
+                </IonItem>
+                <IonItem><IonLabel position="stacked">E-Mail address</IonLabel>
+                <IonInput type="email" autocomplete="email" value={remoteState.dbCreds.email} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, dbCreds: {...prevstate.dbCreds,email: String(e.detail.value)}}))}}>
                 </IonInput>
                 </IonItem>
                 <IonItem><IonLabel position="stacked">Password</IonLabel>
-                <IonInput autocomplete="current-password" type="password" value={remoteState.dbCreds.password} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, dbCreds: {...prevstate.dbCreds,password: String(e.detail.value)}}))}}>
+                <IonInput autocomplete="current-password" type="password" value={remoteState.password} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
                 </IonInput>
                 </IonItem>
                 <IonItem>
                   <IonButton onClick={() => submitForm()}>Login</IonButton>
+                </IonItem>
+                <IonItem>
+                  <IonText>{remoteState.formError}</IonText>
                 </IonItem>
             </IonList>
             </IonItem>
