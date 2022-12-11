@@ -8,6 +8,7 @@ interface ListsAllProps {
 }
 
 const ListsAll: React.FC<ListsAllProps> = ({separatePage}) => {
+  //TODO -- filter by list owner and/or sharedwith id
   const { docs, loading, error } = useFind({
     index: { fields: ["type","name"] },
     selector: { type: "list", name: { $exists: true } },

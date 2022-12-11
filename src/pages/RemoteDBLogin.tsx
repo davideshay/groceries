@@ -167,7 +167,8 @@ const RemoteDBLogin: React.FC = () => {
           url: String(remoteState.dbCreds.baseURL+"/_session"),
           method: "GET",
           headers: { 'Content-Type': 'application/json',
-                     'Accept': 'application/json' },
+                     'Accept': 'application/json',
+                     'SameSite': 'None' },
           webFetchExtra: { credentials: "include" as RequestCredentials, },
         };
         console.log("about to execute httpget with options: ", {options})
@@ -199,7 +200,8 @@ const RemoteDBLogin: React.FC = () => {
           url: String(remoteState.dbCreds.baseURL+"/_session"),
           method: "POST",
           headers: { 'Content-Type': 'application/json',
-                     'Accept': 'application/json' },
+                     'Accept': 'application/json',
+                     'SameSite': 'None' },
           data: { username: remoteState.dbCreds.dbUsername,
                   password: remoteState.password},           
           webFetchExtra: { credentials: "include" as RequestCredentials, },
