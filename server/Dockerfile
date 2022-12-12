@@ -15,7 +15,7 @@ FROM node:bullseye-slim
 WORKDIR /usr/app
 COPY server/package*.json ./
 RUN npm install --only=production
-COPY --from=builder /usr/app/build ./build
+COPY --from=builder /usr/app/. .
 CMD node src/index.js
 
 EXPOSE 80
