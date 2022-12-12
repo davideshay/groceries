@@ -10,7 +10,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "dotenv": "^16.0.3",
-    "express": "^4.18.2"
+    "axios": "^1.2.1",
+    "express": "^4.18.2",
+    "jose": "^4.11.1",
+    "nano": "^10.1.0"
+  },
+  "devDependencies": {
+    "dotenv": "^16.0.3"
   }
 }
