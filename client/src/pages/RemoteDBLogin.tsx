@@ -1,13 +1,14 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
   IonButtons, IonMenuButton, IonLabel, IonLoading, NavContext, IonText } from '@ionic/react';
 import { useState, useEffect, useContext } from 'react';
-import { CapacitorCookies, CapacitorHttp, HttpResponse } from '@capacitor/core';
+import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import { usePouch, useFind } from 'use-pouchdb';
 import PouchDB from 'pouchdb';
 import { DBCreds } from '../components/DataTypes';
 import { Preferences } from '@capacitor/preferences';
 import { isJsonString, DEFAULT_DB_NAME, DEFAULT_DB_URL_PREFIX, DEFAULT_API_URL } from '../components/Utilities'; 
 import { GlobalStateContext, SyncStatus } from '../components/GlobalState';
+import { cloneDeep } from 'lodash';
 
 
 type RemoteState = {
@@ -37,9 +38,9 @@ enum ConnectionStatus {
   JWTResponseFound = 4,
   JWTInvalid = 5,
   JWTValid = 6,
-  tryPasswordLogin = 7,
-  checkingPasswordLogin = 8,
-  passwordResponseFound = 9,
+  tryIssueToken = 7,
+  checkingIssueToken = 8,
+  tokenResponseFound = 9,
   remoteDBNeedsAssigned = 10,
   remoteDBAssigned = 11,
   attemptToSync = 12,
@@ -185,37 +186,43 @@ const RemoteDBLogin: React.FC = () => {
       let response: HttpResponse | undefined;
       const checkPasswordLogin = async () => {
         const options = {
-          url: String(remoteState.dbCreds.couchBaseURL+"/_session"),
-          method: "POST",
+          url: String(remoteState.dbCreds.apiServerURL+"/issuetoken"),
+          method: "GET",
           headers: { 'Content-Type': 'application/json',
-                     'Accept': 'application/json',
-                     'SameSite': 'None' },
+                     'Accept': 'application/json'},
           data: { username: remoteState.dbCreds.dbUsername,
                   password: remoteState.password},           
-          webFetchExtra: { credentials: "include" as RequestCredentials, },
         };
         console.log("about to execute httpget with options: ", {options})
-        response = await CapacitorHttp.post(options);
+        response = await CapacitorHttp.get(options);
         console.log("got httpget response: ",{response});
-        let myCookies = await CapacitorCookies.getCookies()
-        console.log("Ma cookies: ",myCookies);
-        console.log("doc cookies: ", document.cookie);
-        setRemoteState(prevState => ({...prevState, connectionStatus: ConnectionStatus.passwordResponseFound,
+        setRemoteState(prevState => ({...prevState, connectionStatus: ConnectionStatus.tokenResponseFound,
                 httpResponse: response}))
       }
-      if (remoteState.connectionStatus === ConnectionStatus.tryPasswordLogin) {
+      if (remoteState.connectionStatus === ConnectionStatus.tryIssueToken) {
         console.log("trying password login");
         checkPasswordLogin();
-        setRemoteState(prevState => ({...prevState, connectionStatus: ConnectionStatus.checkingPasswordLogin}));
+        setRemoteState(prevState => ({...prevState, connectionStatus: ConnectionStatus.checkingIssueToken}));
       }
 
     },[remoteState.connectionStatus])
 
+    function updateDBCredsFromResponse() {
+      let newDBCreds=cloneDeep(remoteState.dbCreds);
+      newDBCreds.couchBaseURL  = remoteState.httpResponse?.data.couchdbUrl;
+      newDBCreds.database= remoteState.httpResponse?.data.couchdbDatabase;
+      newDBCreds.email = remoteState.httpResponse?.data.email;
+      newDBCreds.JWT= remoteState.httpResponse?.data.JWT;
+      let credsObj = JSON.stringify(newDBCreds);
+      Preferences.set({key: 'dbcreds', value: credsObj})
+      setRemoteState(prevState => ({...prevState, dbCreds: newDBCreds}))
+    }
+
     useEffect( () => {
-      if (remoteState.connectionStatus === ConnectionStatus.passwordResponseFound) {
+      if (remoteState.connectionStatus === ConnectionStatus.tokenResponseFound) {
         console.log("password response found: ", {remoteState})
-        if ((remoteState.httpResponse?.status == 200) && (remoteState.httpResponse.data?.name != null)) {
-          console.log("add code here to set the cookie in localstorage");
+        if ((remoteState.httpResponse?.status == 200) && (remoteState.httpResponse?.data?.loginSuccessful)) {
+          updateDBCredsFromResponse()
           setRemoteState(prevState => ({...prevState, connectionStatus: ConnectionStatus.remoteDBNeedsAssigned}));
         } else {
           setRemoteState(prevState => ({...prevState,connectionStatus: ConnectionStatus.JWTInvalid,showLoginForm: true, formError: "Invalid Authentication provided"}));
@@ -305,7 +312,7 @@ const RemoteDBLogin: React.FC = () => {
     setPrefsDBCreds();
     console.log("error check creds...", errorCheckCreds());
     if (errorCheckCreds() ) {
-      setRemoteState(prevstate => ({...prevstate,formSubmitted: true, connectionStatus: ConnectionStatus.tryPasswordLogin}))
+      setRemoteState(prevstate => ({...prevstate,formSubmitted: true, connectionStatus: ConnectionStatus.tryIssueToken}))
     } else {
       setRemoteState(prevState => ({...prevState,showLoginForm: true, connectionStatus: ConnectionStatus.cannotStart}))
     } 
