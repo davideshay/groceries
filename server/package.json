@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "axios": "^1.2.1",
+    "cors": "^2.8.5",
     "express": "^4.18.2",
     "jose": "^4.11.1",
     "nano": "^10.1.0"

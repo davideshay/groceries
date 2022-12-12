@@ -1,7 +1,9 @@
 const express = require('express');
+const cors = require('cors');
 const app = express();
 const { issueToken, checkUserExists, registerNewUser } = require('./userfunctions');
 
+app.use(cors());
 app.use(express.json());
 
 app.post('/issuetoken', async (req, res) => res.send(await issueToken(req,res)));

@@ -87,7 +87,8 @@ const RemoteDBLogin: React.FC = () => {
     },[listDocs, listLoading])
 
     function urlPatternValidation(url: string) {
-      const regex = new RegExp('(https?://)?([\\da-z.-]+)\\.([a-z.]{2,6})[/\\w .-]*/?');    
+      const regex = new RegExp('https?:\/\/(?:w{1,3}\.)?[^\s.]+(?:\.[a-z]+)*(?::\d+)?(?![^<]*(?:<\/\w+>|\/?>))')
+//      const regex = new RegExp('(https?://)?([\\da-z.-]+)\\.([a-z.]{2,6})[/\\w .-]*/?');    
       return regex.test(url);
     };
 
@@ -187,14 +188,14 @@ const RemoteDBLogin: React.FC = () => {
       const checkPasswordLogin = async () => {
         const options = {
           url: String(remoteState.dbCreds.apiServerURL+"/issuetoken"),
-          method: "GET",
+          method: "POST",
           headers: { 'Content-Type': 'application/json',
                      'Accept': 'application/json'},
           data: { username: remoteState.dbCreds.dbUsername,
                   password: remoteState.password},           
         };
         console.log("about to execute httpget with options: ", {options})
-        response = await CapacitorHttp.get(options);
+        response = await CapacitorHttp.post(options);
         console.log("got httpget response: ",{response});
         setRemoteState(prevState => ({...prevState, connectionStatus: ConnectionStatus.tokenResponseFound,
                 httpResponse: response}))
@@ -246,7 +247,7 @@ const RemoteDBLogin: React.FC = () => {
       // assign effect
       if (remoteDB == null && (remoteState.connectionStatus === ConnectionStatus.remoteDBNeedsAssigned)) {
         setRemoteDB(new PouchDB(remoteState.dbCreds.couchBaseURL+"/"+remoteState.dbCreds.database, 
-        { fetch: (url, opts) => fetch(url, { ...opts, credentials: 'include'}) }));
+        { fetch: (url, opts) => fetch(url, { ...opts, credentials: 'include', headers: { ...opts?.headers, 'Authorization': 'Bearer '+remoteState.dbCreds.JWT}})} ));
         setRemoteState(prevstate => ({...prevstate,connectionStatus: ConnectionStatus.attemptToSync}));
       }
     }, [db,remoteDB,remoteState.connectionStatus])
@@ -335,7 +336,7 @@ const RemoteDBLogin: React.FC = () => {
             <IonItem>
             <IonList>
                 <IonItem><IonLabel position="stacked">API Server URL</IonLabel>
-                <IonInput type="url" inputmode="url" value={remoteState.dbCreds.apiServerURL} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, dbCreds: {...prevstate.dbCreds,baseURL: String(e.detail.value)}}))}}>
+                <IonInput type="url" inputmode="url" value={remoteState.dbCreds.apiServerURL} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, dbCreds: {...prevstate.dbCreds,apiServerURL: String(e.detail.value)}}))}}>
                 </IonInput>
                 </IonItem>
                 <IonItem><IonLabel position="stacked">Database Name</IonLabel>
