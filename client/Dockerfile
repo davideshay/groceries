@@ -2,11 +2,11 @@ FROM node:alpine as builder
 
 WORKDIR /usr/app
 
-COPY package.json package-lock.json /usr/app/
+COPY client/package.json client/package-lock.json /usr/app/
 
 RUN NODE_ENV=production npm ci --include=dev
 
-COPY . ./
+COPY client/. ./
 
 RUN ls -lat
 
