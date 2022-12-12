@@ -8,4 +8,5 @@ export function isJsonString(str: string): boolean {
 }
 
 export const DEFAULT_DB_URL_PREFIX="https://couchdb.shaytech.net"
+export const DEFAULT_API_URL="https://groceries.shaytech.net/api"
 export const DEFAULT_DB_NAME="todos"

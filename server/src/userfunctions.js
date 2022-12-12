@@ -86,7 +86,9 @@ async function issueToken(req, res) {
         email: "",
         fullname: "",
         loginRoles: [],
-        loginJWT: ""
+        loginJWT: "",
+        couchdbUrl: process.env.COUCHDB_URL,
+        couchdbDatabase: process.env.COUCHDB_DATABASE
     }
     let loginResponse = await couchLogin(username,password);
     if (!loginResponse.loginSuccessful) return (response);
@@ -142,7 +144,9 @@ async function registerNewUser(req, res) {
         userAlreadyExists: true,
         createdSuccessfully: false,
         idCreated: "",
-        jwt: ""
+        jwt: "",
+        couchdbUrl: process.env.COUCHDB_URL,
+        couchdbDatabase: process.env.COUCHDB_DATABASE
     }
     const {username, password, email, fullname} = req.body;
 

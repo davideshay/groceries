@@ -36,9 +36,10 @@ export interface ItemRow {
   }
 
   export interface DBCreds {
-    baseURL: string | undefined,
+    apiServerURL: string | undefined,
+    couchBaseURL: string | undefined,
     database: string | undefined,
     dbUsername: string | undefined,
     email: string | undefined,
-    authCookie: string | undefined
+    JWT: string | undefined
   }
