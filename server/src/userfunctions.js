@@ -150,6 +150,9 @@ async function setDBSecurity() {
 }
 
 async function dbStartup() {
+    console.log("STATUS: Starting up auth server for couchdb...");
+    console.log("STATUS: Database URL: ",couchdbUrl);
+    console.log("STATUS: Using database: ",couchDatabase);
     await createDBIfNotExists();
     await setDBSecurity();
 }

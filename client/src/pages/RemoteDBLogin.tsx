@@ -1,5 +1,5 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
-  IonButtons, IonMenuButton, IonLabel, IonLoading, NavContext, IonText } from '@ionic/react';
+  IonButtons, IonMenuButton, IonLabel, IonLoading, NavContext, IonText, IonTextarea, IonItemDivider } from '@ionic/react';
 import { useState, useEffect, useContext } from 'react';
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import { usePouch, useFind } from 'use-pouchdb';
@@ -19,6 +19,7 @@ type RemoteState = {
   httpResponse: HttpResponse | undefined,
   showLoginForm: boolean,
   loginByPassword: boolean,
+  createNewUser: boolean,
   formError: string,
   formSubmitted: boolean,
   firstListID: string | null,
@@ -51,13 +52,14 @@ const RemoteDBLogin: React.FC = () => {
 
     const db=usePouch();
     const [remoteState,setRemoteState]=useState<RemoteState>({
-      dbCreds: {apiServerURL: undefined ,couchBaseURL: undefined, database: undefined, dbUsername: undefined, email: undefined, JWT: undefined},
+      dbCreds: {apiServerURL: undefined ,couchBaseURL: undefined, database: undefined, dbUsername: undefined, email: undefined, fullName: undefined, JWT: undefined},
       password: undefined,
       credsStatus: CredsStatus.needLoaded,
       connectionStatus: ConnectionStatus.cannotStart,
       httpResponse: undefined,
       showLoginForm: false,
       loginByPassword: false,
+      createNewUser: false,
       formSubmitted: false,
       formError: "",
       firstListID: null,
@@ -110,7 +112,7 @@ const RemoteDBLogin: React.FC = () => {
         setRemoteState(prevState => ({...prevState,formError: "No API server URL entered"}));
         return false;
       }
-      if ((!remoteState.loginByPassword) && (remoteState.dbCreds.couchBaseURL == undefined || remoteState.dbCreds.couchBaseURL == "")) {
+      if ((!remoteState.showLoginForm) && (remoteState.dbCreds.couchBaseURL == undefined || remoteState.dbCreds.couchBaseURL == "")) {
         setRemoteState(prevState => ({...prevState,formError: "No Base URL entered"}));
         return false;
       }
@@ -118,14 +120,14 @@ const RemoteDBLogin: React.FC = () => {
         setRemoteState(prevState => ({...prevState,formError: "Invalid API URL"}));
         return false;
       }
-      if ((!remoteState.loginByPassword) && (!urlPatternValidation(String(remoteState.dbCreds.couchBaseURL)))) {
+      if ((!remoteState.showLoginForm) && (!urlPatternValidation(String(remoteState.dbCreds.couchBaseURL)))) {
         setRemoteState(prevState => ({...prevState,formError: "Invalid DB URL"}));
         return false;
       }
       if (remoteState.dbCreds.apiServerURL.endsWith("/")) {
         setRemoteState(prevState => ({...prevState,dbCreds: {...prevState.dbCreds,apiServerURL: prevState.dbCreds.apiServerURL?.slice(0,-1)}}))
       }
-      if (remoteState.dbCreds.database == undefined || remoteState.dbCreds.database == "") {
+      if ((!remoteState.showLoginForm) && (remoteState.dbCreds.database == undefined || remoteState.dbCreds.database == "")) {
         setRemoteState(prevState => ({...prevState,formError: "No database entered"}));
         return false;
       }
@@ -133,15 +135,15 @@ const RemoteDBLogin: React.FC = () => {
         setRemoteState(prevState => ({...prevState,formError: "No database user name entered"}));
         return false;
       }
-      if (remoteState.dbCreds.email == undefined || remoteState.dbCreds.email == "") {
+      if ((remoteState.createNewUser) && (remoteState.dbCreds.email == undefined || remoteState.dbCreds.email == "")) {
         setRemoteState(prevState => ({...prevState,formError: "No email entered"}));
         return false;
       }
-      if (!emailPatternValidation(remoteState.dbCreds.email)) {
+      if ((remoteState.createNewUser) && (!emailPatternValidation(String(remoteState.dbCreds.email)))) {
         setRemoteState(prevState => ({...prevState,formError: "Invalid email format"}));
         return false;
       }
-      if (remoteState.password == undefined || remoteState.password == "") {
+      if ((remoteState.loginByPassword) && (remoteState.password == undefined || remoteState.password == "")) {
         setRemoteState(prevState => ({...prevState,formError: "No password entered"}));
         return false;
       }
@@ -191,7 +193,7 @@ const RemoteDBLogin: React.FC = () => {
         if ((remoteState.httpResponse?.status == 200) && (remoteState.httpResponse.data?.userCtx?.name != null)) {
           setRemoteState(prevState => ({...prevState, connectionStatus: ConnectionStatus.remoteDBNeedsAssigned}));
         } else {
-          setRemoteState(prevState => ({...prevState,connectionStatus: ConnectionStatus.JWTInvalid,showLoginForm: true, formError: "Invalid Authentication provided"}));
+          setRemoteState(prevState => ({...prevState,connectionStatus: ConnectionStatus.JWTInvalid,showLoginForm: true, loginByPassword: true,  formError: "Invalid Authentication provided"}));
         }
       }
     },[remoteState.connectionStatus])
@@ -245,7 +247,7 @@ const RemoteDBLogin: React.FC = () => {
           console.log("updated DB creds, about to set to remoteDBNeedsAssigned");
           setRemoteState(prevState => ({...prevState, connectionStatus: ConnectionStatus.remoteDBNeedsAssigned}));
         } else {
-          setRemoteState(prevState => ({...prevState,connectionStatus: ConnectionStatus.JWTInvalid,showLoginForm: true, formError: "Invalid Authentication provided"}));
+          setRemoteState(prevState => ({...prevState,connectionStatus: ConnectionStatus.JWTInvalid,showLoginForm: true, loginByPassword: true,  formError: "Invalid Authentication provided"}));
         }
       }
     },[remoteState.connectionStatus])
@@ -320,7 +322,7 @@ const RemoteDBLogin: React.FC = () => {
     
   const getPrefsDBCreds = async() => {
     let { value: credsStr } = await Preferences.get({ key: 'dbcreds'});
-    let credsObj: DBCreds = { apiServerURL: undefined ,couchBaseURL: undefined, database: undefined, dbUsername: undefined, email: undefined, JWT: undefined};
+    let credsObj: DBCreds = { apiServerURL: undefined ,couchBaseURL: undefined, database: undefined, dbUsername: undefined, email: undefined, fullName: undefined, JWT: undefined};
     if (isJsonString(String(credsStr))) {
       credsObj=JSON.parse(String(credsStr));
       setRemoteState(prevstate => ({...prevstate,dbCreds: credsObj, credsStatus: CredsStatus.loaded}))
@@ -332,7 +334,8 @@ const RemoteDBLogin: React.FC = () => {
             database: DEFAULT_DB_NAME,
             dbUsername:"",
             JWT:"",
-            email: ""
+            email: "",
+            fullName: ""
         }, credsStatus: CredsStatus.loaded}))
     }
   }
@@ -344,9 +347,25 @@ const RemoteDBLogin: React.FC = () => {
     if (errorCheckCreds() ) {
       setRemoteState(prevstate => ({...prevstate,formSubmitted: true, connectionStatus: ConnectionStatus.tryIssueToken}))
     } else {
-      setRemoteState(prevState => ({...prevState,showLoginForm: true, connectionStatus: ConnectionStatus.cannotStart}))
+      setRemoteState(prevState => ({...prevState,showLoginForm: true, loginByPassword: true,  connectionStatus: ConnectionStatus.cannotStart}))
     } 
-  } 
+  }
+  
+  function submitCreateForm() {
+    console.log("in create form");
+    setPrefsDBCreds();
+    console.log("error check creds...", errorCheckCreds());
+    if (errorCheckCreds()) {
+      console.log("Creds Checked out OK");
+      console.log("TODO Add call to register user endpoint");
+    } else {
+      setRemoteState(prevState => ({...prevState,showLoginForm: true, loginByPassword: false}));
+    }
+
+
+    setRemoteState(prevState => ({...prevState,loginByPassword: false}))
+  }
+  
 
   if (globalState.syncStatus === SyncStatus.active || globalState.syncStatus === SyncStatus.paused) {
     return (<></>)
@@ -356,50 +375,79 @@ const RemoteDBLogin: React.FC = () => {
     <IonPage><IonHeader><IonToolbar><IonTitle>Logging Into Remote...</IonTitle></IonToolbar></IonHeader></IonPage>
   )
   
+  let formElem;
+  if (remoteState.loginByPassword) {
+    formElem = <><IonItem><IonLabel position="stacked">API Server URL</IonLabel>
+    <IonInput type="url" inputmode="url" value={remoteState.dbCreds.apiServerURL} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, dbCreds: {...prevstate.dbCreds,apiServerURL: String(e.detail.value)}}))}}>
+    </IonInput>
+    </IonItem>
+    <IonItem><IonLabel position="stacked">Username</IonLabel>
+    <IonInput type="text" autocomplete="username" value={remoteState.dbCreds.dbUsername} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, dbCreds: {...prevstate.dbCreds,dbUsername: String(e.detail.value)}}))}}>
+    </IonInput>
+    </IonItem>
+    <IonItem><IonLabel position="stacked">Password</IonLabel>
+    <IonInput autocomplete="current-password" type="password" value={remoteState.password} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
+    </IonInput>
+    </IonItem>
+    </>
+  } else {
+    formElem = <>
+    <IonItem><IonLabel position="stacked">API Server URL</IonLabel>
+    <IonInput type="url" inputmode="url" value={remoteState.dbCreds.apiServerURL} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, dbCreds: {...prevstate.dbCreds,apiServerURL: String(e.detail.value)}}))}}>
+    </IonInput>
+    </IonItem>
+    <IonItem><IonLabel position="stacked">Username</IonLabel>
+    <IonInput type="text" autocomplete="username" value={remoteState.dbCreds.dbUsername} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, dbCreds: {...prevstate.dbCreds,dbUsername: String(e.detail.value)}}))}}>
+    </IonInput>
+    </IonItem>
+    <IonItem><IonLabel position="stacked">E-Mail address</IonLabel>
+    <IonInput type="email" autocomplete="email" value={remoteState.dbCreds.email} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, dbCreds: {...prevstate.dbCreds,email: String(e.detail.value)}}))}}>
+    </IonInput>
+    </IonItem>
+    <IonItem><IonLabel position="stacked">Full Name</IonLabel>
+    <IonInput type="text" value={remoteState.dbCreds.fullName} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, dbCreds: {...prevstate.dbCreds,fullName: String(e.detail.value)}}))}}>
+    </IonInput>
+    </IonItem>
+    <IonItem><IonLabel position="stacked">Password</IonLabel>
+    <IonInput autocomplete="current-password" type="password" value={remoteState.password} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
+    </IonInput>
+    </IonItem>
+    <IonItemDivider><IonItem>Retrieved Data to be Used for Login</IonItem></IonItemDivider>
+    <IonItem><IonLabel position="stacked">Database URL</IonLabel>
+    <IonTextarea  readonly={true} value={remoteState.dbCreds.couchBaseURL}></IonTextarea>
+    </IonItem>
+    <IonItem><IonLabel position="stacked">Database Name</IonLabel>
+    <IonTextarea readonly={true} value={remoteState.dbCreds.database}></IonTextarea>
+    </IonItem>
+    </>
+  }
+
+  let buttonsElem
+  if (remoteState.loginByPassword) {
+    buttonsElem=<>
+      <IonItem><IonButton onClick={() => submitForm()}>Login</IonButton></IonItem>
+      <IonItem><IonButton onClick={() => setRemoteState(prevState => ({...prevState,loginByPassword: false, createNewUser: true}))}>Create New User</IonButton></IonItem>
+    </>
+  } else {
+    buttonsElem=<>
+      <IonItem><IonButton onClick={() => submitCreateForm()}>Create</IonButton></IonItem>
+      <IonItem><IonButton onClick={() => setRemoteState(prevState => ({...prevState,loginByPassword: true, createNewUser: false}))}>Cancel</IonButton></IonItem>
+    </>
+  }
+
   return(
         <IonPage>
             <IonHeader><IonToolbar><IonButtons slot="start"><IonMenuButton /></IonButtons><IonTitle>
             Login Page
             </IonTitle></IonToolbar></IonHeader>
             <IonContent>
-            <IonItem>
             <IonList>
-                <IonItem><IonLabel position="stacked">API Server URL</IonLabel>
-                <IonInput type="url" inputmode="url" value={remoteState.dbCreds.apiServerURL} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, dbCreds: {...prevstate.dbCreds,apiServerURL: String(e.detail.value)}}))}}>
-                </IonInput>
-                </IonItem>
-                <IonItem><IonLabel position="stacked">Database Name</IonLabel>
-                <IonInput value={remoteState.dbCreds.database} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, dbCreds: {...prevstate.dbCreds,database: String(e.detail.value)}}))}}>
-                </IonInput>
-                </IonItem>
-                <IonItem><IonLabel position="stacked">Username</IonLabel>
-                <IonInput type="text" autocomplete="username" value={remoteState.dbCreds.dbUsername} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, dbCreds: {...prevstate.dbCreds,dbUsername: String(e.detail.value)}}))}}>
-                </IonInput>
-                </IonItem>
-                <IonItem><IonLabel position="stacked">E-Mail address</IonLabel>
-                <IonInput type="email" autocomplete="email" value={remoteState.dbCreds.email} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, dbCreds: {...prevstate.dbCreds,email: String(e.detail.value)}}))}}>
-                </IonInput>
-                </IonItem>
-                <IonItem><IonLabel position="stacked">Password</IonLabel>
-                <IonInput autocomplete="current-password" type="password" value={remoteState.password} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
-                </IonInput>
-                </IonItem>
-                <IonItem><IonLabel position="stacked">Database URL (retrieved)</IonLabel>
-                <IonInput type="url" disabled={true} value={remoteState.dbCreds.couchBaseURL}>
-                </IonInput>
-                </IonItem>
-                <IonItem><IonLabel position="stacked">Database Name (retrieved)</IonLabel>
-                <IonInput value={remoteState.dbCreds.database} >
-                </IonInput>
-                </IonItem>
-                <IonItem>
-                  <IonButton onClick={() => submitForm()}>Login</IonButton>
-                </IonItem>
+              {formElem}
+              {buttonsElem}
                 <IonItem>
                   <IonText>{remoteState.formError}</IonText>
                 </IonItem>
             </IonList>
-            </IonItem>
             </IonContent>
 
         </IonPage>

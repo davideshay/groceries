@@ -41,5 +41,6 @@ export interface ItemRow {
     database: string | undefined,
     dbUsername: string | undefined,
     email: string | undefined,
+    fullName: string | undefined,
     JWT: string | undefined
   }
