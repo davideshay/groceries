@@ -271,7 +271,7 @@ const RemoteDBLogin: React.FC = () => {
       if (remoteDB == null && (remoteState.connectionStatus === ConnectionStatus.remoteDBNeedsAssigned)) {
         console.log("about to set RemoteDB...");
         setRemoteDB(new PouchDB(remoteState.dbCreds.couchBaseURL+"/"+remoteState.dbCreds.database, 
-        { fetch: (url, opts) => fetch(url, { ...opts, credentials: 'include', headers: { ...opts?.headers, 'Authorization': 'Bearer '+remoteState.dbCreds.JWT}})} ));
+          { fetch: (url, opts) => fetch(url, { ...opts, credentials: 'include', headers: { ...opts?.headers, 'Authorization': 'Bearer '+remoteState.dbCreds.JWT}})} ));
         setRemoteState(prevstate => ({...prevstate,connectionStatus: ConnectionStatus.attemptToSync}));
       }
     }, [db,remoteDB,remoteState.connectionStatus])

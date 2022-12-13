@@ -1,9 +1,10 @@
-const couchdbUrl = process.env.COUCHDB_URL;
+const couchdbUrl = process.env.COUCHDB_URL.endsWith("/") ? process.env.COUCHDB_URL.slice(0,-1): process.env.COUCHDB_URL;
 const couchDatabase = process.env.COUCHDB_DATABASE;
 const couchKey = process.env.COUCHDB_HMAC_KEY;
 const couchAdminUser = process.env.COUCHDB_ADMIN_USER;
 const couchAdminPassword = process.env.COUCHDB_ADMIN_PASSWORD;
 const couchStandardRole = "crud";
+const couchAdminRole = "dbadmin";
 const jose = require('jose');
 const axios = require('axios');
 const e = require('express');
@@ -107,12 +108,24 @@ async function setDBSecurity() {
     catch(err) { console.log(err); errorSettingSecurity= true }
     if (errorSettingSecurity) return (!errorSettingSecurity);
     let newSecurity = _.cloneDeep(res.data);
-    let securityNeedsUpdated = true;
+    let securityNeedsUpdated = false;
     if ((getNested(res.data.members.roles.length) == 0) || (getNested(res.data.members.roles.length) == undefined)) {
-        newSecurity.members.roles = ["crud"];
+        newSecurity.members.roles = [couchStandardRole];
+        securityNeedsUpdated = true;
     } else {
-        if (res.data.members.roles.includes(couchStandardRole)) {securityNeedsUpdated = false;}
-        else {newSecurity.members.roles.push("crud");}
+        if (!res.data.members.roles.includes(couchStandardRole)) {
+            newSecurity.members.roles.push(couchStandardRole);
+            securityNeedsUpdated = true;
+        }
+    }
+    if ((getNested(res.data.admins.roles.length) == 0) || (getNested(res.data.admins.roles.length) == undefined)) {
+        newSecurity.admins.roles = [couchAdminRole];
+        securityNeedsUpdated = true;
+    } else {
+        if (!res.data.admins.roles.includes(couchAdminRole)) {
+            newSecurity.admins.roles.push(couchAdminRole);
+            securityNeedsUpdated = true;
+        }
     }
     if (!securityNeedsUpdated) {
         console.log("STATUS: Security roles set correctly");
@@ -166,7 +179,7 @@ async function getUserDoc(username) {
 async function generateJWT(username) {
     const alg = "HS256";
     const secret = new TextEncoder().encode(couchKey)
-    const jwt = await new jose.SignJWT({'sub': username, '_couchdb.roles': [couchStandardRole,"_admin"]})
+    const jwt = await new jose.SignJWT({'sub': username, '_couchdb.roles': [couchStandardRole,couchAdminRole,"_admin"]})
         .setProtectedHeader({ alg })
         .setIssuedAt()
         .setExpirationTime("5s")
@@ -225,7 +238,7 @@ async function createNewUser(userObj) {
             password: userObj.password,
             email: userObj.email,
             fullname: userObj.fullname,
-            roles: [],
+            roles: [couchStandardRole],
             type: "user"
         },
         responseType: 'json'
