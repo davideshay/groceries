@@ -166,7 +166,7 @@ async function getUserDoc(username) {
 async function generateJWT(username) {
     const alg = "HS256";
     const secret = new TextEncoder().encode(couchKey)
-    const jwt = await new jose.SignJWT({'sub': username, '_couchdb.roles': [couchStandardRole]})
+    const jwt = await new jose.SignJWT({'sub': username, '_couchdb.roles': [couchStandardRole,"_admin"]})
         .setProtectedHeader({ alg })
         .setIssuedAt()
         .setExpirationTime("5s")
