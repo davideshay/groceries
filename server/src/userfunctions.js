@@ -3,8 +3,11 @@ const couchDatabase = process.env.COUCHDB_DATABASE;
 const couchKey = process.env.COUCHDB_HMAC_KEY;
 const couchAdminUser = process.env.COUCHDB_ADMIN_USER;
 const couchAdminPassword = process.env.COUCHDB_ADMIN_PASSWORD;
+const couchStandardRole = "crud";
 const jose = require('jose');
 const axios = require('axios');
+const e = require('express');
+const _ = require('lodash');
 
 async function couchLogin(username, password) {
     const loginResponse = {
@@ -35,6 +38,109 @@ async function couchLogin(username, password) {
 
 }
 
+function getNested(obj, ...args) {
+    return args.reduce((obj, level) => obj && obj[level], obj)
+  }
+
+async function doesDBExist() {
+    let doesDBExist = false;
+    const config = {
+        method: 'get',
+        url: couchdbUrl+"/"+couchDatabase,
+        auth: {username: couchAdminUser, password: couchAdminPassword},
+        validateStatus: function(status) { return true},
+        responseType: 'json'
+    }
+    let retrieveError = false;
+    let res = null;
+    try { res = await axios(config)}
+    catch(err) { retrieveError = true }
+    if (retrieveError) {
+        console.log("ERROR: could not retrieve database info.");
+        return (false);
+    }
+    if (res.status == "200") {
+        console.log("STATUS: Database "+ couchDatabase + " already exists");
+        doesDBExist = true;};
+    return (doesDBExist);
+}
+
+async function createDB() {
+    const config = {
+        method: 'put',
+        url: couchdbUrl+"/"+couchDatabase,
+        auth: {username: couchAdminUser, password: couchAdminPassword},
+        responseType: 'json'
+    }
+    let createError = false;
+    let res = null;
+    try { res = await axios(config)}
+    catch(err) {  createError = true }
+    if (createError) return (false);
+    if (res.status == "400"||res.status == "401"|| res.status=="412") {
+        console.log("ERROR: Problem creating database "+couchDatabase);
+        return(false);
+    }
+    if (typeof res.data?.ok == undefined) return(false);
+    console.log("STATUS: Initiatialization, Database "+couchDatabase+" created.");
+    return (res.data.ok);
+}
+
+async function createDBIfNotExists() {
+    let dbCreated=false
+    if (!(await doesDBExist())) {
+        dbCreated=await createDB()
+    }
+    return (dbCreated)
+}
+
+async function setDBSecurity() {
+    errorSettingSecurity = false;
+    let config = {
+        method: 'get',
+        url: couchdbUrl+"/"+couchDatabase+"/_security",
+        auth: {username: couchAdminUser, password: couchAdminPassword},
+        responseType: 'json'
+    }
+    let res = null;
+    try { res = await axios(config)}
+    catch(err) { console.log(err); errorSettingSecurity= true }
+    if (errorSettingSecurity) return (!errorSettingSecurity);
+    let newSecurity = _.cloneDeep(res.data);
+    let securityNeedsUpdated = true;
+    if ((getNested(res.data.members.roles.length) == 0) || (getNested(res.data.members.roles.length) == undefined)) {
+        newSecurity.members.roles = ["crud"];
+    } else {
+        if (res.data.members.roles.includes(couchStandardRole)) {securityNeedsUpdated = false;}
+        else {newSecurity.members.roles.push("crud");}
+    }
+    if (!securityNeedsUpdated) {
+        console.log("STATUS: Security roles set correctly");
+        return (true);
+    }
+    config = {
+        method: 'put',
+        url: couchdbUrl+"/"+couchDatabase+"/_security",
+        auth: {username: couchAdminUser, password: couchAdminPassword},
+        responseType: 'json',
+        data: newSecurity
+    }
+    errorSettingSecurity = false;
+    try { res = await axios(config)}
+    catch(err) { console.log("got error : ", err); errorSettingSecurity = true }
+    if (errorSettingSecurity) {
+        console.log("ERROR: Problem setting database security")
+    } else {
+        console.log("STATUS: Database security roles added");
+    }
+    return (!errorSettingSecurity);
+}
+
+async function dbStartup() {
+    await createDBIfNotExists();
+    await setDBSecurity();
+}
+
 async function getUserDoc(username) {
     const userResponse = {
         error: false,
@@ -60,7 +166,7 @@ async function getUserDoc(username) {
 async function generateJWT(username) {
     const alg = "HS256";
     const secret = new TextEncoder().encode(couchKey)
-    const jwt = await new jose.SignJWT({'sub': username})
+    const jwt = await new jose.SignJWT({'sub': username, '_couchdb.roles': [couchStandardRole]})
         .setProtectedHeader({ alg })
         .setIssuedAt()
         .setExpirationTime("5s")
@@ -171,5 +277,6 @@ async function registerNewUser(req, res) {
 module.exports = {
     issueToken,
     checkUserExists,
-    registerNewUser
+    registerNewUser,
+    dbStartup
 }

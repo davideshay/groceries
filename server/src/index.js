@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
-const { issueToken, checkUserExists, registerNewUser } = require('./userfunctions');
+const { issueToken, checkUserExists, registerNewUser, dbStartup } = require('./userfunctions');
 
 app.use(cors());
 app.use(express.json());
@@ -13,5 +13,7 @@ app.post('/registernewuser', async (req, res) => res.send(await registerNewUser(
 //TODO refreshtoken
 //TODO separate getuserinfo ?
 //TODO setuserdata (including password)
+
+dbStartup();
 
 app.listen(process.env.COUCHDB_API_PORT);

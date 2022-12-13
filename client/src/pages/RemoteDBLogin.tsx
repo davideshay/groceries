@@ -98,6 +98,8 @@ const RemoteDBLogin: React.FC = () => {
     };
 
     function errorCheckCreds() {
+      console.log("Checking creds...", {remoteState});
+      setRemoteState(prevState => ({...prevState,formError:""}));
       if ((remoteState.dbCreds.JWT == undefined || remoteState.dbCreds.JWT == "") && (!remoteState.loginByPassword)) {
         setRemoteState(prevState => ({...prevState,formError: "No existing credentials found"}));
         return false;
@@ -106,12 +108,16 @@ const RemoteDBLogin: React.FC = () => {
         setRemoteState(prevState => ({...prevState,formError: "No API server URL entered"}));
         return false;
       }
-      if (remoteState.dbCreds.couchBaseURL == undefined || remoteState.dbCreds.couchBaseURL == "") {
+      if ((!remoteState.loginByPassword) && (remoteState.dbCreds.couchBaseURL == undefined || remoteState.dbCreds.couchBaseURL == "")) {
         setRemoteState(prevState => ({...prevState,formError: "No Base URL entered"}));
         return false;
       }
       if (!urlPatternValidation(remoteState.dbCreds.apiServerURL)) {
         setRemoteState(prevState => ({...prevState,formError: "Invalid API URL"}));
+        return false;
+      }
+      if ((!remoteState.loginByPassword) && (!urlPatternValidation(String(remoteState.dbCreds.couchBaseURL)))) {
+        setRemoteState(prevState => ({...prevState,formError: "Invalid DB URL"}));
         return false;
       }
       if (remoteState.dbCreds.apiServerURL.endsWith("/")) {
@@ -211,10 +217,11 @@ const RemoteDBLogin: React.FC = () => {
     function updateDBCredsFromResponse() {
       let newDBCreds=cloneDeep(remoteState.dbCreds);
       newDBCreds.couchBaseURL  = remoteState.httpResponse?.data.couchdbUrl;
-      newDBCreds.database= remoteState.httpResponse?.data.couchdbDatabase;
+      newDBCreds.database = remoteState.httpResponse?.data.couchdbDatabase;
       newDBCreds.email = remoteState.httpResponse?.data.email;
-      newDBCreds.JWT= remoteState.httpResponse?.data.JWT;
+      newDBCreds.JWT = remoteState.httpResponse?.data.loginJWT;
       let credsObj = JSON.stringify(newDBCreds);
+      console.log("in update DB CredsFromResponse, newcreds:",{newDBCreds});
       Preferences.set({key: 'dbcreds', value: credsObj})
       setRemoteState(prevState => ({...prevState, dbCreds: newDBCreds}))
     }
@@ -238,7 +245,7 @@ const RemoteDBLogin: React.FC = () => {
               setRemoteState(prevstate => ({...prevstate,showLoginForm: true, loginByPassword: true}));
             }
          else {
-            setRemoteState(prevstate => ({...prevstate,connectionStatus: ConnectionStatus.remoteDBNeedsAssigned}))
+            setRemoteState(prevstate => ({...prevstate,connectionStatus: ConnectionStatus.JWTNeedsChecking}))
          }   
       }
     },[remoteState.credsStatus])
@@ -353,6 +360,14 @@ const RemoteDBLogin: React.FC = () => {
                 </IonItem>
                 <IonItem><IonLabel position="stacked">Password</IonLabel>
                 <IonInput autocomplete="current-password" type="password" value={remoteState.password} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
+                </IonInput>
+                </IonItem>
+                <IonItem><IonLabel position="stacked">Database URL (retrieved)</IonLabel>
+                <IonInput type="url" disabled={true} value={remoteState.dbCreds.couchBaseURL}>
+                </IonInput>
+                </IonItem>
+                <IonItem><IonLabel position="stacked">Database Name (retrieved)</IonLabel>
+                <IonInput value={remoteState.dbCreds.database} >
                 </IonInput>
                 </IonItem>
                 <IonItem>
