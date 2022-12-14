@@ -84,9 +84,13 @@ const RemoteDBLogin: React.FC = () => {
 
     useEffect(() => {
       console.log("cs ",remoteState.connectionStatus);
-      if (!remoteState.gotListID && !listLoading && listDocs.length > 0) {
-        setRemoteState(prevstate => ({...remoteState,firstListID: listDocs[0]._id, gotListID: true}));
-      }
+      console.log({listDocs,listLoading,listError});
+      if (!remoteState.gotListID && !listLoading)
+        if (listDocs.length > 0) {
+          setRemoteState(prevstate => ({...remoteState,firstListID: listDocs[0]._id, gotListID: true}));
+        } else {
+          setRemoteState(prevstate => ({...remoteState,firstListID: "", gotListID: true}));
+        }
 
     },[listDocs, listLoading])
 
@@ -126,6 +130,9 @@ const RemoteDBLogin: React.FC = () => {
       }
       if (remoteState.dbCreds.apiServerURL.endsWith("/")) {
         setRemoteState(prevState => ({...prevState,dbCreds: {...prevState.dbCreds,apiServerURL: prevState.dbCreds.apiServerURL?.slice(0,-1)}}))
+      }
+      if (String(remoteState.dbCreds.couchBaseURL).endsWith("/")) {
+        setRemoteState(prevState => ({...prevState,dbCreds: {...prevState.dbCreds,couchBaseURL: prevState.dbCreds.couchBaseURL?.slice(0,-1)}}))
       }
       if ((!remoteState.showLoginForm) && (remoteState.dbCreds.database == undefined || remoteState.dbCreds.database == "")) {
         setRemoteState(prevState => ({...prevState,formError: "No database entered"}));
@@ -273,7 +280,9 @@ const RemoteDBLogin: React.FC = () => {
       if (remoteDB == null && (remoteState.connectionStatus === ConnectionStatus.remoteDBNeedsAssigned)) {
         console.log("about to set RemoteDB...");
         setRemoteDB(new PouchDB(remoteState.dbCreds.couchBaseURL+"/"+remoteState.dbCreds.database, 
-          { fetch: (url, opts) => fetch(url, { ...opts, credentials: 'include', headers: { ...opts?.headers, 'Authorization': 'Bearer '+remoteState.dbCreds.JWT}})} ));
+          { fetch: (url, opts) =>
+               fetch(url, { ...opts, credentials: 'include', headers:
+                { ...opts?.headers, 'Authorization': 'Bearer '+remoteState.dbCreds.JWT}})} ));
         setRemoteState(prevstate => ({...prevstate,connectionStatus: ConnectionStatus.attemptToSync}));
       }
     }, [db,remoteDB,remoteState.connectionStatus])
@@ -286,6 +295,8 @@ const RemoteDBLogin: React.FC = () => {
       // sync effect
       if (remoteDB !== undefined && (remoteState.connectionStatus === ConnectionStatus.attemptToSync)) {
         console.log("about to create sync link");
+        console.log("current creds:",remoteState.dbCreds);
+        setPrefsDBCreds();
         const sync = db.sync(remoteDB, {
           retry: true,
           live: true,
@@ -305,6 +316,7 @@ const RemoteDBLogin: React.FC = () => {
 
     useEffect(() => {
       console.log("cs ",remoteState.connectionStatus);
+      console.log("gotlistid ",remoteState.gotListID);
       if ((globalState.syncStatus === SyncStatus.active || globalState.syncStatus === SyncStatus.paused) && (remoteState.connectionStatus !== ConnectionStatus.loginComplete) && (remoteState.gotListID)) {
         setRemoteState(prevState => ({...prevState, connectionStatus: ConnectionStatus.loginComplete}))
         if (remoteState.firstListID == null) {
@@ -327,7 +339,7 @@ const RemoteDBLogin: React.FC = () => {
       credsObj=JSON.parse(String(credsStr));
       setRemoteState(prevstate => ({...prevstate,dbCreds: credsObj, credsStatus: CredsStatus.loaded}))
     }
-    if (credsObj == null || (credsObj as any).baseURL == undefined) {
+    if (credsObj == null || (credsObj as any).apiServerURL == undefined) {
         setRemoteState(prevstate => ({...prevstate, dbCreds: {
             apiServerURL: DEFAULT_API_URL,
             couchBaseURL: DEFAULT_DB_URL_PREFIX,
