@@ -273,8 +273,6 @@ async function registerNewUser(req, res) {
     }
     const {username, password, email, fullname} = req.body;
 
-    console.log({username, password, email, fullname});
-
     if (isNothing(username) || isNothing(password) || isNothing(email) || isNothing(fullname)) {
         registerResponse.invalidData = true;
         return (registerResponse);
