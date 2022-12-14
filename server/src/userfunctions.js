@@ -5,6 +5,7 @@ const couchAdminUser = process.env.COUCHDB_ADMIN_USER;
 const couchAdminPassword = process.env.COUCHDB_ADMIN_PASSWORD;
 const couchStandardRole = "crud";
 const couchAdminRole = "dbadmin";
+const couchUserPrefix = "org.couchdb.user";
 const jose = require('jose');
 const axios = require('axios');
 const e = require('express');
@@ -165,7 +166,7 @@ async function getUserDoc(username) {
     }
     const config = {
         method: 'get',
-        url: couchdbUrl+"/_users/"+ encodeURI("org.couchdb.user:"+username),
+        url: couchdbUrl+"/_users/"+ encodeURI(couchUserPrefix+":"+username),
         auth: {username: couchAdminUser, password: couchAdminPassword},
         responseType: 'json'
     }
@@ -234,7 +235,7 @@ async function createNewUser(userObj) {
     }
     const config = {
         method: 'put',
-        url: couchdbUrl+"/_users/"+ encodeURI("org.couchdb.user:"+userObj.username),
+        url: couchdbUrl+"/_users/"+ encodeURI(couchUserPrefix+":"+userObj.username),
         auth: {username: couchAdminUser, password: couchAdminPassword},
         data: {
             name: userObj.username,
@@ -263,7 +264,7 @@ function isNothing(obj) {
 async function registerNewUser(req, res) {
     const registerResponse = {
         invalidData: false,
-        userAlreadyExists: true,
+        userAlreadyExists: false,
         createdSuccessfully: false,
         idCreated: "",
         jwt: "",
@@ -272,14 +273,16 @@ async function registerNewUser(req, res) {
     }
     const {username, password, email, fullname} = req.body;
 
+    console.log({username, password, email, fullname});
+
     if (isNothing(username) || isNothing(password) || isNothing(email) || isNothing(fullname)) {
         registerResponse.invalidData = true;
         return (registerResponse);
     }
 
     let userDoc = await getUserDoc(username);
-    if (userDoc.error) {
-        registerResponse.userAlreadyExists = false;
+    if (!userDoc.error) {
+        registerResponse.userAlreadyExists = true;
     } 
     if (!registerResponse.userAlreadyExists)  {
         let createResponse = await createNewUser({username: username, password: password, email: email, fullname: fullname})

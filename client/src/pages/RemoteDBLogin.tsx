@@ -8,45 +8,8 @@ import { DBCreds } from '../components/DataTypes';
 import { Preferences } from '@capacitor/preferences';
 import { isJsonString, DEFAULT_DB_NAME, DEFAULT_DB_URL_PREFIX, DEFAULT_API_URL } from '../components/Utilities'; 
 import { GlobalStateContext, SyncStatus } from '../components/GlobalState';
+import { createNewUser, RemoteState, CredsStatus, ConnectionStatus } from '../components/RemoteUtilities';
 import { cloneDeep } from 'lodash';
-
-
-type RemoteState = {
-  dbCreds: DBCreds,
-  password: string | undefined,
-  credsStatus: CredsStatus,
-  connectionStatus: ConnectionStatus,
-  httpResponse: HttpResponse | undefined,
-  showLoginForm: boolean,
-  loginByPassword: boolean,
-  createNewUser: boolean,
-  formError: string,
-  formSubmitted: boolean,
-  firstListID: string | null,
-  gotListID: boolean
-}
-
-enum CredsStatus {
-  needLoaded = 0,
-  loading = 1,
-  loaded = 2
-}
-
-enum ConnectionStatus {
-  cannotStart = 0,
-  JWTNeedsChecking = 2,
-  checkingJWT = 3,
-  JWTResponseFound = 4,
-  JWTInvalid = 5,
-  JWTValid = 6,
-  tryIssueToken = 7,
-  checkingIssueToken = 8,
-  tokenResponseFound = 9,
-  remoteDBNeedsAssigned = 10,
-  remoteDBAssigned = 11,
-  attemptToSync = 12,
-  loginComplete = 13
-}
 
 const RemoteDBLogin: React.FC = () => {
 
@@ -108,7 +71,7 @@ const RemoteDBLogin: React.FC = () => {
     function errorCheckCreds() {
       console.log("Checking creds...", {remoteState});
       setRemoteState(prevState => ({...prevState,formError:""}));
-      if ((remoteState.dbCreds.JWT == undefined || remoteState.dbCreds.JWT == "") && (!remoteState.loginByPassword)) {
+      if ((remoteState.dbCreds.JWT == undefined || remoteState.dbCreds.JWT == "") && (!remoteState.showLoginForm)) {
         setRemoteState(prevState => ({...prevState,formError: "No existing credentials found"}));
         return false;
       }
@@ -316,6 +279,11 @@ const RemoteDBLogin: React.FC = () => {
     }, [db,remoteDB,remoteState.connectionStatus])
 
     useEffect(() => {
+      if (remoteState.connectionStatus == ConnectionStatus.startingCreateUser) {}
+    },[remoteState.connectionStatus]);
+
+
+    useEffect(() => {
       console.log("cs ",remoteState.connectionStatus);
       console.log("gotlistid ",remoteState.gotListID);
       if ((globalState.syncStatus === SyncStatus.active || globalState.syncStatus === SyncStatus.paused) && (remoteState.connectionStatus !== ConnectionStatus.loginComplete) && (remoteState.gotListID)) {
@@ -364,18 +332,31 @@ const RemoteDBLogin: React.FC = () => {
     } 
   }
   
-  function submitCreateForm() {
+  async function submitCreateForm() {
     console.log("in create form");
     setPrefsDBCreds();
     console.log("error check creds...", errorCheckCreds());
+    let createResponse: any;
     if (errorCheckCreds()) {
       console.log("Creds Checked out OK");
-      console.log("TODO Add call to register user endpoint");
+      createResponse = await createNewUser(remoteState);
+      console.log(createResponse);
+      if (createResponse.createdSuccessfully) {
+        setRemoteState(prevState => ({...prevState,
+          dbCreds: {...prevState.dbCreds, couchBaseURL: createResponse.couchdbUrl,
+                    database: createResponse.couchdbDatabase, JWT: createResponse.jwt}, 
+          connectionStatus: ConnectionStatus.remoteDBNeedsAssigned
+        }))
+      }
+      else {
+        let errorText="";
+        if (createResponse.invalidData) {errorText = "Invalid Data Entered";} 
+        else if (createResponse.userAlreadyExists) {errorText = "User Already Exists";}
+        setRemoteState(prevState => ({...prevState,showLoginForm: true, formError: errorText}))
+      }
     } else {
       setRemoteState(prevState => ({...prevState,showLoginForm: true, loginByPassword: false}));
     }
-
-
     setRemoteState(prevState => ({...prevState,loginByPassword: false}))
   }
   
@@ -402,6 +383,13 @@ const RemoteDBLogin: React.FC = () => {
     <IonInput autocomplete="current-password" type="password" value={remoteState.password} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
     </IonInput>
     </IonItem>
+    <IonItemDivider><IonItem>Retrieved Data to be Used for Login</IonItem></IonItemDivider>
+    <IonItem><IonLabel position="stacked">Database URL</IonLabel>
+    <IonTextarea  readonly={true} value={remoteState.dbCreds.couchBaseURL}></IonTextarea>
+    </IonItem>
+    <IonItem><IonLabel position="stacked">Database Name</IonLabel>
+    <IonTextarea readonly={true} value={remoteState.dbCreds.database}></IonTextarea>
+    </IonItem>
     </>
   } else {
     formElem = <>
@@ -425,26 +413,23 @@ const RemoteDBLogin: React.FC = () => {
     <IonInput autocomplete="current-password" type="password" value={remoteState.password} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
     </IonInput>
     </IonItem>
-    <IonItemDivider><IonItem>Retrieved Data to be Used for Login</IonItem></IonItemDivider>
-    <IonItem><IonLabel position="stacked">Database URL</IonLabel>
-    <IonTextarea  readonly={true} value={remoteState.dbCreds.couchBaseURL}></IonTextarea>
-    </IonItem>
-    <IonItem><IonLabel position="stacked">Database Name</IonLabel>
-    <IonTextarea readonly={true} value={remoteState.dbCreds.database}></IonTextarea>
-    </IonItem>
     </>
   }
 
   let buttonsElem
   if (remoteState.loginByPassword) {
     buttonsElem=<>
-      <IonItem><IonButton onClick={() => submitForm()}>Login</IonButton></IonItem>
-      <IonItem><IonButton onClick={() => setRemoteState(prevState => ({...prevState,loginByPassword: false, createNewUser: true}))}>Create New User</IonButton></IonItem>
+      <IonItem>
+      <IonButton slot="start" onClick={() => submitForm()}>Login</IonButton>
+      <IonButton slot="end" onClick={() => setRemoteState(prevState => ({...prevState,formError: "",  loginByPassword: false, createNewUser: true}))}>Create New User</IonButton>
+      </IonItem>
     </>
   } else {
     buttonsElem=<>
-      <IonItem><IonButton onClick={() => submitCreateForm()}>Create</IonButton></IonItem>
-      <IonItem><IonButton onClick={() => setRemoteState(prevState => ({...prevState,loginByPassword: true, createNewUser: false}))}>Cancel</IonButton></IonItem>
+      <IonItem>
+      <IonButton onClick={() => submitCreateForm()}>Create</IonButton>
+      <IonButton onClick={() => setRemoteState(prevState => ({...prevState,loginByPassword: true, createNewUser: false}))}>Cancel</IonButton>
+      </IonItem>
     </>
   }
 
