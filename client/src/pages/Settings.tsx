@@ -1,5 +1,5 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonLabel,
-        IonMenuButton, IonButtons } from '@ionic/react';
+        IonMenuButton, IonButtons, IonButton } from '@ionic/react';
 import './Settings.css';
 
 const Settings: React.FC = () => {
@@ -19,13 +19,7 @@ const Settings: React.FC = () => {
         </IonHeader>
         <IonList lines="full">
           <IonItem href="#">
-            <IonLabel>Server URL</IonLabel>
-          </IonItem>
-          <IonItem>
-            <IonLabel>Account / Login</IonLabel>
-          </IonItem>
-          <IonItem>
-            <IonLabel>Auto Sync Interval</IonLabel>
+            <IonButton>Stop Sync, Logout, and Remove Credentials</IonButton>
           </IonItem>
         </IonList>
       </IonContent>

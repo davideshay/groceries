@@ -31,7 +31,7 @@ const RemoteDBLogin: React.FC = () => {
     const [remoteDB, setRemoteDB]=useState<any>();
 
     const {navigate} = useContext(NavContext);
-    const { globalState, setStateInfo} = useContext(GlobalStateContext);
+    const { globalState, setGlobalState, setStateInfo} = useContext(GlobalStateContext);
 
     const { docs: listDocs, loading: listLoading, error: listError } = useFind({
       index: { fields: ["type","name"] },
@@ -288,6 +288,7 @@ const RemoteDBLogin: React.FC = () => {
       console.log("gotlistid ",{globalState,remoteState});
       if ((globalState.syncStatus === SyncStatus.active || globalState.syncStatus === SyncStatus.paused) && (remoteState.connectionStatus !== ConnectionStatus.loginComplete) && (remoteState.gotListID)) {
         setRemoteState(prevState => ({...prevState, connectionStatus: ConnectionStatus.loginComplete}))
+        setGlobalState({...globalState, dbCreds: remoteState.dbCreds});
         console.log("about to navigate", remoteState.firstListID);
         if (remoteState.firstListID == null) {
           navigate("/lists")

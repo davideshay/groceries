@@ -1,9 +1,12 @@
 import React, { createContext, useState} from "react";
+import { DBCreds } from "./DataTypes";
 
 export type GlobalState = {
     itemMode?: string,
     newItemName?: string,
-    callingListID?: string
+    callingListID?: string,
+    syncStatus?: SyncStatus,
+    dbCreds?: DBCreds,
 }
 
 export interface GlobalStateContextType {
@@ -21,11 +24,12 @@ export enum SyncStatus {
   }
   
 
-const initialState = {
+const initialState: GlobalState = {
     itemMode: "none",
     newItemName: undefined,
     callingListID: undefined,
-    syncStatus: SyncStatus.init
+    dbCreds: undefined,
+    syncStatus: SyncStatus.init,
 }
 
 const initialContext = {
