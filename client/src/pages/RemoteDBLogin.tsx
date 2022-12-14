@@ -9,7 +9,7 @@ import { Preferences } from '@capacitor/preferences';
 import { isJsonString, DEFAULT_DB_NAME, DEFAULT_DB_URL_PREFIX, DEFAULT_API_URL } from '../components/Utilities'; 
 import { GlobalStateContext, SyncStatus } from '../components/GlobalState';
 import { createNewUser, RemoteState, CredsStatus, ConnectionStatus } from '../components/RemoteUtilities';
-import { cloneDeep } from 'lodash';
+import { cloneDeep, pick } from 'lodash';
 
 const RemoteDBLogin: React.FC = () => {
 
@@ -47,12 +47,11 @@ const RemoteDBLogin: React.FC = () => {
 
     useEffect(() => {
       console.log("cs ",remoteState.connectionStatus);
-      console.log({listDocs,listLoading,listError});
       if (!remoteState.gotListID && !listLoading)
         if (listDocs.length > 0) {
           setRemoteState(prevstate => ({...remoteState,firstListID: listDocs[0]._id, gotListID: true}));
         } else {
-          setRemoteState(prevstate => ({...remoteState,firstListID: "", gotListID: true}));
+          setRemoteState(prevstate => ({...remoteState,firstListID: null, gotListID: true}));
         }
 
     },[listDocs, listLoading])
@@ -124,6 +123,7 @@ const RemoteDBLogin: React.FC = () => {
       console.log("cs ",remoteState.connectionStatus);
       if (remoteState.credsStatus === CredsStatus.loaded) {
         if ( errorCheckCreds() ) {
+          setPrefsDBCreds(); // update creds with filtered list now in dbcreds state
           setRemoteState(prevState => ({...prevState,connectionStatus: ConnectionStatus.checkingJWT}))
         } else {
           setRemoteState(prevState => ({...prevState,connectionStatus: ConnectionStatus.JWTInvalid, showLoginForm: true, loginByPassword: true}))
@@ -285,9 +285,10 @@ const RemoteDBLogin: React.FC = () => {
 
     useEffect(() => {
       console.log("cs ",remoteState.connectionStatus);
-      console.log("gotlistid ",remoteState.gotListID);
+      console.log("gotlistid ",{globalState,remoteState});
       if ((globalState.syncStatus === SyncStatus.active || globalState.syncStatus === SyncStatus.paused) && (remoteState.connectionStatus !== ConnectionStatus.loginComplete) && (remoteState.gotListID)) {
         setRemoteState(prevState => ({...prevState, connectionStatus: ConnectionStatus.loginComplete}))
+        console.log("about to navigate", remoteState.firstListID);
         if (remoteState.firstListID == null) {
           navigate("/lists")
         } else {
@@ -306,7 +307,8 @@ const RemoteDBLogin: React.FC = () => {
     let credsObj: DBCreds = { apiServerURL: undefined ,couchBaseURL: undefined, database: undefined, dbUsername: undefined, email: undefined, fullName: undefined, JWT: undefined};
     if (isJsonString(String(credsStr))) {
       credsObj=JSON.parse(String(credsStr));
-      setRemoteState(prevstate => ({...prevstate,dbCreds: credsObj, credsStatus: CredsStatus.loaded}))
+      let credsObjFiltered=pick(credsObj,['apiServerURL','couchBaseURL','database','dbUserName','email','fullName','JWT'])
+      setRemoteState(prevstate => ({...prevstate,dbCreds: credsObjFiltered, credsStatus: CredsStatus.loaded}))
     }
     if (credsObj == null || (credsObj as any).apiServerURL == undefined) {
         setRemoteState(prevstate => ({...prevstate, dbCreds: {
@@ -382,13 +384,6 @@ const RemoteDBLogin: React.FC = () => {
     <IonItem><IonLabel position="stacked">Password</IonLabel>
     <IonInput autocomplete="current-password" type="password" value={remoteState.password} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
     </IonInput>
-    </IonItem>
-    <IonItemDivider><IonItem>Retrieved Data to be Used for Login</IonItem></IonItemDivider>
-    <IonItem><IonLabel position="stacked">Database URL</IonLabel>
-    <IonTextarea  readonly={true} value={remoteState.dbCreds.couchBaseURL}></IonTextarea>
-    </IonItem>
-    <IonItem><IonLabel position="stacked">Database Name</IonLabel>
-    <IonTextarea readonly={true} value={remoteState.dbCreds.database}></IonTextarea>
     </IonItem>
     </>
   } else {

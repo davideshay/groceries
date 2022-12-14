@@ -95,9 +95,16 @@ const Items: React.FC = () => {
 
   function searchKeyPress(event: KeyboardEvent<HTMLElement>) {
     if (event.code === "Enter") {
+      console.log("Got a new item");
       addNewItemToList(searchState.searchCriteria)
     } 
   }
+
+  function clickedSearchCheck() {
+    console.log("clicked search check");
+    addNewItemToList(searchState.searchCriteria);
+  }
+
 
   function addExistingItemToList(itemID: string) {
     let existingItem: any = cloneDeep(allItemDocs.find((el: any) => el._id === itemID));
@@ -148,7 +155,7 @@ const Items: React.FC = () => {
         <IonItem key="searchbar">
           <IonSearchbar ref={searchRef} value={searchState.searchCriteria} onKeyPress= {(e: any) => searchKeyPress(e)} onIonChange={(e: any) => updateSearchCriteria(e)}>
           </IonSearchbar>
-          <IonButton><IonIcon icon={checkmark} /></IonButton>
+          <IonButton onClick={()=> clickedSearchCheck()}><IonIcon icon={checkmark} /></IonButton>
         </IonItem>
         {popOverElem}
     </IonTitle></IonToolbar></IonHeader>)
