@@ -23,6 +23,7 @@ const listItem = (listItem: string,link: string) => {
       {listItem("Create New List","/list/new/new")}
       {listHeader("Other Actions")}
       {listItem("Manage Categories","/categories")}
+      {listItem("Friends","/friends")}
       {listItem("Settings","/settings")}
     </IonContent>
   </IonMenu>

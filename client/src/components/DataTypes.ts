@@ -44,3 +44,10 @@ export interface ItemRow {
     fullName: string | undefined,
     JWT: string | undefined
   }
+
+  export enum FriendStatus {
+    PendingFrom1 = "PENDFROM1",
+    PendingFrom2 = "PENDFROM2",
+    Confirmed = "CONFIRMED",
+    Deleted = "DELETED"
+  }

@@ -67,7 +67,10 @@ const App: React.FC = () => {
           </Route>
           <Route path="/category/:mode/:id?" component={Category}>
           </Route>
-          <Route path="/settings">
+          <Route exact path="/settings">
+            <Settings />
+          </Route>
+          <Route exact path="/friends">
             <Settings />
           </Route>
           <Route exact path="/">

@@ -291,9 +291,46 @@ async function registerNewUser(req, res) {
     return (registerResponse);
 }
 
+async function getUsersInfo(req, res) {
+    // input - json list of userIDs : userIDs: ["username1","username2"] -- should be _users ids 
+    //        without the org.couchdb.user prefix
+    // return - json array of objects:
+    //        [ {userID: "username1", email: "username1@gmail.com", fullName: "User 1"},
+    //          {userID: "username2", email: "username2@yahoo.com", fullName: "User 2"}]
+
+    const getResponse = {
+        error: false,
+        users: [],
+    }
+//    console.log("req is:",{req});
+    if (isNothing(req.body?.userIDs)) {getResponse.error=true; return (getResponse)}
+    const requestData = { keys: [], include_docs: true }
+    req.body.userIDs.forEach(uid => { requestData.keys.push(couchUserPrefix+":"+uid) });
+    const config = {
+        method: 'post',
+        url: couchdbUrl+"/_users/_all_docs",
+        auth: {username: couchAdminUser, password: couchAdminPassword},
+        data: requestData,
+        responseType: 'json'
+    }
+    let userRes = null;
+    try { userRes = await axios(config)}
+    catch(err) { console.log(err); getResponse.error= true }
+    if (!getResponse.error) {
+        console.log(userRes.data.rows)
+        userRes.data.rows.forEach(el => {
+            getResponse.users.push({name: el.doc.name, email: el.doc.email, fullname: el.doc.fullname})
+        });
+    }
+    return(getResponse);
+}
+
+
+
 module.exports = {
     issueToken,
     checkUserExists,
     registerNewUser,
-    dbStartup
+    dbStartup,
+    getUsersInfo
 }

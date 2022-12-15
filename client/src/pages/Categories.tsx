@@ -7,13 +7,8 @@ import './Categories.css';
 const Categories: React.FC = () => {
 
   const { docs, loading, error } = useFind({
-  index: {
-    fields: ["type","name"]
-  },
-  selector: {
-    type: "category",
-    name: { $exists: true }
-  },
+  index: { fields: ["type","name"]},
+  selector: { type: "category", name: { $exists: true }},
   sort: [ "type", "name" ]
   })
 

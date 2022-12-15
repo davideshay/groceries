@@ -1,14 +1,43 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonLabel,
         IonMenuButton, IonButtons, IonButton, useIonAlert, NavContext} from '@ionic/react';
-import { useContext } from 'react';        
+import { useState, useEffect, useContext } from 'react';
+import { useDoc, useFind } from 'use-pouchdb';
+import { useCreateGenericDocument, useUpdateGenericDocument } from '../components/itemhooks';
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
 import './Settings.css';
 
+/* 
 
-const Settings: React.FC = (props) => {
+Friend document structure
+
+friendID1 : string -- _user.id of friend1 (lower ID #)
+friendID2 : string -- _user.id of friend2 (higher ID #)
+inviteEmail: string -- email address of friend request (friend that needs to register)
+friendStatus: string
+    PendingFrom1 - friend request from id1 to id2 (both in _users)
+    PendingFrom2 - friend request from id2 to id1 (both in _users)
+    WaitingToRegister - waiting on inviteEmail user to register
+    RegisteredNotConfirmed - email user has registered, not yet confirmed
+    Confirmed - friendship confirmed
+    Deleted - friendship deleted
+
+
+
+
+
+
+ */
+const Friends: React.FC = (props) => {
   const [presentAlert] = useIonAlert();
   const {navigate} = useContext(NavContext);
+
+  const { docs, loading, error } = useFind({
+    index: { fields: ["type","name"]},
+    selector: { type: "category", name: { $exists: true }},
+    sort: [ "type", "name" ]
+    })
+
 
   async function stopSync() {
     let credsStr=JSON.stringify({});
@@ -60,4 +89,4 @@ const Settings: React.FC = (props) => {
   );
 };
 
-export default Settings;
+export default Friends;
