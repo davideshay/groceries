@@ -202,6 +202,51 @@ async function checkUserExists(req, res) {
     return (response);
 }
 
+async function getUserByEmailDoc(email) {
+    const userResponse = {
+        error: false,
+        username: null,
+        fullname: null,
+        email: email,
+    }
+    const config = {
+        method: 'post',
+        url: couchdbUrl+"/_users/_find",
+        auth: {username: couchAdminUser, password: couchAdminPassword},
+        data: {selector: {"email": {"$eq": email}},
+                fields: ["name", "email", "fullname"]},
+        responseType: 'json'
+    }
+    let res = null;
+    try { res = await axios(config)}
+    catch(err) { userResponse.error= true }
+    if (!userResponse.error) {
+        userResponse.username = res.data?.docs[0].name;
+        userResponse.email = res.data?.docs[0].email;
+        userResponse.fullname = res.data?.docs[0].fullname;
+    }
+    return (userResponse);
+}
+
+async function checkUserByEmailExists(req, res) {
+    const { email} = req.body;
+    let response = {
+        username: null,
+        fullname: null,
+        email: null,
+        userExists: false
+    }
+    let userResponse = await getUserByEmailDoc(email);
+    if (userResponse.error) { response.userExists = false;}
+    else {
+        response.username = userResponse.username;
+        response.email = userResponse.email;
+        response.fullname = userResponse.fullname;
+    }
+    return (response);
+}
+
+
 async function issueToken(req, res) {
     const { username, password } = req.body;
     let response = {
@@ -325,11 +370,10 @@ async function getUsersInfo(req, res) {
     return(getResponse);
 }
 
-
-
 module.exports = {
     issueToken,
     checkUserExists,
+    checkUserByEmailExists,
     registerNewUser,
     dbStartup,
     getUsersInfo
