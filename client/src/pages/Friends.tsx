@@ -6,6 +6,9 @@ import { useCreateGenericDocument, useUpdateGenericDocument } from '../component
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
 import './Settings.css';
+import { GlobalStateContext } from '../components/GlobalState';
+import { compassSharp } from 'ionicons/icons';
+
 
 /* 
 
@@ -23,46 +26,61 @@ friendStatus: string
     Deleted - friendship deleted
 
 
-
-
+Critical API calls:
+  /checkuserbyemailexists -- input { email: "user1@gmail.com"}
+      return: { username: "user1", fullname: "User Name 1", email: "user1@gmail.com"}
+  /getusersinfo
+       input - json list of userIDs : userIDs: ["username1","username2"] -- should be _users ids 
+            without the org.couchdb.user prefix
+       return - json array of objects:
+            [ {userID: "username1", email: "username1@gmail.com", fullName: "User 1"},
+              {userID: "username2", email: "username2@yahoo.com", fullName: "User 2"}]
 
 
  */
 const Friends: React.FC = (props) => {
   const [presentAlert] = useIonAlert();
   const {navigate} = useContext(NavContext);
+  const { globalState, setGlobalState, setStateInfo} = useContext(GlobalStateContext);
+
+  const uname = (globalState.dbCreds as any).dbUsername;
+  
+  // const { docs, loading, error } = useFind({
+  //   index: { fields: ["type","friendID1","friendID2"]},
+  //   selector: { 
+  //     "$and": [
+  //       { "type": "friend"},
+  //       { "$or": [
+  //         { "friendID1" : uname },
+  //         { "friendID2" : uname }
+  //       ]}
+  //     ]      
+  //   },
+  //   sort: [ "type", "friendID1", "friendID2" ]
+  //   })
 
   const { docs, loading, error } = useFind({
-    index: { fields: ["type","name"]},
-    selector: { type: "category", name: { $exists: true }},
-    sort: [ "type", "name" ]
+    index: { fields: ["type","friendID1","friendID2"]},
+    selector: { "$and": [ {
+        "type": "friend",
+        "friendID1": { "$exists": true },
+        "friendID2": { "$exists" : true} }, 
+        { "$or" : [{"friendID1": uname},{"friendID2": uname}]}
+    ]  
+    },
+    sort: [ "type", "friendID1", "friendID2" ],
+    fields: [ "type", "friendID1", "friendID2", "friendStatus"]
     })
 
-
-  async function stopSync() {
-    let credsStr=JSON.stringify({});
-    await Preferences.set({key: 'dbcreds', value: credsStr})
-    App.exitApp()
-    navigate("/","back","replace");
-  }
-
-  function stopSyncPopup() {
-    presentAlert({
-      header: 'Warning',
-      subHeader: '',
-      message: 'Do you want to remove your saved credentials? This will cause the application to restart and allow you to sign in again if desired.',
-      buttons: [{
-        text: 'Remove',
-        role: 'confirm',
-        handler: () => {stopSync()}}
-        ,{
-        text:'Cancel',
-        role: 'cancel',
-        handler: () => {}}]
-
-    })
-
-  }
+  let friendsElem: any =[];
+  if (!loading) {
+    docs.forEach((element: any) => {
+      let friendEmail=(element.friendID1 == globalState.dbCreds?.dbUsername) ? element.friendID2 : element.friendID1
+      friendsElem.push(
+        <IonItem key={friendEmail}><IonLabel>{friendEmail}</IonLabel><IonLabel>{element.friendStatus}</IonLabel></IonItem>
+      )
+    });
+  } 
 
 
   return (
@@ -70,7 +88,7 @@ const Friends: React.FC = (props) => {
       <IonHeader>
         <IonToolbar>
         <IonButtons slot="start"><IonMenuButton /></IonButtons>
-          <IonTitle>Settings</IonTitle>
+          <IonTitle>Friends</IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>
@@ -80,9 +98,7 @@ const Friends: React.FC = (props) => {
           </IonToolbar>
         </IonHeader>
         <IonList lines="full">
-          <IonItem>
-            <IonButton onClick={() => stopSyncPopup()} key="stopitall">Stop Sync, Logout, and Remove Credentials</IonButton>
-          </IonItem>
+          {friendsElem}
         </IonList>
       </IonContent>
     </IonPage>

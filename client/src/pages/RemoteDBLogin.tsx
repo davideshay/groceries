@@ -308,7 +308,7 @@ const RemoteDBLogin: React.FC = () => {
     let credsObj: DBCreds = { apiServerURL: undefined ,couchBaseURL: undefined, database: undefined, dbUsername: undefined, email: undefined, fullName: undefined, JWT: undefined};
     if (isJsonString(String(credsStr))) {
       credsObj=JSON.parse(String(credsStr));
-      let credsObjFiltered=pick(credsObj,['apiServerURL','couchBaseURL','database','dbUserName','email','fullName','JWT'])
+      let credsObjFiltered=pick(credsObj,['apiServerURL','couchBaseURL','database','dbUsername','email','fullName','JWT'])
       setRemoteState(prevstate => ({...prevstate,dbCreds: credsObjFiltered, credsStatus: CredsStatus.loaded}))
     }
     if (credsObj == null || (credsObj as any).apiServerURL == undefined) {

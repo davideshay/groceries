@@ -12,6 +12,7 @@ import Item from './pages/Item';
 import Categories from './pages/Categories';
 import Category from './pages/Category';
 import Settings from './pages/Settings';
+import Friends from './pages/Friends';
 import RemoteDBLogin from './pages/RemoteDBLogin';
 import AppMenu from './components/AppMenu';
 import { GlobalStateProvider } from './components/GlobalState';
@@ -71,7 +72,7 @@ const App: React.FC = () => {
             <Settings />
           </Route>
           <Route exact path="/friends">
-            <Settings />
+            <Friends />
           </Route>
           <Route exact path="/">
             <Redirect to="/login" />
