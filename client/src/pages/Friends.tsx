@@ -1,14 +1,10 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonLabel,
         IonMenuButton, IonButtons, IonButton, useIonAlert, NavContext} from '@ionic/react';
 import { useState, useEffect, useContext } from 'react';
-import { useDoc, useFind } from 'use-pouchdb';
-import { useCreateGenericDocument, useFriends, useUpdateGenericDocument } from '../components/Usehooks';
-import { Preferences } from '@capacitor/preferences';
-import { App } from '@capacitor/app';
+import { useCreateGenericDocument, useFriends, useUpdateGenericDocument} from '../components/Usehooks';
 import './Settings.css';
 import { GlobalStateContext } from '../components/GlobalState';
-import { compassSharp } from 'ionicons/icons';
-import { FriendRow } from '../components/DataTypes';
+import { FriendRow, FriendStatus, ResolvedFriendStatus } from '../components/DataTypes';
 
 /* 
 
@@ -41,19 +37,48 @@ Critical API calls:
 const Friends: React.FC = (props) => {
   const [presentAlert] = useIonAlert();
   const {navigate} = useContext(NavContext);
-  const { globalState, setGlobalState, setStateInfo} = useContext(GlobalStateContext);
+  const { globalState} = useContext(GlobalStateContext);
   const uname = (globalState.dbCreds as any).dbUsername;
   const friendRows = useFriends(uname);
+  const updateDoc = useUpdateGenericDocument();
+  const [friendsElem,setFriendsElem] = useState<any[]>([]);
 
-  let friendsElem: any =[];
-  if (friendRows.length > 0) {
-    console.log(friendRows);
-    friendRows.forEach((friendRow: FriendRow) => {
-      friendsElem.push(
-        <IonItem key={friendRow.targetUserName}><IonLabel>{friendRow.targetUserName}</IonLabel><IonLabel>{friendRow.friendStatusCode}</IonLabel><IonLabel>{friendRow.targetEmail}</IonLabel><IonLabel>{friendRow.targetFullName}</IonLabel></IonItem>
-      )
-    });
-  } 
+  function confirmFriend(friendRow: FriendRow) {
+    let updatedDoc = {
+      _id : friendRow.friendRelID,
+      _rev : friendRow.friendRev,
+      type: "friend",
+      friendID1: friendRow.friendID1,
+      friendID2: friendRow.friendID2,
+      inviteEmail: null,
+      friendStatus: FriendStatus.Confirmed
+    } 
+    updateDoc(updatedDoc);
+  }
+
+  function statusItem(friendRow: FriendRow) {
+    if (friendRow.resolvedStatus == ResolvedFriendStatus.PendingConfirmation)
+    {
+      return (<IonButton onClick={() => confirmFriend(friendRow)}>Confirm Friend</IonButton>)
+    } else {
+      return (<IonLabel>{friendRow.friendStatusText}</IonLabel>)
+    }
+  }
+
+  function updateFriendsElem() {
+    if (friendRows.length > 0) {
+      console.log(friendRows);
+      friendRows.forEach((friendRow: FriendRow) => {
+        let elem: any =<IonItem key={friendRow.targetUserName}><IonLabel>{friendRow.targetUserName}</IonLabel>{statusItem(friendRow)}<IonLabel>{friendRow.targetEmail}</IonLabel><IonLabel>{friendRow.targetFullName}</IonLabel></IonItem>
+        setFriendsElem((prevState : any) => ([...prevState,elem]))
+      });
+    }
+  }
+   
+  useEffect( () => {
+    console.log("Friend Rows Changed: ",{friendRows});
+    updateFriendsElem();
+  },[friendRows])
 
   return (
     <IonPage>

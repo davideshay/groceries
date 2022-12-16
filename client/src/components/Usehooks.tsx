@@ -3,7 +3,7 @@ import { usePouch, useFind } from 'use-pouchdb'
 import { cloneDeep } from 'lodash';
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import { GlobalStateContext } from '../components/GlobalState';
-import { FriendStatus, FriendRow } from './DataTypes';
+import { FriendStatus, FriendRow, ResolvedFriendStatus } from './DataTypes';
 
 
 export function useUpdateGenericDocument() {
@@ -139,8 +139,8 @@ export function useFriends(username: string) {
     })
 
     useEffect( () => {
-      console.log({friendLoading,usersNeedLoading,friendDocs})
-      if (friendLoading || !usersNeedLoading ) { return };
+      console.log("UseEffect in usefriend executing:",{friendLoading,usersNeedLoading,friendDocs})
+      if (friendLoading) { return };
       let response: HttpResponse | undefined;
 
       let userIDList : { userIDs: string[]} = { userIDs: []};
@@ -151,7 +151,9 @@ export function useFriends(username: string) {
           else {userIDList.userIDs.push(element.friendID1)}
         }
       });
+      console.log("built the userID list:",{userIDList});
       const getUsers = async () => {
+        console.log("inside getUsers");
         const options = {
           url: String(globalState.dbCreds?.apiServerURL+"/getusersinfo"),
           data: userIDList,
@@ -162,33 +164,59 @@ export function useFriends(username: string) {
         console.log("about to execute httpget with options: ", {options})
         response = await CapacitorHttp.post(options);
         console.log("got httpget response: ",{response});
+        console.log("clearing friend rows");
+        setFriendRows(prevState => ([]));
         if (response && response.data) {
           friendDocs.forEach((friendDoc: any) => {
             console.log({friendDoc});
             let friendRow : any = {};
             friendRow.friendRelID = friendDoc._id;
+            friendRow.friendRev = friendDoc._rev;
             friendRow.friendID1 = friendDoc.friendID1;
             friendRow.friendID2 = friendDoc.friendID2;
             if (friendRow.friendID1 == globalState.dbCreds?.dbUsername)
               { friendRow.targetUserName = friendRow.friendID2}
-            else { friendRow.targetUserName = friendRow.friendID1}  
-            friendRow.targetEmail = friendDoc.inviteEmail;
+            else { friendRow.targetUserName = friendRow.friendID1}
+            console.log(friendRow.targetUserName);
             const user=response?.data.users.find((el: any) => el.name == friendRow.targetUserName)
             console.log({user});
-            friendRow.targetEmail = user.email;
+            if (friendDoc.friendStatus == FriendStatus.WaitingToRegister) {
+              friendRow.targetEmail = friendDoc.inviteEmail
+            } else {
+              friendRow.targetEmail = user.email;
+            }
             friendRow.targetFullName = user.fullname;
             friendRow.friendStatusCode = friendDoc.friendStatus;
-            friendRow.friendStatusText = "STATUS TEXT";
+            if (friendRow.friendStatusCode == FriendStatus.PendingFrom1 || friendRow.friendStatusCode == FriendStatus.PendingFrom2) {
+              if ((globalState.dbCreds?.dbUsername == friendRow.friendID1 && friendRow.friendStatusCode == FriendStatus.PendingFrom2) || 
+                  (globalState.dbCreds?.dbUsername == friendRow.friendID2 && friendRow.friendStatusCode == FriendStatus.PendingFrom1))
+              {
+                friendRow.friendStatusText = "Confirm?"
+                friendRow.resolvedStatus = ResolvedFriendStatus.PendingConfirmation;
+              } else {
+                friendRow.friendStatusText = "Requested";
+                friendRow.resolvedStatus = ResolvedFriendStatus.Requested;
+              }
+            } else if (friendRow.friendStatusCode == FriendStatus.Confirmed) {
+              friendRow.friendStatusText = "Confirmed";
+              friendRow.resolvedStatus = ResolvedFriendStatus.Confirmed;
+            } else if (friendRow.friendStatusCode == FriendStatus.WaitingToRegister) {
+              friendRow.friendStatusText = "Needs to Register";
+              friendRow.resolvedStatus = ResolvedFriendStatus.WaitingToRegister
+            }
+            console.log("adding friend row to array",{friendRow});
             setFriendRows(prevArray => [...prevArray, friendRow])
           })
           
         }
       }
-      if (usersNeedLoading && !friendLoading)  {
+      console.log("anything else happen?");
+      if ( !friendLoading)  {
+        console.log("got a change in usehook");
         getUsers();
         setUsersNeedLoading(false);
       }
-    },[friendLoading, usersNeedLoading]);
+    },[friendLoading,friendDocs, usersNeedLoading]);
 
     return(friendRows);
 

@@ -9,7 +9,7 @@ import { Preferences } from '@capacitor/preferences';
 import { isJsonString, DEFAULT_DB_NAME, DEFAULT_DB_URL_PREFIX, DEFAULT_API_URL } from '../components/Utilities'; 
 import { GlobalStateContext, SyncStatus } from '../components/GlobalState';
 import { createNewUser, RemoteState, CredsStatus, ConnectionStatus } from '../components/RemoteUtilities';
-import { cloneDeep, pick } from 'lodash';
+import { cloneDeep, pick, keys, isEqual } from 'lodash';
 
 const RemoteDBLogin: React.FC = () => {
 
@@ -306,12 +306,15 @@ const RemoteDBLogin: React.FC = () => {
   const getPrefsDBCreds = async() => {
     let { value: credsStr } = await Preferences.get({ key: 'dbcreds'});
     let credsObj: DBCreds = { apiServerURL: undefined ,couchBaseURL: undefined, database: undefined, dbUsername: undefined, email: undefined, fullName: undefined, JWT: undefined};
+    const credsOrigKeys = keys(credsObj);
     if (isJsonString(String(credsStr))) {
       credsObj=JSON.parse(String(credsStr));
       let credsObjFiltered=pick(credsObj,['apiServerURL','couchBaseURL','database','dbUsername','email','fullName','JWT'])
       setRemoteState(prevstate => ({...prevstate,dbCreds: credsObjFiltered, credsStatus: CredsStatus.loaded}))
     }
-    if (credsObj == null || (credsObj as any).apiServerURL == undefined) {
+    const credKeys = keys(credsObj);
+    console.log({credKeys,credsOrigKeys});
+    if (credsObj == null || (credsObj as any).apiServerURL == undefined || (!isEqual(credsOrigKeys.sort(),credKeys.sort()))) {
         setRemoteState(prevstate => ({...prevstate, dbCreds: {
             apiServerURL: DEFAULT_API_URL,
             couchBaseURL: DEFAULT_DB_URL_PREFIX,

@@ -49,18 +49,28 @@ export interface ItemRow {
     PendingFrom1 = "PENDFROM1",
     PendingFrom2 = "PENDFROM2",
     WaitingToRegister = "WAITREGISTER",
-    RegisteredNotConfirmed = "REFNOTCONF",
+    RegisteredNotConfirmed = "REFNOTCONF", // do we need this, or reverts to pendfrom1 I think!
+    Confirmed = "CONFIRMED",
+    Deleted = "DELETED"
+  }
+
+  export enum ResolvedFriendStatus {
+    PendingConfirmation = "PENDING",
+    Requested = "REQUESTED",
+    WaitingToRegister= "WAITREGISTER",
     Confirmed = "CONFIRMED",
     Deleted = "DELETED"
   }
 
   export type FriendRow = {
     friendRelID: string,
+    friendRev: string,
     friendID1: string,
     friendID2: string,
     targetUserName: string,
     targetEmail: string,
     targetFullName: string,
-    friendStatusCode: string,
+    friendStatusCode: FriendStatus,
+    resolvedStatus: ResolvedFriendStatus
     friendStatusText: string,
   }
