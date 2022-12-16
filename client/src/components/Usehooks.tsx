@@ -122,7 +122,7 @@ export function useUpdateItemInList() {
 
 export function useFriends(username: string) {
   const [friendRows,setFriendRows] = useState<FriendRow[]>([]);
-  const [usersNeedLoading, setUsersNeedLoading ] = useState(true);
+  const [usersLoading, setUsersLoading ] = useState(false);
   const { globalState, setGlobalState, setStateInfo} = useContext(GlobalStateContext);
 
   const { docs: friendDocs, loading: friendLoading, error: friendError } = useFind({
@@ -139,8 +139,9 @@ export function useFriends(username: string) {
     })
 
     useEffect( () => {
-      console.log("UseEffect in usefriend executing:",{friendLoading,usersNeedLoading,friendDocs})
-      if (friendLoading) { return };
+      console.log("UseEffect in usefriend executing:",{friendLoading,usersLoading,friendDocs})
+      if (friendLoading || usersLoading) { return };
+      setUsersLoading(true);
       let response: HttpResponse | undefined;
 
       let userIDList : { userIDs: string[]} = { userIDs: []};
@@ -214,10 +215,11 @@ export function useFriends(username: string) {
       if ( !friendLoading)  {
         console.log("got a change in usehook");
         getUsers();
-        setUsersNeedLoading(false);
+        setUsersLoading(false);
       }
-    },[friendLoading,friendDocs, usersNeedLoading]);
+    },[friendLoading,friendDocs, usersLoading]);
 
+    if (friendLoading || usersLoading) { return([])}
     return(friendRows);
 
 }
