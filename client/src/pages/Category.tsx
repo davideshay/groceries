@@ -3,7 +3,7 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonLis
 import { RouteComponentProps,useParams } from 'react-router-dom';
 import { useDoc } from 'use-pouchdb';
 import { useState, useEffect, useContext } from 'react';
-import { useUpdateCategory,useCreateCategory } from '../components/itemhooks';
+import { useUpdateCategory,useCreateCategory } from '../components/Usehooks';
 import { cloneDeep } from 'lodash';
 import './Category.css';
 

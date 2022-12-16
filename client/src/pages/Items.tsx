@@ -7,7 +7,7 @@ import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
 import { cloneDeep } from 'lodash';
 import './Items.css';
-import { useUpdateCompleted, useUpdateGenericDocument } from '../components/itemhooks';
+import { useUpdateCompleted, useUpdateGenericDocument } from '../components/Usehooks';
 import { GlobalStateContext } from '../components/GlobalState';
 import {ItemRow, ItemSearch, SearchState, PageState} from '../components/DataTypes'
 import { getAllSearchRows, getItemRows, filterSearchRows } from '../components/ItemUtilities';

@@ -48,6 +48,19 @@ export interface ItemRow {
   export enum FriendStatus {
     PendingFrom1 = "PENDFROM1",
     PendingFrom2 = "PENDFROM2",
+    WaitingToRegister = "WAITREGISTER",
+    RegisteredNotConfirmed = "REFNOTCONF",
     Confirmed = "CONFIRMED",
     Deleted = "DELETED"
+  }
+
+  export type FriendRow = {
+    friendRelID: string,
+    friendID1: string,
+    friendID2: string,
+    targetUserName: string,
+    targetEmail: string,
+    targetFullName: string,
+    friendStatusCode: string,
+    friendStatusText: string,
   }

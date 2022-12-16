@@ -2,13 +2,13 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
         IonMenuButton, IonButtons, IonButton, useIonAlert, NavContext} from '@ionic/react';
 import { useState, useEffect, useContext } from 'react';
 import { useDoc, useFind } from 'use-pouchdb';
-import { useCreateGenericDocument, useUpdateGenericDocument } from '../components/itemhooks';
+import { useCreateGenericDocument, useFriends, useUpdateGenericDocument } from '../components/Usehooks';
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
 import './Settings.css';
 import { GlobalStateContext } from '../components/GlobalState';
 import { compassSharp } from 'ionicons/icons';
-
+import { FriendRow } from '../components/DataTypes';
 
 /* 
 
@@ -42,46 +42,18 @@ const Friends: React.FC = (props) => {
   const [presentAlert] = useIonAlert();
   const {navigate} = useContext(NavContext);
   const { globalState, setGlobalState, setStateInfo} = useContext(GlobalStateContext);
-
   const uname = (globalState.dbCreds as any).dbUsername;
-  
-  // const { docs, loading, error } = useFind({
-  //   index: { fields: ["type","friendID1","friendID2"]},
-  //   selector: { 
-  //     "$and": [
-  //       { "type": "friend"},
-  //       { "$or": [
-  //         { "friendID1" : uname },
-  //         { "friendID2" : uname }
-  //       ]}
-  //     ]      
-  //   },
-  //   sort: [ "type", "friendID1", "friendID2" ]
-  //   })
-
-  const { docs, loading, error } = useFind({
-    index: { fields: ["type","friendID1","friendID2"]},
-    selector: { "$and": [ {
-        "type": "friend",
-        "friendID1": { "$exists": true },
-        "friendID2": { "$exists" : true} }, 
-        { "$or" : [{"friendID1": uname},{"friendID2": uname}]}
-    ]  
-    },
-    sort: [ "type", "friendID1", "friendID2" ],
-    fields: [ "type", "friendID1", "friendID2", "friendStatus"]
-    })
+  const friendRows = useFriends(uname);
 
   let friendsElem: any =[];
-  if (!loading) {
-    docs.forEach((element: any) => {
-      let friendEmail=(element.friendID1 == globalState.dbCreds?.dbUsername) ? element.friendID2 : element.friendID1
+  if (friendRows.length > 0) {
+    console.log(friendRows);
+    friendRows.forEach((friendRow: FriendRow) => {
       friendsElem.push(
-        <IonItem key={friendEmail}><IonLabel>{friendEmail}</IonLabel><IonLabel>{element.friendStatus}</IonLabel></IonItem>
+        <IonItem key={friendRow.targetUserName}><IonLabel>{friendRow.targetUserName}</IonLabel><IonLabel>{friendRow.friendStatusCode}</IonLabel><IonLabel>{friendRow.targetEmail}</IonLabel><IonLabel>{friendRow.targetFullName}</IonLabel></IonItem>
       )
     });
   } 
-
 
   return (
     <IonPage>
