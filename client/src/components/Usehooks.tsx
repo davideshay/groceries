@@ -122,8 +122,7 @@ export function useUpdateItemInList() {
 
 export function useFriends(username: string) {
   const [friendRows,setFriendRows] = useState<FriendRow[]>([]);
-  const [usersLoading, setUsersLoading ] = useState(false);
-  const { globalState, setGlobalState, setStateInfo} = useContext(GlobalStateContext);
+  const { globalState} = useContext(GlobalStateContext);
 
   const { docs: friendDocs, loading: friendLoading, error: friendError } = useFind({
     index: { fields: ["type","friendID1","friendID2"]},
@@ -138,10 +137,11 @@ export function useFriends(username: string) {
 //    fields: [ "type", "friendID1", "friendID2", "friendStatus"]
     })
 
+  let friendRowsLoading = false;
+
     useEffect( () => {
-      console.log("UseEffect in usefriend executing:",{friendLoading,usersLoading,friendDocs})
-      if (friendLoading || usersLoading) { return };
-      setUsersLoading(true);
+      console.log("UseEffect in usefriend executing:",{friendLoading,friendRowsLoading,friendDocs})
+      if (friendLoading || friendRowsLoading) { return };
       let response: HttpResponse | undefined;
 
       let userIDList : { userIDs: string[]} = { userIDs: []};
@@ -179,8 +179,8 @@ export function useFriends(username: string) {
               { friendRow.targetUserName = friendRow.friendID2}
             else { friendRow.targetUserName = friendRow.friendID1}
             console.log(friendRow.targetUserName);
-            const user=response?.data.users.find((el: any) => el.name == friendRow.targetUserName)
-            console.log({user});
+            let user=response?.data?.users?.find((el: any) => el?.name == friendRow.targetUserName)
+            if (user == undefined) {user = {email:"",fullname:""}};
             if (friendDoc.friendStatus == FriendStatus.WaitingToRegister) {
               friendRow.targetEmail = friendDoc.inviteEmail
             } else {
@@ -212,14 +212,15 @@ export function useFriends(username: string) {
         }
       }
       console.log("anything else happen?");
-      if ( !friendLoading)  {
+      if ( !friendLoading && !friendRowsLoading)  {
         console.log("got a change in usehook");
+        friendRowsLoading = true;
         getUsers();
-        setUsersLoading(false);
+        friendRowsLoading = false;
       }
-    },[friendLoading,friendDocs, usersLoading]);
+    },[friendLoading,friendDocs]);
 
-    if (friendLoading || usersLoading) { return([])}
+    if (friendLoading || friendRowsLoading) { return([])}
     return(friendRows);
 
 }

@@ -67,6 +67,7 @@ const Friends: React.FC = (props) => {
 
   function updateFriendsElem() {
     if (friendRows.length > 0) {
+      setFriendsElem(prevState => ([]));
       console.log(friendRows);
       friendRows.forEach((friendRow: FriendRow) => {
         let elem: any =<IonItem key={friendRow.targetUserName}><IonLabel>{friendRow.targetUserName}</IonLabel>{statusItem(friendRow)}<IonLabel>{friendRow.targetEmail}</IonLabel><IonLabel>{friendRow.targetFullName}</IonLabel></IonItem>

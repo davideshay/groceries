@@ -364,7 +364,7 @@ async function getUsersInfo(req, res) {
     if (!getResponse.error) {
         console.log(userRes.data.rows)
         userRes.data.rows.forEach(el => {
-            getResponse.users.push({name: el.doc.name, email: el.doc.email, fullname: el.doc.fullname})
+            getResponse.users.push({name: el?.doc?.name, email: el?.doc?.email, fullname: el?.doc?.fullname})
         });
     }
     return(getResponse);
