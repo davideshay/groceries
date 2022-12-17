@@ -4,7 +4,7 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonLis
 import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext } from 'react';
-import { useUpdateGenericDocument, useCreateGenericDocument } from '../components/Usehooks';
+import { useUpdateGenericDocument, useCreateGenericDocument, useFriends } from '../components/Usehooks';
 import { cloneDeep, isEmpty, isEqual } from 'lodash';
 import './List.css';
 import { GlobalStateContext } from '../components/GlobalState';
@@ -29,6 +29,7 @@ const List: React.FC = () => {
   const updateListWhole  = useUpdateGenericDocument();
   const createList = useCreateGenericDocument();
   const { globalState } = useContext(GlobalStateContext);
+  const {friendsLoading,friendRowsLoading,friendRows} = useFriends(String(globalState.dbCreds?.dbUsername));
 
   const { docs: listDocs, loading: listLoading, error: listError} = useFind({
     index: { fields: ["type","name"] },
@@ -39,11 +40,6 @@ const List: React.FC = () => {
                  {"sharedWith": { $elemMatch: {$eq: globalState.dbCreds?.dbUsername}}}]
       }             
     ] },
-    sort: [ "type","name"]
-  });
-  const { docs: userDocs, loading: userLoading, error: userError} = useFind({
-    index: { fields: ["type","name"] },
-    selector: { type: "user", name: { $exists: true} },
     sort: [ "type","name"]
   });
   const { docs: categoryDocs, loading: categoryLoading, error: categoryError } = useFind({
@@ -63,7 +59,7 @@ const List: React.FC = () => {
 
   useEffect( () => {
     let newPageState=cloneDeep(pageState);
-    if (!listLoading && !userLoading && !categoryLoading) {
+    if (!listLoading && !friendRowsLoading && !friendsLoading && !categoryLoading) {
       if (mode === "new" && pageState.needInitListDoc) {
         let initCategories=categoryDocs.map(cat => cat._id);
         let initListDoc = {
@@ -83,9 +79,9 @@ const List: React.FC = () => {
       newPageState.changesMade=false;
       setPageState(newPageState);
     }
-  },[listLoading,listDocs,userLoading,userDocs,categoryLoading,categoryDocs,pageState.selectedListID]);
+  },[listLoading,listDocs,friendsLoading, friendRowsLoading, friendRows, categoryLoading,categoryDocs,pageState.selectedListID]);
 
-  if (listLoading || userLoading || categoryLoading || isEmpty(pageState.listDoc))  {return(
+  if (listLoading || friendRowsLoading || friendsLoading || categoryLoading || isEmpty(pageState.listDoc))  {return(
       <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
   )};
   
@@ -165,11 +161,22 @@ const List: React.FC = () => {
   }
 
   let usersElem=[];
+  let ownerText="";
+  let iAmListOwner=false;
+  if (pageState.listDoc.listOwner == globalState.dbCreds?.dbUsername) {
+    ownerText = "You are the list owner";
+    iAmListOwner=true;
+  } else {
+    let ownerRow=friendRows.find(el => (el.targetUserName == pageState.listDoc.listOwner));
+    ownerText = ownerRow?.targetFullName + " is the list owner";
+  }
+
+  usersElem.push(<IonItemDivider key="listuserdivider">{ownerText}</IonItemDivider>)
   usersElem.push(<IonItemDivider key="listdivider">List is shared with these users:</IonItemDivider>)
-  for (let i = 0; i < userDocs.length; i++) {
-    const userID=userDocs[i]._id;
-    const userName=(userDocs[i] as any).name;
-    const userEmail=(userDocs[i] as any).email;
+  for (let i = 0; i < friendRows.length; i++) {
+    const userID=friendRows[i].targetUserName;
+    const userName=friendRows[i].targetFullName;
+    const userEmail=friendRows[i].targetEmail;
     const userFound=pageState.listDoc.sharedWith.find((element: string) => (element === userID));
     usersElem.push(
       <IonItem key={pageState.selectedListID+"-"+userID}>
@@ -283,6 +290,9 @@ const List: React.FC = () => {
               <IonInput type="text" placeholder="<New>" onIonChange={(e: any) => updateName(e.detail.value)} value={(pageState.listDoc as any).name}></IonInput>
             </IonItem>
             <IonItemGroup key="userlist">
+            <IonItem key="listowner">
+              <IonLabel>{}</IonLabel>
+            </IonItem>
             {usersElem}
             </IonItemGroup>
             <IonItemGroup key="categorylist">

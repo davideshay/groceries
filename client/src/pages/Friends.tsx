@@ -39,7 +39,7 @@ const Friends: React.FC = (props) => {
   const {navigate} = useContext(NavContext);
   const { globalState} = useContext(GlobalStateContext);
   const uname = (globalState.dbCreds as any).dbUsername;
-  const friendRows = useFriends(uname);
+  const {friendsLoading,friendRows} = useFriends(uname);
   const updateDoc = useUpdateGenericDocument();
   const [friendsElem,setFriendsElem] = useState<any[]>([]);
 

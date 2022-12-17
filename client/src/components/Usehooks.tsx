@@ -96,11 +96,11 @@ export function useUpdateItemInList() {
   )
 }
 
-export function useFriends(username: string) {
+export function useFriends(username: string) : {friendsLoading: boolean, friendRowsLoading: boolean, friendRows: FriendRow[]} {
   const [friendRows,setFriendRows] = useState<FriendRow[]>([]);
   const { globalState} = useContext(GlobalStateContext);
 
-  const { docs: friendDocs, loading: friendLoading, error: friendError } = useFind({
+  const { docs: friendDocs, loading: friendsLoading, error: friendsError } = useFind({
     index: { fields: ["type","friendID1","friendID2"]},
     selector: { "$and": [ {
         "type": "friend",
@@ -116,8 +116,8 @@ export function useFriends(username: string) {
   let friendRowsLoading = false;
 
     useEffect( () => {
-      console.log("UseEffect in usefriend executing:",{friendLoading,friendRowsLoading,friendDocs})
-      if (friendLoading || friendRowsLoading) { return };
+      console.log("UseEffect in usefriend executing:",{friendsLoading,friendRowsLoading,friendDocs})
+      if (friendsLoading || friendRowsLoading) { return };
       let response: HttpResponse | undefined;
 
       let userIDList : { userIDs: string[]} = { userIDs: []};
@@ -188,15 +188,15 @@ export function useFriends(username: string) {
         }
       }
       console.log("anything else happen?");
-      if ( !friendLoading && !friendRowsLoading)  {
+      if ( !friendsLoading && !friendRowsLoading)  {
         console.log("got a change in usehook");
         friendRowsLoading = true;
         getUsers();
         friendRowsLoading = false;
       }
-    },[friendLoading,friendDocs]);
+    },[friendsLoading,friendDocs]);
 
-    if (friendLoading || friendRowsLoading) { return([])}
-    return(friendRows);
+    if (friendsLoading || friendRowsLoading) { return({friendsLoading: false,friendRowsLoading: false,friendRows: []})}
+    return({friendsLoading, friendRowsLoading,friendRows});
 
 }
