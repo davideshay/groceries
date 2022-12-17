@@ -15,7 +15,7 @@ const RemoteDBLogin: React.FC = () => {
 
     const db=usePouch();
     const [remoteState,setRemoteState]=useState<RemoteState>({
-      dbCreds: {apiServerURL: undefined ,couchBaseURL: undefined, database: undefined, dbUsername: undefined, email: undefined, fullName: undefined, JWT: undefined},
+      dbCreds: {apiServerURL: null ,couchBaseURL: null, database: null, dbUsername: null, email: null, fullName: null, JWT: null},
       password: undefined,
       credsStatus: CredsStatus.needLoaded,
       connectionStatus: ConnectionStatus.cannotStart,
@@ -33,11 +33,20 @@ const RemoteDBLogin: React.FC = () => {
     const {navigate} = useContext(NavContext);
     const { globalState, setGlobalState, setStateInfo} = useContext(GlobalStateContext);
 
-    const { docs: listDocs, loading: listLoading, error: listError } = useFind({
-      index: { fields: ["type","name"] },
-      selector: { type: "list", name: { $exists: true }},
-      sort: [ "type", "name" ]})
+    console.log(globalState.dbCreds?.dbUsername);
 
+    const { docs: listDocs, loading: listLoading, error: listError} = useFind({
+      index: { fields: ["type","name"] },
+      selector: { "$and": [ 
+        {  "type": "list",
+            "name": { "$exists": true } },
+        { "$or" : [{"listOwner": globalState.dbCreds?.dbUsername},
+                    {"sharedWith": { $elemMatch: {$eq: globalState.dbCreds?.dbUsername}}}]
+        }             
+      ] },
+      sort: [ "type","name"]
+    });
+    
     useEffect(() => {
       console.log("cs ",remoteState.connectionStatus);
       if (remoteState.credsStatus === CredsStatus.needLoaded) {
@@ -46,9 +55,10 @@ const RemoteDBLogin: React.FC = () => {
     },[remoteState.credsStatus])
 
     useEffect(() => {
-      console.log("cs ",remoteState.connectionStatus);
+      console.log("cs ",remoteState.connectionStatus,"listDocs,loading:",{listDocs,listLoading,remoteState});
       if (!remoteState.gotListID && !listLoading)
         if (listDocs.length > 0) {
+          console.log("len > 0",listDocs[0]._id);
           setRemoteState(prevstate => ({...remoteState,firstListID: listDocs[0]._id, gotListID: true}));
         } else {
           setRemoteState(prevstate => ({...remoteState,firstListID: null, gotListID: true}));
@@ -70,15 +80,15 @@ const RemoteDBLogin: React.FC = () => {
     function errorCheckCreds() {
       console.log("Checking creds...", {remoteState});
       setRemoteState(prevState => ({...prevState,formError:""}));
-      if ((remoteState.dbCreds.JWT == undefined || remoteState.dbCreds.JWT == "") && (!remoteState.showLoginForm)) {
+      if ((remoteState.dbCreds.JWT == null || remoteState.dbCreds.JWT == "") && (!remoteState.showLoginForm)) {
         setRemoteState(prevState => ({...prevState,formError: "No existing credentials found"}));
         return false;
       }
-      if (remoteState.dbCreds.apiServerURL == undefined || remoteState.dbCreds.apiServerURL == "") {
+      if (remoteState.dbCreds.apiServerURL == null || remoteState.dbCreds.apiServerURL == "") {
         setRemoteState(prevState => ({...prevState,formError: "No API server URL entered"}));
         return false;
       }
-      if ((!remoteState.showLoginForm) && (remoteState.dbCreds.couchBaseURL == undefined || remoteState.dbCreds.couchBaseURL == "")) {
+      if ((!remoteState.showLoginForm) && (remoteState.dbCreds.couchBaseURL == null || remoteState.dbCreds.couchBaseURL == "")) {
         setRemoteState(prevState => ({...prevState,formError: "No Base URL entered"}));
         return false;
       }
@@ -91,20 +101,20 @@ const RemoteDBLogin: React.FC = () => {
         return false;
       }
       if (remoteState.dbCreds.apiServerURL.endsWith("/")) {
-        setRemoteState(prevState => ({...prevState,dbCreds: {...prevState.dbCreds,apiServerURL: prevState.dbCreds.apiServerURL?.slice(0,-1)}}))
+        setRemoteState(prevState => ({...prevState,dbCreds: {...prevState.dbCreds,apiServerURL: String(prevState.dbCreds.apiServerURL?.slice(0,-1))}}))
       }
       if (String(remoteState.dbCreds.couchBaseURL).endsWith("/")) {
-        setRemoteState(prevState => ({...prevState,dbCreds: {...prevState.dbCreds,couchBaseURL: prevState.dbCreds.couchBaseURL?.slice(0,-1)}}))
+        setRemoteState(prevState => ({...prevState,dbCreds: {...prevState.dbCreds,couchBaseURL: String(prevState.dbCreds.couchBaseURL?.slice(0,-1))}}))
       }
-      if ((!remoteState.showLoginForm) && (remoteState.dbCreds.database == undefined || remoteState.dbCreds.database == "")) {
+      if ((!remoteState.showLoginForm) && (remoteState.dbCreds.database == null || remoteState.dbCreds.database == "")) {
         setRemoteState(prevState => ({...prevState,formError: "No database entered"}));
         return false;
       }
-      if (remoteState.dbCreds.dbUsername == undefined || remoteState.dbCreds.dbUsername == "") {
+      if (remoteState.dbCreds.dbUsername == null || remoteState.dbCreds.dbUsername == "") {
         setRemoteState(prevState => ({...prevState,formError: "No database user name entered"}));
         return false;
       }
-      if ((remoteState.createNewUser) && (remoteState.dbCreds.email == undefined || remoteState.dbCreds.email == "")) {
+      if ((remoteState.createNewUser) && (remoteState.dbCreds.email == null || remoteState.dbCreds.email == "")) {
         setRemoteState(prevState => ({...prevState,formError: "No email entered"}));
         return false;
       }
@@ -305,7 +315,7 @@ const RemoteDBLogin: React.FC = () => {
     
   const getPrefsDBCreds = async() => {
     let { value: credsStr } = await Preferences.get({ key: 'dbcreds'});
-    let credsObj: DBCreds = { apiServerURL: undefined ,couchBaseURL: undefined, database: undefined, dbUsername: undefined, email: undefined, fullName: undefined, JWT: undefined};
+    let credsObj: DBCreds = { apiServerURL: null ,couchBaseURL: null, database: null, dbUsername: null, email: null, fullName: null, JWT: null};
     const credsOrigKeys = keys(credsObj);
     if (isJsonString(String(credsStr))) {
       credsObj=JSON.parse(String(credsStr));

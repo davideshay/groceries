@@ -36,13 +36,18 @@ export interface ItemRow {
   }
 
   export interface DBCreds {
-    apiServerURL: string | undefined,
-    couchBaseURL: string | undefined,
-    database: string | undefined,
-    dbUsername: string | undefined,
-    email: string | undefined,
-    fullName: string | undefined,
-    JWT: string | undefined
+    apiServerURL: string | null,
+    couchBaseURL: string | null,
+    database: string | null,
+    dbUsername: string | null,
+    email: string | null,
+    fullName: string | null,
+    JWT: string | null
+  }
+
+  export const DBCredsInit: DBCreds = {
+    apiServerURL: null, couchBaseURL: null, database: null,
+    dbUsername: null, email: null, fullName: null, JWT: null
   }
 
   export enum FriendStatus {

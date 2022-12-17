@@ -1,5 +1,5 @@
 import React, { createContext, useState} from "react";
-import { DBCreds } from "./DataTypes";
+import { DBCreds,DBCredsInit } from "./DataTypes";
 
 export type GlobalState = {
     itemMode?: string,
@@ -28,7 +28,7 @@ const initialState: GlobalState = {
     itemMode: "none",
     newItemName: undefined,
     callingListID: undefined,
-    dbCreds: undefined,
+    dbCreds: DBCredsInit,
     syncStatus: SyncStatus.init,
 }
 

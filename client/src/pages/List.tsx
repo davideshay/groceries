@@ -4,9 +4,10 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonLis
 import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext } from 'react';
-import { useUpdateListWhole, useCreateList } from '../components/Usehooks';
+import { useUpdateGenericDocument, useCreateGenericDocument } from '../components/Usehooks';
 import { cloneDeep, isEmpty, isEqual } from 'lodash';
 import './List.css';
+import { GlobalStateContext } from '../components/GlobalState';
 
 interface PageState {
   needInitListDoc: boolean,
@@ -25,12 +26,19 @@ const List: React.FC = () => {
     selectedListID: routeID,
     changesMade: false
   })
-  const updateListWhole  = useUpdateListWhole();
-  const createList = useCreateList();
+  const updateListWhole  = useUpdateGenericDocument();
+  const createList = useCreateGenericDocument();
+  const { globalState } = useContext(GlobalStateContext);
 
   const { docs: listDocs, loading: listLoading, error: listError} = useFind({
     index: { fields: ["type","name"] },
-    selector: { type: "list", name: { $exists: true} },
+    selector: { "$and": [ 
+      {  "type": "list",
+         "name": { "$exists": true } },
+      { "$or" : [{"listOwner": globalState.dbCreds?.dbUsername},
+                 {"sharedWith": { $elemMatch: {$eq: globalState.dbCreds?.dbUsername}}}]
+      }             
+    ] },
     sort: [ "type","name"]
   });
   const { docs: userDocs, loading: userLoading, error: userError} = useFind({
@@ -61,6 +69,7 @@ const List: React.FC = () => {
         let initListDoc = {
           type: "list",
           name: "",
+          listOwner: globalState.dbCreds?.dbUsername,
           sharedWith: [],
           categories: initCategories
         }
