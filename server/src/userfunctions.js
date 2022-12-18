@@ -218,10 +218,16 @@ async function getUserByEmailDoc(email) {
         responseType: 'json'
     }
     let res = null;
+    console.log("doing axios with config: ",config, " for email ",email);
     try { res = await axios(config)}
     catch(err) { console.log(err); userResponse.error= true }
+    if (!userResponse.error && res.status == 200 && res.data.docs.length == 0) {
+        userResponse.error = true;
+    }
+    console.log("response data is ",res.data);
+    console.log("status : ", res.status, " data len ",res.data.docs.length);
     if (!userResponse.error) {
-        if (res.statusCode == 200 && res.data.docs.length > 0) {
+        if (res.status == 200 && res.data.docs.length > 0) {
             userResponse.username = res.data?.docs[0].name;
             userResponse.email = res.data?.docs[0].email;
             userResponse.fullname = res.data?.docs[0].fullname;
@@ -236,7 +242,7 @@ async function checkUserByEmailExists(req, res) {
         username: null,
         fullname: null,
         email: null,
-        userExists: false
+        userExists: true
     }
     let userResponse = await getUserByEmailDoc(email);
     if (userResponse.error) { response.userExists = false;}
