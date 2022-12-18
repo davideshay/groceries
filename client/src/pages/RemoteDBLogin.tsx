@@ -6,7 +6,7 @@ import { usePouch, useFind } from 'use-pouchdb';
 import PouchDB from 'pouchdb';
 import { DBCreds } from '../components/DataTypes';
 import { Preferences } from '@capacitor/preferences';
-import { isJsonString, DEFAULT_DB_NAME, DEFAULT_DB_URL_PREFIX, DEFAULT_API_URL } from '../components/Utilities'; 
+import { isJsonString, urlPatternValidation, emailPatternValidation,DEFAULT_DB_NAME, DEFAULT_DB_URL_PREFIX, DEFAULT_API_URL } from '../components/Utilities'; 
 import { GlobalStateContext, SyncStatus } from '../components/GlobalState';
 import { createNewUser, RemoteState, CredsStatus, ConnectionStatus } from '../components/RemoteUtilities';
 import { cloneDeep, pick, keys, isEqual } from 'lodash';
@@ -65,17 +65,6 @@ const RemoteDBLogin: React.FC = () => {
         }
 
     },[listDocs, listLoading])
-
-    function urlPatternValidation(url: string) {
-      const regex = new RegExp('https?:\/\/(?:w{1,3}\.)?[^\s.]+(?:\.[a-z]+)*(?::\d+)?(?![^<]*(?:<\/\w+>|\/?>))')
-//      const regex = new RegExp('(https?://)?([\\da-z.-]+)\\.([a-z.]{2,6})[/\\w .-]*/?');    
-      return regex.test(url);
-    };
-
-    function emailPatternValidation(email: string) {
-      const emailRegex=/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-      return emailRegex.test(email);
-    };
 
     function errorCheckCreds() {
       console.log("Checking creds...", {remoteState});

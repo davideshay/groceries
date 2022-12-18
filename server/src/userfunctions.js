@@ -219,11 +219,13 @@ async function getUserByEmailDoc(email) {
     }
     let res = null;
     try { res = await axios(config)}
-    catch(err) { userResponse.error= true }
+    catch(err) { console.log(err); userResponse.error= true }
     if (!userResponse.error) {
-        userResponse.username = res.data?.docs[0].name;
-        userResponse.email = res.data?.docs[0].email;
-        userResponse.fullname = res.data?.docs[0].fullname;
+        if (res.statusCode == 200 && res.data.docs.length > 0) {
+            userResponse.username = res.data?.docs[0].name;
+            userResponse.email = res.data?.docs[0].email;
+            userResponse.fullname = res.data?.docs[0].fullname;
+        }
     }
     return (userResponse);
 }
