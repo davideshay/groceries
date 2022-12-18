@@ -147,13 +147,10 @@ export function useFriends(username: string) : {friendsLoading: boolean, friendR
           friendDocs.forEach((friendDoc: any) => {
             console.log({friendDoc});
             let friendRow : any = {};
-            friendRow.friendRelID = friendDoc._id;
-            friendRow.friendRev = friendDoc._rev;
-            friendRow.friendID1 = friendDoc.friendID1;
-            friendRow.friendID2 = friendDoc.friendID2;
-            if (friendRow.friendID1 == globalState.dbCreds?.dbUsername)
-              { friendRow.targetUserName = friendRow.friendID2}
-            else { friendRow.targetUserName = friendRow.friendID1}
+            friendRow.friendDoc=cloneDeep(friendDoc);
+            if (friendRow.friendDoc.friendID1 == globalState.dbCreds?.dbUsername)
+              { friendRow.targetUserName = friendRow.friendDoc.friendID2}
+            else { friendRow.targetUserName = friendRow.friendDoc.friendID1}
             console.log(friendRow.targetUserName);
             let user=response?.data?.users?.find((el: any) => el?.name == friendRow.targetUserName)
             if (user == undefined) {user = {email:"",fullname:""}};
@@ -163,10 +160,9 @@ export function useFriends(username: string) : {friendsLoading: boolean, friendR
               friendRow.targetEmail = user.email;
             }
             friendRow.targetFullName = user.fullname;
-            friendRow.friendStatusCode = friendDoc.friendStatus;
-            if (friendRow.friendStatusCode == FriendStatus.PendingFrom1 || friendRow.friendStatusCode == FriendStatus.PendingFrom2) {
-              if ((globalState.dbCreds?.dbUsername == friendRow.friendID1 && friendRow.friendStatusCode == FriendStatus.PendingFrom2) || 
-                  (globalState.dbCreds?.dbUsername == friendRow.friendID2 && friendRow.friendStatusCode == FriendStatus.PendingFrom1))
+            if (friendDoc.friendStatus == FriendStatus.PendingFrom1 || friendDoc.friendStatus == FriendStatus.PendingFrom2) {
+              if ((globalState.dbCreds?.dbUsername == friendDoc.friendID1 && friendDoc.friendStatus == FriendStatus.PendingFrom2) || 
+                  (globalState.dbCreds?.dbUsername == friendDoc.friendID2 && friendDoc.friendStatus == FriendStatus.PendingFrom1))
               {
                 friendRow.friendStatusText = "Confirm?"
                 friendRow.resolvedStatus = ResolvedFriendStatus.PendingConfirmation;
@@ -174,10 +170,10 @@ export function useFriends(username: string) : {friendsLoading: boolean, friendR
                 friendRow.friendStatusText = "Requested";
                 friendRow.resolvedStatus = ResolvedFriendStatus.Requested;
               }
-            } else if (friendRow.friendStatusCode == FriendStatus.Confirmed) {
+            } else if (friendDoc.friendStatus == FriendStatus.Confirmed) {
               friendRow.friendStatusText = "Confirmed";
               friendRow.resolvedStatus = ResolvedFriendStatus.Confirmed;
-            } else if (friendRow.friendStatusCode == FriendStatus.WaitingToRegister) {
+            } else if (friendDoc.friendStatus == FriendStatus.WaitingToRegister) {
               friendRow.friendStatusText = "Needs to Register";
               friendRow.resolvedStatus = ResolvedFriendStatus.WaitingToRegister
             }

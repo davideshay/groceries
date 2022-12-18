@@ -5,6 +5,7 @@
   "dependencies": {
     "@capacitor/android": "4.5.0",
     "@capacitor/app": "4.1.1",
+    "@capacitor/clipboard": "^4.1.0",
     "@capacitor/core": "^4.6.1",
     "@capacitor/haptics": "4.1.0",
     "@capacitor/keyboard": "4.1.0",
@@ -34,6 +35,7 @@
     "react-router-dom": "^5.2.0",
     "react-scripts": "^5.0.0",
     "typescript": "^4.1.3",
+    "uuid": "^9.0.0",
     "web-vitals": "^0.2.4",
     "workbox-background-sync": "^5.1.4",
     "workbox-broadcast-update": "^5.1.4",
@@ -75,6 +77,7 @@
   "devDependencies": {
     "@capacitor/cli": "4.5.0",
     "@types/lodash": "^4.14.190",
+    "@types/uuid": "^9.0.0",
     "pouchdb-browser": "^7.3.1",
     "pouchdb-find": "^7.3.1",
     "use-pouchdb": "^1.4.0"

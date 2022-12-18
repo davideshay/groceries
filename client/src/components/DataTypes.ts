@@ -68,14 +68,10 @@ export interface ItemRow {
   }
 
   export type FriendRow = {
-    friendRelID: string,
-    friendRev: string,
-    friendID1: string,
-    friendID2: string,
+    friendDoc: any,
     targetUserName: string,
     targetEmail: string,
     targetFullName: string,
-    friendStatusCode: FriendStatus,
     resolvedStatus: ResolvedFriendStatus
     friendStatusText: string,
   }

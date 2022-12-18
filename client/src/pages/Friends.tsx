@@ -1,8 +1,10 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonLabel,
         IonMenuButton, IonButtons, IonButton, useIonAlert, NavContext,
-        IonFab, IonFabButton, IonIcon, IonInput } from '@ionic/react';
+        IonFab, IonFabButton, IonIcon, IonInput, IonAlert } from '@ionic/react';
 import { useState, useEffect, useContext, Fragment } from 'react';
-import { CapacitorHttp, HttpResponse } from '@capacitor/core';
+import { Clipboard } from '@capacitor/clipboard';
+import { v4 as uuidv4 } from 'uuid';
+import { cloneDeep } from 'lodash';
 import { useCreateGenericDocument, useFriends, useUpdateGenericDocument} from '../components/Usehooks';
 import { add } from 'ionicons/icons';
 import './Friends.css';
@@ -45,6 +47,10 @@ interface PageState {
   newFriendName: string,
   inAddMode: boolean,
   formError: string,
+  showNewUserAlert: boolean,
+  newUserAlertSubheader: string,
+  showRegistrationURL: boolean,
+  registrationAlertSubheader: string
 }  
               
 const Friends: React.FC = (props) => {
@@ -52,24 +58,23 @@ const Friends: React.FC = (props) => {
   const uname = (globalState.dbCreds as any).dbUsername;
   const {friendsLoading,friendRows} = useFriends(uname);
   const updateDoc = useUpdateGenericDocument();
+  const createDoc = useCreateGenericDocument();
   const [friendsElem,setFriendsElem] = useState<any[]>([]);
   const [pageState,setPageState] = useState<PageState>({
     newFriendEmail: "",
     newFriendName: "",
     inAddMode: false,
-    formError: ""
-  })
+    formError: "",
+    showNewUserAlert: false,
+    newUserAlertSubheader: "",
+    showRegistrationURL: false,
+    registrationAlertSubheader: ""
+  });
+  const [presentAlert,hideAlert] = useIonAlert();
 
   function confirmFriend(friendRow: FriendRow) {
-    let updatedDoc = {
-      _id : friendRow.friendRelID,
-      _rev : friendRow.friendRev,
-      type: "friend",
-      friendID1: friendRow.friendID1,
-      friendID2: friendRow.friendID2,
-      inviteEmail: null,
-      friendStatus: FriendStatus.Confirmed
-    } 
+    let updatedDoc = cloneDeep(friendRow.friendDoc);
+    updatedDoc.friendStatus = FriendStatus.Confirmed;
     updateDoc(updatedDoc);
   }
 
@@ -87,7 +92,8 @@ const Friends: React.FC = (props) => {
       setFriendsElem(prevState => ([]));
       console.log(friendRows);
       friendRows.forEach((friendRow: FriendRow) => {
-        let elem: any =<IonItem key={friendRow.targetUserName}><IonLabel>{friendRow.targetUserName}</IonLabel>{statusItem(friendRow)}<IonLabel>{friendRow.targetEmail}</IonLabel><IonLabel>{friendRow.targetFullName}</IonLabel></IonItem>
+        const itemKey = (friendRow.targetUserName == "" || friendRow.targetUserName == null) ? friendRow.targetEmail : friendRow.targetUserName;
+        let elem: any =<IonItem key={itemKey}><IonLabel>{friendRow.targetUserName}</IonLabel>{statusItem(friendRow)}<IonLabel>{friendRow.targetEmail}</IonLabel><IonLabel>{friendRow.targetFullName}</IonLabel></IonItem>
         setFriendsElem((prevState : any) => ([...prevState,elem]))
       });
     }
@@ -104,6 +110,28 @@ const Friends: React.FC = (props) => {
 
   function addNewFriend() {
     setPageState(prevState => ({...prevState,inAddMode: true, formError: "", newFriendEmail:"", newFriendName: ""}))
+  }
+
+  function sendFriendRequest() {
+    hideAlert();
+    const invuid=uuidv4();
+    const newFriendDoc = {
+      type: "friend",
+      friendID1: globalState.dbCreds?.dbUsername,
+      friendID2: null,
+      inviteEmail: pageState.newFriendEmail,
+      inviteUUID: invuid,
+      friendStatus: FriendStatus.WaitingToRegister
+    }
+    console.log(newFriendDoc);
+    let result=createDoc(newFriendDoc);
+    console.log(result);
+    let confURL = globalState.dbCreds?.apiServerURL + "/createaccountui&uuid=&"+invuid;
+    Clipboard.write({string: confURL});
+    setPageState(prevState => ({...prevState,formError: "", inAddMode: false, newFriendEmail: "",
+            showRegistrationURL: true,
+            registrationAlertSubheader: "An email has been sent to "+pageState.newFriendEmail+" to confirm and create their account. The URL is here: " + confURL+ " . This has also been copied to the clipboard."}))
+    console.log("about to present new alert");
   }
 
   async function submitForm() {
@@ -129,35 +157,22 @@ const Friends: React.FC = (props) => {
         friend2 = String(globalState.dbCreds?.dbUsername);
       }
       const newFriendDoc = {
+        type: "friend",
         friendID1: friend1,
         friendID2: friend2,
         inviteEmail: "",
+        inviteUUID: "",
         friendStatus: pendfrom1 ? FriendStatus.PendingFrom1 : FriendStatus.PendingFrom2
       }
+      console.log(newFriendDoc);
+      createDoc(newFriendDoc);
+      setPageState(prevState => ({...prevState,formError: "",inAddMode: false, newFriendEmail: ""}))
+      return
     }
-
-
-
-
-
-
-    // check if email exists by user... if so, just add to friend list as unconfirmed and proceed
-    // if not, present alert asking if want to send registration
+    // user does not exist in _users, prompt to register
+    setPageState(prevState => ({...prevState,showNewUserAlert: true ,newUserAlertSubheader: "There is no user with email "+pageState.newFriendEmail+" currently registered. Do you want to ask them to register?"}))
 
   }
-
-/*   <IonItem key="addfriendemail"><IonLabel key="labelfriendemail" position="stacked">E-Mail address for friend to add</IonLabel>
-  <IonInput key="inputfriendemail" type="email" autocomplete="email" value={pageState.newFriendEmail} onIonChange={(e) => {setPageState(prevstate => ({...prevstate, newFriendEmail: String(e.detail.value)}))}}>
-  </IonInput>
-</IonItem>
-<IonItem key="blankspace"></IonItem>
-<IonItem key="formbuttons">
-  <IonButton key="addbutton" slot="start" onClick={() => submitForm()}>Add</IonButton>
-  <IonButton key="cancelbutton" slot="end" onClick={() => setPageState(prevState => ({...prevState,formError: "",  inAddMode: false, newFriendEmail: "", newFriendName: ""}))}>Cancel</IonButton>
-</IonItem>
-<IonItem key="formerrors">{pageState.formError}</IonItem>
- */
-
 
   let formElem: any[] = [];
   if (pageState.inAddMode) {
@@ -192,6 +207,22 @@ const Friends: React.FC = (props) => {
             <IonTitle size="large">Settings</IonTitle>
           </IonToolbar>
         </IonHeader>
+        <IonAlert isOpen={pageState.showNewUserAlert}
+                  header="User not found, send registration request?"
+                  subHeader={pageState.newUserAlertSubheader}
+                  onDidDismiss={() => setPageState(prevState => ({...prevState,showNewUserAlert: false}))} 
+                  buttons={[
+                    { text: "Cancel", role: "cancel"},
+                    { text: "Send Registration", role: "confirm",
+                      handler: () => {sendFriendRequest();} }
+                  ]}
+                  />
+        <IonAlert isOpen={pageState.showRegistrationURL}
+                  header="URL for Registration Confirmation"
+                  subHeader={pageState.registrationAlertSubheader}
+                  onDidDismiss={() => setPageState(prevState => ({...prevState,showRegistrationURL: false}))} 
+                  buttons={["OK"]}
+                  />
         <IonList id="friendslist" lines="full">
           {friendsElem}
           {formElem}
