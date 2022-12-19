@@ -8,8 +8,16 @@ const couchAdminRole = "dbadmin";
 const couchUserPrefix = "org.couchdb.user";
 const jose = require('jose');
 const axios = require('axios');
-const nanoAdmin = require('nano')();
-const dbAsAdmin = nano()
+const nanoAdmin = require('nano');
+const nanoAdminOpts = {
+    url: couchdbUrl,
+    requestDefaults: {
+        headers: { Authorization: "Basic "+ Buffer.from(couchAdminUser+":"+couchAdminPassword).toString('base64') }
+    }
+}
+const dbAsAdmin = nanoAdmin(nanoAdminOpts)
+let todosDBAsAdmin
+let usersDBAsAdmin
 const _ = require('lodash');
 
 async function couchLogin(username, password) {
@@ -157,6 +165,8 @@ async function dbStartup() {
     console.log("STATUS: Using database: ",couchDatabase);
     await createDBIfNotExists();
     await setDBSecurity();
+    todosDBAsAdmin =  dbAsAdmin.use(couchDatabase);
+    usersDBAsAdmin = dbAsAdmin.use("_users");
 }
 
 async function getUserDoc(username) {
@@ -391,13 +401,31 @@ async function createAccountUIGet(req, res) {
     let respObj = {
         uuid: req.query.uuid,
         email: "testemail",
-        formError: ""
+        formError: "",
+        disableSubmit: false
     }
+   
+    console.log(nanoAdminOpts);
     
+    const uuidq = {
+        selector: { type: { "$eq": "friend" }, inviteUUID: { "$eq": req.query.uuid}},
+        fields: [ "friendID1","friendID2","inviteUUID","inviteEmail","friendStatus"]
+    }
 
+    let foundFriendDocs =  await todosDBAsAdmin.find(uuidq);
+    let foundFriendDoc;
+    console.log(foundFriendDocs.docs.length);
+    if (foundFriendDocs.docs.length > 0) {foundFriendDoc = foundFriendDocs.docs[0]}
+    else {
+        respObj.formError = "Registration ID not found. Cannot complete registration process."
+        respObj.disableSubmit = true;
+        return (respObj);
+    };
+    console.log(foundFriendDocs)
+    console.log(foundFriendDoc);
+    respObj.email = foundFriendDoc.inviteEmail;
 
-
-
+    // validate status in foundFriend.
 
 
 

@@ -16,8 +16,10 @@
         <input id="password" name="password" type="password"><br>
         <label for="passwordverify">Confirm Password</label>
         <input id="passwordverify" name="passwordverify" type="password"><br>
-        <input id="formerror" name="formerror" disabled value=<%= it.formError %>><br>
-        <input type="submit" value="Submit">
+        <p><%= it.formError %></p><br>
+        <% if (!it.disableSubmit) { %>
+            <input type="submit" value="Submit">
+            <% } %> 
     </form>
     </body>
 </html>
