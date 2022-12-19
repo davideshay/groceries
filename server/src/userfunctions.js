@@ -8,7 +8,8 @@ const couchAdminRole = "dbadmin";
 const couchUserPrefix = "org.couchdb.user";
 const jose = require('jose');
 const axios = require('axios');
-const e = require('express');
+const nanoAdmin = require('nano')();
+const dbAsAdmin = nano()
 const _ = require('lodash');
 
 async function couchLogin(username, password) {
@@ -378,11 +379,70 @@ async function getUsersInfo(req, res) {
     return(getResponse);
 }
 
+async function createAccountUIGet(req, res) {
+    // input - query parameter - uuid
+    // creates a form pre-filled with email address (cannot change), username,full name, and password
+    // on submit (to different endpoint?),
+    // check if username or email already exists, if so, error out,
+    // otherwise reqister new user
+    console.log("in cauig, req:",req.query);
+    console.log(req.query.uuid);
+
+    let respObj = {
+        uuid: req.query.uuid,
+        email: "testemail",
+        formError: ""
+    }
+    
+
+
+
+
+
+
+
+    return(respObj);
+
+
+
+
+
+    if (isNothing(req.body?.userIDs)) {getResponse.error=true; return (getResponse)}
+    const requestData = { keys: [], include_docs: true }
+    req.body.userIDs.forEach(uid => { requestData.keys.push(couchUserPrefix+":"+uid) });
+    const config = {
+        method: 'post',
+        url: couchdbUrl+"/_users/_all_docs",
+        auth: {username: couchAdminUser, password: couchAdminPassword},
+        data: requestData,
+        responseType: 'json'
+    }
+    let userRes = null;
+    try { userRes = await axios(config)}
+    catch(err) { console.log(err); getResponse.error= true }
+    if (!getResponse.error) {
+        console.log(userRes.data.rows)
+        userRes.data.rows.forEach(el => {
+            getResponse.users.push({name: el?.doc?.name, email: el?.doc?.email, fullname: el?.doc?.fullname})
+        });
+    }
+    return(getResponse);
+}
+
+async function createAccountUIPost(req,res) {
+    console.log(req.body);
+    return;
+}
+
+
 module.exports = {
     issueToken,
     checkUserExists,
     checkUserByEmailExists,
     registerNewUser,
     dbStartup,
-    getUsersInfo
+    getUsersInfo,
+    createAccountUIGet,
+    createAccountUIPost
+
 }
