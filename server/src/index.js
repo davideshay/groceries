@@ -20,7 +20,7 @@ app.post('/registernewuser', async (req, res) => res.send(await registerNewUser(
 app.post('/getusersinfo', async (req, res) => res.send(await getUsersInfo(req,res)));
 app.get('/test', async (req,res) => res.render("test", {favorite: "Movies", reasons: ["background","action"]}))
 app.get('/createaccountui', async (req,res) => await res.render("createaccount",await createAccountUIGet(req,res)))
-app.post('/createaccountui', async (req,res) => res.send(await createAccountUIPost(req,res)));
+app.post('/createaccountui', async (req,res) => await res.render("createaccount",await createAccountUIPost(req,res)));
 
 //TODO refreshtoken
 //TODO setuserdata (including password)

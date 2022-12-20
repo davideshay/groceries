@@ -50,7 +50,8 @@ interface PageState {
   showNewUserAlert: boolean,
   newUserAlertSubheader: string,
   showRegistrationURL: boolean,
-  registrationAlertSubheader: string
+  registrationAlertSubheader: string,
+
 }  
               
 const Friends: React.FC = (props) => {
@@ -87,13 +88,34 @@ const Friends: React.FC = (props) => {
     }
   }
 
+  function showURL(friendRow: FriendRow) {
+    let confURL = globalState.dbCreds?.apiServerURL + "/createaccountui?uuid="+friendRow.friendDoc.inviteUUID;
+    Clipboard.write({string: confURL});
+    setPageState(prevState => ({...prevState,formError: "", inAddMode: false, newFriendEmail: "",
+            showRegistrationURL: true,
+            registrationAlertSubheader: "An email has been sent to "+pageState.newFriendEmail+" to confirm and create their account. The URL is here: " + confURL+ " . This has also been copied to the clipboard."}))
+    }
+
+  function URLButtonElem(friendRow: FriendRow) {
+    if (friendRow.resolvedStatus == ResolvedFriendStatus.WaitingToRegister) {
+      return(
+        <IonButton onClick={() => showURL(friendRow)}>Show URL</IonButton> 
+      )
+    }
+    else {
+      return([]);
+    }
+  }
+
+
+
   function updateFriendsElem() {
     if (friendRows.length > 0) {
       setFriendsElem(prevState => ([]));
       console.log(friendRows);
       friendRows.forEach((friendRow: FriendRow) => {
         const itemKey = (friendRow.targetUserName == "" || friendRow.targetUserName == null) ? friendRow.targetEmail : friendRow.targetUserName;
-        let elem: any =<IonItem key={itemKey}><IonLabel>{friendRow.targetUserName}</IonLabel>{statusItem(friendRow)}<IonLabel>{friendRow.targetEmail}</IonLabel><IonLabel>{friendRow.targetFullName}</IonLabel></IonItem>
+        let elem: any =<IonItem key={itemKey}>{URLButtonElem(friendRow)}{statusItem(friendRow)}<IonLabel>{friendRow.targetEmail}</IonLabel><IonLabel>{friendRow.targetFullName}</IonLabel></IonItem>
         setFriendsElem((prevState : any) => ([...prevState,elem]))
       });
     }
@@ -126,7 +148,7 @@ const Friends: React.FC = (props) => {
     console.log(newFriendDoc);
     let result=createDoc(newFriendDoc);
     console.log(result);
-    let confURL = globalState.dbCreds?.apiServerURL + "/createaccountui&uuid=&"+invuid;
+    let confURL = globalState.dbCreds?.apiServerURL + "/createaccountui?uuid="+invuid;
     Clipboard.write({string: confURL});
     setPageState(prevState => ({...prevState,formError: "", inAddMode: false, newFriendEmail: "",
             showRegistrationURL: true,

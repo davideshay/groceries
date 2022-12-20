@@ -16,8 +16,10 @@ const nanoAdminOpts = {
     }
 }
 const dbAsAdmin = nanoAdmin(nanoAdminOpts)
-let todosDBAsAdmin
-let usersDBAsAdmin
+let todosNanoAsAdmin = nanoAdmin(nanoAdminOpts);
+let usersNanoAsAdmin = nanoAdmin(nanoAdminOpts);
+let todosDBAsAdmin;
+let usersDBAsAdmin;
 const _ = require('lodash');
 
 async function couchLogin(username, password) {
@@ -165,8 +167,8 @@ async function dbStartup() {
     console.log("STATUS: Using database: ",couchDatabase);
     await createDBIfNotExists();
     await setDBSecurity();
-    todosDBAsAdmin =  dbAsAdmin.use(couchDatabase);
-    usersDBAsAdmin = dbAsAdmin.use("_users");
+    todosDBAsAdmin =  todosNanoAsAdmin.use(couchDatabase);
+    usersDBAsAdmin = usersNanoAsAdmin.use("_users");
 }
 
 async function getUserDoc(username) {
@@ -320,6 +322,26 @@ async function createNewUser(userObj) {
     return (createResponse);
 }
 
+async function updateUnregisteredFriends(email) {
+    const emailq = {
+        selector: { type: { "$eq": "friend" }, inviteEmail: { "$eq": email}}
+    }
+    console.log(emailq);
+    foundFriendDocs =  await todosDBAsAdmin.find(emailq);
+    console.log({foundFriendDocs});
+    foundFriendDoc = undefined;
+    if (foundFriendDocs.docs.length > 0) {foundFriendDoc = foundFriendDocs.docs[0]}
+    foundFriendDocs.docs.forEach(async (doc) => {
+        if (doc.friendStatus == "WAITREGISTER") {
+            doc.friendID2 = req.body.username;
+            foundFriendDoc.friendStatus = "PENDFROM1"
+            update2Success=true;
+            try { await todosDBAsAdmin.insert(doc);} 
+            catch(e) {update2success = false;}
+        }
+    });
+}
+
 function isNothing(obj) {
     if (obj == "" || obj == null || obj == undefined) {return (true)}
     else {return (false)};
@@ -351,6 +373,7 @@ async function registerNewUser(req, res) {
         registerResponse.createdSuccessfully = !createResponse.error;
         registerResponse.idCreated = createResponse.idCreated;
         registerResponse.jwt = await generateJWT(username);
+        let updateFriendResponse = await updateUnregisteredFriends(email)
     }
     return (registerResponse);
 }
@@ -401,65 +424,130 @@ async function createAccountUIGet(req, res) {
     let respObj = {
         uuid: req.query.uuid,
         email: "testemail",
+        fullname: "",
+        username: "",
+        password: "",
+        passwordverify: "",
         formError: "",
-        disableSubmit: false
+        disableSubmit: false,
+        createdSuccessfully: false
     }
-   
-    console.log(nanoAdminOpts);
-    
+       
     const uuidq = {
         selector: { type: { "$eq": "friend" }, inviteUUID: { "$eq": req.query.uuid}},
         fields: [ "friendID1","friendID2","inviteUUID","inviteEmail","friendStatus"]
     }
-
     let foundFriendDocs =  await todosDBAsAdmin.find(uuidq);
     let foundFriendDoc;
-    console.log(foundFriendDocs.docs.length);
     if (foundFriendDocs.docs.length > 0) {foundFriendDoc = foundFriendDocs.docs[0]}
     else {
         respObj.formError = "Registration ID not found. Cannot complete registration process."
         respObj.disableSubmit = true;
         return (respObj);
     };
-    console.log(foundFriendDocs)
-    console.log(foundFriendDoc);
     respObj.email = foundFriendDoc.inviteEmail;
 
-    // validate status in foundFriend.
-
-
+    if (foundFriendDoc.friendStatus != "WAITREGISTER") {
+        respObj.formError = "Registration already completed. Please login to the app directly."
+        respObj.disableSubmit = true;
+        return (respObj);
+    }
 
     return(respObj);
 
-
-
-
-
-    if (isNothing(req.body?.userIDs)) {getResponse.error=true; return (getResponse)}
-    const requestData = { keys: [], include_docs: true }
-    req.body.userIDs.forEach(uid => { requestData.keys.push(couchUserPrefix+":"+uid) });
-    const config = {
-        method: 'post',
-        url: couchdbUrl+"/_users/_all_docs",
-        auth: {username: couchAdminUser, password: couchAdminPassword},
-        data: requestData,
-        responseType: 'json'
-    }
-    let userRes = null;
-    try { userRes = await axios(config)}
-    catch(err) { console.log(err); getResponse.error= true }
-    if (!getResponse.error) {
-        console.log(userRes.data.rows)
-        userRes.data.rows.forEach(el => {
-            getResponse.users.push({name: el?.doc?.name, email: el?.doc?.email, fullname: el?.doc?.fullname})
-        });
-    }
-    return(getResponse);
 }
 
 async function createAccountUIPost(req,res) {
-    console.log(req.body);
-    return;
+
+    let respObj = {
+        uuid: req.body.uuid,
+        email: req.body.email,
+        username: (req.body.username == undefined) ? "" : req.body.username,
+        fullname: (req.body.fullname == undefined) ? "" : req.body.fullname,
+        password: (req.body.password == undefined) ? "" : req.body.password,
+        passwordverify: (req.body.passwordverify == undefined) ? "" : req.body.passwordverify,
+        formError: "",
+        disableSubmit: false,
+        createdSuccessfully: false
+    }
+
+    console.log("initial respobj:", {respObj});
+
+    if (req.body.fullname.length < 2 ) {
+        respObj.formError = "Please enter a full name 3 characters or longer";
+        return (respObj);
+    } 
+    if (req.body.username.length < 5 ) {
+        respObj.formError = "Please enter a username 5 characters or longer";
+        return (respObj);
+    } 
+    if (req.body.password.length < 5 ) {
+        respObj.formError = "Please enter a password 5 characters or longer";
+        return (respObj);
+    } 
+    if (req.body.password != req.body.passwordverify) {
+        respObj.formError = "Passwords do not match";
+        return (respObj);
+    }
+    let foundUserDoc; let userAlreadyExists=true;
+    try {
+        foundUserDoc =  await usersDBAsAdmin.get(couchUserPrefix+":"+req.body.username);}
+    catch(e) { userAlreadyExists=false;}    
+    console.log({foundUserDoc});
+    if (userAlreadyExists) {
+        respObj.formError = "Username already exists, plase choose a new one";
+        return(respObj);
+    }
+
+    // create user doc
+    const userObj = {
+        username: req.body.username,
+        fullname: req.body.fullname,
+        email: req.body.email,
+        password: req.body.password
+    }
+
+    let userIDres = await createNewUser(userObj);
+    console.log(userIDres);
+
+    // change friend doc to registered
+    const uuidq = {
+        selector: { type: { "$eq": "friend" }, inviteUUID: { "$eq": req.body.uuid}}
+    }
+    console.log(uuidq);
+    let foundFriendDocs =  await todosDBAsAdmin.find(uuidq);
+    console.log({foundFriendDocs});
+    let foundFriendDoc;
+    if (foundFriendDocs.docs.length > 0) {foundFriendDoc = foundFriendDocs.docs[0]}
+    console.log({foundFriendDoc});
+    if (foundFriendDoc!=undefined) {
+        foundFriendDoc.friendID2 = req.body.username;
+        foundFriendDoc.friendStatus = "PENDFROM1";
+        updateSuccessful = true;
+        try { await todosDBAsAdmin.insert(foundFriendDoc); }
+        catch(e) {updateSuccessful = false;}
+    }
+
+    const emailq = {
+        selector: { type: { "$eq": "friend" }, inviteEmail: { "$eq": req.body.email}}
+    }
+    console.log(emailq);
+    foundFriendDocs =  await todosDBAsAdmin.find(emailq);
+    console.log({foundFriendDocs});
+    foundFriendDoc = undefined;
+    if (foundFriendDocs.docs.length > 0) {foundFriendDoc = foundFriendDocs.docs[0]}
+    foundFriendDocs.docs.forEach(async (doc) => {
+        if ((doc.inviteUUID != req.body.uuid) && (doc.friendStatus == "WAITREGISTER")) {
+            doc.friendID2 = req.body.username;
+            foundFriendDoc.friendStatus = "PENDFROM1"
+            update2Success=true;
+            try { await todosDBAsAdmin.insert(doc);} 
+            catch(e) {update2success = false;}
+        }
+    });
+
+    respObj.createdSuccessfully = true;
+    return(respObj);
 }
 
 
