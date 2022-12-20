@@ -339,9 +339,7 @@ async function updateUnregisteredFriends(email) {
     const emailq = {
         selector: { type: { "$eq": "friend" }, inviteEmail: { "$eq": email}}
     }
-    console.log(emailq);
     foundFriendDocs =  await todosDBAsAdmin.find(emailq);
-    console.log({foundFriendDocs});
     foundFriendDoc = undefined;
     if (foundFriendDocs.docs.length > 0) {foundFriendDoc = foundFriendDocs.docs[0]}
     foundFriendDocs.docs.forEach(async (doc) => {
@@ -431,8 +429,6 @@ async function createAccountUIGet(req, res) {
     // on submit (to different endpoint?),
     // check if username or email already exists, if so, error out,
     // otherwise reqister new user
-    console.log("in cauig, req:",req.query);
-    console.log(req.query.uuid);
 
     let respObj = {
         uuid: req.query.uuid,
@@ -495,8 +491,6 @@ async function createAccountUIPost(req,res) {
         createdSuccessfully: false
     }
 
-    console.log("initial respobj:", {respObj});
-
     if (req.body.fullname.length < 2 ) {
         respObj.formError = "Please enter a full name 3 characters or longer";
         return (respObj);
@@ -517,7 +511,6 @@ async function createAccountUIPost(req,res) {
     try {
         foundUserDoc =  await usersDBAsAdmin.get(couchUserPrefix+":"+req.body.username);}
     catch(e) { userAlreadyExists=false;}    
-    console.log({foundUserDoc});
     if (userAlreadyExists) {
         respObj.formError = "Username already exists, plase choose a new one";
         return(respObj);
@@ -532,11 +525,9 @@ async function createAccountUIPost(req,res) {
     }
 
     let userIDres = await createNewUser(userObj);
-    console.log(userIDres);
 
     // change friend doc to registered
     let foundFriendDoc = getFriendDocByUUID(req.body.uuid);
-    console.log({foundFriendDoc});
     if (foundFriendDoc!=undefined) {
         foundFriendDoc.friendID2 = req.body.username;
         foundFriendDoc.friendStatus = "PENDFROM1";
@@ -548,9 +539,7 @@ async function createAccountUIPost(req,res) {
     const emailq = {
         selector: { type: { "$eq": "friend" }, inviteEmail: { "$eq": req.body.email}}
     }
-    console.log(emailq);
     foundFriendDocs =  await todosDBAsAdmin.find(emailq);
-    console.log({foundFriendDocs});
     foundFriendDoc = undefined;
     if (foundFriendDocs.docs.length > 0) {foundFriendDoc = foundFriendDocs.docs[0]}
     foundFriendDocs.docs.forEach(async (doc) => {
@@ -575,17 +564,14 @@ async function triggerRegEmail(req, res) {
 
     if (isNothing(uuid)) {return (triggerResponse);}
     let foundFriendDoc = await getFriendDocByUUID(req.body.uuid);
-    console.log({foundFriendDoc});
     if (foundFriendDoc == undefined) {return triggerResponse;};
     let userDoc = await getUserDoc(foundFriendDoc.friendID1);
     if (userDoc.error) {return triggerResponse};
     
     let transport = nodemailer.createTransport(smtpOptions);
-    console.log("transport created");
     transport.verify(function (error,success) {
         if (error) {return triggerResponse}
     })
-    console.log("transport verified");
 
     let confURL = groceryAPIUrl + "/createaccountui?uuid="+foundFriendDoc.inviteUUID;
 
@@ -595,12 +581,10 @@ async function triggerRegEmail(req, res) {
         subject: "User Creation request from Groceries",
         text: userDoc.fullname+" has requested to share lists with you on the Groceries App. Please use the link to register for an account: "+confURL+ " . Once registered, visit "+groceryUrl+" to use the app."
     }
-    console.log({message});
 
     transport.sendMail(message, function (error, success) {
         if (!error) {return triggerResponse}
     });
-    console.log("message sent maybe");
     triggerResponse.emailSent = true;
 
     return (triggerResponse);

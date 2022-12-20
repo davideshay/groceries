@@ -1,6 +1,6 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonItemGroup,
   IonItemDivider, IonButton, IonButtons, IonFab, IonFabButton, IonIcon, IonCheckbox, IonLabel, IonSelect,
-  IonSelectOption, IonSearchbar, IonPopover, IonMenuButton, NavContext} from '@ionic/react';
+  IonSelectOption, IonSearchbar, IonPopover, IonAlert,IonMenuButton, NavContext} from '@ionic/react';
 import { add,checkmark } from 'ionicons/icons';
 import React, { useState, useEffect, useContext, useRef, KeyboardEvent } from 'react';
 import { useParams } from 'react-router-dom';
@@ -17,7 +17,7 @@ const Items: React.FC = () => {
   let { id: routeListID  } = useParams<{id: string}>();
   const [searchRows,setSearchRows] = useState<ItemSearch[]>();
   const [searchState,setSearchState] = useState<SearchState>({searchCriteria:"",isOpen: false,event: undefined, filteredSearchRows: [], dismissEvent: undefined});
-  const [pageState, setPageState] = useState<PageState>({selectedListID: routeListID, doingUpdate: false, itemRows: []});
+  const [pageState, setPageState] = useState<PageState>({selectedListID: routeListID, doingUpdate: false, itemRows: [], showAlert: false, alertHeader: "", alertMessage: ""});
   const searchRef=useRef<HTMLIonSearchbarElement>(null);
   
   const updateCompleted = useUpdateCompleted();
@@ -83,14 +83,24 @@ const Items: React.FC = () => {
     setSearchState({...searchState,isOpen: (event.detail.value === "") ? false: true , event: event, searchCriteria: event.detail.value});
   }  
 
+  function isItemAlreadyInList(itemName: string) {
+    let existingItem: any = allItemDocs.find((el: any) => el.name.toUpperCase() === itemName.toUpperCase());
+    console.log("trying item name: ",{itemName,existingItem});
+    return(!(existingItem == undefined));
+  }
+
   function addNewItemToList(itemName: string) {
 //    let newItemDoc=createEmptyItemDoc(listDocs,pageState.selectedListID,itemName);
 //    let  newglobalState=cloneDeep(globalState);
-    setGlobalState({...globalState, itemMode: "new",
+    if (isItemAlreadyInList(itemName)) {
+      setPageState(prevState => ({...prevState, showAlert: true, alertHeader: "Error adding to list", alertMessage: "Item already exists in the current list"}))
+    } else {
+      setGlobalState({...globalState, itemMode: "new",
                                      callingListID: pageState.selectedListID,
                                      newItemName: itemName})
-    setSearchState({...searchState, isOpen: false})
-    navigate("/item/new/");
+      setSearchState({...searchState, isOpen: false})
+      navigate("/item/new/");
+    }
   }
 
   function searchKeyPress(event: KeyboardEvent<HTMLElement>) {
@@ -139,6 +149,16 @@ const Items: React.FC = () => {
     </IonPopover>
   )
 
+  let alertElem = (
+    <IonAlert
+      isOpen={pageState.showAlert}
+      onDidDismiss={() => setPageState(prevState => ({...prevState,showAlert: false, alertHeader:"",alertMessage:""}))}
+      header={pageState.alertHeader}
+      message={pageState.alertMessage}
+      buttons={["OK"]}
+    />
+  )
+  
   let headerElem=(
     <IonHeader><IonToolbar><IonButtons slot="start"><IonMenuButton /></IonButtons>
     <IonTitle>
@@ -158,6 +178,7 @@ const Items: React.FC = () => {
           <IonButton onClick={()=> clickedSearchCheck()}><IonIcon icon={checkmark} /></IonButton>
         </IonItem>
         {popOverElem}
+        {alertElem}
     </IonTitle></IonToolbar></IonHeader>)
 
   if (pageState.itemRows.length <=0 )  {return(

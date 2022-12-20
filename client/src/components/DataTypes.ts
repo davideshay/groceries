@@ -33,6 +33,9 @@ export interface ItemRow {
     selectedListID: string,
     doingUpdate: boolean,
     itemRows: Array<ItemRow>,
+    showAlert: boolean,
+    alertHeader: string,
+    alertMessage: string
   }
 
   export interface DBCreds {

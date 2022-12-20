@@ -29,6 +29,4 @@ app.post('/triggerregemail', async (req,res) => res.send(await triggerRegEmail(r
 
 dbStartup();
 
-console.log(process.env.GROCERY_API_PORT);
-
 app.listen(process.env.GROCERY_API_PORT);
