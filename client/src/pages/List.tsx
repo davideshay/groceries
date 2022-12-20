@@ -8,6 +8,7 @@ import { useUpdateGenericDocument, useCreateGenericDocument, useFriends } from '
 import { cloneDeep, isEmpty, isEqual } from 'lodash';
 import './List.css';
 import { GlobalStateContext } from '../components/GlobalState';
+import { ResolvedFriendStatus } from '../components/DataTypes';
 
 interface PageState {
   needInitListDoc: boolean,
@@ -178,25 +179,27 @@ const List: React.FC = () => {
   usersElem.push(<IonItemDivider key="listuserdivider">{ownerText}</IonItemDivider>)
   usersElem.push(<IonItemDivider key="listdivider">List is shared with these other users:</IonItemDivider>)
   for (let i = 0; i < friendRows.length; i++) {
-    const userID=friendRows[i].targetUserName;
-    const userName=friendRows[i].targetFullName;
-    const userEmail=friendRows[i].targetEmail;
-    const userFound=pageState.listDoc.sharedWith.find((element: string) => (element === userID));
-    if (iAmListOwner) {
-      usersElem.push(
-        <IonItem key={pageState.selectedListID+"-"+userID}>
-          <IonCheckbox key={pageState.selectedListID+"-"+userID} slot="start" onIonChange={(e: any) => selectUser(userID,Boolean(e.detail.checked))} checked={userFound}></IonCheckbox>
-          <IonLabel>{userName}</IonLabel>
-          <IonLabel>{userEmail}</IonLabel>
-        </IonItem>)
-    } else {
-      if (userFound) {
+    if (friendRows[i].resolvedStatus == ResolvedFriendStatus.Confirmed) {
+      const userID=friendRows[i].targetUserName;
+      const userName=friendRows[i].targetFullName;
+      const userEmail=friendRows[i].targetEmail;
+      const userFound=pageState.listDoc.sharedWith.find((element: string) => (element === userID));
+      if (iAmListOwner) {
         usersElem.push(
           <IonItem key={pageState.selectedListID+"-"+userID}>
+            <IonCheckbox key={pageState.selectedListID+"-"+userID} slot="start" onIonChange={(e: any) => selectUser(userID,Boolean(e.detail.checked))} checked={userFound}></IonCheckbox>
             <IonLabel>{userName}</IonLabel>
             <IonLabel>{userEmail}</IonLabel>
           </IonItem>)
-      }    
+      } else {
+        if (userFound) {
+          usersElem.push(
+            <IonItem key={pageState.selectedListID+"-"+userID}>
+              <IonLabel>{userName}</IonLabel>
+              <IonLabel>{userEmail}</IonLabel>
+            </IonItem>)
+        }    
+      }
     }
   }
 

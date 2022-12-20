@@ -3,9 +3,22 @@ const couchDatabase = process.env.COUCHDB_DATABASE;
 const couchKey = process.env.COUCHDB_HMAC_KEY;
 const couchAdminUser = process.env.COUCHDB_ADMIN_USER;
 const couchAdminPassword = process.env.COUCHDB_ADMIN_PASSWORD;
+const groceryUrl = process.env.GROCERY_URL.endsWith("/") ? process.env.GROCERY_URL.slice(0,-1): process.env.GROCERY_URL;
+const groceryAPIUrl = process.env.GROCERY_API_URL.endsWith("/") ? process.env.GROCERY_API_URL.slice(0,-1): process.env.GROCERY_API_URL;
+const smtpHost = process.env.SMTP_HOST;
+const smtpPort = process.env.SMTP_PORT;
+const smtpSecure = Boolean(process.env.SMTP_SECURE);
+const smtpUser = process.env.SMTP_USER;
+const smtpPassword = process.env.SMTP_PASSWORD;
+const smtpFrom = process.env.SMTP_FROM;
 const couchStandardRole = "crud";
 const couchAdminRole = "dbadmin";
 const couchUserPrefix = "org.couchdb.user";
+const smtpOptions = {
+    host: smtpHost, port: smtpPort, 
+    auth: { user: smtpUser, pass: smtpPassword}
+};
+const nodemailer = require('nodemailer');
 const jose = require('jose');
 const axios = require('axios');
 const nanoAdmin = require('nano');
@@ -457,6 +470,17 @@ async function createAccountUIGet(req, res) {
 
 }
 
+async function getFriendDocByUUID(uuid) {
+    const uuidq = {
+        selector: { type: { "$eq": "friend" }, inviteUUID: { "$eq": uuid}}
+    }
+    let foundFriendDocs =  await todosDBAsAdmin.find(uuidq);
+    let foundFriendDoc;
+    if (foundFriendDocs.docs.length > 0) {foundFriendDoc = foundFriendDocs.docs[0]}
+    return(foundFriendDoc);
+}
+
+
 async function createAccountUIPost(req,res) {
 
     let respObj = {
@@ -511,14 +535,7 @@ async function createAccountUIPost(req,res) {
     console.log(userIDres);
 
     // change friend doc to registered
-    const uuidq = {
-        selector: { type: { "$eq": "friend" }, inviteUUID: { "$eq": req.body.uuid}}
-    }
-    console.log(uuidq);
-    let foundFriendDocs =  await todosDBAsAdmin.find(uuidq);
-    console.log({foundFriendDocs});
-    let foundFriendDoc;
-    if (foundFriendDocs.docs.length > 0) {foundFriendDoc = foundFriendDocs.docs[0]}
+    let foundFriendDoc = getFriendDocByUUID(req.body.uuid);
     console.log({foundFriendDoc});
     if (foundFriendDoc!=undefined) {
         foundFriendDoc.friendID2 = req.body.username;
@@ -550,6 +567,45 @@ async function createAccountUIPost(req,res) {
     return(respObj);
 }
 
+async function triggerRegEmail(req, res) {
+    const triggerResponse = {
+        emailSent : false
+    }
+    const {uuid} = req.body;
+
+    if (isNothing(uuid)) {return (triggerResponse);}
+    let foundFriendDoc = await getFriendDocByUUID(req.body.uuid);
+    console.log({foundFriendDoc});
+    if (foundFriendDoc == undefined) {return triggerResponse;};
+    let userDoc = await getUserDoc(foundFriendDoc.friendID1);
+    if (userDoc.error) {return triggerResponse};
+    
+    let transport = nodemailer.createTransport(smtpOptions);
+    console.log("transport created");
+    transport.verify(function (error,success) {
+        if (error) {return triggerResponse}
+    })
+    console.log("transport verified");
+
+    let confURL = groceryAPIUrl + "/createaccountui?uuid="+foundFriendDoc.inviteUUID;
+
+    const message = {
+        from: smtpFrom,
+        to: foundFriendDoc.inviteEmail,
+        subject: "User Creation request from Groceries",
+        text: userDoc.fullname+" has requested to share lists with you on the Groceries App. Please use the link to register for an account: "+confURL+ " . Once registered, visit "+groceryUrl+" to use the app."
+    }
+    console.log({message});
+
+    transport.sendMail(message, function (error, success) {
+        if (!error) {return triggerResponse}
+    });
+    console.log("message sent maybe");
+    triggerResponse.emailSent = true;
+
+    return (triggerResponse);
+}
+
 
 module.exports = {
     issueToken,
@@ -559,6 +615,7 @@ module.exports = {
     dbStartup,
     getUsersInfo,
     createAccountUIGet,
-    createAccountUIPost
+    createAccountUIPost,
+    triggerRegEmail
 
 }

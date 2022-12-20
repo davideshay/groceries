@@ -3,7 +3,8 @@ const cors = require('cors');
 const eta = require('eta');
 const app = express();
 const { issueToken, checkUserExists, registerNewUser, dbStartup, getUsersInfo, 
-        checkUserByEmailExists, createAccountUIGet, createAccountUIPost } = require('./userfunctions');
+        checkUserByEmailExists, createAccountUIGet, createAccountUIPost,
+        triggerRegEmail } = require('./userfunctions');
 
 app.use(cors());
 app.use(express.json());
@@ -21,10 +22,13 @@ app.post('/getusersinfo', async (req, res) => res.send(await getUsersInfo(req,re
 app.get('/test', async (req,res) => res.render("test", {favorite: "Movies", reasons: ["background","action"]}))
 app.get('/createaccountui', async (req,res) => await res.render("createaccount",await createAccountUIGet(req,res)))
 app.post('/createaccountui', async (req,res) => await res.render("createaccount",await createAccountUIPost(req,res)));
+app.post('/triggerregemail', async (req,res) => res.send(await triggerRegEmail(req,res)));
 
 //TODO refreshtoken
 //TODO setuserdata (including password)
 
 dbStartup();
 
-app.listen(process.env.COUCHDB_API_PORT);
+console.log(process.env.GROCERY_API_PORT);
+
+app.listen(process.env.GROCERY_API_PORT);

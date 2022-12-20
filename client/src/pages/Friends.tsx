@@ -107,8 +107,6 @@ const Friends: React.FC = (props) => {
     }
   }
 
-
-
   function updateFriendsElem() {
     if (friendRows.length > 0) {
       setFriendsElem(prevState => ([]));
