@@ -4,6 +4,7 @@ import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 export type RemoteState = {
     dbCreds: DBCreds,
     password: string | undefined,
+    verifyPassword: string | undefined,
     credsStatus: CredsStatus,
     connectionStatus: ConnectionStatus,
     httpResponse: HttpResponse | undefined,

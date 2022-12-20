@@ -17,6 +17,7 @@ const RemoteDBLogin: React.FC = () => {
     const [remoteState,setRemoteState]=useState<RemoteState>({
       dbCreds: {apiServerURL: null ,couchBaseURL: null, database: null, dbUsername: null, email: null, fullName: null, JWT: null},
       password: undefined,
+      verifyPassword: undefined,
       credsStatus: CredsStatus.needLoaded,
       connectionStatus: ConnectionStatus.cannotStart,
       httpResponse: undefined,
@@ -113,6 +114,10 @@ const RemoteDBLogin: React.FC = () => {
       }
       if ((remoteState.loginByPassword) && (remoteState.password == undefined || remoteState.password == "")) {
         setRemoteState(prevState => ({...prevState,formError: "No password entered"}));
+        return false;
+      }
+      if ((remoteState.createNewUser) && (remoteState.password != remoteState.verifyPassword)) {
+        setRemoteState(prevState => ({...prevState,formError: "Passwords do not match"}));
         return false;
       }
       return true;
@@ -409,6 +414,10 @@ const RemoteDBLogin: React.FC = () => {
     </IonItem>
     <IonItem><IonLabel position="stacked">Password</IonLabel>
     <IonInput autocomplete="current-password" type="password" value={remoteState.password} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
+    </IonInput>
+    </IonItem>
+    <IonItem><IonLabel position="stacked">Confirm Password</IonLabel>
+    <IonInput autocomplete="current-password" type="password" value={remoteState.verifyPassword} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, verifyPassword: String(e.detail.value)}))}}>
     </IonInput>
     </IonItem>
     </>
