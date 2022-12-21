@@ -181,7 +181,7 @@ async function addDBIdentifier() {
         name: "Database UUID",
         "uuid": uuidv4(),
     }
-    let dbresp = todosDBAsAdmin.insert(newDoc);
+    let dbResp = todosDBAsAdmin.insert(newDoc);
     console.log(dbResp);
 }
 
