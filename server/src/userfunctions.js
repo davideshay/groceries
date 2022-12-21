@@ -176,15 +176,22 @@ async function setDBSecurity() {
 }
 
 async function addDBIdentifier() {
-    const newDoc = {
-        type: "dbuuid",
-        name: "Database UUID",
-        "uuid": uuidv4(),
+    const dbidq = {
+        selector: { type: { "$eq": "dbuuid" }}
     }
-    let dbResp = todosDBAsAdmin.insert(newDoc);
-    console.log(dbResp);
+    let foundIDDocs =  await todosDBAsAdmin.find(dbidq);
+    let foundIDDoc = undefined;
+    if (foundIDDocs.docs.length > 0) {foundIDDoc = foundIDDocs.docs[0]}
+    if (foundIDDoc == undefined) {
+        const newDoc = {
+            type: "dbuuid",
+            name: "Database UUID",
+            "uuid": uuidv4(),
+        }
+        let dbResp = await todosDBAsAdmin.insert(newDoc);
+        console.log(dbResp);    
+    }
 }
-
 
 async function dbStartup() {
     console.log("STATUS: Starting up auth server for couchdb...");
