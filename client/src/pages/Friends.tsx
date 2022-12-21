@@ -3,6 +3,7 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
         IonFab, IonFabButton, IonIcon, IonInput, IonAlert } from '@ionic/react';
 import { useState, useEffect, useContext, Fragment } from 'react';
 import { Clipboard } from '@capacitor/clipboard';
+import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import { v4 as uuidv4 } from 'uuid';
 import { cloneDeep } from 'lodash';
 import { useCreateGenericDocument, useFriends, useUpdateGenericDocument} from '../components/Usehooks';
@@ -132,7 +133,7 @@ const Friends: React.FC = (props) => {
     setPageState(prevState => ({...prevState,inAddMode: true, formError: "", newFriendEmail:"", newFriendName: ""}))
   }
 
-  function sendFriendRequest() {
+  async function sendFriendRequest() {
     hideAlert();
     const invuid=uuidv4();
     const newFriendDoc = {
@@ -144,8 +145,19 @@ const Friends: React.FC = (props) => {
       friendStatus: FriendStatus.WaitingToRegister
     }
     console.log(newFriendDoc);
-    let result=createDoc(newFriendDoc);
+    let result=await createDoc(newFriendDoc);
     console.log(result);
+    const options = {
+      url: String(globalState.dbCreds?.apiServerURL+"/triggerregemail"),
+      method: "POST",
+      headers: { 'Content-Type': 'application/json',
+                 'Accept': 'application/json'},
+      data: { "uuid": invuid }           
+      };
+    console.log("about to execute trigger httpget with options: ", {options})
+    let response = await CapacitorHttp.post(options);
+    console.log("got trigger httpget response: ",{response});
+
     let confURL = globalState.dbCreds?.apiServerURL + "/createaccountui?uuid="+invuid;
     Clipboard.write({string: confURL});
     setPageState(prevState => ({...prevState,formError: "", inAddMode: false, newFriendEmail: "",
