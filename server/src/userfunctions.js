@@ -34,6 +34,7 @@ let usersNanoAsAdmin = nanoAdmin(nanoAdminOpts);
 let todosDBAsAdmin;
 let usersDBAsAdmin;
 const _ = require('lodash');
+const { v4: uuidv4 } = require('uuid');
 
 async function couchLogin(username, password) {
     const loginResponse = {
@@ -174,14 +175,26 @@ async function setDBSecurity() {
     return (!errorSettingSecurity);
 }
 
+async function addDBIdentifier() {
+    const newDoc = {
+        type: "dbuuid",
+        name: "Database UUID",
+        "uuid": uuidv4(),
+    }
+    let dbresp = todosDBAsAdmin.insert(newDoc);
+    console.log(dbResp);
+}
+
+
 async function dbStartup() {
     console.log("STATUS: Starting up auth server for couchdb...");
     console.log("STATUS: Database URL: ",couchdbUrl);
     console.log("STATUS: Using database: ",couchDatabase);
     await createDBIfNotExists();
     await setDBSecurity();
-    todosDBAsAdmin =  todosNanoAsAdmin.use(couchDatabase);
+    todosDBAsAdmin = todosNanoAsAdmin.use(couchDatabase);
     usersDBAsAdmin = usersNanoAsAdmin.use("_users");
+    await addDBIdentifier();
 }
 
 async function getUserDoc(username) {

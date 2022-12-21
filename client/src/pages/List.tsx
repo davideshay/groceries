@@ -56,6 +56,7 @@ const List: React.FC = () => {
   },[routeID])
 
   function changeListUpdateState(listID: string) {
+    console.log("in changeListUpdateState about to update listdoc");
     setPageState(prevState => ({...prevState,
         listDoc: listDocs.find(el => el._id === listID),
         selectedListID: listID}))
@@ -64,8 +65,10 @@ const List: React.FC = () => {
 
   useEffect( () => {
     let newPageState=cloneDeep(pageState);
+//    console.log({listLoading,friendRowsLoading,friendsLoading,categoryLoading,mode,pageState})
     if (!listLoading && !friendRowsLoading && !friendsLoading && !categoryLoading) {
       if (mode === "new" && pageState.needInitListDoc) {
+        console.log("in new useeffect, creating initlistdoc");
         let initCategories=categoryDocs.map(cat => cat._id);
         let initListDoc = {
           type: "list",
@@ -77,14 +80,22 @@ const List: React.FC = () => {
         newPageState.listDoc=initListDoc;
         newPageState.needInitListDoc=false;
       }
-      else {
+      else if (mode != "new") {
+        console.log("in initDoc, doing lookup against listDocs");
         let newListDoc = listDocs.find(el => el._id === pageState.selectedListID);
         newPageState.listDoc = newListDoc;
       }
+      console.log("updating the entire pagestate including listdoc... could be bad (initlistdoc");
       newPageState.changesMade=false;
+      console.log("setting to newPageState",{newPageState});
       setPageState(newPageState);
     }
   },[listLoading,listDocs,friendsLoading, friendRowsLoading, friendRows, categoryLoading,categoryDocs,pageState.selectedListID]);
+
+//  console.log("almost going to render loading or real page");
+  let ps=cloneDeep(pageState);
+//  console.log({listLoading,friendRowsLoading,friendsLoading,categoryLoading,ps});
+//  console.log("is empty listdoc:",isEmpty(pageState.listDoc));
 
   if (listLoading || friendRowsLoading || friendsLoading || categoryLoading || isEmpty(pageState.listDoc))  {return(
       <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
@@ -107,6 +118,7 @@ const List: React.FC = () => {
     let newPageState=cloneDeep(pageState);
     newPageState.listDoc.categories.splice(event.detail.to,0,newPageState.listDoc.categories.splice(event.detail.from,1)[0]);
     newPageState.changesMade=true;
+    console.log("updating the entire pagestate again including listdoc");
     setPageState(newPageState);
 
     // Finish the reorder and position the item in the DOM based on
@@ -131,6 +143,7 @@ const List: React.FC = () => {
     if (updateVal && !foundIt) {
       currCategories.push(categoryID);
     }
+    console.log("I am in updateCat updating listDoc... problem?")
     setPageState(prevState => (
       {...prevState, changesMade: true, listDoc: {...prevState.listDoc, categories: currCategories}}))
 
@@ -152,6 +165,7 @@ const List: React.FC = () => {
     if (updateVal && !foundIt) {
       currUsers.push(userID);
     }
+    console.log("about to update listDoc with new data in selectUser");
     if (!isEqual(pageState.listDoc.sharedWith,currUsers)) {
       setPageState(prevState => (
         {...prevState, changesMade: true, listDoc: {...prevState.listDoc, sharedWith: currUsers}}))
@@ -160,6 +174,7 @@ const List: React.FC = () => {
 
   function updateName(updName: string) {
     if (pageState.listDoc.name !== updName) {
+      console.log("updating listDoc in updateName");
       setPageState(prevState => (
         {...prevState, changesMade: true, listDoc: {...prevState.listDoc, name: updName}}));
     }  

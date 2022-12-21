@@ -68,7 +68,7 @@ const Category: React.FC<CategoryPageProps> = () => {
               <IonInput type="text" placeholder="<NEW>" onIonChange={(e: any) => setStateCategoryDoc({...stateCategoryDoc, name: e.detail.value})} value={(stateCategoryDoc as any).name}></IonInput>
             </IonItem>
           </IonList>
-          <IonButton onClick={() => updateThisCategory()}>Update</IonButton>
+          <IonButton onClick={() => updateThisCategory()}>{(mode === "new") ? "Add" : "Update"}</IonButton>
           <IonButton onClick={() => goBack("/categories")}>Cancel</IonButton>
       </IonContent>
     </IonPage>
