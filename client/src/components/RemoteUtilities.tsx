@@ -35,8 +35,9 @@ export type RemoteState = {
     createUserResponseFound = 10,
     remoteDBNeedsAssigned = 10,
     remoteDBAssigned = 11,
-    attemptToSync = 12,
-    loginComplete = 13
+    checkDBUUID = 12,
+    attemptToSync = 13,
+    loginComplete = 14
   }
   
 export async function createNewUser(remoteState: RemoteState) {

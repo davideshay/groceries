@@ -45,12 +45,13 @@ export interface ItemRow {
     dbUsername: string | null,
     email: string | null,
     fullName: string | null,
-    JWT: string | null
+    JWT: string | null,
+    remoteDBUUID: string | null
   }
 
   export const DBCredsInit: DBCreds = {
     apiServerURL: null, couchBaseURL: null, database: null,
-    dbUsername: null, email: null, fullName: null, JWT: null
+    dbUsername: null, email: null, fullName: null, JWT: null, remoteDBUUID: null
   }
 
   export enum FriendStatus {

@@ -23,7 +23,6 @@ export enum SyncStatus {
     denied = 4
   }
   
-
 const initialState: GlobalState = {
     itemMode: "none",
     newItemName: undefined,

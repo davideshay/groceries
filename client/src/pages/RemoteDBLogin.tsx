@@ -1,11 +1,12 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
-  IonButtons, IonMenuButton, IonLabel, IonLoading, NavContext, IonText, IonTextarea, IonItemDivider } from '@ionic/react';
+  IonButtons, IonMenuButton, IonLabel, NavContext, IonText, useIonAlert } from '@ionic/react';
 import { useState, useEffect, useContext } from 'react';
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import { usePouch, useFind } from 'use-pouchdb';
 import PouchDB from 'pouchdb';
-import { DBCreds } from '../components/DataTypes';
+import { DBCreds, DBCredsInit } from '../components/DataTypes';
 import { Preferences } from '@capacitor/preferences';
+import { App } from '@capacitor/app';
 import { isJsonString, urlPatternValidation, emailPatternValidation,DEFAULT_DB_NAME, DEFAULT_DB_URL_PREFIX, DEFAULT_API_URL } from '../components/Utilities'; 
 import { GlobalStateContext, SyncStatus } from '../components/GlobalState';
 import { createNewUser, RemoteState, CredsStatus, ConnectionStatus } from '../components/RemoteUtilities';
@@ -16,7 +17,7 @@ const RemoteDBLogin: React.FC = () => {
 
     const db=usePouch();
     const [remoteState,setRemoteState]=useState<RemoteState>({
-      dbCreds: {apiServerURL: null ,couchBaseURL: null, database: null, dbUsername: null, email: null, fullName: null, JWT: null},
+      dbCreds: DBCredsInit,
       password: undefined,
       verifyPassword: undefined,
       credsStatus: CredsStatus.needLoaded,
@@ -29,7 +30,7 @@ const RemoteDBLogin: React.FC = () => {
       formError: ""
     });
     const [remoteDB, setRemoteDB]=useState<any>();
-
+    const [presentAlert] = useIonAlert();
     const {navigate} = useContext(NavContext);
     const { globalState, setGlobalState, setStateInfo} = useContext(GlobalStateContext);
     
@@ -163,6 +164,7 @@ const RemoteDBLogin: React.FC = () => {
       newDBCreds.couchBaseURL  = remoteState.httpResponse?.data.couchdbUrl;
       newDBCreds.database = remoteState.httpResponse?.data.couchdbDatabase;
       newDBCreds.email = remoteState.httpResponse?.data.email;
+      newDBCreds.fullName = remoteState.httpResponse?.data.fullname;
       newDBCreds.JWT = remoteState.httpResponse?.data.loginJWT;
       let credsObj = JSON.stringify(newDBCreds);
       Preferences.set({key: 'dbcreds', value: credsObj})
@@ -202,10 +204,61 @@ const RemoteDBLogin: React.FC = () => {
                fetch(url, { ...opts, credentials: 'include', headers:
                 { ...opts.headers, 'Authorization': 'Bearer '+remoteState.dbCreds.JWT, 'Content-type': 'application/json' }})
                 )} ));
-        setRemoteState(prevstate => ({...prevstate,connectionStatus: ConnectionStatus.attemptToSync}));
+        setRemoteState(prevstate => ({...prevstate,connectionStatus: ConnectionStatus.checkDBUUID}));
       }
     }, [db,remoteDB,remoteState.connectionStatus])
 
+    async function destroyAndExit() {
+      await db.destroy();
+      await Preferences.remove({key: 'dbcreds'});
+      App.exitApp();
+    }
+
+    async function compareRemoteDBUUID() {
+        // find on remoteDB, get 1 doc
+      console.log("In Compare Remote DBUUID");
+      let UUIDResults = await remoteDB.find({
+          selector: { "type": { "$eq": "dbuuid"} } })
+      let UUIDResult : null|string = null;
+      if (UUIDResults.docs.length > 0) {
+        UUIDResult = UUIDResults.docs[0].uuid;
+      }
+      if (UUIDResult == null) {
+        console.log("ERROR: No database UUID defined in todos database. Cannot continue");
+        return;
+      }
+      console.log("Remote UUID is ", UUIDResult);
+      let rs=cloneDeep(remoteState);
+      console.log("creds UUID is ", rs.dbCreds.remoteDBUUID);
+        // compare to current DBCreds one.
+      if (remoteState.dbCreds.remoteDBUUID == UUIDResult) {
+        console.log("Compared the same");
+        setRemoteState(prevState => ({...prevState,connectionStatus: ConnectionStatus.attemptToSync}))
+        return;
+      } 
+        // if current DBCreds doesn't have one, set it to the remote one.
+      if (remoteState.dbCreds.remoteDBUUID == null || remoteState.dbCreds.remoteDBUUID == "" ) {
+        console.log("none defined locally, setting");
+        setRemoteState(prevState => ({...prevState,connectionStatus: ConnectionStatus.attemptToSync,dbCreds: {...prevState.dbCreds, remoteDBUUID: UUIDResult}}))
+        return;
+      }
+      console.log("need to destroy");
+        // if different, destroy the local pouchDB (prompt first?)
+      presentAlert( {
+        header: "WARNING",
+        message: "The Database identifier on the server is not the same as the local copy. You should delete your local copy in order to continue.",
+        buttons: [
+          {text: "Delete/Exit App",handler: () => destroyAndExit()},
+          {text: "Cancel/Exit App",handler: () => App.exitApp()}
+        ]
+      })
+    }
+
+    useEffect(() => {      
+      if (remoteDB !== null && remoteState.connectionStatus == ConnectionStatus.checkDBUUID) {
+       compareRemoteDBUUID(); 
+      }
+    },[db, remoteDB, remoteState.connectionStatus])
 
     useEffect(() => {
       // sync effect
@@ -271,11 +324,11 @@ const RemoteDBLogin: React.FC = () => {
     
   const getPrefsDBCreds = async() => {
     let { value: credsStr } = await Preferences.get({ key: 'dbcreds'});
-    let credsObj: DBCreds = { apiServerURL: null ,couchBaseURL: null, database: null, dbUsername: null, email: null, fullName: null, JWT: null};
+    let credsObj: DBCreds = DBCredsInit;
     const credsOrigKeys = keys(credsObj);
     if (isJsonString(String(credsStr))) {
       credsObj=JSON.parse(String(credsStr));
-      let credsObjFiltered=pick(credsObj,['apiServerURL','couchBaseURL','database','dbUsername','email','fullName','JWT'])
+      let credsObjFiltered=pick(credsObj,['apiServerURL','couchBaseURL','database','dbUsername','email','fullName','JWT',"remoteDBUUID"])
       setRemoteState(prevstate => ({...prevstate,dbCreds: credsObjFiltered, credsStatus: CredsStatus.loaded}))
     }
     const credKeys = keys(credsObj);
@@ -287,7 +340,8 @@ const RemoteDBLogin: React.FC = () => {
             dbUsername:"",
             JWT:"",
             email: "",
-            fullName: ""
+            fullName: "",
+            remoteDBUUID:""
         }, credsStatus: CredsStatus.loaded}))
     }
   }
