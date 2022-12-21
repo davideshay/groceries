@@ -1,11 +1,12 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, 
-  IonButtons, IonMenuButton, IonItem, IonLabel, NavContext } from '@ionic/react';
+  IonButtons, IonMenuButton, IonItem, IonLabel, IonFooter, NavContext } from '@ionic/react';
 import { RouteComponentProps,useParams } from 'react-router-dom';
 import { useDoc } from 'use-pouchdb';
 import { useState, useEffect, useContext } from 'react';
-import { useUpdateCategory,useCreateCategory } from '../components/Usehooks';
+import { useUpdateGenericDocument, useCreateGenericDocument } from '../components/Usehooks';
 import { cloneDeep } from 'lodash';
 import './Category.css';
+import { PouchResponse } from '../components/DataTypes';
 
 interface CategoryPageProps
   extends RouteComponentProps<{
@@ -17,8 +18,9 @@ const Category: React.FC<CategoryPageProps> = () => {
   if ( mode === "new" ) { routeID = "<new>"};
   const [needInitCategoryDoc,setNeedInitCategoryDoc] = useState((mode === "new") ? true: false);
   const [stateCategoryDoc,setStateCategoryDoc] = useState<any>({});
-  const updateCategory  = useUpdateCategory();
-  const createCategory = useCreateCategory();
+  const [formError,setFormError] = useState<string>("");
+  const updateCategory  = useUpdateGenericDocument();
+  const createCategory = useCreateGenericDocument();
 
   const { doc: categoryDoc, loading: categoryLoading, state: categoryState, error: categoryError } = useDoc(routeID);
 
@@ -41,14 +43,19 @@ const Category: React.FC<CategoryPageProps> = () => {
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
   )};
   
-  function updateThisCategory() {
-    let result = {}
+  async function updateThisCategory() {
+    setFormError("");
+    let result: PouchResponse
     if (mode === "new") {
-      result = createCategory(stateCategoryDoc);
+      result = await createCategory(stateCategoryDoc);
     } else {
-      result = updateCategory(stateCategoryDoc);
+      result = await updateCategory(stateCategoryDoc);
     }
-    goBack("/categories");
+    if (result.successful) {
+        goBack("/categories");
+    } else {
+        setFormError("Error updating category: " + result.errorCode + " : " + result.errorText)
+    } 
   }
   
   return (
@@ -71,6 +78,9 @@ const Category: React.FC<CategoryPageProps> = () => {
           <IonButton onClick={() => updateThisCategory()}>{(mode === "new") ? "Add" : "Update"}</IonButton>
           <IonButton onClick={() => goBack("/categories")}>Cancel</IonButton>
       </IonContent>
+      <IonFooter>
+        <IonLabel>{formError}</IonLabel>
+      </IonFooter>
     </IonPage>
   );
 };

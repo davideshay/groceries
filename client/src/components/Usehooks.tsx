@@ -3,15 +3,25 @@ import { usePouch, useFind } from 'use-pouchdb'
 import { cloneDeep } from 'lodash';
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import { GlobalStateContext } from '../components/GlobalState';
-import { FriendStatus, FriendRow, ResolvedFriendStatus } from './DataTypes';
+import { FriendStatus, FriendRow, ResolvedFriendStatus, PouchResponse } from './DataTypes';
 
 
 export function useUpdateGenericDocument() {
   const db = usePouch();
   return useCallback(
     async (updatedDoc: any) => {
-      const result = await db.put(updatedDoc)
-      return result
+          let response: PouchResponse ={
+            pouchData: {},
+            successful: true,
+            errorCode: 0,
+            errorText: "",
+            fullError: undefined
+          }
+          try { response.pouchData = await db.put(updatedDoc)}
+          catch(err) { response.successful = false; response.fullError = err;}
+          const result = await db.put(updatedDoc)
+          if (!response.pouchData.ok) { response.successful = false;}
+      return response
     },[db])
 }
 
@@ -19,8 +29,18 @@ export function useCreateGenericDocument() {
   const db = usePouch();
   return useCallback(
     async (updatedDoc: any) => {
-      const result = await db.post(updatedDoc)
-      return result
+          let response: PouchResponse ={
+            pouchData: {},
+            successful: true,
+            errorCode: 0,
+            errorText: "",
+            fullError: undefined
+          }
+          try { response.pouchData = await db.post(updatedDoc)}
+          catch(err) { response.successful = false; response.fullError = err;}
+          const result = await db.put(updatedDoc)
+          if (!response.pouchData.ok) { response.successful = false;}
+      return response
     },[db])
 }
 
@@ -30,30 +50,6 @@ export function useUpdateItem() {
   return useCallback(
     async (updatedDoc: any) => {
       const result = await db.put(updatedDoc)
-      return result
-    },
-    [db]
-  )
-}
-
-export function useUpdateCategory() {
-  const db = usePouch();
-
-  return useCallback(
-    async (updatedDoc: any) => {
-      const result = await db.put(updatedDoc)
-      return result
-    },
-    [db]
-  )
-}
-
-export function useCreateCategory() {
-  const db = usePouch();
-
-  return useCallback(
-    async (updatedDoc: any) => {
-      const result = await db.post(updatedDoc)
       return result
     },
     [db]

@@ -79,3 +79,11 @@ export interface ItemRow {
     resolvedStatus: ResolvedFriendStatus
     friendStatusText: string,
   }
+
+  export type PouchResponse = {
+    pouchData: any,
+    successful: boolean,
+    errorCode: number,
+    errorText: string,
+    fullError: any
+  }

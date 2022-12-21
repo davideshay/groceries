@@ -9,6 +9,7 @@ import { createEmptyItemDoc } from '../components/DefaultDocs';
 import { GlobalStateContext } from '../components/GlobalState';
 import { cloneDeep, isEmpty } from 'lodash';
 import './Item.css';
+import { analytics } from 'ionicons/icons';
 
 interface ItemPageProps
   extends RouteComponentProps<{
