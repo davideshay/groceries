@@ -233,10 +233,6 @@ const RemoteDBLogin: React.FC = () => {
     },[remoteState.connectionStatus]);
 
     async function navigateToFirstListID() {
-      let gs = cloneDeep(globalState); let rs = cloneDeep(remoteState);
-      console.log("dbfind with global state:",{gs});
-      console.log("dbfind with remote state:",{rs});
-      console.log("about to execute db.find");
       let listResults = await db.find({
           selector: { "$and": [ 
             {  "type": "list",
@@ -245,25 +241,16 @@ const RemoteDBLogin: React.FC = () => {
                         {"sharedWith": { $elemMatch: {$eq: remoteState.dbCreds?.dbUsername}}}]
             }] },
           sort: [ "type","name"]})
-      console.log("db.find finished");    
-      console.log({listResults});    
       let firstListID = null;
       if (listResults.docs.length > 0) {
         firstListID = listResults.docs[0]._id;
       }
-      console.log("about to navigate", firstListID);
       if (firstListID == null) {
-        console.log("null, defaulting to go to lists");
         navigate("/lists")
       } else {
-  //      console.log("going to items with ",rems.firstListID);
         navigate("/items/"+firstListID)
       }  
-
     }
-
-
-
 
     useEffect(() => {
       console.log("in nav effect cs = ",remoteState.connectionStatus);
@@ -274,8 +261,6 @@ const RemoteDBLogin: React.FC = () => {
         setRemoteState(prevState => ({...prevState, connectionStatus: ConnectionStatus.loginComplete}))
         setGlobalState({...globalState, dbCreds: remoteState.dbCreds});
         navigateToFirstListID();
-
-
       }
     }, [globalState.syncStatus, remoteState.connectionStatus])
 
