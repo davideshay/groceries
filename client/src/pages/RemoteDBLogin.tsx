@@ -224,7 +224,7 @@ const RemoteDBLogin: React.FC = () => {
         UUIDResult = UUIDResults.docs[0].uuid;
       }
       if (UUIDResult == null) {
-        console.log("ERROR: No database UUID defined in todos database. Cannot continue");
+        console.log("ERROR: No database UUID defined in server todos database. Cannot continue");
         return;
       }
       console.log("Remote UUID is ", UUIDResult);
@@ -236,8 +236,13 @@ const RemoteDBLogin: React.FC = () => {
         setRemoteState(prevState => ({...prevState,connectionStatus: ConnectionStatus.attemptToSync}))
         return;
       } 
+      let localDBInfo = null;
+      let localHasRecords = true;
+      try { localDBInfo = await db.info();} catch(e) {localHasRecords=false};
+      if (localDBInfo != null && localDBInfo.doc_count > 0) { localHasRecords = true};
+
         // if current DBCreds doesn't have one, set it to the remote one.
-      if (remoteState.dbCreds.remoteDBUUID == null || remoteState.dbCreds.remoteDBUUID == "" ) {
+      if ((remoteState.dbCreds.remoteDBUUID == null || remoteState.dbCreds.remoteDBUUID == "" ) && !localHasRecords) {
         console.log("none defined locally, setting");
         setRemoteState(prevState => ({...prevState,connectionStatus: ConnectionStatus.attemptToSync,dbCreds: {...prevState.dbCreds, remoteDBUUID: UUIDResult}}))
         return;
@@ -246,10 +251,10 @@ const RemoteDBLogin: React.FC = () => {
         // if different, destroy the local pouchDB (prompt first?)
       presentAlert( {
         header: "WARNING",
-        message: "The Database identifier on the server is not the same as the local copy. You should delete your local copy in order to continue.",
+        message: "The Database identifier on the server is not the same as the local copy. You should delete your local copy in order to continue. App will exit.",
         buttons: [
-          {text: "Delete/Exit App",handler: () => destroyAndExit()},
-          {text: "Cancel/Exit App",handler: () => App.exitApp()}
+          {text: "Delete/Exit",handler: () => destroyAndExit()},
+          {text: "Cancel/Exit",handler: () => App.exitApp()}
         ]
       })
     }
