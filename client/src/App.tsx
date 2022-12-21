@@ -40,13 +40,14 @@ import './theme/variables.css';
 import { Provider } from 'use-pouchdb';
 import PouchDB from 'pouchdb';
 import find from 'pouchdb-find';
+import AllItems from './pages/AllItems';
 
 setupIonicReact();
 
 const App: React.FC = () => {
 
   PouchDB.plugin(find);
-  const [db, setDB] = useState(() => new PouchDB('local', {revs_limit: 10, auto_compaction: true}))
+  const [db, setDB] = useState(() => new PouchDB('local', {revs_limit: 10, auto_compaction: true, size: 250}))
 
   return (
   <IonApp>
@@ -63,6 +64,7 @@ const App: React.FC = () => {
           </Route>
           <Route path="/item/:mode/:itemid?" component={Item}>
           </Route>
+          <Route exact path="/allitems"><AllItems /></Route>
           <Route exact path="/categories">
             <Categories />
           </Route>
