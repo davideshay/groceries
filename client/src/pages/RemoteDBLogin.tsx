@@ -26,45 +26,18 @@ const RemoteDBLogin: React.FC = () => {
       loginByPassword: false,
       createNewUser: false,
       formSubmitted: false,
-      formError: "",
-      firstListID: null,
-      gotListID: false
+      formError: ""
     });
     const [remoteDB, setRemoteDB]=useState<any>();
 
     const {navigate} = useContext(NavContext);
     const { globalState, setGlobalState, setStateInfo} = useContext(GlobalStateContext);
-
-    const { docs: listDocs, loading: listLoading, error: listError} = useFind({
-      index: { fields: ["type","name"] },
-      selector: { "$and": [ 
-        {  "type": "list",
-            "name": { "$exists": true } },
-        { "$or" : [{"listOwner": globalState.dbCreds?.dbUsername},
-                    {"sharedWith": { $elemMatch: {$eq: globalState.dbCreds?.dbUsername}}}]
-        }             
-      ] },
-      sort: [ "type","name"]
-    });
     
     useEffect(() => {
       if (remoteState.credsStatus === CredsStatus.needLoaded) {
         getPrefsDBCreds();
       } 
     },[remoteState.credsStatus])
-
-    useEffect(() => {
-      let ld=cloneDeep(listDocs); let ll=cloneDeep(listLoading); let rs=cloneDeep(remoteState);
-      console.log("cs ",remoteState.connectionStatus,"listDocs,loading:",{ld,ll,rs});
-      if (!remoteState.gotListID && !listLoading)
-        if (listDocs.length > 0) {
-          console.log("len > 0",listDocs[0]._id);
-          setRemoteState(prevstate => ({...remoteState,firstListID: listDocs[0]._id, gotListID: true}));
-        } else {
-//          setRemoteState(prevstate => ({...remoteState,firstListID: null, gotListID: true}));
-        }
-
-    },[listDocs, listLoading])
 
     function errorCheckCreds() {
       setRemoteState(prevState => ({...prevState,formError:""}));
@@ -143,9 +116,7 @@ const RemoteDBLogin: React.FC = () => {
                      'Authorization': 'Bearer '+remoteState.dbCreds.JWT },
           webFetchExtra: { credentials: "include" as RequestCredentials, },
         };
-        console.log("about to execute httpget with options: ", {options})
         response = await CapacitorHttp.get(options);
-        console.log("got httpget response: ",{response});
         setRemoteState(prevState => ({...prevState, connectionStatus: ConnectionStatus.JWTResponseFound,
                      httpResponse: response}))
       }
@@ -157,7 +128,6 @@ const RemoteDBLogin: React.FC = () => {
 
     useEffect( () => {
       if (remoteState.connectionStatus === ConnectionStatus.JWTResponseFound) {
-        console.log("JWTResponse Found", remoteState.httpResponse);
         if ((remoteState.httpResponse?.status == 200) && (remoteState.httpResponse.data?.userCtx?.name != null)) {
           setRemoteState(prevState => ({...prevState, connectionStatus: ConnectionStatus.remoteDBNeedsAssigned}));
         } else {
@@ -177,14 +147,11 @@ const RemoteDBLogin: React.FC = () => {
           data: { username: remoteState.dbCreds.dbUsername,
                   password: remoteState.password},           
         };
-        console.log("about to execute httpget with options: ", {options})
         response = await CapacitorHttp.post(options);
-        console.log("got httpget response: ",{response});
         setRemoteState(prevState => ({...prevState, connectionStatus: ConnectionStatus.tokenResponseFound,
                 httpResponse: response}))
       }
       if (remoteState.connectionStatus === ConnectionStatus.tryIssueToken) {
-        console.log("trying password login");
         checkPasswordLogin();
         setRemoteState(prevState => ({...prevState, connectionStatus: ConnectionStatus.checkingIssueToken}));
       }
@@ -198,7 +165,6 @@ const RemoteDBLogin: React.FC = () => {
       newDBCreds.email = remoteState.httpResponse?.data.email;
       newDBCreds.JWT = remoteState.httpResponse?.data.loginJWT;
       let credsObj = JSON.stringify(newDBCreds);
-      console.log("in update DB CredsFromResponse, newcreds:",{newDBCreds});
       Preferences.set({key: 'dbcreds', value: credsObj})
       setRemoteState(prevState => ({...prevState, dbCreds: newDBCreds}))
     }
@@ -206,10 +172,8 @@ const RemoteDBLogin: React.FC = () => {
     useEffect( () => {
 //      console.log("cs ",remoteState.connectionStatus);
       if (remoteState.connectionStatus === ConnectionStatus.tokenResponseFound) {
-        console.log("password response found: ", {remoteState})
         if ((remoteState.httpResponse?.status == 200) && (remoteState.httpResponse?.data?.loginSuccessful)) {
           updateDBCredsFromResponse()
-          console.log("updated DB creds, about to set to remoteDBNeedsAssigned");
           setRemoteState(prevState => ({...prevState, connectionStatus: ConnectionStatus.remoteDBNeedsAssigned}));
         } else {
           setRemoteState(prevState => ({...prevState,connectionStatus: ConnectionStatus.JWTInvalid,showLoginForm: true, loginByPassword: true,  formError: "Invalid Authentication provided"}));
@@ -218,8 +182,6 @@ const RemoteDBLogin: React.FC = () => {
     },[remoteState.connectionStatus])
 
     useEffect(() => {
-      console.log("cs ",remoteState.connectionStatus);
-
       if (remoteState.credsStatus === CredsStatus.loaded) {
         if (remoteState.dbCreds.JWT == undefined || 
             remoteState.dbCreds.JWT == "") {
@@ -232,8 +194,6 @@ const RemoteDBLogin: React.FC = () => {
     },[remoteState.credsStatus])
 
     useEffect(() => {
-      console.log("cs ",remoteState.connectionStatus);
-
       // assign effect
       if (remoteDB == null && (remoteState.connectionStatus === ConnectionStatus.remoteDBNeedsAssigned)) {
         console.log("about to set RemoteDB...");
@@ -248,13 +208,8 @@ const RemoteDBLogin: React.FC = () => {
 
 
     useEffect(() => {
-      console.log("cs ",remoteState.connectionStatus);
-
-      console.log("remote DB is : ", remoteDB);
       // sync effect
       if (remoteDB !== undefined && (remoteState.connectionStatus === ConnectionStatus.attemptToSync)) {
-        console.log("about to create sync link");
-        console.log("current creds:",remoteState.dbCreds);
         setPrefsDBCreds();
         const sync = db.sync(remoteDB, {
           retry: true,
@@ -277,25 +232,52 @@ const RemoteDBLogin: React.FC = () => {
       if (remoteState.connectionStatus == ConnectionStatus.startingCreateUser) {}
     },[remoteState.connectionStatus]);
 
+    async function navigateToFirstListID() {
+      let gs = cloneDeep(globalState); let rs = cloneDeep(remoteState);
+      console.log("dbfind with global state:",{gs});
+      console.log("dbfind with remote state:",{rs});
+      console.log("about to execute db.find");
+      let listResults = await db.find({
+          selector: { "$and": [ 
+            {  "type": "list",
+                "name": { "$exists": true } },
+            { "$or" : [{"listOwner": remoteState.dbCreds?.dbUsername},
+                        {"sharedWith": { $elemMatch: {$eq: remoteState.dbCreds?.dbUsername}}}]
+            }] },
+          sort: [ "type","name"]})
+      console.log("db.find finished");    
+      console.log({listResults});    
+      let firstListID = null;
+      if (listResults.docs.length > 0) {
+        firstListID = listResults.docs[0]._id;
+      }
+      console.log("about to navigate", firstListID);
+      if (firstListID == null) {
+        console.log("null, defaulting to go to lists");
+        navigate("/lists")
+      } else {
+  //      console.log("going to items with ",rems.firstListID);
+        navigate("/items/"+firstListID)
+      }  
+
+    }
+
+
+
 
     useEffect(() => {
-      console.log("cs ",remoteState.connectionStatus);
+      console.log("in nav effect cs = ",remoteState.connectionStatus);
       let rems=cloneDeep(remoteState);
       let gs=cloneDeep(globalState);
       console.log("maybe navigating: gotlistid ",{gs,rems});
       if ((globalState.syncStatus === SyncStatus.active || globalState.syncStatus === SyncStatus.paused) && (remoteState.connectionStatus !== ConnectionStatus.loginComplete) ) {
         setRemoteState(prevState => ({...prevState, connectionStatus: ConnectionStatus.loginComplete}))
         setGlobalState({...globalState, dbCreds: remoteState.dbCreds});
-        console.log("about to navigate", rems.firstListID);
-        if (remoteState.firstListID == null) {
-          console.log("null, defaulting to go to lists");
-          navigate("/lists")
-        } else {
-          console.log("going to items with ",rems.firstListID);
-          navigate("/items/"+remoteState.firstListID)
-        }  
+        navigateToFirstListID();
+
+
       }
-    }, [globalState.syncStatus,remoteState.gotListID])
+    }, [globalState.syncStatus, remoteState.connectionStatus])
 
   const setPrefsDBCreds = async() => {
         let credsObj = JSON.stringify(remoteState.dbCreds);
@@ -312,7 +294,6 @@ const RemoteDBLogin: React.FC = () => {
       setRemoteState(prevstate => ({...prevstate,dbCreds: credsObjFiltered, credsStatus: CredsStatus.loaded}))
     }
     const credKeys = keys(credsObj);
-    console.log({credKeys,credsOrigKeys});
     if (credsObj == null || (credsObj as any).apiServerURL == undefined || (!isEqual(credsOrigKeys.sort(),credKeys.sort()))) {
         setRemoteState(prevstate => ({...prevstate, dbCreds: {
             apiServerURL: DEFAULT_API_URL,
@@ -327,9 +308,7 @@ const RemoteDBLogin: React.FC = () => {
   }
 
   function submitForm() {
-    console.log("In submit form...");
     setPrefsDBCreds();
-    console.log("error check creds...", errorCheckCreds());
     if (errorCheckCreds() ) {
       setRemoteState(prevstate => ({...prevstate,formSubmitted: true, connectionStatus: ConnectionStatus.tryIssueToken}))
     } else {
@@ -338,14 +317,10 @@ const RemoteDBLogin: React.FC = () => {
   }
   
   async function submitCreateForm() {
-    console.log("in create form");
     setPrefsDBCreds();
-    console.log("error check creds...", errorCheckCreds());
     let createResponse: any;
     if (errorCheckCreds()) {
-      console.log("Creds Checked out OK");
       createResponse = await createNewUser(remoteState);
-      console.log(createResponse);
       if (createResponse.createdSuccessfully) {
         setRemoteState(prevState => ({...prevState,
           dbCreds: {...prevState.dbCreds, couchBaseURL: createResponse.couchdbUrl,

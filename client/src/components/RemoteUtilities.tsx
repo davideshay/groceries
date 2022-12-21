@@ -13,8 +13,6 @@ export type RemoteState = {
     createNewUser: boolean,
     formError: string,
     formSubmitted: boolean,
-    firstListID: string | null,
-    gotListID: boolean
   }
 
   export enum CredsStatus {
