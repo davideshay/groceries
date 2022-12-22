@@ -495,6 +495,7 @@ async function getFriendDocByUUID(uuid) {
         selector: { type: { "$eq": "friend" }, inviteUUID: { "$eq": uuid}}
     }
     let foundFriendDocs =  await todosDBAsAdmin.find(uuidq);
+    console.log("all docs found:",{foundFriendDocs});
     let foundFriendDoc;
     if (foundFriendDocs.docs.length > 0) {foundFriendDoc = foundFriendDocs.docs[0]}
     return(foundFriendDoc);
@@ -548,28 +549,36 @@ async function createAccountUIPost(req,res) {
         password: req.body.password
     }
 
+    console.log("about to create new user: ",{userObj});
     let userIDres = await createNewUser(userObj);
 
     // change friend doc to registered
     let foundFriendDoc = getFriendDocByUUID(req.body.uuid);
+    console.log("getting friend doc by uuid",{foundFriendDoc});
     if (foundFriendDoc!=undefined) {
+        console.log("updating that friend doc to PENDFROM1");
         foundFriendDoc.friendID2 = req.body.username;
         foundFriendDoc.friendStatus = "PENDFROM1";
         updateSuccessful = true;
+        console.log("about to update/insert:",{foundFriendDoc});
         try { await todosDBAsAdmin.insert(foundFriendDoc); }
         catch(e) {updateSuccessful = false;}
+        console.log("update success:",{updateSuccessful});
     }
 
+    console.log("checking other friend records by email now");
     const emailq = {
         selector: { type: { "$eq": "friend" }, inviteEmail: { "$eq": req.body.email}}
     }
     foundFriendDocs =  await todosDBAsAdmin.find(emailq);
+    console.log("found complete list of friends to check:",{foundFriendDocs});
     foundFriendDoc = undefined;
     if (foundFriendDocs.docs.length > 0) {foundFriendDoc = foundFriendDocs.docs[0]}
     foundFriendDocs.docs.forEach(async (doc) => {
+        console.log("checking for other, existing doc:",{doc});
         if ((doc.inviteUUID != req.body.uuid) && (doc.friendStatus == "WAITREGISTER")) {
             doc.friendID2 = req.body.username;
-            foundFriendDoc.friendStatus = "PENDFROM1"
+            doc.friendStatus = "PENDFROM1"
             update2Success=true;
             try { await todosDBAsAdmin.insert(doc);} 
             catch(e) {update2success = false;}
@@ -577,6 +586,7 @@ async function createAccountUIPost(req,res) {
     });
 
     respObj.createdSuccessfully = true;
+    console.log("about to respond with :",{respObj});
     return(respObj);
 }
 
