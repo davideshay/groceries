@@ -134,6 +134,7 @@ const Friends: React.FC = (props) => {
   }
 
   async function sendFriendRequest() {
+    console.log("in sendFriendRequest");
     hideAlert();
     const invuid=uuidv4();
     const newFriendDoc = {
@@ -154,9 +155,9 @@ const Friends: React.FC = (props) => {
                  'Accept': 'application/json'},
       data: { "uuid": invuid }           
       };
-    console.log("about to execute trigger httpget with options: ", {options})
+    console.log("about to execute triggerregemail httpget with options: ", {options})
     let response = await CapacitorHttp.post(options);
-    console.log("got trigger httpget response: ",{response});
+    console.log("got triggerregemail httpget response: ",{response});
 
     let confURL = globalState.dbCreds?.apiServerURL + "/createaccountui?uuid="+invuid;
     Clipboard.write({string: confURL});
