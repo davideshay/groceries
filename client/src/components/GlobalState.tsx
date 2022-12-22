@@ -5,7 +5,6 @@ export type GlobalState = {
     itemMode?: string,
     newItemName?: string,
     callingListID?: string,
-    syncStatus?: SyncStatus,
     dbCreds?: DBCreds,
 }
 
@@ -15,20 +14,11 @@ export interface GlobalStateContextType {
     setStateInfo: any 
 }
 
-export enum SyncStatus {
-    init = 0,
-    active = 1,
-    paused = 2,
-    error = 3,
-    denied = 4
-  }
-  
 const initialState: GlobalState = {
     itemMode: "none",
     newItemName: undefined,
     callingListID: undefined,
     dbCreds: DBCredsInit,
-    syncStatus: SyncStatus.init,
 }
 
 const initialContext = {

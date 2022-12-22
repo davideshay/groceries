@@ -16,6 +16,7 @@ import Friends from './pages/Friends';
 import RemoteDBLogin from './pages/RemoteDBLogin';
 import AppMenu from './components/AppMenu';
 import { GlobalStateProvider } from './components/GlobalState';
+import { RemoteDBStateProvider } from './components/RemoteDBState';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -53,6 +54,7 @@ const App: React.FC = () => {
   <IonApp>
     <GlobalStateProvider>
     <Provider pouchdb={db}>
+    <RemoteDBStateProvider>
     <IonReactRouter>
       <IonSplitPane contentId="main">
       <AppMenu />
@@ -86,6 +88,7 @@ const App: React.FC = () => {
         </IonRouterOutlet>
       </IonSplitPane>
     </IonReactRouter>
+    </RemoteDBStateProvider>
     </Provider>    
     </GlobalStateProvider>
   </IonApp>

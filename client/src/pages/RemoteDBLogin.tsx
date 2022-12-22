@@ -8,10 +8,10 @@ import { DBCreds, DBCredsInit } from '../components/DataTypes';
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
 import { isJsonString, urlPatternValidation, emailPatternValidation,DEFAULT_DB_NAME, DEFAULT_DB_URL_PREFIX, DEFAULT_API_URL } from '../components/Utilities'; 
-import { GlobalStateContext, SyncStatus } from '../components/GlobalState';
+import { GlobalStateContext } from '../components/GlobalState';
 import { createNewUser, RemoteState, CredsStatus, ConnectionStatus } from '../components/RemoteUtilities';
 import { cloneDeep, pick, keys, isEqual } from 'lodash';
-import { clone } from 'lodash';
+import { RemoteDBState, RemoteDBStateContext, RemoteDBStateContextType, SyncStatus } from '../components/RemoteDBState';
 
 const RemoteDBLogin: React.FC = () => {
 
@@ -29,10 +29,11 @@ const RemoteDBLogin: React.FC = () => {
       formSubmitted: false,
       formError: ""
     });
-    const [remoteDB, setRemoteDB]=useState<any>();
+//    const [remoteDB, setRemoteDB]=useState<any>();
     const [presentAlert] = useIonAlert();
     const {navigate} = useContext(NavContext);
     const { globalState, setGlobalState, setStateInfo} = useContext(GlobalStateContext);
+    const { remoteDBState, setRemoteDBState, startSync} = useContext(RemoteDBStateContext);
     
     useEffect(() => {
       if (remoteState.credsStatus === CredsStatus.needLoaded) {
@@ -197,16 +198,22 @@ const RemoteDBLogin: React.FC = () => {
 
     useEffect(() => {
       // assign effect
-      if (remoteDB == null && (remoteState.connectionStatus === ConnectionStatus.remoteDBNeedsAssigned)) {
+      if (remoteDBState.remoteDB == null && (remoteState.connectionStatus === ConnectionStatus.remoteDBNeedsAssigned)) {
         console.log("about to set RemoteDB...");
-        setRemoteDB(new PouchDB(remoteState.dbCreds.couchBaseURL+"/"+remoteState.dbCreds.database, 
-          { fetch: (url, opts: any) => ( 
-               fetch(url, { ...opts, credentials: 'include', headers:
-                { ...opts.headers, 'Authorization': 'Bearer '+remoteState.dbCreds.JWT, 'Content-type': 'application/json' }})
-                )} ));
+        setRemoteDBState({...remoteDBState,remoteDB: new PouchDB(remoteState.dbCreds.couchBaseURL+"/"+remoteState.dbCreds.database, 
+        { fetch: (url, opts: any) => ( 
+             fetch(url, { ...opts, credentials: 'include', headers:
+              { ...opts.headers, 'Authorization': 'Bearer '+remoteState.dbCreds.JWT, 'Content-type': 'application/json' }})
+              )} )});
+
+        // setRemoteDB(new PouchDB(remoteState.dbCreds.couchBaseURL+"/"+remoteState.dbCreds.database, 
+        //   { fetch: (url, opts: any) => ( 
+        //        fetch(url, { ...opts, credentials: 'include', headers:
+        //         { ...opts.headers, 'Authorization': 'Bearer '+remoteState.dbCreds.JWT, 'Content-type': 'application/json' }})
+        //         )} ));
         setRemoteState(prevstate => ({...prevstate,connectionStatus: ConnectionStatus.checkDBUUID}));
       }
-    }, [db,remoteDB,remoteState.connectionStatus])
+    }, [db,remoteDBState.remoteDB,remoteState.connectionStatus])
 
     async function destroyAndExit() {
       await db.destroy();
@@ -217,11 +224,11 @@ const RemoteDBLogin: React.FC = () => {
     async function compareRemoteDBUUID() {
         // find on remoteDB, get 1 doc
       console.log("In Compare Remote DBUUID");
-      let UUIDResults = await remoteDB.find({
+      let UUIDResults = await (remoteDBState.remoteDB as PouchDB.Database).find({
           selector: { "type": { "$eq": "dbuuid"} } })
       let UUIDResult : null|string = null;
       if (UUIDResults.docs.length > 0) {
-        UUIDResult = UUIDResults.docs[0].uuid;
+        UUIDResult = (UUIDResults.docs[0] as any).uuid;
       }
       if (UUIDResult == null) {
         console.log("ERROR: No database UUID defined in server todos database. Cannot continue");
@@ -260,31 +267,18 @@ const RemoteDBLogin: React.FC = () => {
     }
 
     useEffect(() => {      
-      if (remoteDB !== null && remoteState.connectionStatus == ConnectionStatus.checkDBUUID) {
+      if (remoteDBState.remoteDB !== null && remoteState.connectionStatus == ConnectionStatus.checkDBUUID) {
        compareRemoteDBUUID(); 
       }
-    },[db, remoteDB, remoteState.connectionStatus])
+    },[db, remoteDBState.remoteDB, remoteState.connectionStatus])
 
     useEffect(() => {
       // sync effect
-      if (remoteDB !== undefined && (remoteState.connectionStatus === ConnectionStatus.attemptToSync)) {
+      if (remoteDBState.remoteDB !== undefined && (remoteState.connectionStatus === ConnectionStatus.attemptToSync)) {
         setPrefsDBCreds();
-        const sync = db.sync(remoteDB, {
-          retry: true,
-          live: true,
-        }).on('paused', () => { setStateInfo("syncStatus", SyncStatus.paused)})
-          .on('active', () => { setStateInfo("syncStatus", SyncStatus.active)})
-          .on('denied', () => { setStateInfo("syncStatus", SyncStatus.denied)})
-          .on('error', () => { console.log ("error state") ; 
-                            setStateInfo("syncStatus", SyncStatus.error)})
-        
-        return () => {
-          // and cancel syncing whenever our sessionState changes
-          console.log("should I cancel sync here?");
-          // sync.cancel()
-        }
+        startSync();        
       }
-    }, [db,remoteDB,remoteState.connectionStatus])
+    }, [db,remoteDBState.remoteDB,remoteState.connectionStatus])
 
     useEffect(() => {
       if (remoteState.connectionStatus == ConnectionStatus.startingCreateUser) {}
@@ -315,12 +309,12 @@ const RemoteDBLogin: React.FC = () => {
       let rems=cloneDeep(remoteState);
       let gs=cloneDeep(globalState);
       console.log("maybe navigating: gotlistid ",{gs,rems});
-      if ((globalState.syncStatus === SyncStatus.active || globalState.syncStatus === SyncStatus.paused) && (remoteState.connectionStatus !== ConnectionStatus.loginComplete) ) {
+      if ((remoteDBState.syncStatus === SyncStatus.active || remoteDBState.syncStatus === SyncStatus.paused) && (remoteState.connectionStatus !== ConnectionStatus.loginComplete) ) {
         setRemoteState(prevState => ({...prevState, connectionStatus: ConnectionStatus.loginComplete}))
         setGlobalState({...globalState, dbCreds: remoteState.dbCreds});
         navigateToFirstListID();
       }
-    }, [globalState.syncStatus, remoteState.connectionStatus])
+    }, [remoteDBState.syncStatus, remoteState.connectionStatus])
 
   const setPrefsDBCreds = async() => {
         let credsObj = JSON.stringify(remoteState.dbCreds);
@@ -385,7 +379,7 @@ const RemoteDBLogin: React.FC = () => {
   }
   
 
-  if (globalState.syncStatus === SyncStatus.active || globalState.syncStatus === SyncStatus.paused) {
+  if (remoteDBState.syncStatus === SyncStatus.active || remoteDBState.syncStatus === SyncStatus.paused) {
     return (<></>)
   }
 

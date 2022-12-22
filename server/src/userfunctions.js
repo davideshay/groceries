@@ -602,6 +602,8 @@ async function triggerRegEmail(req, res) {
         text: userDoc.fullname+" has requested to share lists with you on the Groceries App. Please use the link to register for an account: "+confURL+ " . Once registered, visit "+groceryUrl+" to use the app."
     }
 
+    console.log("about to send message:",{message});
+
     transport.sendMail(message, function (error, success) {
         if (!error) {return triggerResponse}
     });
