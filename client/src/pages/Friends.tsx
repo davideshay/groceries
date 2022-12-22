@@ -12,6 +12,7 @@ import './Friends.css';
 import { GlobalStateContext } from '../components/GlobalState';
 import { FriendRow, FriendStatus, ResolvedFriendStatus } from '../components/DataTypes';
 import { checkUserByEmailExists, emailPatternValidation } from '../components/Utilities';
+import SyncIndicator from '../components/SyncIndicator';
 
 /* 
 
@@ -234,6 +235,7 @@ const Friends: React.FC = (props) => {
         <IonToolbar>
         <IonButtons key="buttonsinmenu" slot="start"><IonMenuButton key="menuhamburger" /></IonButtons>
           <IonTitle>Friends</IonTitle>
+          <SyncIndicator />
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>
