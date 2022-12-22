@@ -244,9 +244,10 @@ const RemoteDBLogin: React.FC = () => {
         return;
       } 
       let localDBInfo = null;
-      let localHasRecords = true;
+      let localHasRecords = false;
       try { localDBInfo = await db.info();} catch(e) {localHasRecords=false};
       if (localDBInfo != null && localDBInfo.doc_count > 0) { localHasRecords = true};
+      console.log({localDBInfo,localHasRecords});
 
         // if current DBCreds doesn't have one, set it to the remote one.
       if ((remoteState.dbCreds.remoteDBUUID == null || remoteState.dbCreds.remoteDBUUID == "" ) && !localHasRecords) {
