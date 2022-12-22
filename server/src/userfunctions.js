@@ -595,17 +595,21 @@ async function triggerRegEmail(req, res) {
         emailSent : false
     }
     const {uuid} = req.body;
+    console.log("about to trigger reg email for uuid: ", uuid);
 
     if (isNothing(uuid)) {return (triggerResponse);}
     let foundFriendDoc = await getFriendDocByUUID(req.body.uuid);
     if (foundFriendDoc == undefined) {return triggerResponse;};
+    console.log("Found Friend to trigger: ", {foundFriendDoc});
     let userDoc = await getUserDoc(foundFriendDoc.friendID1);
     if (userDoc.error) {return triggerResponse};
+    console.log("Got user Doc:",{userDoc});
     
     let transport = nodemailer.createTransport(smtpOptions);
     transport.verify(function (error,success) {
         if (error) {return triggerResponse}
     })
+    console.log("transport verified");
 
     let confURL = groceryAPIUrl + "/createaccountui?uuid="+foundFriendDoc.inviteUUID;
 
