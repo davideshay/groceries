@@ -360,15 +360,19 @@ async function updateUnregisteredFriends(email) {
         selector: { type: { "$eq": "friend" }, inviteEmail: { "$eq": email}}
     }
     foundFriendDocs =  await todosDBAsAdmin.find(emailq);
+    console.log("updating unregistered friends..., full list:",{foundFriendDocs});
     foundFriendDoc = undefined;
-    if (foundFriendDocs.docs.length > 0) {foundFriendDoc = foundFriendDocs.docs[0]}
+//    if (foundFriendDocs.docs.length > 0) {foundFriendDoc = foundFriendDocs.docs[0]}
     foundFriendDocs.docs.forEach(async (doc) => {
+        console.log("processing one friend:",{doc});
         if (doc.friendStatus == "WAITREGISTER") {
             doc.friendID2 = req.body.username;
-            foundFriendDoc.friendStatus = "PENDFROM1"
+            doc.friendStatus = "PENDFROM1"
+            console.log("about to update record:", doc)
             update2Success=true;
             try { await todosDBAsAdmin.insert(doc);} 
             catch(e) {update2success = false;}
+            console.log("update2success:",{update2Success})
         }
     });
 }
