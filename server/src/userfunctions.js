@@ -553,7 +553,7 @@ async function createAccountUIPost(req,res) {
     let userIDres = await createNewUser(userObj);
 
     // change friend doc to registered
-    let foundFriendDoc = getFriendDocByUUID(req.body.uuid);
+    let foundFriendDoc = await getFriendDocByUUID(req.body.uuid);
     console.log("getting friend doc by uuid",{foundFriendDoc});
     if (foundFriendDoc!=undefined) {
         console.log("updating that friend doc to PENDFROM1");
