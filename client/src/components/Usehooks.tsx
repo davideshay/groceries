@@ -17,10 +17,10 @@ export function useUpdateGenericDocument() {
             errorText: "",
             fullError: undefined
           }
-          try { response.pouchData = await db.put(updatedDoc)}
+          try { response.pouchData = await db.put(updatedDoc); console.log(response.pouchData);}
           catch(err) { response.successful = false; response.fullError = err;}
-          const result = await db.put(updatedDoc)
           if (!response.pouchData.ok) { response.successful = false;}
+          console.log(response);
       return response
     },[db])
 }
@@ -36,10 +36,10 @@ export function useCreateGenericDocument() {
             errorText: "",
             fullError: undefined
           }
-          try { response.pouchData = await db.post(updatedDoc)}
+          try { response.pouchData = await db.post(updatedDoc); console.log(response.pouchData);}
           catch(err) { response.successful = false; response.fullError = err;}
-          const result = await db.put(updatedDoc)
           if (!response.pouchData.ok) { response.successful = false;}
+          console.log(response);
       return response
     },[db])
 }

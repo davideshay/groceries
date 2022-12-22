@@ -51,6 +51,7 @@ const Category: React.FC<CategoryPageProps> = () => {
     } else {
       result = await updateCategory(stateCategoryDoc);
     }
+    console.log(result);
     if (result.successful) {
         goBack("/categories");
     } else {
