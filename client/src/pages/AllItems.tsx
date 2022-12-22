@@ -2,6 +2,7 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
   IonMenuButton, IonButton, IonFab, IonFabButton, IonIcon } from '@ionic/react';
 import { add } from 'ionicons/icons';
 import { useFind } from 'use-pouchdb';
+import SyncIndicator from '../components/SyncIndicator';
 import './AllItems.css';
 
 const AllItems: React.FC = () => {
@@ -22,6 +23,7 @@ const AllItems: React.FC = () => {
         <IonToolbar>
           <IonButtons slot="start"><IonMenuButton /></IonButtons>
           <IonTitle>All Items</IonTitle>
+          <SyncIndicator />
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>

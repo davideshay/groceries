@@ -3,6 +3,7 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonMenuButton, Io
 import { add } from 'ionicons/icons';
 import './Lists.css';
 import ListsAll from '../components/ListsAll'
+import SyncIndicator from '../components/SyncIndicator';
 
 const Lists: React.FC = () => {
 
@@ -12,6 +13,7 @@ const Lists: React.FC = () => {
         <IonToolbar>
         <IonButtons slot="start"><IonMenuButton /></IonButtons>
           <IonTitle>Shopping Lists</IonTitle>
+          <SyncIndicator />
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>

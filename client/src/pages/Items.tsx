@@ -11,6 +11,7 @@ import { useUpdateCompleted, useUpdateGenericDocument } from '../components/Useh
 import { GlobalStateContext } from '../components/GlobalState';
 import {ItemRow, ItemSearch, SearchState, PageState} from '../components/DataTypes'
 import { getAllSearchRows, getItemRows, filterSearchRows } from '../components/ItemUtilities';
+import SyncIndicator from '../components/SyncIndicator';
 
 const Items: React.FC = () => {
 
@@ -179,7 +180,7 @@ const Items: React.FC = () => {
         </IonItem>
         {popOverElem}
         {alertElem}
-    </IonTitle></IonToolbar></IonHeader>)
+    </IonTitle><SyncIndicator /></IonToolbar></IonHeader>)
 
   if (pageState.itemRows.length <=0 )  {return(
     <IonPage>{headerElem}<IonContent><IonItem key="nonefound"><IonLabel key="nothinghere">No Items On List</IonLabel></IonItem></IonContent></IonPage>

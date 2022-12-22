@@ -178,17 +178,21 @@ export function useFriends(username: string) : {friendsLoading: boolean, friendR
           })
           
         }
+        console.log("exiting getUsers");
       }
       console.log("anything else happen?");
       if ( !friendsLoading && !friendRowsLoading)  {
         console.log("got a change in usehook");
+        console.log("set friends loading to true");
         friendRowsLoading = true;
+        console.log("called getusers");
         getUsers();
+        console.log("setting friendsrowloading to false");
         friendRowsLoading = false;
       }
     },[friendsLoading,friendDocs]);
 
-    if (friendsLoading || friendRowsLoading) { return({friendsLoading: false,friendRowsLoading: false,friendRows: []})}
+    if (friendsLoading || friendRowsLoading) { return({friendsLoading: true,friendRowsLoading: true,friendRows: []})}
     return({friendsLoading, friendRowsLoading,friendRows});
 
 }

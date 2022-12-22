@@ -10,6 +10,7 @@ import { GlobalStateContext } from '../components/GlobalState';
 import { cloneDeep, isEmpty } from 'lodash';
 import './Item.css';
 import { analytics } from 'ionicons/icons';
+import SyncIndicator from '../components/SyncIndicator';
 
 interface ItemPageProps
   extends RouteComponentProps<{
@@ -136,6 +137,7 @@ const Item: React.FC<ItemPageProps> = () => {
         <IonToolbar>
         <IonButtons slot="start"><IonMenuButton /></IonButtons>
           <IonTitle>Editing Item: {(stateItemDoc as any).name}</IonTitle>
+          <SyncIndicator />
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>

@@ -7,6 +7,7 @@ import { useUpdateGenericDocument, useCreateGenericDocument } from '../component
 import { cloneDeep } from 'lodash';
 import './Category.css';
 import { PouchResponse } from '../components/DataTypes';
+import SyncIndicator from '../components/SyncIndicator';
 
 interface CategoryPageProps
   extends RouteComponentProps<{
@@ -65,6 +66,7 @@ const Category: React.FC<CategoryPageProps> = () => {
         <IonToolbar>
         <IonButtons slot="start"><IonMenuButton /></IonButtons>
           <IonTitle>Editing Category: {(stateCategoryDoc as any).name}</IonTitle>
+          <SyncIndicator />
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>

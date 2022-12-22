@@ -58,7 +58,7 @@ interface PageState {
 const Friends: React.FC = (props) => {
   const { globalState} = useContext(GlobalStateContext);
   const uname = (globalState.dbCreds as any).dbUsername;
-  const {friendsLoading,friendRows} = useFriends(uname);
+  const {friendRowsLoading,friendsLoading,friendRows} = useFriends(uname);
   const updateDoc = useUpdateGenericDocument();
   const createDoc = useCreateGenericDocument();
   const [friendsElem,setFriendsElem] = useState<any[]>([]);
@@ -109,8 +109,8 @@ const Friends: React.FC = (props) => {
   }
 
   function updateFriendsElem() {
+    setFriendsElem(prevState => ([]));
     if (friendRows.length > 0) {
-      setFriendsElem(prevState => ([]));
       console.log(friendRows);
       friendRows.forEach((friendRow: FriendRow) => {
         const itemKey = (friendRow.targetUserName == "" || friendRow.targetUserName == null) ? friendRow.targetEmail : friendRow.targetUserName;
@@ -121,9 +121,11 @@ const Friends: React.FC = (props) => {
   }
    
   useEffect( () => {
-    console.log("Friend Rows Changed: ",{friendRows});
-    updateFriendsElem();
-  },[friendRows])
+    console.log("Friend Rows Changed: ",{friendRows,friendRowsLoading});
+    if (!friendRowsLoading) {
+      updateFriendsElem();
+    }  
+  },[friendRows,friendRowsLoading])
 
   function addFriend() {
 

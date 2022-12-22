@@ -9,6 +9,7 @@ import { cloneDeep, isEmpty, isEqual } from 'lodash';
 import './List.css';
 import { GlobalStateContext } from '../components/GlobalState';
 import { ResolvedFriendStatus } from '../components/DataTypes';
+import SyncIndicator from '../components/SyncIndicator';
 
 interface PageState {
   needInitListDoc: boolean,
@@ -312,6 +313,7 @@ const List: React.FC = () => {
         <IonToolbar>
         <IonButtons slot="start"><IonMenuButton /></IonButtons>
             {selectDropDown}
+            <SyncIndicator />
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>

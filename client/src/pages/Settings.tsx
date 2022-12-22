@@ -4,6 +4,7 @@ import { useContext } from 'react';
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
 import './Settings.css';
+import SyncIndicator from '../components/SyncIndicator';
 
 
 const Settings: React.FC = (props) => {
@@ -42,6 +43,7 @@ const Settings: React.FC = (props) => {
         <IonToolbar>
         <IonButtons slot="start"><IonMenuButton /></IonButtons>
           <IonTitle>Settings</IonTitle>
+          <SyncIndicator />
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>
