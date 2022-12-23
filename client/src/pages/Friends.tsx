@@ -14,6 +14,7 @@ import { GlobalStateContext } from '../components/GlobalState';
 import { FriendRow, FriendStatus, ResolvedFriendStatus } from '../components/DataTypes';
 import { checkUserByEmailExists, emailPatternValidation } from '../components/Utilities';
 import SyncIndicator from '../components/SyncIndicator';
+import { unstable_renderSubtreeIntoContainer } from 'react-dom';
 
 /* 
 
@@ -151,8 +152,13 @@ const Friends: React.FC = (props) => {
       friendStatus: FriendStatus.WaitingToRegister
     }
     console.log(newFriendDoc);
-    let result=await createDoc(newFriendDoc);
-    console.log(result);
+
+    let createFriendSuccessful=true; let createResults;
+    try { createResults = await remoteDBState.remoteDB?.put(newFriendDoc) } 
+    catch(e) {createFriendSuccessful=false; console.log(e)}
+    console.log({createResults});
+//    let result=await createDoc(newFriendDoc);
+//    console.log(result);
     const options = {
       url: String(remoteDBState.dbCreds.apiServerURL+"/triggerregemail"),
       method: "POST",
