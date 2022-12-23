@@ -81,13 +81,12 @@ export interface DBCreds {
     dbUsername: string | null,
     email: string | null,
     fullName: string | null,
-    JWT: string | null,
-    remoteDBUUID: string | null
+    JWT: string | null
 }
 
 export const DBCredsInit: DBCreds = {
     apiServerURL: null, couchBaseURL: null, database: null,
-    dbUsername: null, email: null, fullName: null, JWT: null, remoteDBUUID: null
+    dbUsername: null, email: null, fullName: null, JWT: null
 }
 
 const initialState: RemoteDBState = {
@@ -155,10 +154,14 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         const credsOrigKeys = keys(credsObj);
         if (isJsonString(String(credsStr))) {
           console.log("returning filtered creds");
+          console.log("incoming string : ",credsStr);
           credsObj=JSON.parse(String(credsStr));
-          let credsObjFiltered=pick(credsObj,['apiServerURL','couchBaseURL','database','dbUsername','email','fullName','JWT',"remoteDBUUID"])
+          console.log("parsed string: ",credsObj)
+          let credsObjFiltered=pick(credsObj,['apiServerURL','couchBaseURL','database','dbUsername','email','fullName','JWT'])
+          console.log("credsObjFiltered:",cloneDeep(credsObjFiltered));
           setRemoteDBState(prevstate => ({...prevstate,dbCreds: credsObjFiltered}))
           credsObj = credsObjFiltered;
+          console.log("reassigned credsObj",cloneDeep(credsObj));
         }
         const credKeys = keys(credsObj);
         if (credsObj == null || (credsObj as any).apiServerURL == undefined || (!isEqual(credsOrigKeys.sort(),credKeys.sort()))) {
@@ -169,11 +172,11 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
                 JWT:"",
                 email: "",
                 fullName: "",
-                remoteDBUUID:"" };
+                };
             console.log("setting state DB Creds to ", {credsObj});    
             setRemoteDBState(prevstate => ({...prevstate, dbCreds: credsObj}))
-            return (credsObj);
         }
+        return credsObj;
       }
     
       function errorCheckCreds(credsObj: DBCreds,background: boolean, creatingNewUser: boolean = false, password: string = "", verifyPassword: string = "") {
@@ -184,6 +187,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         function setError(err: string) {
             credsCheck.credsError = true; credsCheck.errorText=err;
         }
+        console.log({credsObj});
         if (background && (credsObj.JWT == null || credsObj.JWT == "")) {
             setError("No existing credentials found"); return credsCheck;}
         if (credsObj.apiServerURL == null || credsObj.apiServerURL == "") {
@@ -244,18 +248,16 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         if (UUIDResults.docs.length > 0) {
           UUIDResult = (UUIDResults.docs[0] as any).uuid;
         }
+        console.log("Initial UUID Result: ", UUIDResult);
         if (UUIDResult == null) {
           console.log("ERROR: No database UUID defined in server todos database. Cannot continue");
           UUIDCheck.checkOK = false; UUIDCheck.dbUUIDAction = DBUUIDAction.exit_no_uuid_on_server;
           return UUIDCheck;
         }
-          // compare to current DBCreds one.
-        if (credsObj.remoteDBUUID == UUIDResult) {
-          console.log("Compared the same");
-          return UUIDCheck;
-        } 
+
         let localDBInfo = null;
         let localHasRecords = false;
+        let localDBUUID = null;
         try { localDBInfo = await db.info();} catch(e) {localHasRecords=false};
         if (localDBInfo != null && localDBInfo.doc_count > 0) { localHasRecords = true}
         console.log({localDBInfo,localHasRecords});
@@ -267,11 +269,33 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
               (localDBInfo?.doc_count == 1) &&
              ((localDBAllDocs.rows[0]?.doc) as any).language == "query")
              { localHasRecords = false }
-        }  
-  
+        }
+        if (localHasRecords) {
+            let localDBFindDocs = null;
+            try { localDBFindDocs = await db.find({selector: { "type": { "$eq": "dbuuid"} }}) }
+            catch(e) {console.log(e)};
+            console.log({localDBFindDocs});
+            if ((localDBFindDocs != null) && localDBFindDocs.docs.length == 1) {
+                localDBUUID = (localDBFindDocs.docs[0] as any).uuid;
+            }
+        }
+        
+        console.log({localHasRecords,localDBUUID});
+
+        // compare to current DBCreds one.
+        if (localDBUUID == UUIDResult) {
+        console.log("Compared the same");
+        return UUIDCheck;
+        } 
+          
+        console.log("local has records ",localHasRecords);
+
+        //TODO : Need a check on the one in the database, not in localstorage? Should this be the main check?
+
+
           // if current DBCreds doesn't have one, set it to the remote one.
-        if ((credsObj.remoteDBUUID == null || credsObj.remoteDBUUID == "" ) && !localHasRecords) {
-            credsObj.remoteDBUUID = UUIDResult;
+        if ((localDBUUID == null || localDBUUID == "" ) && !localHasRecords) {
+ //           credsObj.remoteDBUUID = UUIDResult;
           console.log("none defined locally, setting");
           return UUIDCheck;
         }
@@ -308,6 +332,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
 
     async function attemptFullLogin() {
         let credsObj = await getPrefsDBCreds();
+        console.log("returned credsObj: ",cloneDeep(credsObj));
         let credsCheck =  errorCheckCreds((credsObj as DBCreds),true);
         console.log({credsCheck});
         if (credsCheck.credsError) {

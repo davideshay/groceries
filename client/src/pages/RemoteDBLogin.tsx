@@ -75,9 +75,6 @@ const RemoteDBLogin: React.FC = () => {
     const { globalState, setGlobalState, setStateInfo} = useContext(GlobalStateContext);
     const { remoteDBState, setRemoteDBState, errorCheckCreds, assignDBAndSync, setDBCredsValue} = useContext(RemoteDBStateContext);
 
-    console.log("did I even get to RemoteDBLogin??");
-
-
     // effect for dbuuidaction not none
     useEffect( () => {
       if (remoteDBState.dbUUIDAction !== DBUUIDAction.none) {
