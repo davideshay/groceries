@@ -121,9 +121,12 @@ const RemoteDBLogin: React.FC = () => {
     
   async function submitForm() {
 //    setPrefsDBCreds();
+    console.log("in submit form");
     let credsCheck = errorCheckCreds(remoteDBState.dbCreds,false,false,remoteState.password);
+    console.log(credsCheck);
     if (credsCheck.credsError ) {
       setRemoteState(prevState => ({...prevState,formError: String(credsCheck.credsError)}))
+      console.log("error found, exiting submit");
       return;
     }
     let response: HttpResponse;
@@ -136,6 +139,7 @@ const RemoteDBLogin: React.FC = () => {
                 password: remoteState.password},           
     };
     response = await CapacitorHttp.post(options);
+    console.log("got http response",{response});
     if (!((response?.status == 200) && (response?.data?.loginSuccessful))) {
         setRemoteState(prevState => ({...prevState, formError: "Invalid Authentication"}))
         return
@@ -168,8 +172,6 @@ const RemoteDBLogin: React.FC = () => {
     if (!assignSuccess) {
       setRemoteState(prevState => ({...prevState, formError: "Error Starting Sync"}));
     }
-
-
   }
   
 
@@ -178,7 +180,7 @@ const RemoteDBLogin: React.FC = () => {
   }
   
   let formElem;
-  if (remoteState.loginByPassword) {
+  if (!remoteState.inCreateMode) {
     formElem = <><IonItem><IonLabel position="stacked">API Server URL</IonLabel>
     <IonInput type="url" inputmode="url" value={remoteDBState.dbCreds.apiServerURL} onIonChange={(e) => {setDBCredsValue("apiServerURL",String(e.detail.value))}}>
     </IonInput>
@@ -222,18 +224,18 @@ const RemoteDBLogin: React.FC = () => {
   }
 
   let buttonsElem
-  if (remoteState.loginByPassword) {
+  if (!remoteState.inCreateMode) {
     buttonsElem=<>
       <IonItem>
       <IonButton slot="start" onClick={() => submitForm()}>Login</IonButton>
-      <IonButton slot="end" onClick={() => setRemoteState(prevState => ({...prevState,formError: "",  loginByPassword: false}))}>Create New User</IonButton>
+      <IonButton slot="end" onClick={() => setRemoteState(prevState => ({...prevState,formError: ""}))}>Create New User</IonButton>
       </IonItem>
     </>
   } else {
     buttonsElem=<>
       <IonItem>
       <IonButton onClick={() => submitCreateForm()}>Create</IonButton>
-      <IonButton onClick={() => setRemoteState(prevState => ({...prevState,loginByPassword: true, createNewUser: false}))}>Cancel</IonButton>
+      <IonButton onClick={() => setRemoteState(prevState => ({...prevState,inCreateMode: false}))}>Cancel</IonButton>
       </IonItem>
     </>
   }

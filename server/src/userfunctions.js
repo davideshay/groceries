@@ -321,7 +321,7 @@ async function issueToken(req, res) {
          response.loginRoles = loginResponse.loginRoles;
          response.email = userDoc.email;
          response.fullname = userDoc.fullname;
-         response.loginJWT = await generateJWT(username);
+         response.jwt = await generateJWT(username);
      }
     return(response);
 

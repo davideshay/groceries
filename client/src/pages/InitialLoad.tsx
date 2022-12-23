@@ -43,7 +43,7 @@ const InitialLoad: React.FC = () => {
             // should do logic here around navigating to first list
             navigateToFirstListID();
         } else {
-            present({message: "Please wait, logging into server...", duration: 100})
+            present({message: "Please wait, logging into server...", duration: 500})
         }   
     },[remoteDBState.connectionStatus])   
 
