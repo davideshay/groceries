@@ -244,7 +244,7 @@ const Items: React.FC = () => {
         </IonItemDivider></IonItemGroup>);
   for (let i = 0; i < pageState.itemRows.length; i++) {
     const item = pageState.itemRows[i];
-    if ((lastCategorySeq !== item.categorySeq )||(lastCategoryFinished !== item.completed)) { 
+    if ((lastCategoryName !== item.categoryName )||(lastCategoryFinished !== item.completed)) { 
       if (currentRows.length > 0) {
         addCurrentRows(listContent,currentRows,lastCategoryID,lastCategoryName,lastCategoryFinished);
         currentRows=[];

@@ -67,7 +67,7 @@ export function getItemRows(itemDocs: any, listDocs: any, categoryDocs: any, lis
     itemRows.push(itemRow);
     })
     itemRows.sort((a,b) => (
-    (Number(a.completed) - Number(b.completed)) || (a.categorySeq - b.categorySeq) ||
+    (Number(a.completed) - Number(b.completed)) || (a.categorySeq - b.categorySeq) || (a.categoryName.localeCompare(b.categoryName)) ||
     (a.itemName.localeCompare(b.itemName))
     ))
     return (itemRows)

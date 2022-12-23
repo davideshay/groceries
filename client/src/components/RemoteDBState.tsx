@@ -265,10 +265,14 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
           let localDBAllDocs = null;
           try { localDBAllDocs = await db.allDocs({include_docs: true});} catch(e) {console.log(e)};
           console.log(localDBAllDocs);
-          if ((localDBAllDocs != null) &&
-              (localDBInfo?.doc_count == 1) &&
-             ((localDBAllDocs.rows[0]?.doc) as any).language == "query")
-             { localHasRecords = false }
+          localHasRecords = false;
+          if (localDBAllDocs != null) {
+            localDBAllDocs.rows.forEach(doc => {
+              if ((doc as any).language != "query") {
+                    localHasRecords=true;
+                }
+            });
+          }
         }
         if (localHasRecords) {
             let localDBFindDocs = null;
