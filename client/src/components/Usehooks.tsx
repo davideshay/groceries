@@ -2,7 +2,7 @@ import { useCallback, useState, useEffect, useContext } from 'react'
 import { usePouch, useFind } from 'use-pouchdb'
 import { cloneDeep } from 'lodash';
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
-import { GlobalStateContext } from '../components/GlobalState';
+import { RemoteDBStateContext } from './RemoteDBState';
 import { FriendStatus, FriendRow, ResolvedFriendStatus, PouchResponse } from './DataTypes';
 
 
@@ -94,7 +94,8 @@ export function useUpdateItemInList() {
 
 export function useFriends(username: string) : {friendsLoading: boolean, friendRowsLoading: boolean, friendRows: FriendRow[]} {
   const [friendRows,setFriendRows] = useState<FriendRow[]>([]);
-  const { globalState} = useContext(GlobalStateContext);
+  const { remoteDBState } = useContext(RemoteDBStateContext);
+  const [friendRowsLoading,setFriendRowsLoading] = useState(false);
 
   const { docs: friendDocs, loading: friendsLoading, error: friendsError } = useFind({
     index: { fields: ["type","friendID1","friendID2"]},
@@ -108,8 +109,6 @@ export function useFriends(username: string) : {friendsLoading: boolean, friendR
     sort: [ "type", "friendID1", "friendID2" ],
 //    fields: [ "type", "friendID1", "friendID2", "friendStatus"]
     })
-
-  let friendRowsLoading = false;
 
     useEffect( () => {
       console.log("UseEffect in usefriend executing:",{friendsLoading,friendRowsLoading,friendDocs})
@@ -128,7 +127,7 @@ export function useFriends(username: string) : {friendsLoading: boolean, friendR
       const getUsers = async () => {
         console.log("inside getUsers");
         const options = {
-          url: String(globalState.dbCreds?.apiServerURL+"/getusersinfo"),
+          url: String(remoteDBState.dbCreds?.apiServerURL+"/getusersinfo"),
           data: userIDList,
           method: "POST",
           headers: { 'Content-Type': 'application/json',
@@ -144,7 +143,7 @@ export function useFriends(username: string) : {friendsLoading: boolean, friendR
             console.log({friendDoc});
             let friendRow : any = {};
             friendRow.friendDoc=cloneDeep(friendDoc);
-            if (friendRow.friendDoc.friendID1 == globalState.dbCreds?.dbUsername)
+            if (friendRow.friendDoc.friendID1 == remoteDBState.dbCreds.dbUsername)
               { friendRow.targetUserName = friendRow.friendDoc.friendID2}
             else { friendRow.targetUserName = friendRow.friendDoc.friendID1}
             console.log(friendRow.targetUserName);
@@ -157,8 +156,8 @@ export function useFriends(username: string) : {friendsLoading: boolean, friendR
             }
             friendRow.targetFullName = user.fullname;
             if (friendDoc.friendStatus == FriendStatus.PendingFrom1 || friendDoc.friendStatus == FriendStatus.PendingFrom2) {
-              if ((globalState.dbCreds?.dbUsername == friendDoc.friendID1 && friendDoc.friendStatus == FriendStatus.PendingFrom2) || 
-                  (globalState.dbCreds?.dbUsername == friendDoc.friendID2 && friendDoc.friendStatus == FriendStatus.PendingFrom1))
+              if ((remoteDBState.dbCreds.dbUsername == friendDoc.friendID1 && friendDoc.friendStatus == FriendStatus.PendingFrom2) || 
+                  (remoteDBState.dbCreds.dbUsername == friendDoc.friendID2 && friendDoc.friendStatus == FriendStatus.PendingFrom1))
               {
                 friendRow.friendStatusText = "Confirm?"
                 friendRow.resolvedStatus = ResolvedFriendStatus.PendingConfirmation;
@@ -184,13 +183,13 @@ export function useFriends(username: string) : {friendsLoading: boolean, friendR
       if ( !friendsLoading && !friendRowsLoading)  {
         console.log("got a change in usehook");
         console.log("set friends loading to true");
-        friendRowsLoading = true;
+        setFriendRowsLoading(true);
         console.log("called getusers");
         getUsers();
         console.log("setting friendsrowloading to false");
-        friendRowsLoading = false;
+        setFriendRowsLoading(false);
       }
-    },[friendsLoading,friendDocs]);
+    },[friendsLoading,friendRowsLoading,friendDocs]);
 
     if (friendsLoading || friendRowsLoading) { return({friendsLoading: true,friendRowsLoading: true,friendRows: []})}
     return({friendsLoading, friendRowsLoading,friendRows});

@@ -38,22 +38,6 @@ export interface ItemRow {
     alertMessage: string
   }
 
-  export interface DBCreds {
-    apiServerURL: string | null,
-    couchBaseURL: string | null,
-    database: string | null,
-    dbUsername: string | null,
-    email: string | null,
-    fullName: string | null,
-    JWT: string | null,
-    remoteDBUUID: string | null
-  }
-
-  export const DBCredsInit: DBCreds = {
-    apiServerURL: null, couchBaseURL: null, database: null,
-    dbUsername: null, email: null, fullName: null, JWT: null, remoteDBUUID: null
-  }
-
   export enum FriendStatus {
     PendingFrom1 = "PENDFROM1",
     PendingFrom2 = "PENDFROM2",

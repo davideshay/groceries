@@ -7,7 +7,7 @@ import { useState, useEffect, useContext } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useFriends } from '../components/Usehooks';
 import { cloneDeep, isEmpty, isEqual } from 'lodash';
 import './List.css';
-import { GlobalStateContext } from '../components/GlobalState';
+import { RemoteDBStateContext } from '../components/RemoteDBState';
 import { ResolvedFriendStatus } from '../components/DataTypes';
 import SyncIndicator from '../components/SyncIndicator';
 
@@ -30,16 +30,17 @@ const List: React.FC = () => {
   })
   const updateListWhole  = useUpdateGenericDocument();
   const createList = useCreateGenericDocument();
-  const { globalState } = useContext(GlobalStateContext);
-  const {friendsLoading,friendRowsLoading,friendRows} = useFriends(String(globalState.dbCreds?.dbUsername));
+  const { remoteDBState, setRemoteDBState, startSync} = useContext(RemoteDBStateContext);
+
+  const {friendsLoading,friendRowsLoading,friendRows} = useFriends(String(remoteDBState.dbCreds.dbUsername));
 
   const { docs: listDocs, loading: listLoading, error: listError} = useFind({
     index: { fields: ["type","name"] },
     selector: { "$and": [ 
       {  "type": "list",
          "name": { "$exists": true } },
-      { "$or" : [{"listOwner": globalState.dbCreds?.dbUsername},
-                 {"sharedWith": { $elemMatch: {$eq: globalState.dbCreds?.dbUsername}}}]
+      { "$or" : [{"listOwner": remoteDBState.dbCreds.dbUsername},
+                 {"sharedWith": { $elemMatch: {$eq: remoteDBState.dbCreds.dbUsername}}}]
       }             
     ] },
     sort: [ "type","name"]
@@ -74,7 +75,7 @@ const List: React.FC = () => {
         let initListDoc = {
           type: "list",
           name: "",
-          listOwner: globalState.dbCreds?.dbUsername,
+          listOwner: remoteDBState.dbCreds.dbUsername,
           sharedWith: [],
           categories: initCategories
         }
@@ -184,7 +185,7 @@ const List: React.FC = () => {
   let usersElem=[];
   let ownerText="";
   let iAmListOwner=false;
-  if (pageState.listDoc.listOwner == globalState.dbCreds?.dbUsername) {
+  if (pageState.listDoc.listOwner == remoteDBState.dbCreds.dbUsername) {
     ownerText = "You are the list owner";
     iAmListOwner=true;
   } else {

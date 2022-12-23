@@ -14,6 +14,7 @@ import Category from './pages/Category';
 import Settings from './pages/Settings';
 import Friends from './pages/Friends';
 import RemoteDBLogin from './pages/RemoteDBLogin';
+import InitialLoad from './pages/InitialLoad';
 import AppMenu from './components/AppMenu';
 import { GlobalStateProvider } from './components/GlobalState';
 import { RemoteDBStateProvider } from './components/RemoteDBState';
@@ -79,12 +80,13 @@ const App: React.FC = () => {
             <Friends />
           </Route>
           <Route exact path="/">
-            <Redirect to="/login" />
+            <Redirect to="/initialload" />
           </Route>
           <Route path="/list/:mode/:id?" component={List}>
           </Route>
-          <Route path="/login" component={RemoteDBLogin}>
+          <Route exact path="/login" component={RemoteDBLogin}>
           </Route>
+          <Route exact path="/initialload" component={InitialLoad}></Route>
         </IonRouterOutlet>
       </IonSplitPane>
     </IonReactRouter>

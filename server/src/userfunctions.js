@@ -308,7 +308,7 @@ async function issueToken(req, res) {
         email: "",
         fullname: "",
         loginRoles: [],
-        loginJWT: "",
+        jwt: "",
         couchdbUrl: process.env.COUCHDB_URL,
         couchdbDatabase: process.env.COUCHDB_DATABASE
     }
@@ -383,6 +383,7 @@ function isNothing(obj) {
 }
 
 async function registerNewUser(req, res) {
+    const {username, password, email, fullname} = req.body;
     const registerResponse = {
         invalidData: false,
         userAlreadyExists: false,
@@ -390,9 +391,10 @@ async function registerNewUser(req, res) {
         idCreated: "",
         jwt: "",
         couchdbUrl: process.env.COUCHDB_URL,
-        couchdbDatabase: process.env.COUCHDB_DATABASE
+        couchdbDatabase: process.env.COUCHDB_DATABASE,
+        email: email,
+        fullname: fullname
     }
-    const {username, password, email, fullname} = req.body;
 
     if (isNothing(username) || isNothing(password) || isNothing(email) || isNothing(fullname)) {
         registerResponse.invalidData = true;

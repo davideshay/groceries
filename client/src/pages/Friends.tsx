@@ -9,6 +9,7 @@ import { cloneDeep } from 'lodash';
 import { useCreateGenericDocument, useFriends, useUpdateGenericDocument} from '../components/Usehooks';
 import { add } from 'ionicons/icons';
 import './Friends.css';
+import { RemoteDBStateContext } from '../components/RemoteDBState';
 import { GlobalStateContext } from '../components/GlobalState';
 import { FriendRow, FriendStatus, ResolvedFriendStatus } from '../components/DataTypes';
 import { checkUserByEmailExists, emailPatternValidation } from '../components/Utilities';
@@ -58,7 +59,8 @@ interface PageState {
               
 const Friends: React.FC = (props) => {
   const { globalState} = useContext(GlobalStateContext);
-  const uname = (globalState.dbCreds as any).dbUsername;
+  const { remoteDBState } = useContext(RemoteDBStateContext);
+  const uname = (remoteDBState.dbCreds as any).dbUsername;
   const {friendRowsLoading,friendsLoading,friendRows} = useFriends(uname);
   const updateDoc = useUpdateGenericDocument();
   const createDoc = useCreateGenericDocument();
@@ -91,7 +93,7 @@ const Friends: React.FC = (props) => {
   }
 
   function showURL(friendRow: FriendRow) {
-    let confURL = globalState.dbCreds?.apiServerURL + "/createaccountui?uuid="+friendRow.friendDoc.inviteUUID;
+    let confURL = remoteDBState.dbCreds.apiServerURL + "/createaccountui?uuid="+friendRow.friendDoc.inviteUUID;
     Clipboard.write({string: confURL});
     setPageState(prevState => ({...prevState,formError: "", inAddMode: false, newFriendEmail: "",
             showRegistrationURL: true,
@@ -142,7 +144,7 @@ const Friends: React.FC = (props) => {
     const invuid=uuidv4();
     const newFriendDoc = {
       type: "friend",
-      friendID1: globalState.dbCreds?.dbUsername,
+      friendID1: remoteDBState.dbCreds.dbUsername,
       friendID2: null,
       inviteEmail: pageState.newFriendEmail,
       inviteUUID: invuid,
@@ -152,7 +154,7 @@ const Friends: React.FC = (props) => {
     let result=await createDoc(newFriendDoc);
     console.log(result);
     const options = {
-      url: String(globalState.dbCreds?.apiServerURL+"/triggerregemail"),
+      url: String(remoteDBState.dbCreds.apiServerURL+"/triggerregemail"),
       method: "POST",
       headers: { 'Content-Type': 'application/json',
                  'Accept': 'application/json'},
@@ -162,7 +164,7 @@ const Friends: React.FC = (props) => {
     let response = await CapacitorHttp.post(options);
     console.log("got triggerregemail httpget response: ",{response});
 
-    let confURL = globalState.dbCreds?.apiServerURL + "/createaccountui?uuid="+invuid;
+    let confURL = remoteDBState.dbCreds.apiServerURL + "/createaccountui?uuid="+invuid;
     Clipboard.write({string: confURL});
     setPageState(prevState => ({...prevState,formError: "", inAddMode: false, newFriendEmail: "",
             showRegistrationURL: true,
@@ -180,17 +182,17 @@ const Friends: React.FC = (props) => {
       setPageState(prevState => ({...prevState, formError: "Invalid email address"}));
     }
     console.log("... add friend here ...");
-    const response = await checkUserByEmailExists(pageState.newFriendEmail,globalState);
+    const response = await checkUserByEmailExists(pageState.newFriendEmail,remoteDBState);
     console.log("response to check user", response);
     if (response.userExists) {
       let friend1 = ""; let friend2 = ""; let pendfrom1: boolean = false;
-      if (response.username > String(globalState.dbCreds?.dbUsername)) {
-        friend1 = String(globalState.dbCreds?.dbUsername);
+      if (response.username > String(remoteDBState.dbCreds.dbUsername)) {
+        friend1 = String(remoteDBState.dbCreds.dbUsername);
         friend2 = response.username;
         pendfrom1 = true;
       } else {
         friend1 = response.username
-        friend2 = String(globalState.dbCreds?.dbUsername);
+        friend2 = String(remoteDBState.dbCreds.dbUsername);
       }
       const newFriendDoc = {
         type: "friend",

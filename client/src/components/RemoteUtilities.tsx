@@ -1,58 +1,19 @@
-import { DBCreds } from "./DataTypes";
+import { DBCreds, RemoteDBState } from "./RemoteDBState";
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
-
-export type RemoteState = {
-    dbCreds: DBCreds,
-    password: string | undefined,
-    verifyPassword: string | undefined,
-    credsStatus: CredsStatus,
-    connectionStatus: ConnectionStatus,
-    httpResponse: HttpResponse | undefined,
-    showLoginForm: boolean,
-    loginByPassword: boolean,
-    createNewUser: boolean,
-    formError: string,
-    formSubmitted: boolean,
-  }
-
-  export enum CredsStatus {
-    needLoaded = 0,
-    loading = 1,
-    loaded = 2
-  }
   
-  export enum ConnectionStatus {
-    cannotStart = 0,
-    JWTNeedsChecking = 1,
-    checkingJWT = 2,
-    JWTResponseFound = 3,
-    JWTInvalid = 4,
-    JWTValid = 5,
-    tryIssueToken = 6,
-    checkingIssueToken = 7,
-    tokenResponseFound = 8,
-    startingCreateUser = 9,
-    createUserResponseFound = 10,
-    remoteDBNeedsAssigned = 10,
-    remoteDBAssigned = 11,
-    checkDBUUID = 12,
-    attemptToSync = 13,
-    loginComplete = 14
-  }
-  
-export async function createNewUser(remoteState: RemoteState) {
+export async function createNewUser(remoteDBState: RemoteDBState,password: string) {
     let response: HttpResponse | undefined;
     const options = {
-        url: String(remoteState.dbCreds.apiServerURL+"/registernewuser"),
+        url: String(remoteDBState.dbCreds.apiServerURL+"/registernewuser"),
         method: "POST",
         headers: { 'Content-Type': 'application/json',
                    'Accept': 'application/json',
-                   'Authorization': 'Bearer '+remoteState.dbCreds.JWT },
+                   'Authorization': 'Bearer '+remoteDBState.dbCreds.JWT },
         data: {
-            username: remoteState.dbCreds.dbUsername,
-            password: remoteState.password,
-            email: remoteState.dbCreds.email,
-            fullname: remoteState.dbCreds.fullName
+            username: remoteDBState.dbCreds.dbUsername,
+            password: password,
+            email: remoteDBState.dbCreds.email,
+            fullname: remoteDBState.dbCreds.fullName
         }           
     };
     console.log("about to execute createnewuser httpget with options: ", {options})

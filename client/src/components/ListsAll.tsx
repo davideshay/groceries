@@ -2,7 +2,7 @@ import { IonList, IonItem, IonButton, IonMenuToggle, IonIcon } from '@ionic/reac
 import { useContext } from 'react';
 import { useFind } from 'use-pouchdb';
 import { pencilOutline } from 'ionicons/icons';
-import { GlobalStateContext } from '../components/GlobalState';
+import { RemoteDBStateContext } from './RemoteDBState';
 import './ListsAll.css';
 
 interface ListsAllProps {
@@ -10,15 +10,14 @@ interface ListsAllProps {
 }
 
 const ListsAll: React.FC<ListsAllProps> = ({separatePage}) => {
-  //TODO -- filter by list owner and/or sharedwith id
-  const { globalState } = useContext(GlobalStateContext);
+  const { remoteDBState } = useContext(RemoteDBStateContext);
   const { docs: listDocs, loading: listLoading, error: listError} = useFind({
     index: { fields: ["type","name"] },
     selector: { "$and": [ 
       {  "type": "list",
          "name": { "$exists": true } },
-      { "$or" : [{"listOwner": globalState.dbCreds?.dbUsername},
-                 {"sharedWith": { $elemMatch: {$eq: globalState.dbCreds?.dbUsername}}}]
+      { "$or" : [{"listOwner": remoteDBState.dbCreds.dbUsername},
+                 {"sharedWith": { $elemMatch: {$eq: remoteDBState.dbCreds.dbUsername}}}]
       }             
     ] },
     sort: [ "type","name"]

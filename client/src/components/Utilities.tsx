@@ -1,5 +1,6 @@
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import { GlobalState } from './GlobalState';
+import { RemoteDBState } from './RemoteDBState';
 
 export function isJsonString(str: string): boolean {
     try {
@@ -20,14 +21,14 @@ export function emailPatternValidation(email: string) {
     return emailRegex.test(email);
 };
 
-export async function checkUserByEmailExists(email: string, globalState: GlobalState) {
+export async function checkUserByEmailExists(email: string, remoteDBState: RemoteDBState) {
     let response: HttpResponse | undefined;
     const options = {
-        url: String(globalState.dbCreds?.apiServerURL+"/checkuserbyemailexists"),
+        url: String(remoteDBState.dbCreds?.apiServerURL+"/checkuserbyemailexists"),
         method: "POST",
         headers: { 'Content-Type': 'application/json',
                    'Accept': 'application/json',
-                   'Authorization': 'Bearer '+globalState.dbCreds?.JWT },
+                   'Authorization': 'Bearer '+remoteDBState.dbCreds?.JWT },
         data: {
             email: email,
         }           
@@ -37,10 +38,6 @@ export async function checkUserByEmailExists(email: string, globalState: GlobalS
     console.log("got httpget response: ",{response});
     return response.data;
 }
-
-
-
-
 
 export const DEFAULT_DB_URL_PREFIX="https://couchdb.shaytech.net"
 export const DEFAULT_API_URL="https://groceries.shaytech.net/api"

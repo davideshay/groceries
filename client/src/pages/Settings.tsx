@@ -1,4 +1,4 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonLabel,
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
         IonMenuButton, IonButtons, IonButton, useIonAlert, NavContext} from '@ionic/react';
 import { useContext } from 'react';        
 import { Preferences } from '@capacitor/preferences';
