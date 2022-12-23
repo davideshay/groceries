@@ -154,7 +154,7 @@ const Friends: React.FC = (props) => {
     console.log(newFriendDoc);
 
     let createFriendSuccessful=true; let createResults;
-    try { createResults = await remoteDBState.remoteDB?.put(newFriendDoc) } 
+    try { createResults = await remoteDBState.remoteDB?.post(newFriendDoc) } 
     catch(e) {createFriendSuccessful=false; console.log(e)}
     console.log({createResults});
 //    let result=await createDoc(newFriendDoc);
