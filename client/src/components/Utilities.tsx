@@ -39,6 +39,5 @@ export async function checkUserByEmailExists(email: string, remoteDBState: Remot
     return response.data;
 }
 
-export const DEFAULT_DB_URL_PREFIX="https://couchdb.shaytech.net"
-export const DEFAULT_API_URL="https://groceries.shaytech.net/api"
-export const DEFAULT_DB_NAME="todos"
+// export const DEFAULT_API_URL="https://groceries.shaytech.net/api"
+export const DEFAULT_API_URL=(window as any)._env_.DEFAULT_API_URL

@@ -51,6 +51,7 @@
     "workbox-streams": "^5.1.4"
   },
   "scripts": {
+    "ionic:serve:before": "bin/updateenv.sh && cp env-config.js ./public/env-config.js",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test --transformIgnorePatterns 'node_modules/(?!(@ionic/react|@ionic/react-router|@ionic/core|@stencil/core|ionicons)/)'",

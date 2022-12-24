@@ -3,7 +3,7 @@ import { NavContext } from "@ionic/react";
 import { usePouch} from 'use-pouchdb';
 import { Preferences } from '@capacitor/preferences';
 import { cloneDeep, pick, keys, isEqual } from 'lodash';
-import { isJsonString, urlPatternValidation, emailPatternValidation,DEFAULT_DB_NAME, DEFAULT_DB_URL_PREFIX, DEFAULT_API_URL } from '../components/Utilities'; 
+import { isJsonString, urlPatternValidation, emailPatternValidation, DEFAULT_API_URL } from '../components/Utilities'; 
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import PouchDB from 'pouchdb';
 
@@ -162,8 +162,8 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         const credKeys = keys(credsObj);
         if (credsObj == null || (credsObj as any).apiServerURL == undefined || (!isEqual(credsOrigKeys.sort(),credKeys.sort()))) {
             credsObj = { apiServerURL: DEFAULT_API_URL,
-                couchBaseURL: DEFAULT_DB_URL_PREFIX,
-                database: DEFAULT_DB_NAME,
+                couchBaseURL: "",
+                database: "",
                 dbUsername:"",
                 JWT:"",
                 email: "",
