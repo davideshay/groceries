@@ -6,10 +6,9 @@ import { usePouch} from 'use-pouchdb';
 import { DBCreds, DBUUIDAction } from '../components/RemoteDBState';
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
-import { GlobalStateContext } from '../components/GlobalState';
 import { createNewUser,  } from '../components/RemoteUtilities';
 import { cloneDeep } from 'lodash';
-import { RemoteDBState, RemoteDBStateContext, RemoteDBStateContextType, SyncStatus } from '../components/RemoteDBState';
+import { RemoteDBStateContext, SyncStatus } from '../components/RemoteDBState';
 
 export type RemoteState = {
   password: string | undefined,
@@ -21,8 +20,7 @@ export type RemoteState = {
 }
 
 /* 
-
-Three logic paths:  (should these be 3 conditional components?)
+Three logic paths: 
 
 1) Come in with remoteDBState.dbuuidaction not = none
     Exit app if set to exit.
@@ -71,14 +69,12 @@ const RemoteDBLogin: React.FC = () => {
       formError: ""
     });
     const [presentAlert] = useIonAlert();
-    const {navigate} = useContext(NavContext);
-    const { globalState, setGlobalState, setStateInfo} = useContext(GlobalStateContext);
-    const { remoteDBState, setRemoteDBState, errorCheckCreds, assignDBAndSync, setDBCredsValue} = useContext(RemoteDBStateContext);
+    const { remoteDBState, errorCheckCreds, assignDBAndSync, setDBCredsValue} = useContext(RemoteDBStateContext);
 
     // effect for dbuuidaction not none
     useEffect( () => {
       if (remoteDBState.dbUUIDAction !== DBUUIDAction.none) {
-        if (remoteDBState.dbUUIDAction == DBUUIDAction.exit_no_uuid_on_server) {
+        if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_no_uuid_on_server) {
           console.log("ERROR: No database UUID defined in server todos database. Cannot continue");
           presentAlert({
             header: "ERROR",
@@ -87,7 +83,7 @@ const RemoteDBLogin: React.FC = () => {
           });
           App.exitApp();
           return;
-        } else if (remoteDBState.dbUUIDAction == DBUUIDAction.destroy_needed) {
+        } else if (remoteDBState.dbUUIDAction === DBUUIDAction.destroy_needed) {
           presentAlert( {
             header: "WARNING",
             message: "The Database identifier on the server is not the same as the local copy. You should delete your local copy in order to continue. App will exit.",

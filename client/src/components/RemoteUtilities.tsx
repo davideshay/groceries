@@ -1,4 +1,4 @@
-import { DBCreds, RemoteDBState } from "./RemoteDBState";
+import { RemoteDBState } from "./RemoteDBState";
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
   
 export async function createNewUser(remoteDBState: RemoteDBState,password: string) {

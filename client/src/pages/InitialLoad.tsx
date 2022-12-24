@@ -1,4 +1,4 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, NavContext,useIonRouter, useIonLoading } from '@ionic/react';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, NavContext, useIonLoading } from '@ionic/react';
 import { useContext, useEffect, useState } from 'react';
 import { usePouch } from 'use-pouchdb';
 import { ConnectionStatus, RemoteDBStateContext } from '../components/RemoteDBState';    

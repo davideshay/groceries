@@ -71,7 +71,7 @@ const Category: React.FC<CategoryPageProps> = () => {
     if (result.successful) {
         goBack("/categories");
     } else {
-        setFormError("Error updating category: " + result.errorCode + " : " + result.errorText)
+        setFormError("Error updating category: " + result.errorCode + " : " + result.errorText + ". Please retry.");
     } 
   }
   

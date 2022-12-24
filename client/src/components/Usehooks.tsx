@@ -3,20 +3,14 @@ import { usePouch, useFind } from 'use-pouchdb'
 import { cloneDeep } from 'lodash';
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import { RemoteDBStateContext } from './RemoteDBState';
-import { FriendStatus, FriendRow, ResolvedFriendStatus, PouchResponse } from './DataTypes';
+import { FriendStatus, FriendRow, ResolvedFriendStatus, PouchResponse, PouchResponseInit } from './DataTypes';
 
 
 export function useUpdateGenericDocument() {
   const db = usePouch();
   return useCallback(
     async (updatedDoc: any) => {
-          let response: PouchResponse ={
-            pouchData: {},
-            successful: true,
-            errorCode: 0,
-            errorText: "",
-            fullError: undefined
-          }
+          let response: PouchResponse = PouchResponseInit;
           try { response.pouchData = await db.put(updatedDoc); console.log(response.pouchData);}
           catch(err) { response.successful = false; response.fullError = err;}
           if (!response.pouchData.ok) { response.successful = false;}
@@ -29,13 +23,7 @@ export function useCreateGenericDocument() {
   const db = usePouch();
   return useCallback(
     async (updatedDoc: any) => {
-          let response: PouchResponse ={
-            pouchData: {},
-            successful: true,
-            errorCode: 0,
-            errorText: "",
-            fullError: undefined
-          }
+          let response: PouchResponse = PouchResponseInit;
           try { response.pouchData = await db.post(updatedDoc); console.log(response.pouchData);}
           catch(err) { response.successful = false; response.fullError = err;}
           if (!response.pouchData.ok) { response.successful = false;}
@@ -44,23 +32,12 @@ export function useCreateGenericDocument() {
     },[db])
 }
 
-export function useUpdateItem() {
-  const db = usePouch();
-
-  return useCallback(
-    async (updatedDoc: any) => {
-      const result = await db.put(updatedDoc)
-      return result
-    },
-    [db]
-  )
-}
-
 export function useUpdateCompleted() {
   const db = usePouch();
 
   return useCallback(
     async (updateInfo: any) => {
+      let response: PouchResponse = PouchResponseInit;
       const newItemDoc = cloneDeep(updateInfo.itemDoc);
       for (let i = 0; i < newItemDoc.lists.length; i++) {
         if (updateInfo.updateAll) {
@@ -73,20 +50,10 @@ export function useUpdateCompleted() {
           }
         }   
       }
-      const result = await db.put(newItemDoc);
-      return result
-    },
-    [db]
-  )
-}
-
-export function useUpdateItemInList() {
-  const db = usePouch()
-
-  return useCallback(
-    async (updatedDoc: any) => {
-      const result = await db.put(updatedDoc)
-      return result
+      try { response.pouchData = await db.put(newItemDoc)}
+      catch(err) { response.successful = false; response.fullError = err;}
+      if (!response.pouchData.ok) { response.successful = false};
+      return response;
     },
     [db]
   )

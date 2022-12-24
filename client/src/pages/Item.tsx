@@ -1,6 +1,6 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
   IonButtons, IonMenuButton, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonIcon,
-  IonSelectOption, NavContext, useIonAlert } from '@ionic/react';
+  IonSelectOption, NavContext, useIonAlert,useIonToast } from '@ionic/react';
 import { addOutline } from 'ionicons/icons';
 import { RouteComponentProps, useParams } from 'react-router-dom';
 import { usePouch, useDoc, useFind } from 'use-pouchdb';
@@ -11,6 +11,7 @@ import { GlobalStateContext } from '../components/GlobalState';
 import { cloneDeep, isEmpty } from 'lodash';
 import './Item.css';
 import SyncIndicator from '../components/SyncIndicator';
+import { PouchResponse } from '../components/DataTypes';
 
 interface ItemPageProps
   extends RouteComponentProps<{
@@ -23,8 +24,10 @@ const Item: React.FC<ItemPageProps> = () => {
   if ( mode === "new" ) { routeItemID = "<new>"};
   const [needInitItemDoc,setNeedInitItemDoc] = useState((mode === "new") ? true: false);
   const [stateItemDoc,setStateItemDoc] = useState({});
+  const [formError,setFormError] = useState("");
   const updateItem  = useUpdateGenericDocument();
   const addItem = useCreateGenericDocument();
+  const addCategoryDoc = useCreateGenericDocument();
   const { doc: itemDoc, loading: itemLoading, state: itemState, error: itemError } = useDoc(routeItemID);
   const { docs: listDocs, loading: listLoading, error: listError} = useFind({
     index: { fields: ["type","name"] },
@@ -41,6 +44,7 @@ const Item: React.FC<ItemPageProps> = () => {
   const {goBack} = useContext(NavContext);
   const { globalState, setStateInfo} = useContext(GlobalStateContext);
   const [presentAlert, dismissAlert] = useIonAlert();
+  const [presentToast] = useIonToast();
   const db = usePouch();
 
   function addListsIfNotExist(itemDoc: any) {
@@ -78,14 +82,19 @@ const Item: React.FC<ItemPageProps> = () => {
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader></IonPage>
   )};
   
-  function updateThisItem() {
+  async function updateThisItem() {
+    let result: PouchResponse;
     if (mode === "new") {
-      addItem(stateItemDoc);
+      result = await addItem(stateItemDoc);
     }  
     else {
-      updateItem(stateItemDoc);
+      result = await updateItem(stateItemDoc);
     }
-    goBack("/lists");
+    if (result.successful) {
+      goBack("/lists");
+    } else {
+      setFormError("Error updating item. Please retry.");
+    }
   }
 
   function updateCategory(catID: string) {
@@ -104,9 +113,14 @@ const Item: React.FC<ItemPageProps> = () => {
       });
     console.log("found: ",{alreadyFound})
     if (!alreadyFound) {
-      let result = await db.post({"type": "category", "name": category})
+      let result = await addCategoryDoc({"type": "category", "name": category})
       console.log(result);
-      updateCategory(result.id)
+      if (result.successful) {
+        updateCategory(result.pouchData.id)
+      } else {
+        presentToast({message: "Error adding category. Please retry.",
+              duration: 1500, position: "middle"})
+      }  
     }  
   }
 
@@ -198,6 +212,7 @@ const Item: React.FC<ItemPageProps> = () => {
               </IonButton>  
             </IonItem>
             {listsElem}
+            <IonItem key="formErrors">{formError}</IonItem>
           </IonList>
           <IonButton onClick={() => goBack("/lists")}>Cancel</IonButton>
           <IonButton onClick={() => updateThisItem()}>{mode === "new" ? "Add": "Update"}</IonButton>

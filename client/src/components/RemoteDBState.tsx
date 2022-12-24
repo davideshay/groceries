@@ -5,11 +5,7 @@ import { Preferences } from '@capacitor/preferences';
 import { cloneDeep, pick, keys, isEqual } from 'lodash';
 import { isJsonString, urlPatternValidation, emailPatternValidation,DEFAULT_DB_NAME, DEFAULT_DB_URL_PREFIX, DEFAULT_API_URL } from '../components/Utilities'; 
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
-
-
 import PouchDB from 'pouchdb';
-import { isEmpty } from "lodash";
-// import { ConnectionStatus } from "./RemoteUtilities";
 
 export type RemoteDBState = {
     remoteDB: PouchDB.Database | undefined,

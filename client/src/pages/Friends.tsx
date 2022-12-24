@@ -1,5 +1,5 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonLabel,
-        IonMenuButton, IonButtons, IonButton, useIonAlert, NavContext,
+        IonMenuButton, IonButtons, IonButton, useIonAlert, NavContext, useIonToast,
         IonFab, IonFabButton, IonIcon, IonInput, IonAlert } from '@ionic/react';
 import { useState, useEffect, useContext, Fragment } from 'react';
 import { Clipboard } from '@capacitor/clipboard';
@@ -55,7 +55,6 @@ interface PageState {
   newUserAlertSubheader: string,
   showRegistrationURL: boolean,
   registrationAlertSubheader: string,
-
 }  
               
 const Friends: React.FC = (props) => {
@@ -75,12 +74,16 @@ const Friends: React.FC = (props) => {
     showRegistrationURL: false,
     registrationAlertSubheader: ""
   });
+  const [presentToast] = useIonToast();
 //  const [presentAlert,hideAlert] = useIonAlert();
 
-  function confirmFriend(friendRow: FriendRow) {
+  async function confirmFriend(friendRow: FriendRow) {
     let updatedDoc = cloneDeep(friendRow.friendDoc);
     updatedDoc.friendStatus = FriendStatus.Confirmed;
-    updateDoc(updatedDoc);
+    let result = await updateDoc(updatedDoc);
+    if (!result.successful) {
+      presentToast({"message": "Error confirming friend. Please retry."})
+    }
   }
 
   function statusItem(friendRow: FriendRow) {
@@ -204,8 +207,12 @@ const Friends: React.FC = (props) => {
         friendStatus: pendfrom1 ? FriendStatus.PendingFrom1 : FriendStatus.PendingFrom2
       }
       console.log(newFriendDoc);
-      createDoc(newFriendDoc);
-      setPageState(prevState => ({...prevState,formError: "",inAddMode: false, newFriendEmail: ""}))
+      let result = await createDoc(newFriendDoc);
+      if (result.successful) {
+          setPageState(prevState => ({...prevState,formError: "",inAddMode: false, newFriendEmail: ""}))
+      } else {
+          setPageState(prevState => ({...prevState,formError: "Error creating friend. Please retry."}))
+      }    
       return
     }
     // user does not exist in _users, prompt to register

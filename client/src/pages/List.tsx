@@ -1,6 +1,7 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput,
    IonItem, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonSelectOption,
-   IonReorder, IonReorderGroup,ItemReorderEventDetail, IonButtons, IonMenuButton, NavContext } from '@ionic/react';
+   IonReorder, IonReorderGroup,ItemReorderEventDetail, IonButtons, IonMenuButton, NavContext,
+   useIonToast } from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext } from 'react';
@@ -8,7 +9,7 @@ import { useUpdateGenericDocument, useCreateGenericDocument, useFriends } from '
 import { cloneDeep, isEmpty, isEqual } from 'lodash';
 import './List.css';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
-import { ResolvedFriendStatus } from '../components/DataTypes';
+import { PouchResponse, ResolvedFriendStatus } from '../components/DataTypes';
 import SyncIndicator from '../components/SyncIndicator';
 
 interface PageState {
@@ -31,7 +32,7 @@ const List: React.FC = () => {
   const updateListWhole  = useUpdateGenericDocument();
   const createList = useCreateGenericDocument();
   const { remoteDBState, setRemoteDBState, startSync} = useContext(RemoteDBStateContext);
-
+  const [ presentToast ] = useIonToast();
   const {friendsLoading,friendRowsLoading,friendRows} = useFriends(String(remoteDBState.dbCreds.dbUsername));
 
   const { docs: listDocs, loading: listLoading, error: listError} = useFind({
@@ -103,15 +104,19 @@ const List: React.FC = () => {
       <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
   )};
   
-  function updateThisItem() {
+  async function updateThisItem() {
+    let response: PouchResponse;
     if (mode === "new") {
-      const result = createList(pageState.listDoc);
-      console.log("result:", result, ": add error checking here")
+      response = await createList(pageState.listDoc);
     }
     else {
-      updateListWhole(pageState.listDoc);
+      response = await updateListWhole(pageState.listDoc);
     }
-    goBack("/lists");
+    if (response.successful) {
+      goBack("/lists");
+    } else {
+      presentToast({message: "Error Creating/Updating List", duration: 1500, position: "middle"});
+    }
   }
 
   function handleReorder(event: CustomEvent<ItemReorderEventDetail>) {

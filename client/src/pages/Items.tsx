@@ -1,6 +1,6 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonItemGroup,
   IonItemDivider, IonButton, IonButtons, IonFab, IonFabButton, IonIcon, IonCheckbox, IonLabel, IonSelect,
-  IonSelectOption, IonSearchbar, IonPopover, IonAlert,IonMenuButton, NavContext} from '@ionic/react';
+  IonSelectOption, IonSearchbar, IonPopover, IonAlert,IonMenuButton, NavContext, useIonToast} from '@ionic/react';
 import { add,checkmark } from 'ionicons/icons';
 import React, { useState, useEffect, useContext, useRef, KeyboardEvent } from 'react';
 import { useParams } from 'react-router-dom';
@@ -20,7 +20,7 @@ const Items: React.FC = () => {
   const [searchState,setSearchState] = useState<SearchState>({searchCriteria:"",isOpen: false,event: undefined, filteredSearchRows: [], dismissEvent: undefined});
   const [pageState, setPageState] = useState<PageState>({selectedListID: routeListID, doingUpdate: false, itemRows: [], showAlert: false, alertHeader: "", alertMessage: ""});
   const searchRef=useRef<HTMLIonSearchbarElement>(null);
-  
+  const [presentToast] = useIonToast();
   const updateCompleted = useUpdateCompleted();
   const updateItemInList = useUpdateGenericDocument();
 
@@ -117,7 +117,7 @@ const Items: React.FC = () => {
   }
 
 
-  function addExistingItemToList(itemID: string) {
+  async function addExistingItemToList(itemID: string) {
     let existingItem: any = cloneDeep(allItemDocs.find((el: any) => el._id === itemID));
     let idxInLists=existingItem.lists.findIndex((el: any) => el.listID === pageState.selectedListID);
     if (idxInLists === -1) {
@@ -132,7 +132,10 @@ const Items: React.FC = () => {
       existingItem.lists[idxInLists].active = true;
       existingItem.lists[idxInLists].completed = false;
     }
-    updateItemInList(existingItem);
+    let result = await updateItemInList(existingItem);
+    if (!result.successful) {
+      presentToast({message: "Error updating item, please retry.",duration: 1500, position: "middle"});
+    }
   }
 
   function chooseSearchItem(itemID: string) {
@@ -186,7 +189,7 @@ const Items: React.FC = () => {
     <IonPage>{headerElem}<IonContent><IonItem key="nonefound"><IonLabel key="nothinghere">No Items On List</IonLabel></IonItem></IonContent></IonPage>
   )};  
 
-  function completeItemRow(id: String, newStatus: boolean | null) {
+  async function completeItemRow(id: String, newStatus: boolean | null) {
     let newItemRows: Array<ItemRow>=cloneDeep(pageState.itemRows);
     let itemSeq = newItemRows.findIndex(element => (element.itemID === id))
     newItemRows[itemSeq].completed = newStatus;
@@ -199,7 +202,10 @@ const Items: React.FC = () => {
       listID: pageState.selectedListID
     }
     setPageState({...pageState, itemRows: newItemRows, doingUpdate: true});
-    updateCompleted(updateInfo);
+    let response=await updateCompleted(updateInfo);
+    if (!response.successful) {
+      presentToast({message: "Error updating completed status. Please retry", duration: 1500, position: "middle"})
+    }
   }
 
   function selectList(listID: string) {
@@ -218,20 +224,23 @@ const Items: React.FC = () => {
     )
   }
 
-  function deleteCompletedItems(itemDocs: any,listID: string) {
-    itemDocs.forEach((itemDoc: any) => {
+  async function deleteCompletedItems(itemDocs: any,listID: string) {
+    itemDocs.forEach(async (itemDoc: any) => {
         let updatedItem=cloneDeep(itemDoc);
         let listItemIdx=updatedItem.lists.findIndex((el: any) => el.listID === listID);
         if ((listItemIdx !== -1)) {
             if (updatedItem.lists[listItemIdx].completed) {
                 updatedItem.lists[listItemIdx].active = false;
-                updateItemInList(updatedItem);
+                let result = await updateItemInList(updatedItem);
+                if (!result.successful) {
+                  presentToast({message: "Error deleting items from list. Please retry.",
+                    duration: 1500, position: "middle"})
+                }
             }    
         }
     });
   }
 
-  let lastCategorySeq=-2;
   let lastCategoryID="<INITIAL>";
   let lastCategoryName="<INITIAL>";
   let lastCategoryFinished: boolean | null = null;
@@ -249,7 +258,6 @@ const Items: React.FC = () => {
         addCurrentRows(listContent,currentRows,lastCategoryID,lastCategoryName,lastCategoryFinished);
         currentRows=[];
       }
-      lastCategorySeq = item.categorySeq;
       lastCategoryID = item.categoryID;
       lastCategoryName=item.categoryName;
       lastCategoryFinished=item.completed;   

@@ -71,3 +71,11 @@ export interface ItemRow {
     errorText: string,
     fullError: any
   }
+
+  export const PouchResponseInit:PouchResponse = {
+    pouchData: {},
+    successful: true,
+    errorCode: 0,
+    errorText: "",
+    fullError: undefined
+  }
