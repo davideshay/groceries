@@ -1,7 +1,7 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, 
   IonButtons, IonMenuButton, IonItem, IonLabel, IonFooter, NavContext } from '@ionic/react';
 import { RouteComponentProps,useParams } from 'react-router-dom';
-import { useDoc } from 'use-pouchdb';
+import { useDoc, useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument } from '../components/Usehooks';
 import { cloneDeep } from 'lodash';
@@ -24,6 +24,11 @@ const Category: React.FC<CategoryPageProps> = () => {
   const createCategory = useCreateGenericDocument();
 
   const { doc: categoryDoc, loading: categoryLoading, state: categoryState, error: categoryError } = useDoc(routeID);
+  const { docs: categoryDocs, loading: categoriesLoading, error: categoriesError } = useFind({
+    index: { fields: [ "type","name"] },
+    selector: { type: "category", name: { $exists: true}},
+    sort: [ "type","name"]
+  })
 
   const {goBack} = useContext(NavContext);
 
@@ -40,12 +45,22 @@ const Category: React.FC<CategoryPageProps> = () => {
     }
   },[categoryLoading,categoryDoc]);
 
-  if ( categoryLoading || !stateCategoryDoc )  {return(
+  if ( categoryLoading || categoriesLoading || !stateCategoryDoc )  {return(
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
   )};
   
   async function updateThisCategory() {
     setFormError("");
+    let categoryDup=false;
+    categoryDocs.forEach((doc: any) => {
+      if (doc.name.toUpperCase() == stateCategoryDoc.name.toUpperCase()) {
+        categoryDup = true;
+      }
+    });
+    if (categoryDup) {
+      setFormError("Duplicate Category Name");
+      return
+    }
     let result: PouchResponse
     if (mode === "new") {
       result = await createCategory(stateCategoryDoc);

@@ -35,6 +35,7 @@ let todosDBAsAdmin;
 let usersDBAsAdmin;
 const _ = require('lodash');
 const { v4: uuidv4 } = require('uuid');
+const { cloneDeep } = require('lodash');
 
 async function couchLogin(username, password) {
     const loginResponse = {
@@ -208,7 +209,8 @@ async function getUserDoc(username) {
     const userResponse = {
         error: false,
         fullname: "",
-        email: ""
+        email: "",
+        fullDoc: {}
     }
     const config = {
         method: 'get',
@@ -222,6 +224,7 @@ async function getUserDoc(username) {
     if (!userResponse.error) {
         userResponse.email = res.data?.email;
         userResponse.fullname = res.data?.fullname;
+        userResponse.fullDoc = res.data;
     }
     return (userResponse);
 }
@@ -632,6 +635,93 @@ async function triggerRegEmail(req, res) {
     return (triggerResponse);
 }
 
+async function resetPassword(req, res) {
+    const resetResponse = {
+        emailSent : false
+    }
+    const {username} = req.body;
+
+    let userDoc = await getUserDoc(username);
+    if (userDoc.error) {return resetResponse};
+    console.log("Got user Doc:",{userDoc});
+
+    let transport = nodemailer.createTransport(smtpOptions);
+    transport.verify(function (error,success) {
+        if (error) {return triggerResponse}
+    })
+    console.log("transport verified");
+
+    let resetURL = groceryAPIUrl + "/resetpasswordui?username="+encodeURIComponent(username);
+    const message = {
+        from: smtpFrom,
+        to: userDoc.email,
+        subject: "Password Reset Request from Groceries",
+        text: userDoc.fullname+" has requested to reset their password. If you did not request this reset, please validate the security of this account. Please use the link to reset your password: "+resetURL+ " . Once reset, visit "+groceryUrl+" to use the app or login on your mobile device.."
+    }
+
+    console.log("about to send message:",{message});
+
+    transport.sendMail(message, function (error, success) {
+        if (!error) {return resetResponse}
+    });
+    resetResponse.emailSent = true;
+    return resetResponse;
+}    
+
+async function resetPasswordUIGet(req, res) {
+    let respObj = {
+        email: "",
+        username: req.query.username,
+        password: "",
+        passwordverify: "",
+        formError: "",
+        disableSubmit: false,
+        resetSuccessfully: false
+    }
+    
+    let userDoc = await getUserDoc(req.query.username);
+    if (userDoc.error) {
+        respObj.formError = "Cannot locate user name "+username;
+        respObj.disableSubmit = true;
+        return respObj
+    }
+    respObj.email = userDoc.email;
+    return respObj;
+}
+
+async function resetPasswordUIPost(req, res) {
+    let respObj = {
+        username: req.body.username,
+        password: (req.body.password == undefined) ? "" : req.body.password,
+        passwordverify: (req.body.passwordverify == undefined) ? "" : req.body.passwordverify,
+        email: (req.body.email),
+        formError: "",
+        disableSubmit: false,
+        resetSuccessfully: false
+    }
+    if (req.body.password.length < 5 ) {
+        respObj.formError = "Please enter a password 5 characters or longer";
+        return (respObj);
+    } 
+    if (req.body.password != req.body.passwordverify) {
+        respObj.formError = "Passwords do not match";
+        return (respObj);
+    }
+
+    let userDoc = await getUserDoc(req.body.username);
+    if (!userDoc.error) {
+        let newDoc=cloneDeep(userDoc.fullDoc);
+        newDoc.password=req.body.password;
+        let newDocFiltered = _.pick(newDoc,['_id','_rev','name','email','fullname','roles','type','password']);
+        console.log(newDocFiltered)
+        let docupdate = await usersDBAsAdmin.insert(newDocFiltered);
+        console.log(docupdate);
+    }
+    respObj.resetSuccessfully = true;
+    // do actual password update
+    console.log("password updated to ",req.body.password);
+    return(respObj);
+}
 
 module.exports = {
     issueToken,
@@ -642,6 +732,9 @@ module.exports = {
     getUsersInfo,
     createAccountUIGet,
     createAccountUIPost,
-    triggerRegEmail
+    triggerRegEmail,
+    resetPassword,
+    resetPasswordUIGet,
+    resetPasswordUIPost
 
 }

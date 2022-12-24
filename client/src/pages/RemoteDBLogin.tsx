@@ -174,6 +174,43 @@ const RemoteDBLogin: React.FC = () => {
     }
   }
   
+  async function callResetPasswordAPI() {
+    console.log("password API called");
+    let response: HttpResponse;
+    const options = {
+        url: String(remoteDBState.dbCreds.apiServerURL+"/resetpassword"),
+        method: "POST",
+        headers: { 'Content-Type': 'application/json',
+                   'Accept': 'application/json'},
+        data: { username: remoteDBState.dbCreds.dbUsername },           
+    };
+    response = await CapacitorHttp.post(options);
+    console.log("got http reset response",cloneDeep(response));
+//    presentAlert({
+//      header: "Password Request Sent",
+//      message: "Please check your email for the link to reset your password",
+//      buttons: ["OK"]
+//    })
+
+  }
+
+  function resetPassword() {
+    if (remoteDBState.dbCreds.dbUsername == "" || remoteDBState.dbCreds.dbUsername == null || remoteDBState.dbCreds.dbUsername == undefined) {
+      setRemoteState(prevState => ({...prevState, formError: "Must enter username to reset password"}))
+    } else {
+      presentAlert({
+        header: "Request password reset",
+        message: "Press reset to receive an email link to reset your password",
+        buttons: [ {
+          text: "Cancel", role: "cancel"
+        }, {
+          text: "Reset", role: "confirm", handler: () => callResetPasswordAPI()
+        }]
+      })
+    }
+    console.log("resetting password, email sent");
+  }
+
 
   if (remoteDBState.syncStatus === SyncStatus.active || remoteDBState.syncStatus === SyncStatus.paused) {
     return (<></>)
@@ -228,6 +265,7 @@ const RemoteDBLogin: React.FC = () => {
     buttonsElem=<>
       <IonItem>
       <IonButton slot="start" onClick={() => submitForm()}>Login</IonButton>
+      <IonButton onClick={() => resetPassword()}>Reset Password</IonButton>
       <IonButton slot="end" onClick={() => setRemoteState(prevState => ({...prevState,inCreateMode: true, formError: ""}))}>Create New User</IonButton>
       </IonItem>
     </>

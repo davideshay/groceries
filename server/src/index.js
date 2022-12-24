@@ -4,7 +4,7 @@ const eta = require('eta');
 const app = express();
 const { issueToken, checkUserExists, registerNewUser, dbStartup, getUsersInfo, 
         checkUserByEmailExists, createAccountUIGet, createAccountUIPost,
-        triggerRegEmail } = require('./userfunctions');
+        triggerRegEmail, resetPassword, resetPasswordUIGet, resetPasswordUIPost } = require('./userfunctions');
 
 app.use(cors());
 app.use(express.json());
@@ -22,7 +22,10 @@ app.post('/getusersinfo', async (req, res) => res.send(await getUsersInfo(req,re
 app.get('/test', async (req,res) => res.render("test", {favorite: "Movies", reasons: ["background","action"]}))
 app.get('/createaccountui', async (req,res) => await res.render("createaccount",await createAccountUIGet(req,res)))
 app.post('/createaccountui', async (req,res) => await res.render("createaccount",await createAccountUIPost(req,res)));
-app.post('/triggerregemail', async (req,res) => res.send(await triggerRegEmail(req,res)));
+app.post('/triggerregemail', async (req,res) => await res.send(await triggerRegEmail(req,res)));
+app.post('/resetpassword', async (req, res) => await res.render("resetpassword",await resetPassword(req,res)));
+app.get('/resetpasswordui', async(req,res) => await res.render("resetpassword", await resetPasswordUIGet(req,res)));
+app.post('/resetpasswordui', async(req,res) => await res.render("resetpassword", await resetPasswordUIPost(req,res)));
 
 //TODO refreshtoken
 //TODO setuserdata (including password)
