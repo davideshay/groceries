@@ -19,5 +19,5 @@ export async function createNewUser(remoteDBState: RemoteDBState,password: strin
     console.log("about to execute createnewuser httpget with options: ", {options})
     response = await CapacitorHttp.post(options);
     console.log("got httpget response: ",{response});
-    return response.data;
+    return response;
 }

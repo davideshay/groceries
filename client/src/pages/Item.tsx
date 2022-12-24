@@ -1,15 +1,15 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
-  IonButtons, IonMenuButton, IonItemDivider, IonLabel, IonSelect, IonCheckbox, 
-  IonSelectOption, NavContext } from '@ionic/react';
+  IonButtons, IonMenuButton, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonIcon,
+  IonSelectOption, NavContext, useIonAlert } from '@ionic/react';
+import { addOutline } from 'ionicons/icons';
 import { RouteComponentProps, useParams } from 'react-router-dom';
-import { useDoc, useFind } from 'use-pouchdb';
+import { usePouch, useDoc, useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext } from 'react';
 import { useCreateGenericDocument, useUpdateGenericDocument } from '../components/Usehooks';
 import { createEmptyItemDoc } from '../components/DefaultDocs';
 import { GlobalStateContext } from '../components/GlobalState';
 import { cloneDeep, isEmpty } from 'lodash';
 import './Item.css';
-import { analytics } from 'ionicons/icons';
 import SyncIndicator from '../components/SyncIndicator';
 
 interface ItemPageProps
@@ -40,7 +40,8 @@ const Item: React.FC<ItemPageProps> = () => {
 
   const {goBack} = useContext(NavContext);
   const { globalState, setStateInfo} = useContext(GlobalStateContext);
-
+  const [presentAlert, dismissAlert] = useIonAlert();
+  const db = usePouch();
 
   function addListsIfNotExist(itemDoc: any) {
     let newItemDoc=cloneDeep(itemDoc);
@@ -92,6 +93,33 @@ const Item: React.FC<ItemPageProps> = () => {
       ...stateItemDoc,
       categoryID: catID
     });
+  }
+
+  async function addNewCategory(category: string) {
+    console.log("added new category");
+    let alreadyFound=false;
+    categoryDocs.forEach((cat: any) => 
+      {
+        if (category.toUpperCase() == cat.name.toUpperCase()) {alreadyFound=true}
+      });
+    console.log("found: ",{alreadyFound})
+    if (!alreadyFound) {
+      let result = await db.post({"type": "category", "name": category})
+      console.log(result);
+      updateCategory(result.id)
+    }  
+  }
+
+  function addCategoryPopup() {
+    presentAlert({
+      header: "Add new category",
+      inputs: [ {name: "category", type: "text"}],
+      buttons: [ { text: 'Cancel', role: 'cancel'},
+                { text: "Add", role: 'confirm',
+                handler: (alertData) => {addNewCategory(alertData.category)}}
+                ]    
+    })
+
   }
 
   function selectList(listID: string, updateVal: boolean) {
@@ -165,6 +193,9 @@ const Item: React.FC<ItemPageProps> = () => {
                     </IonSelectOption>
                 ))}
               </IonSelect>
+              <IonButton slot="end" fill="clear" onClick={(e: any) => {addCategoryPopup()}}>
+                <IonIcon slot="end" icon={addOutline} ></IonIcon>
+              </IonButton>  
             </IonItem>
             {listsElem}
           </IonList>

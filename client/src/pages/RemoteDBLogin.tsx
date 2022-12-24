@@ -108,6 +108,7 @@ const RemoteDBLogin: React.FC = () => {
 
     function updateDBCredsFromResponse(response: HttpResponse): DBCreds {
       let newDBCreds=cloneDeep(remoteDBState.dbCreds);
+      console.log("resdata:",response?.data)
       newDBCreds.couchBaseURL  = response?.data.couchdbUrl;
       newDBCreds.database = response?.data.couchdbDatabase;
       newDBCreds.email = response?.data.email;
@@ -136,7 +137,7 @@ const RemoteDBLogin: React.FC = () => {
                 password: remoteState.password},           
     };
     response = await CapacitorHttp.post(options);
-    console.log("got http response",{response});
+    console.log("got http response",cloneDeep(response));
     if (!((response?.status == 200) && (response?.data?.loginSuccessful))) {
         setRemoteState(prevState => ({...prevState, formError: "Invalid Authentication"}))
         return
@@ -154,16 +155,18 @@ const RemoteDBLogin: React.FC = () => {
     let credsCheck = errorCheckCreds(remoteDBState.dbCreds,false,true,remoteState.password,remoteState.verifyPassword);
     if (!credsCheck.credsError) {
       createResponse = await createNewUser(remoteDBState,String(remoteState.password));
-      if (!createResponse.createdSuccessfully) {
+      console.log("now createResponse is ", {createResponse})
+      if (!createResponse.data.createdSuccessfully) {
         let errorText="";
-        if (createResponse.invalidData) {errorText = "Invalid Data Entered";} 
-        else if (createResponse.userAlreadyExists) {errorText = "User Already Exists";}
+        if (createResponse.data.invalidData) {errorText = "Invalid Data Entered";} 
+        else if (createResponse.data.userAlreadyExists) {errorText = "User Already Exists";}
         setRemoteState(prevState => ({...prevState, formError: errorText}))
         return;
       }
     } else {
       setRemoteState(prevState => ({...prevState, formError: String(credsCheck.credsError)}));
     }
+    console.log({createResponse});
     let newCreds=updateDBCredsFromResponse(createResponse);
     let assignSuccess = assignDBAndSync(newCreds);
     if (!assignSuccess) {
@@ -225,7 +228,7 @@ const RemoteDBLogin: React.FC = () => {
     buttonsElem=<>
       <IonItem>
       <IonButton slot="start" onClick={() => submitForm()}>Login</IonButton>
-      <IonButton slot="end" onClick={() => setRemoteState(prevState => ({...prevState,formError: ""}))}>Create New User</IonButton>
+      <IonButton slot="end" onClick={() => setRemoteState(prevState => ({...prevState,inCreateMode: true, formError: ""}))}>Create New User</IonButton>
       </IonItem>
     </>
   } else {
