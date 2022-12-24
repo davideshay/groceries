@@ -1,5 +1,4 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonButtons, IonLoading,
-    IonMenuButton, IonButton, IonFab, IonFabButton, IonIcon, NavContext,useIonRouter, useIonLoading } from '@ionic/react';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, NavContext,useIonRouter, useIonLoading } from '@ionic/react';
 import { useContext, useEffect, useState } from 'react';
 import { usePouch } from 'use-pouchdb';
 import { ConnectionStatus, RemoteDBStateContext } from '../components/RemoteDBState';    
@@ -8,7 +7,7 @@ import { ConnectionStatus, RemoteDBStateContext } from '../components/RemoteDBSt
 const InitialLoad: React.FC = () => {
     const { remoteDBState, setRemoteDBState, startSync} = useContext(RemoteDBStateContext);
     const [showLoading, setShowLoading] = useState(true);
-    const router = useIonRouter();
+    const {navigate} = useContext(NavContext);
     const [present,dismiss] = useIonLoading();
     const db=usePouch();
 
@@ -28,13 +27,14 @@ const InitialLoad: React.FC = () => {
           firstListID = listResults.docs[0]._id;
         }
         if (firstListID == null) {
-          router.push("lists")
+          navigate("lists")
         } else {
-          router.push("/items/"+firstListID)
+          navigate("/items/"+firstListID)
         }  
       }
   
     useEffect(() => { 
+        console.log(remoteDBState.connectionStatus);
         if ((remoteDBState.connectionStatus == ConnectionStatus.loginComplete)) {
             setShowLoading(false);
             console.log("about to dismiss...");
@@ -51,7 +51,7 @@ const InitialLoad: React.FC = () => {
         if (remoteDBState.connectionStatus == ConnectionStatus.navToLoginScreen) {
             console.log("nav to login based on conn status");
             setRemoteDBState({...remoteDBState,connectionStatus: ConnectionStatus.onLoginScreen});
-            router.push("/login");
+            navigate("/login");
         }
 
     },[remoteDBState.connectionStatus])

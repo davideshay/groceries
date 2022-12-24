@@ -14,7 +14,7 @@ import { GlobalStateContext } from '../components/GlobalState';
 import { FriendRow, FriendStatus, ResolvedFriendStatus } from '../components/DataTypes';
 import { checkUserByEmailExists, emailPatternValidation } from '../components/Utilities';
 import SyncIndicator from '../components/SyncIndicator';
-import { unstable_renderSubtreeIntoContainer } from 'react-dom';
+
 
 /* 
 
@@ -59,7 +59,6 @@ interface PageState {
 }  
               
 const Friends: React.FC = (props) => {
-  const { globalState} = useContext(GlobalStateContext);
   const { remoteDBState } = useContext(RemoteDBStateContext);
   const uname = (remoteDBState.dbCreds as any).dbUsername;
   const {friendRowsLoading,friendsLoading,friendRows} = useFriends(uname);
@@ -76,7 +75,7 @@ const Friends: React.FC = (props) => {
     showRegistrationURL: false,
     registrationAlertSubheader: ""
   });
-  const [presentAlert,hideAlert] = useIonAlert();
+//  const [presentAlert,hideAlert] = useIonAlert();
 
   function confirmFriend(friendRow: FriendRow) {
     let updatedDoc = cloneDeep(friendRow.friendDoc);
@@ -131,17 +130,13 @@ const Friends: React.FC = (props) => {
     }  
   },[friendRows,friendRowsLoading])
 
-  function addFriend() {
-
-  }
-
   function addNewFriend() {
     setPageState(prevState => ({...prevState,inAddMode: true, formError: "", newFriendEmail:"", newFriendName: ""}))
   }
 
   async function sendFriendRequest() {
     console.log("in sendFriendRequest");
-    hideAlert();
+//    hideAlert();
     const invuid=uuidv4();
     const newFriendDoc = {
       type: "friend",

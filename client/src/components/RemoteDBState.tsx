@@ -268,10 +268,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
           localHasRecords = false;
           if (localDBAllDocs != null) {
             localDBAllDocs.rows.forEach(row => {
-              console.log("checking doc: ",{row})
-              console.log("language: ",(row.doc as any).language)
               if ((row.doc as any).language != "query") {
-                    console.log("wasn't query type, setting localhasrecords to true");
                     localHasRecords=true;
                 }
             });
@@ -370,7 +367,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
       },[])
   
     useEffect(() => {
-        if (remoteDBState.syncStatus == SyncStatus.active || remoteDBState.syncStatus == SyncStatus.paused) {
+        if (( remoteDBState.syncStatus == SyncStatus.active || remoteDBState.syncStatus == SyncStatus.paused) && (remoteDBState.connectionStatus !== ConnectionStatus.initialNavComplete)) {
             setRemoteDBState(prevState => ({...prevState,connectionStatus: ConnectionStatus.loginComplete}));
         }
     },[remoteDBState.syncStatus])
