@@ -14,7 +14,9 @@ export type RemoteDBState = {
     connectionStatus: ConnectionStatus,
     dbUUIDAction: DBUUIDAction,
     credsError: boolean,
-    credsErrorText: string
+    credsErrorText: string,
+    serverAvailable: boolean,
+    workingOffline: boolean
 }
 
 export interface RemoteDBStateContextType {
@@ -92,7 +94,9 @@ const initialState: RemoteDBState = {
     connectionStatus: ConnectionStatus.cannotStart,
     dbUUIDAction: DBUUIDAction.none,
     credsError: false,
-    credsErrorText: ""
+    credsErrorText: "",
+    serverAvailable: true,
+    workingOffline: false,
 }
 
 const initialContext = {
@@ -216,6 +220,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     async function checkJWT(credsObj: DBCreds) {
         let JWTOK = false;
         let response: HttpResponse | undefined;
+        let serverAvailable = true;
         const options = {
             url: String(credsObj.couchBaseURL+"/_session"),
             method: "GET",
@@ -223,11 +228,17 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
                        'Accept': 'application/json',
                        'Authorization': 'Bearer '+ credsObj.JWT },
               };
-        response = await CapacitorHttp.get(options);
-        if ((response?.status == 200) && (response.data?.userCtx?.name != null)) {
-            JWTOK = true;
+        try { response = await CapacitorHttp.get(options); }
+        catch(err) {console.log("Got error:",err); serverAvailable=false}
+        console.log("got checkJWT response:",{response,serverAvailable});
+        if (serverAvailable) {
+            if ((response?.status == 200) && (response.data?.userCtx?.name != null)) {
+                JWTOK = true;
+            } else {
+                setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: "Invalid JWT credentials"}));
+            }
         } else {
-            setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: "Invalid JWT credentials"}));
+            setRemoteDBState(prevState => ({...prevState,serverAvailable: false, credsError: true, credsErrorText: "Database offline"}));
         }
         return JWTOK;
     } 

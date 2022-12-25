@@ -1,9 +1,9 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
-  IonButtons, IonMenuButton, IonLabel, NavContext, IonText, useIonAlert } from '@ionic/react';
+  IonButtons, IonMenuButton, IonLabel, NavContext, IonText, useIonAlert, IonAlert } from '@ionic/react';
 import { useState, useEffect, useContext } from 'react';
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import { usePouch} from 'use-pouchdb';
-import { DBCreds, DBUUIDAction } from '../components/RemoteDBState';
+import { ConnectionStatus, DBCreds, DBUUIDAction } from '../components/RemoteDBState';
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
 import { createNewUser,  } from '../components/RemoteUtilities';
@@ -69,7 +69,7 @@ const RemoteDBLogin: React.FC = () => {
       formError: ""
     });
     const [presentAlert] = useIonAlert();
-    const { remoteDBState, errorCheckCreds, assignDBAndSync, setDBCredsValue} = useContext(RemoteDBStateContext);
+    const { remoteDBState, setRemoteDBState, errorCheckCreds, assignDBAndSync, setDBCredsValue} = useContext(RemoteDBStateContext);
 
     // effect for dbuuidaction not none
     useEffect( () => {
@@ -119,7 +119,7 @@ const RemoteDBLogin: React.FC = () => {
     let credsCheck = errorCheckCreds(remoteDBState.dbCreds,false,false,remoteState.password);
     console.log(credsCheck);
     if (credsCheck.credsError ) {
-      setRemoteState(prevState => ({...prevState,formError: String(credsCheck.credsError)}))
+      setRemoteState(prevState => ({...prevState,formError: String(credsCheck.errorText)}))
       console.log("error found, exiting submit");
       return;
     }
@@ -207,69 +207,102 @@ const RemoteDBLogin: React.FC = () => {
     console.log("resetting password, email sent");
   }
 
+  function setWorkingOffline() {
+    setRemoteDBState({...remoteDBState,workingOffline: true,connectionStatus: ConnectionStatus.loginComplete, 
+        syncStatus: SyncStatus.offline})
+  }
+
+  function workOffline() {
+    presentAlert({
+      header: "Choose to work offline",
+      message: "You can choose to work offline with your locally replicated data. Please be aware that your changes will not be synchronized back to the server until you restart the app and login again. The chance for conflicts also increases.",
+      buttons: [ {
+        text: "Cancel", role: "cancel" },
+        { text: "Work Offline", role: "confirm", handler: () => setWorkingOffline()}
+      ]})      
+  }
 
   if (remoteDBState.syncStatus === SyncStatus.active || remoteDBState.syncStatus === SyncStatus.paused) {
     return (<></>)
   }
   
   let formElem;
-  if (!remoteState.inCreateMode) {
-    formElem = <><IonItem><IonLabel position="stacked">API Server URL</IonLabel>
-    <IonInput type="url" inputmode="url" value={remoteDBState.dbCreds.apiServerURL} onIonChange={(e) => {setDBCredsValue("apiServerURL",String(e.detail.value))}}>
-    </IonInput>
-    </IonItem>
-    <IonItem><IonLabel position="stacked">Username</IonLabel>
-    <IonInput type="text" autocomplete="username" value={remoteDBState.dbCreds.dbUsername} onIonChange={(e) => {setDBCredsValue("dbUsername",String(e.detail.value))}}>
-    </IonInput>
-    </IonItem>
-    <IonItem><IonLabel position="stacked">Password</IonLabel>
-    <IonInput autocomplete="current-password" type="password" value={remoteState.password} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
-    </IonInput>
-    </IonItem>
-    </>
+  if (remoteDBState.serverAvailable) {
+    if (!remoteState.inCreateMode) {
+      formElem = <><IonItem><IonLabel position="stacked">API Server URL</IonLabel>
+      <IonInput type="url" inputmode="url" value={remoteDBState.dbCreds.apiServerURL} onIonChange={(e) => {setDBCredsValue("apiServerURL",String(e.detail.value))}}>
+      </IonInput>
+      </IonItem>
+      <IonItem><IonLabel position="stacked">Username</IonLabel>
+      <IonInput type="text" autocomplete="username" value={remoteDBState.dbCreds.dbUsername} onIonChange={(e) => {setDBCredsValue("dbUsername",String(e.detail.value))}}>
+      </IonInput>
+      </IonItem>
+      <IonItem><IonLabel position="stacked">Password</IonLabel>
+      <IonInput autocomplete="current-password" type="password" value={remoteState.password} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
+      </IonInput>
+      </IonItem>
+      </>
+    } else {
+      formElem = <>
+      <IonItem><IonLabel position="stacked">API Server URL</IonLabel>
+      <IonInput type="url" inputmode="url" value={remoteDBState.dbCreds.apiServerURL} onIonChange={(e) => {setDBCredsValue("apiServerURL:",String(e.detail.value))}}>
+      </IonInput>
+      </IonItem>
+      <IonItem><IonLabel position="stacked">Username</IonLabel>
+      <IonInput type="text" autocomplete="username" value={remoteDBState.dbCreds.dbUsername} onIonChange={(e) => {setDBCredsValue("dbUsername",String(e.detail.value))}}>
+      </IonInput>
+      </IonItem>
+      <IonItem><IonLabel position="stacked">E-Mail address</IonLabel>
+      <IonInput type="email" autocomplete="email" value={remoteDBState.dbCreds.email} onIonChange={(e) => {setDBCredsValue("email",String(e.detail.value))}}>
+      </IonInput>
+      </IonItem>
+      <IonItem><IonLabel position="stacked">Full Name</IonLabel>
+      <IonInput type="text" value={remoteDBState.dbCreds.fullName} onIonChange={(e) => {setDBCredsValue("fullName",String(e.detail.value))}}>
+      </IonInput>
+      </IonItem>
+      <IonItem><IonLabel position="stacked">Password</IonLabel>
+      <IonInput autocomplete="current-password" type="password" value={remoteState.password} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
+      </IonInput>
+      </IonItem>
+      <IonItem><IonLabel position="stacked">Confirm Password</IonLabel>
+      <IonInput autocomplete="current-password" type="password" value={remoteState.verifyPassword} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, verifyPassword: String(e.detail.value)}))}}>
+      </IonInput>
+      </IonItem>
+      </>
+    }
   } else {
     formElem = <>
-    <IonItem><IonLabel position="stacked">API Server URL</IonLabel>
-    <IonInput type="url" inputmode="url" value={remoteDBState.dbCreds.apiServerURL} onIonChange={(e) => {setDBCredsValue("apiServerURL:",String(e.detail.value))}}>
-    </IonInput>
-    </IonItem>
-    <IonItem><IonLabel position="stacked">Username</IonLabel>
-    <IonInput type="text" autocomplete="username" value={remoteDBState.dbCreds.dbUsername} onIonChange={(e) => {setDBCredsValue("dbUsername",String(e.detail.value))}}>
-    </IonInput>
-    </IonItem>
-    <IonItem><IonLabel position="stacked">E-Mail address</IonLabel>
-    <IonInput type="email" autocomplete="email" value={remoteDBState.dbCreds.email} onIonChange={(e) => {setDBCredsValue("email",String(e.detail.value))}}>
-    </IonInput>
-    </IonItem>
-    <IonItem><IonLabel position="stacked">Full Name</IonLabel>
-    <IonInput type="text" value={remoteDBState.dbCreds.fullName} onIonChange={(e) => {setDBCredsValue("fullName",String(e.detail.value))}}>
-    </IonInput>
-    </IonItem>
-    <IonItem><IonLabel position="stacked">Password</IonLabel>
-    <IonInput autocomplete="current-password" type="password" value={remoteState.password} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
-    </IonInput>
-    </IonItem>
-    <IonItem><IonLabel position="stacked">Confirm Password</IonLabel>
-    <IonInput autocomplete="current-password" type="password" value={remoteState.verifyPassword} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, verifyPassword: String(e.detail.value)}))}}>
-    </IonInput>
-    </IonItem>
-    </>
-  }
-
-  let buttonsElem
-  if (!remoteState.inCreateMode) {
-    buttonsElem=<>
       <IonItem>
-      <IonButton slot="start" onClick={() => submitForm()}>Login</IonButton>
-      <IonButton onClick={() => resetPassword()}>Reset Password</IonButton>
-      <IonButton slot="end" onClick={() => setRemoteState(prevState => ({...prevState,inCreateMode: true, formError: ""}))}>Create New User</IonButton>
+        <IonText>
+          The database server is not available. You can choose to work offline and your changes will sync when you start the app again and the server is available. The risk for conflicts increases when working offline.
+        </IonText>
       </IonItem>
     </>
+
+  }
+  let buttonsElem
+  if (remoteDBState.serverAvailable) {
+    if (!remoteState.inCreateMode) {
+      buttonsElem=<>
+        <IonItem>
+        <IonButton slot="start" onClick={() => submitForm()}>Login</IonButton>
+        {/* <IonButton onClick={() => workOffline()}>Work Offline</IonButton> */}        
+        <IonButton onClick={() => resetPassword()}>Reset Password</IonButton>
+        <IonButton slot="end" onClick={() => setRemoteState(prevState => ({...prevState,inCreateMode: true, formError: ""}))}>Create New User</IonButton>
+        </IonItem>
+      </>
+    } else {
+      buttonsElem=<>
+        <IonItem>
+        <IonButton onClick={() => submitCreateForm()}>Create</IonButton>
+        <IonButton onClick={() => setRemoteState(prevState => ({...prevState,inCreateMode: false}))}>Cancel</IonButton>
+        </IonItem>
+      </>
+    }
   } else {
     buttonsElem=<>
       <IonItem>
-      <IonButton onClick={() => submitCreateForm()}>Create</IonButton>
-      <IonButton onClick={() => setRemoteState(prevState => ({...prevState,inCreateMode: false}))}>Cancel</IonButton>
+        <IonButton slot="start" onClick={() => setWorkingOffline()}>Work Offline</IonButton>
       </IonItem>
     </>
   }
