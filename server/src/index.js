@@ -4,7 +4,8 @@ const eta = require('eta');
 const app = express();
 const { issueToken, checkUserExists, registerNewUser, dbStartup, getUsersInfo, 
         checkUserByEmailExists, createAccountUIGet, createAccountUIPost,
-        triggerRegEmail, resetPassword, resetPasswordUIGet, resetPasswordUIPost } = require('./userfunctions');
+        triggerRegEmail, resetPassword, resetPasswordUIGet, resetPasswordUIPost,
+        triggerResolveConflicts } = require('./userfunctions');
 
 app.use(cors());
 app.use(express.json());
@@ -26,6 +27,8 @@ app.post('/triggerregemail', async (req,res) => await res.send(await triggerRegE
 app.post('/resetpassword', async (req, res) => await res.render("resetpassword",await resetPassword(req,res)));
 app.get('/resetpasswordui', async(req,res) => await res.render("resetpassword", await resetPasswordUIGet(req,res)));
 app.post('/resetpasswordui', async(req,res) => await res.render("resetpassword", await resetPasswordUIPost(req,res)));
+app.post('/triggerresolveconflicts', async (req, res) => res.send(await triggerResolveConflicts(req,res)));
+app.post('/triggerdbcompact', async (req,res) => res.send(await triggerDBCompact(req, res)));
 
 //TODO refreshtoken
 //TODO setuserdata (including password)

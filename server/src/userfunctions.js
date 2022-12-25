@@ -747,6 +747,28 @@ async function resetPasswordUIPost(req, res) {
     return(respObj);
 }
 
+async function triggerResolveConflicts(req,res) {
+    let respObj = {
+        triggered: true
+    };
+    resolveConflicts()
+    return respObj;
+}
+
+async function compactDB() {
+    
+}
+
+async function triggerDBCompact(req,res) {
+    let respObj = {
+        triggered: true
+    };
+    compactDB();
+    return respObj;
+}
+
+
+
 module.exports = {
     issueToken,
     checkUserExists,
@@ -759,6 +781,8 @@ module.exports = {
     triggerRegEmail,
     resetPassword,
     resetPasswordUIGet,
-    resetPasswordUIPost
+    resetPasswordUIPost,
+    triggerResolveConflicts,
+    triggerDBCompact
 
 }
