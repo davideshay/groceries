@@ -147,7 +147,9 @@ const Friends: React.FC = (props) => {
       friendID2: null,
       inviteEmail: pageState.newFriendEmail,
       inviteUUID: invuid,
-      friendStatus: FriendStatus.WaitingToRegister
+      friendStatus: FriendStatus.WaitingToRegister,
+      updatedAt: (new Date()).toISOString()
+
     }
     console.log(newFriendDoc);
 

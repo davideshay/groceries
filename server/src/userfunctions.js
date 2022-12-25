@@ -14,6 +14,7 @@ const smtpFrom = process.env.SMTP_FROM;
 const couchStandardRole = "crud";
 const couchAdminRole = "dbadmin";
 const couchUserPrefix = "org.couchdb.user";
+const conflictsViewID = "_conflicts_only_view";
 const smtpOptions = {
     host: smtpHost, port: smtpPort, 
     auth: { user: smtpUser, pass: smtpPassword}
@@ -188,9 +189,28 @@ async function addDBIdentifier() {
             type: "dbuuid",
             name: "Database UUID",
             "uuid": uuidv4(),
+            updatedAt: (new Date()).toISOString()
         }
         let dbResp = await todosDBAsAdmin.insert(newDoc);
         console.log(dbResp);    
+    }
+}
+
+async function createConflictsView() {
+    let viewFound=true; let existingView;
+    try {existingView = await todosDBAsAdmin.get("_design/"+conflictsViewID)}
+    catch(err) {viewFound = false;}
+    if (!viewFound) {
+        let viewCreated=true;
+        try {
+            await todosDBAsAdmin.insert({
+                "views": {conflictsViewID : {
+                    "map": function(doc) { if (doc._conflicts) { emit (doc._conflicts, null)}
+                }
+            }}},"_design/"+conflictsViewID)
+        }
+        catch(err) {console.log("View not created:",{err}); viewCreated=false;}
+        console.log("View created/ updated");
     }
 }
 
@@ -203,6 +223,7 @@ async function dbStartup() {
     todosDBAsAdmin = todosNanoAsAdmin.use(couchDatabase);
     usersDBAsAdmin = usersNanoAsAdmin.use("_users");
     await addDBIdentifier();
+    await createConflictsView();
 }
 
 async function getUserDoc(username) {
@@ -370,7 +391,8 @@ async function updateUnregisteredFriends(email) {
         console.log("processing one friend:",{doc});
         if (doc.friendStatus == "WAITREGISTER") {
             doc.friendID2 = req.body.username;
-            doc.friendStatus = "PENDFROM1"
+            doc.friendStatus = "PENDFROM1";
+            doc.updatedAt = (new Date()).toISOString();
             console.log("about to update record:", doc)
             update2Success=true;
             try { await todosDBAsAdmin.insert(doc);} 
@@ -564,6 +586,7 @@ async function createAccountUIPost(req,res) {
         console.log("updating that friend doc to PENDFROM1");
         foundFriendDoc.friendID2 = req.body.username;
         foundFriendDoc.friendStatus = "PENDFROM1";
+        foundFriendDoc.updatedAt = (new Date()).toISOString();
         updateSuccessful = true;
         console.log("about to update/insert:",{foundFriendDoc});
         try { await todosDBAsAdmin.insert(foundFriendDoc); }
@@ -583,7 +606,8 @@ async function createAccountUIPost(req,res) {
         console.log("checking for other, existing doc:",{doc});
         if ((doc.inviteUUID != req.body.uuid) && (doc.friendStatus == "WAITREGISTER")) {
             doc.friendID2 = req.body.username;
-            doc.friendStatus = "PENDFROM1"
+            doc.friendStatus = "PENDFROM1";
+            doc.updatedAt = (new Date()).toISOString();
             update2Success=true;
             try { await todosDBAsAdmin.insert(doc);} 
             catch(e) {update2success = false;}

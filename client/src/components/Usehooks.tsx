@@ -10,6 +10,8 @@ export function useUpdateGenericDocument() {
   const db = usePouch();
   return useCallback(
     async (updatedDoc: any) => {
+          let curDateStr=(new Date()).toISOString()
+          updatedDoc.updatedAt = curDateStr;
           let response: PouchResponse = PouchResponseInit;
           try { response.pouchData = await db.put(updatedDoc); console.log(response.pouchData);}
           catch(err) { response.successful = false; response.fullError = err;}
@@ -23,6 +25,8 @@ export function useCreateGenericDocument() {
   const db = usePouch();
   return useCallback(
     async (updatedDoc: any) => {
+          let curDateStr=(new Date()).toISOString()
+          updatedDoc.updatedAt = curDateStr;
           let response: PouchResponse = PouchResponseInit;
           try { response.pouchData = await db.post(updatedDoc); console.log(response.pouchData);}
           catch(err) { response.successful = false; response.fullError = err;}
@@ -50,6 +54,8 @@ export function useUpdateCompleted() {
           }
         }   
       }
+      let curDateStr=(new Date()).toISOString()
+      newItemDoc.updatedAt = curDateStr;
       try { response.pouchData = await db.put(newItemDoc)}
       catch(err) { response.successful = false; response.fullError = err;}
       if (!response.pouchData.ok) { response.successful = false};
