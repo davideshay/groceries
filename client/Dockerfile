@@ -21,6 +21,8 @@ WORKDIR /usr/share/nginx/html
 
 COPY client/bin/updateenv.sh  . 
 
+COPY client/env-template ./.env
+
 RUN chmod +x /usr/share/nginx/html/updateenv.sh
 
 ENV LANDSCAPE=PRODUCTION
