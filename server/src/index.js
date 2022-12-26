@@ -5,7 +5,7 @@ const app = express();
 const { issueToken, checkUserExists, registerNewUser, dbStartup, getUsersInfo, 
         checkUserByEmailExists, createAccountUIGet, createAccountUIPost,
         triggerRegEmail, resetPassword, resetPasswordUIGet, resetPasswordUIPost,
-        triggerResolveConflicts } = require('./userfunctions');
+        triggerResolveConflicts, triggerDBCompact } = require('./userfunctions');
 
 app.use(cors());
 app.use(express.json());

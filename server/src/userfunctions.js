@@ -14,7 +14,8 @@ const smtpFrom = process.env.SMTP_FROM;
 const couchStandardRole = "crud";
 const couchAdminRole = "dbadmin";
 const couchUserPrefix = "org.couchdb.user";
-const conflictsViewID = "_conflicts_only_view";
+const conflictsViewID = "_conflicts_only_view_id";
+const conflictsViewName = "conflicts_view";
 const smtpOptions = {
     host: smtpHost, port: smtpPort, 
     auth: { user: smtpUser, pass: smtpPassword}
@@ -204,7 +205,7 @@ async function createConflictsView() {
         let viewCreated=true;
         try {
             await todosDBAsAdmin.insert({
-                "views": {conflictsViewID : {
+                "views": { "conflicts_view" : {
                     "map": function(doc) { if (doc._conflicts) { emit (doc._conflicts, null)}
                 }
             }}},"_design/"+conflictsViewID)
@@ -747,6 +748,64 @@ async function resetPasswordUIPost(req, res) {
     return(respObj);
 }
 
+async function resolveConflicts() {
+    const conflicts = await todosDBAsAdmin.view(conflictsViewID,conflictsViewName);
+    let resolveFailure=false;
+    if (conflicts.rows?.length <= 0) {console.log("no conflicts found"); return};
+    outerloop: for (let i = 0; i < conflicts.rows.length; i++) {
+        const conflict = conflicts.rows[i];
+        console.log(conflict);
+        console.log(conflict.id);
+        let curWinner;
+        try { curWinner = await todosDBAsAdmin.get(conflict.id, {conflicts: true});}
+        catch(err) { resolveFailure = true;}
+        if (resolveFailure) {continue};
+        console.log(curWinner,resolveFailure);
+        let latestDocTime = curWinner.updatedAt; 
+        let latestIsCurrentWinner = true;
+        let latestDoc = curWinner
+        let bulkObj = { docs: []};
+        let logObj = { type: "conflictlog", docType: curWinner.type, winner: {}, losers: []};
+        console.log({latestDocTime,latestIsCurrentWinner,latestDoc});
+        console.log
+        for (let j = 0; j < curWinner._conflicts.length; j++) {
+            const losingRev = curWinner._conflicts[j];
+            let curLoser;
+            try { curLoser = await todosDBAsAdmin.get(conflict.id,{ rev: losingRev})}
+            catch(err) {resolveFailure=true;}
+            if (resolveFailure) {continue outerloop};
+            console.log({curLoser});
+            if (curLoser.updatedAt >= latestDocTime) {
+                latestIsCurrentWinner = false;
+                latestDocTime = curLoser.updatedAt;
+                latestDoc = curLoser;
+            } else {
+                bulkObj.docs.push({_id: curLoser._id, _rev: losingRev ,_deleted: true})
+                logObj.losers.push(curLoser);
+            }
+        }
+        let resolvedTime = (new Date()).toISOString();
+        latestDoc.updatedAt = resolvedTime;
+        logObj.updatedAt = resolvedTime;
+        bulkObj.docs.push(latestDoc);
+        logObj.winner = latestDoc;
+        if (!latestIsCurrentWinner) {
+            bulkObj.docs.push({_id: curWinner._id, _rev: curWinner._rev, _deleted: true});
+            logObj.losers.push(curWinner);
+        }
+        console.log("LogObj:",JSON.stringify(logObj));
+        console.log("BulkObj:", JSON.stringify(bulkObj));
+        let bulkResult;
+        try { bulkResult = await todosDBAsAdmin.bulk(bulkObj) }
+        catch(err) {console.log("Error updating bulk docs on conflict resolve"); resolveFailure=true;}
+        console.log("STATUS: Bulk Update to resolve doc id : ",conflict.id, " succeeded");
+        let logResult;
+        try { logResult = await todosDBAsAdmin.insert(logObj)}
+        catch(err) { console.log("ERROR: creating conflict log document failed: ",err)};
+        console.log(bulkResult);
+    }
+}
+
 async function triggerResolveConflicts(req,res) {
     let respObj = {
         triggered: true
@@ -756,7 +815,7 @@ async function triggerResolveConflicts(req,res) {
 }
 
 async function compactDB() {
-    
+    todosNanoAsAdmin.db.compact(couchDatabase);
 }
 
 async function triggerDBCompact(req,res) {
@@ -766,8 +825,6 @@ async function triggerDBCompact(req,res) {
     compactDB();
     return respObj;
 }
-
-
 
 module.exports = {
     issueToken,
