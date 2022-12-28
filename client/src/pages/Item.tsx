@@ -2,7 +2,7 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonLis
   IonButtons, IonMenuButton, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonIcon,
   IonSelectOption, NavContext, useIonAlert,useIonToast } from '@ionic/react';
 import { addOutline } from 'ionicons/icons';
-import { RouteComponentProps, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { usePouch, useDoc, useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext } from 'react';
 import { useCreateGenericDocument, useUpdateGenericDocument } from '../components/Usehooks';
@@ -13,12 +13,7 @@ import './Item.css';
 import SyncIndicator from '../components/SyncIndicator';
 import { PouchResponse } from '../components/DataTypes';
 
-interface ItemPageProps
-  extends RouteComponentProps<{
-    id: string;
-  }> {}
-
-const Item: React.FC<ItemPageProps> = () => {
+const Item: React.FC = () => {
 
   let { mode, itemid: routeItemID  } = useParams<{mode: string, itemid: string}>();
   if ( mode === "new" ) { routeItemID = "<new>"};
@@ -183,11 +178,6 @@ const Item: React.FC<ItemPageProps> = () => {
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar>
-            <IonTitle size="large">Editing Item: {(stateItemDoc as any).name}</IonTitle>
-          </IonToolbar>
-        </IonHeader>
           <IonList>
             <IonItem key="name">
               <IonLabel position="stacked">Name</IonLabel>

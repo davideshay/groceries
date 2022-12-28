@@ -309,7 +309,9 @@ const RemoteDBLogin: React.FC = () => {
 
   return(
         <IonPage>
-            <IonHeader><IonToolbar><IonButtons slot="start"><IonMenuButton /></IonButtons><IonTitle>
+            <IonHeader><IonToolbar>
+            <IonButtons slot="start"><IonMenuButton /></IonButtons>
+            <IonTitle>
             Login Page
             </IonTitle></IonToolbar></IonHeader>
             <IonContent>

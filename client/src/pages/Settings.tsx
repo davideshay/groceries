@@ -47,11 +47,6 @@ const Settings: React.FC = (props) => {
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar>
-            <IonTitle size="large">Settings</IonTitle>
-          </IonToolbar>
-        </IonHeader>
         <IonList lines="full">
           <IonItem>
             <IonButton onClick={() => stopSyncPopup()} key="stopitall">Stop Sync, Logout, and Remove Credentials</IonButton>

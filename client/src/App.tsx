@@ -17,6 +17,7 @@ import RemoteDBLogin from './pages/RemoteDBLogin';
 import InitialLoad from './pages/InitialLoad';
 import AppMenu from './components/AppMenu';
 import ConflictLog from './pages/ConflictLog';
+import ConflictItem from './pages/ConflictItem';
 import { GlobalStateProvider } from './components/GlobalState';
 import { RemoteDBStateProvider } from './components/RemoteDBState';
 
@@ -89,6 +90,7 @@ const App: React.FC = () => {
           </Route>
           <Route exact path="/initialload" component={InitialLoad}></Route>
           <Route exact path="/conflictlog" component={ConflictLog}></Route>
+          <Route path="/conflictitem/:id" component={ConflictItem}></Route>
         </IonRouterOutlet>
       </IonSplitPane>
     </IonReactRouter>

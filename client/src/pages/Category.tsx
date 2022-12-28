@@ -9,12 +9,7 @@ import './Category.css';
 import { PouchResponse } from '../components/DataTypes';
 import SyncIndicator from '../components/SyncIndicator';
 
-interface CategoryPageProps
-  extends RouteComponentProps<{
-    id: string;
-  }> {}
-
-const Category: React.FC<CategoryPageProps> = () => {
+const Category: React.FC = () => {
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
   if ( mode === "new" ) { routeID = "<new>"};
   const [needInitCategoryDoc,setNeedInitCategoryDoc] = useState((mode === "new") ? true: false);
@@ -85,8 +80,6 @@ const Category: React.FC<CategoryPageProps> = () => {
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>
-        <IonHeader collapse="condense">
-        </IonHeader>
           <IonList>
             <IonItem key="name">
               <IonLabel position="stacked">Name</IonLabel>

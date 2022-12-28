@@ -27,11 +27,6 @@ const AllItems: React.FC = () => {
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar>
-            <IonTitle size="large">Categories</IonTitle>
-          </IonToolbar>
-        </IonHeader>
         <IonList lines="full">
                {docs.map((doc) => (
                   <IonItem key={(doc as any)._id} >

@@ -250,11 +250,6 @@ const Friends: React.FC = (props) => {
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar>
-            <IonTitle size="large">Settings</IonTitle>
-          </IonToolbar>
-        </IonHeader>
         <IonAlert isOpen={pageState.showNewUserAlert}
                   header="User not found, send registration request?"
                   subHeader={pageState.newUserAlertSubheader}

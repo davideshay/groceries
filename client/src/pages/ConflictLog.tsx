@@ -33,15 +33,10 @@ const ConflictLog: React.FC = () => {
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar>
-            <IonTitle size="large">Conflict Log</IonTitle>
-          </IonToolbar>
-        </IonHeader>
         <IonList lines="full">
                {docs.map((doc: any) => (
                   <IonItem key={doc._id} >
-                    <IonButton slot="start" class="textButton" fill="clear" routerLink={("/category/edit/" + doc._id)}>{doc.docType} {doc.updatedAt}</IonButton>
+                    <IonButton slot="start" class="textButton" fill="clear" routerLink={("/conflictitem/" + doc._id)}>{doc.docType} {doc.updatedAt}</IonButton>
                   </IonItem>  
             ))}
         </IonList>
