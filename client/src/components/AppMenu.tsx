@@ -1,7 +1,7 @@
 import { IonMenu, IonContent, IonMenuToggle, IonList, IonPage, IonHeader, IonToolbar,
     IonTitle, IonItem, IonItemDivider, IonListHeader, IonBadge } from '@ionic/react';
 import { useContext } from 'react';    
-import { useFriends } from './Usehooks';    
+import { useConflicts, useFriends } from './Usehooks';    
 import ListsAll from './ListsAll';
 import { RemoteDBStateContext } from './RemoteDBState';
 import { ResolvedFriendStatus } from './DataTypes';
@@ -9,6 +9,7 @@ import { ResolvedFriendStatus } from './DataTypes';
 const AppMenu: React.FC = () => {
   const { remoteDBState } = useContext(RemoteDBStateContext);
   const {friendRowsLoading,friendsLoading,friendRows} = useFriends((remoteDBState.dbCreds as any).dbUsername);
+  const { conflictDocs, conflictsLoading } = useConflicts();
 
   const listHeader = (headerName: string) => {
     return (<IonList key={headerName}><IonItemDivider>{headerName}</IonItemDivider></IonList>)
@@ -33,6 +34,15 @@ const AppMenu: React.FC = () => {
               Friends
               </IonItem></IonMenuToggle></IonList>) 
   }
+  const conflictItem = () => {
+    let pendingCount=0;
+    if (!conflictsLoading) { pendingCount=conflictDocs.length }
+    return (<IonList key="Conflict Log"><IonMenuToggle key="ConflictLog" autoHide={false}>
+              <IonItem key={"item-ConflictLog"} routerLink="/conflictlog">
+              {(pendingCount > 0) ? <IonBadge slot="start">{pendingCount}</IonBadge> : <></>}
+              Conflict Log
+              </IonItem></IonMenuToggle></IonList>) 
+  }
 
 
   if (friendRowsLoading || friendsLoading )  {return(
@@ -51,7 +61,7 @@ const AppMenu: React.FC = () => {
       {listItem("Manage Categories","/categories")}
       {listItem("Manage All Items","/allitems")}
       {friendItem()}
-      {listItem("View Conflict Log","/conflictlog")}
+      {conflictItem()}
       {listItem("Settings","/settings")}
     </IonContent>
   </IonMenu>

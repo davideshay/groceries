@@ -32,7 +32,6 @@ const nanoAdminOpts = {
         headers: { Authorization: "Basic "+ Buffer.from(couchAdminUser+":"+couchAdminPassword).toString('base64') }
     }
 }
-const dbAsAdmin = nanoAdmin(nanoAdminOpts)
 let todosNanoAsAdmin = nanoAdmin(nanoAdminOpts);
 let usersNanoAsAdmin = nanoAdmin(nanoAdminOpts);
 let todosDBAsAdmin;
@@ -75,47 +74,25 @@ function getNested(obj, ...args) {
   }
 
 async function doesDBExist() {
-    let doesDBExist = false;
-    const config = {
-        method: 'get',
-        url: couchdbUrl+"/"+couchDatabase,
-        auth: {username: couchAdminUser, password: couchAdminPassword},
-        validateStatus: function(status) { return true},
-        responseType: 'json'
-    }
     let retrieveError = false;
     let res = null;
-    try { res = await axios(config)}
+    try { res = await todosNanoAsAdmin.db.get(couchDatabase)}
     catch(err) { retrieveError = true }
-    if (retrieveError) {
+    if (retrieveError || res == null) {
         console.log("ERROR: could not retrieve database info.");
         return (false);
+    } else {
+        return (true)
     }
-    if (res.status == "200") {
-        console.log("STATUS: Database "+ couchDatabase + " already exists");
-        doesDBExist = true;};
-    return (doesDBExist);
 }
 
 async function createDB() {
-    const config = {
-        method: 'put',
-        url: couchdbUrl+"/"+couchDatabase,
-        auth: {username: couchAdminUser, password: couchAdminPassword},
-        responseType: 'json'
-    }
     let createError = false;
-    let res = null;
-    try { res = await axios(config)}
+    try { await todosNanoAsAdmin.db.create(couchDatabase)}
     catch(err) {  createError = true }
     if (createError) return (false);
-    if (res.status == "400"||res.status == "401"|| res.status=="412") {
-        console.log("ERROR: Problem creating database "+couchDatabase);
-        return(false);
-    }
-    if (typeof res.data?.ok == undefined) return(false);
     console.log("STATUS: Initiatialization, Database "+couchDatabase+" created.");
-    return (res.data.ok);
+    return (createError);
 }
 
 async function createDBIfNotExists() {
@@ -194,8 +171,10 @@ async function addDBIdentifier() {
             "uuid": uuidv4(),
             updatedAt: (new Date()).toISOString()
         }
-        let dbResp = await todosDBAsAdmin.insert(newDoc);
-        console.log(dbResp);    
+        let dbResp = null;
+        try { dbResp = await todosDBAsAdmin.insert(newDoc) }
+        catch(err) { console.log("ERROR: problem creating UUID:",err)};
+        if (dbResp != null) {console.log("STATUS: UUID created in DB: ", newDoc.uuid)}  
     }
 }
 
@@ -212,8 +191,8 @@ async function createConflictsView() {
                 }
             }}},"_design/"+conflictsViewID)
         }
-        catch(err) {console.log("View not created:",{err}); viewCreated=false;}
-        console.log("View created/ updated");
+        catch(err) {console.log("ERROR: View not created:",{err}); viewCreated=false;}
+        console.log("STATUS: View created/ updated");
     }
 }
 function isInteger(str) {
@@ -254,12 +233,12 @@ async function getUserDoc(username) {
         responseType: 'json'
     }
     let res = null;
-    try { res = await axios(config)}
-    catch(err) { userResponse.error= true }
+    try { res = await usersDBAsAdmin.get(couchUserPrefix+":"+username)}
+    catch(err) { console.log("ERROR GETTING USER:",err); userResponse.error= true }
     if (!userResponse.error) {
-        userResponse.email = res.data?.email;
-        userResponse.fullname = res.data?.fullname;
-        userResponse.fullDoc = res.data;
+        userResponse.email = res.email;
+        userResponse.fullname = res.fullname;
+        userResponse.fullDoc = res;
     }
     return (userResponse);
 }
@@ -293,28 +272,16 @@ async function getUserByEmailDoc(email) {
         fullname: null,
         email: email,
     }
-    const config = {
-        method: 'post',
-        url: couchdbUrl+"/_users/_find",
-        auth: {username: couchAdminUser, password: couchAdminPassword},
-        data: {selector: {"email": {"$eq": email}},
-                fields: ["name", "email", "fullname"]},
-        responseType: 'json'
-    }
+    const query={selector: {"email": {"$eq": email}}};
     let res = null;
-    console.log("doing axios with config: ",config, " for email ",email);
-    try { res = await axios(config)}
+    try { res = await usersDBAsAdmin.find(query);}
     catch(err) { console.log(err); userResponse.error= true }
-    if (!userResponse.error && res.status == 200 && res.data.docs.length == 0) {
-        userResponse.error = true;
-    }
-    console.log("response data is ",res.data);
-    console.log("status : ", res.status, " data len ",res.data.docs.length);
+    console.log(res);
     if (!userResponse.error) {
-        if (res.status == 200 && res.data.docs.length > 0) {
-            userResponse.username = res.data?.docs[0].name;
-            userResponse.email = res.data?.docs[0].email;
-            userResponse.fullname = res.data?.docs[0].fullname;
+        if (res.docs.length > 0) {
+            userResponse.username = res.docs[0].name;
+            userResponse.email = res.docs[0].email;
+            userResponse.fullname = res.docs[0].fullname;
         }
     }
     return (userResponse);
@@ -370,25 +337,20 @@ async function createNewUser(userObj) {
         error: false,
         idCreated: ""
     }
-    const config = {
-        method: 'put',
-        url: couchdbUrl+"/_users/"+ encodeURI(couchUserPrefix+":"+userObj.username),
-        auth: {username: couchAdminUser, password: couchAdminPassword},
-        data: {
-            name: userObj.username,
-            password: userObj.password,
-            email: userObj.email,
-            fullname: userObj.fullname,
-            roles: [couchStandardRole],
-            type: "user"
-        },
-        responseType: 'json'
+    const newDoc = {
+        name: userObj.username,
+        password: userObj.password,
+        email: userObj.email,
+        fullname: userObj.fullname,
+        roles: [couchStandardRole],
+        type: "user"
     }
     let res = null;
-    try { res = await axios(config)}
-    catch(err) { createResponse.error= true }
+    try { res = await usersDBAsAdmin.insert(newDoc,couchUserPrefix+":"+userObj.username); }
+    catch(err) { console.log("ERROR: problem creating user: ",err); createResponse.error= true }
+    console.log({res});
     if (!createResponse.error) {
-        createResponse.idCreated = res.data.id;
+        createResponse.idCreated = res.id;
     }
     return (createResponse);
 }
@@ -465,23 +427,14 @@ async function getUsersInfo(req, res) {
         error: false,
         users: [],
     }
-//    console.log("req is:",{req});
     if (isNothing(req.body?.userIDs)) {getResponse.error=true; return (getResponse)}
     const requestData = { keys: [], include_docs: true }
     req.body.userIDs.forEach(uid => { requestData.keys.push(couchUserPrefix+":"+uid) });
-    const config = {
-        method: 'post',
-        url: couchdbUrl+"/_users/_all_docs",
-        auth: {username: couchAdminUser, password: couchAdminPassword},
-        data: requestData,
-        responseType: 'json'
-    }
     let userRes = null;
-    try { userRes = await axios(config)}
-    catch(err) { console.log(err); getResponse.error= true }
+    try { userRes = await usersDBAsAdmin.list(requestData);}
+    catch(err) { console.log("ERROR: problem retrieving users: ",err); getResponse.error= true }
     if (!getResponse.error) {
-        console.log(userRes.data.rows)
-        userRes.data.rows.forEach(el => {
+        userRes.rows.forEach(el => {
             getResponse.users.push({name: el?.doc?.name, email: el?.doc?.email, fullname: el?.doc?.fullname})
         });
     }
@@ -681,13 +634,11 @@ async function resetPassword(req, res) {
 
     let userDoc = await getUserDoc(username);
     if (userDoc.error) {return resetResponse};
-    console.log("Got user Doc:",{userDoc});
 
     let transport = nodemailer.createTransport(smtpOptions);
     transport.verify(function (error,success) {
         if (error) {return triggerResponse}
     })
-    console.log("transport verified");
 
     let resetURL = groceryAPIUrl + "/resetpasswordui?username="+encodeURIComponent(username);
     const message = {
@@ -696,8 +647,6 @@ async function resetPassword(req, res) {
         subject: "Password Reset Request from Groceries",
         text: userDoc.fullname+" has requested to reset their password. If you did not request this reset, please validate the security of this account. Please use the link to reset your password: "+resetURL+ " . Once reset, visit "+groceryUrl+" to use the app or login on your mobile device.."
     }
-
-    console.log("about to send message:",{message});
 
     transport.sendMail(message, function (error, success) {
         if (!error) {return resetResponse}

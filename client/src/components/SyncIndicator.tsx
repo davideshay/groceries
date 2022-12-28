@@ -1,26 +1,35 @@
-import { IonIcon } from '@ionic/react';
-import { cloudDoneOutline, cloudDownloadOutline, cloudOfflineOutline } from 'ionicons/icons';
+import { IonIcon, IonButton , NavContext} from '@ionic/react';
+import { cloudDoneOutline, cloudDownloadOutline, cloudOfflineOutline, warningOutline } from 'ionicons/icons';
 import { useContext } from 'react';
 import { RemoteDBState, RemoteDBStateContext, RemoteDBStateContextType, SyncStatus } from '../components/RemoteDBState';
+import { useConflicts } from './Usehooks';
 
 
 const SyncIndicator: React.FC = () => {
     const { remoteDBState } = useContext(RemoteDBStateContext);
+    const { navigate } = useContext(NavContext);
+    const { conflictDocs, conflictsLoading } = useConflicts();
 
+    const iconSize="medium"
     let iconElem;
     switch (remoteDBState.syncStatus) {
         case SyncStatus.active:
-            iconElem=(<IonIcon slot="end" size="large" icon={cloudDownloadOutline} />)
+            iconElem=(<IonIcon slot="end" size={iconSize} icon={cloudDownloadOutline} />)
             break;
         case SyncStatus.paused:
-            iconElem=(<IonIcon slot="end" size="large" icon={cloudDoneOutline} />)
+            iconElem=(<IonIcon slot="end" size={iconSize} icon={cloudDoneOutline} />)
             break;
         default:
-            iconElem=(<IonIcon slot="end" size="large" icon={cloudOfflineOutline} />)
+            iconElem=(<IonIcon slot="end" size={iconSize} icon={cloudOfflineOutline} />)
             break;
     }
+    let conflictElem;
+    if (!conflictsLoading) {
+        if (conflictDocs.length > 0)
+        conflictElem=(<IonButton slot="end" fill="default" onClick={() => navigate("/conflictlog")}><IonIcon slot="end" size={iconSize} icon={warningOutline} /></IonButton>)
+    }
 
-    return (iconElem)
+    return (<>{conflictElem}{iconElem}</>)
 } 
 
 export default SyncIndicator;

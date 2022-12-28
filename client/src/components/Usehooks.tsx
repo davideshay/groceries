@@ -168,3 +168,20 @@ export function useFriends(username: string) : {friendsLoading: boolean, friendR
     return({friendsLoading, friendRowsLoading,friendRows});
 
 }
+
+export function useConflicts() : { conflictDocs: any[], conflictsLoading: boolean} {
+  const { remoteDBState } = useContext(RemoteDBStateContext);
+  const [friendRowsLoading,setFriendRowsLoading] = useState(false);
+  const oneDayOldDate=new Date();
+  oneDayOldDate.setDate(oneDayOldDate.getDate()-5);
+  const lastConflictsViewed = new Date(String(remoteDBState.dbCreds.lastConflictsViewed))
+  const mostRecentDate = (lastConflictsViewed > oneDayOldDate) ? lastConflictsViewed : oneDayOldDate;
+
+  const { docs: conflictDocs, loading: conflictsLoading, error } = useFind({
+    index: { fields: ["type","docType","updatedAt"]},
+    selector: { type: "conflictlog", docType: { $exists: true }, updatedAt: { $gt: mostRecentDate.toISOString()} },
+    sort: [ "type", "docType","updatedAt" ]
+  })
+
+  return({conflictDocs, conflictsLoading});
+}
