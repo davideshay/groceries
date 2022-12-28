@@ -11,6 +11,8 @@ const smtpSecure = Boolean(process.env.SMTP_SECURE);
 const smtpUser = process.env.SMTP_USER;
 const smtpPassword = process.env.SMTP_PASSWORD;
 const smtpFrom = process.env.SMTP_FROM;
+const enableScheduling = Boolean(process.env.ENABLE_SCHEDULING);
+const resolveConflictsFrequencyMinutes = (process.env.RESOLVE_CONFLICTS_FREQUENCY_MINUTES);
 const couchStandardRole = "crud";
 const couchAdminRole = "dbadmin";
 const couchUserPrefix = "org.couchdb.user";
@@ -214,6 +216,9 @@ async function createConflictsView() {
         console.log("View created/ updated");
     }
 }
+function isInteger(str) {
+    return /^\+?(0|[1-9]\d*)$/.test(str);
+}
 
 async function dbStartup() {
     console.log("STATUS: Starting up auth server for couchdb...");
@@ -225,6 +230,14 @@ async function dbStartup() {
     usersDBAsAdmin = usersNanoAsAdmin.use("_users");
     await addDBIdentifier();
     await createConflictsView();
+    if (enableScheduling) {
+        if(isInteger(resolveConflictsFrequencyMinutes)) {
+            setInterval(() => {resolveConflicts()},60000*resolveConflictsFrequencyMinutes);
+            console.log("STATUS: Conflict resolution scheduled every ",resolveConflictsFrequencyMinutes, " minutes.")
+        } else {
+            console.log("ERROR: Invalid environment variable for scheduling  -- not started.");
+        }
+    }
 }
 
 async function getUserDoc(username) {
@@ -750,8 +763,9 @@ async function resetPasswordUIPost(req, res) {
 
 async function resolveConflicts() {
     const conflicts = await todosDBAsAdmin.view(conflictsViewID,conflictsViewName);
+    console.log("STATUS: Resolving all conflicts started...");
     let resolveFailure=false;
-    if (conflicts.rows?.length <= 0) {console.log("no conflicts found"); return};
+    if (conflicts.rows?.length <= 0) {console.log("STATUS: no conflicts found"); return};
     outerloop: for (let i = 0; i < conflicts.rows.length; i++) {
         const conflict = conflicts.rows[i];
         console.log(conflict);
@@ -797,7 +811,7 @@ async function resolveConflicts() {
         console.log("BulkObj:", JSON.stringify(bulkObj));
         let bulkResult;
         try { bulkResult = await todosDBAsAdmin.bulk(bulkObj) }
-        catch(err) {console.log("Error updating bulk docs on conflict resolve"); resolveFailure=true;}
+        catch(err) {console.log("ERROR: Error updating bulk docs on conflict resolve"); resolveFailure=true;}
         console.log("STATUS: Bulk Update to resolve doc id : ",conflict.id, " succeeded");
         let logResult;
         try { logResult = await todosDBAsAdmin.insert(logObj)}

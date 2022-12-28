@@ -10,7 +10,6 @@ import { useCreateGenericDocument, useFriends, useUpdateGenericDocument} from '.
 import { add } from 'ionicons/icons';
 import './Friends.css';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
-import { GlobalStateContext } from '../components/GlobalState';
 import { FriendRow, FriendStatus, ResolvedFriendStatus } from '../components/DataTypes';
 import { checkUserByEmailExists, emailPatternValidation } from '../components/Utilities';
 import SyncIndicator from '../components/SyncIndicator';

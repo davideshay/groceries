@@ -79,12 +79,13 @@ export interface DBCreds {
     dbUsername: string | null,
     email: string | null,
     fullName: string | null,
-    JWT: string | null
+    JWT: string | null,
+    lastConflictsViewed: string | null;
 }
 
 export const DBCredsInit: DBCreds = {
     apiServerURL: null, couchBaseURL: null, database: null,
-    dbUsername: null, email: null, fullName: null, JWT: null
+    dbUsername: null, email: null, fullName: null, JWT: null, lastConflictsViewed: null
 }
 
 const initialState: RemoteDBState = {
@@ -157,7 +158,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
           console.log("incoming string : ",credsStr);
           credsObj=JSON.parse(String(credsStr));
           console.log("parsed string: ",credsObj)
-          let credsObjFiltered=pick(credsObj,['apiServerURL','couchBaseURL','database','dbUsername','email','fullName','JWT'])
+          let credsObjFiltered=pick(credsObj,['apiServerURL','couchBaseURL','database','dbUsername','email','fullName','JWT','lastConflictsViewed'])
           console.log("credsObjFiltered:",cloneDeep(credsObjFiltered));
           setRemoteDBState(prevstate => ({...prevstate,dbCreds: credsObjFiltered}))
           credsObj = credsObjFiltered;
@@ -172,6 +173,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
                 JWT:"",
                 email: "",
                 fullName: "",
+                lastConflictsViewed: (new Date()).toISOString()
                 };
             console.log("setting state DB Creds to ", {credsObj});    
             setRemoteDBState(prevstate => ({...prevstate, dbCreds: credsObj}))
@@ -320,7 +322,6 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         setRemoteDBState(prevState => ({...prevState,dbCreds: credsObj}))
         await Preferences.set({key: 'dbcreds', value: credsStr})  
     }
-
 
     async function assignDBAndSync(credsObj: DBCreds): Promise<boolean> {
         let assignSuccessful = true;

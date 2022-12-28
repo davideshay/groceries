@@ -51,6 +51,7 @@ const AppMenu: React.FC = () => {
       {listItem("Manage Categories","/categories")}
       {listItem("Manage All Items","/allitems")}
       {friendItem()}
+      {listItem("View Conflict Log","/conflictlog")}
       {listItem("Settings","/settings")}
     </IonContent>
   </IonMenu>
