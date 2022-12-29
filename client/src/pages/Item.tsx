@@ -1,6 +1,6 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
   IonButtons, IonMenuButton, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonIcon,
-  IonSelectOption, NavContext, useIonAlert,useIonToast } from '@ionic/react';
+  IonSelectOption, NavContext, useIonAlert,useIonToast, IonTextarea } from '@ionic/react';
 import { addOutline } from 'ionicons/icons';
 import { useParams } from 'react-router-dom';
 import { usePouch, useDoc, useFind } from 'use-pouchdb';
@@ -154,7 +154,7 @@ const Item: React.FC = () => {
   }
 
   let listsElem=[];
-  listsElem.push(<IonItemDivider key="listdivider">Item is on these lists:</IonItemDivider>)
+  listsElem.push(<IonLabel key="listlabel" position='stacked'>Item is on these lists:</IonLabel>)
   for (let i = 0; i < (stateItemDoc as any).lists.length; i++) {
     let listID = (stateItemDoc as any).lists[i].listID;
     let itemFoundIdx=listDocs.findIndex(element => (element._id === listID));
@@ -188,7 +188,7 @@ const Item: React.FC = () => {
               <IonInput type="number" min="0" max="9999" onIonChange={(e: any) => setStateItemDoc({...stateItemDoc, quantity: e.detail.value})} value={(stateItemDoc as any).quantity}></IonInput>
             </IonItem>
             <IonItem key="category">
-              <IonLabel position="stacked">Category</IonLabel>
+              <IonLabel key="categorylabel" position="stacked">Category</IonLabel>
               <IonSelect interface="popover" onIonChange={(ev) => updateCategory(ev.detail.value)} value={(stateItemDoc as any).categoryID}>
                 <IonSelectOption key="cat-undefined" value={null}>Uncategorized</IonSelectOption>
                 {categoryDocs.map((cat) => (
@@ -197,9 +197,14 @@ const Item: React.FC = () => {
                     </IonSelectOption>
                 ))}
               </IonSelect>
-              <IonButton slot="end" fill="clear" onClick={(e: any) => {addCategoryPopup()}}>
+              <IonButton slot="end" fill="default" onClick={(e: any) => {addCategoryPopup()}}>
                 <IonIcon slot="end" icon={addOutline} ></IonIcon>
               </IonButton>  
+            </IonItem>
+            <IonItem key="note">
+              <IonLabel key="notelabel" position="stacked">Note</IonLabel>
+              <IonTextarea placeholder="Item Note" inputMode='text' debounce={100} rows={4} onIonChange={(ev) => setStateItemDoc(prevState => ({...prevState,note: ev.detail.value}))} value={(stateItemDoc as any).note}>   
+              </IonTextarea>
             </IonItem>
             {listsElem}
             <IonItem key="formErrors">{formError}</IonItem>

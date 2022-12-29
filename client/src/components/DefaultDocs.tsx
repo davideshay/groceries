@@ -19,6 +19,7 @@ export function createEmptyItemDoc(listDocs:any,listID: string | null | undefine
       name: itemName,
       quantity: 1,
       categoryID: null,
+      note:"",
       lists: newItemLists
     }
     return(newItemDoc);
