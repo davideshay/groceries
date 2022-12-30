@@ -171,7 +171,6 @@ export function useFriends(username: string) : {friendsLoading: boolean, friendR
 
 export function useConflicts() : { conflictDocs: any[], conflictsLoading: boolean} {
   const { remoteDBState } = useContext(RemoteDBStateContext);
-  const [friendRowsLoading,setFriendRowsLoading] = useState(false);
   const oneDayOldDate=new Date();
   oneDayOldDate.setDate(oneDayOldDate.getDate()-5);
   const lastConflictsViewed = new Date(String(remoteDBState.dbCreds.lastConflictsViewed))
