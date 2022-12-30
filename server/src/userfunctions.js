@@ -282,7 +282,10 @@ async function getUserByEmailDoc(email) {
             userResponse.username = res.docs[0].name;
             userResponse.email = res.docs[0].email;
             userResponse.fullname = res.docs[0].fullname;
+        } else {
+            userResponse.error = true;
         }
+
     }
     return (userResponse);
 }
