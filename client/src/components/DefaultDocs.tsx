@@ -1,5 +1,6 @@
+import { GlobalSettings } from "./GlobalState";
 
-export function createEmptyItemDoc(listDocs:any,listID: string | null | undefined, itemName: string | undefined) {
+export function createEmptyItemDoc(listDocs:any,listID: string | null | undefined, itemName: string | undefined, settings: GlobalSettings) {
     let newItemLists: any =[];
     listDocs.forEach((listDoc: any) => {
       let newListDoc={

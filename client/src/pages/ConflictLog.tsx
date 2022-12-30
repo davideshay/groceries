@@ -17,6 +17,7 @@ const ConflictLog: React.FC = () => {
 
   function setConflictsAsViewed() {
     const curDateStr = (new Date()).toISOString();
+    console.log("setting to ",curDateStr);
     setDBCredsValue("lastConflictsViewed",curDateStr);
   }
 

@@ -10,7 +10,7 @@ const AppMenu: React.FC = () => {
   const { remoteDBState } = useContext(RemoteDBStateContext);
   const {friendRowsLoading,friendsLoading,friendRows} = useFriends((remoteDBState.dbCreds as any).dbUsername);
   const { conflictDocs, conflictsLoading } = useConflicts();
-
+ 
   const listHeader = (headerName: string) => {
     return (<IonList key={headerName}><IonItemDivider>{headerName}</IonItemDivider></IonList>)
   }
@@ -34,7 +34,7 @@ const AppMenu: React.FC = () => {
               Friends
               </IonItem></IonMenuToggle></IonList>) 
   }
-  const conflictItem = () => {
+   const conflictItem = () => {
     let pendingCount=0;
     if (!conflictsLoading) { pendingCount=conflictDocs.length }
     return (<IonList key="Conflict Log"><IonMenuToggle key="ConflictLog" autoHide={false}>
@@ -44,11 +44,9 @@ const AppMenu: React.FC = () => {
               </IonItem></IonMenuToggle></IonList>) 
   }
 
-
-  if (friendRowsLoading || friendsLoading )  {return(
+  if (friendRowsLoading || friendsLoading || conflictsLoading)  {return(
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
   )};
-
 
   return (
   <IonMenu contentId="main" type="overlay">

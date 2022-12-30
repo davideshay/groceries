@@ -4,6 +4,7 @@ import { cloneDeep } from 'lodash';
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import { RemoteDBStateContext } from './RemoteDBState';
 import { FriendStatus, FriendRow, ResolvedFriendStatus, PouchResponse, PouchResponseInit } from './DataTypes';
+import { GlobalStateContext } from './GlobalState';
 
 
 export function useUpdateGenericDocument() {
@@ -171,16 +172,21 @@ export function useFriends(username: string) : {friendsLoading: boolean, friendR
 
 export function useConflicts() : { conflictDocs: any[], conflictsLoading: boolean} {
   const { remoteDBState } = useContext(RemoteDBStateContext);
-  const oneDayOldDate=new Date();
-  oneDayOldDate.setDate(oneDayOldDate.getDate()-5);
-  const lastConflictsViewed = new Date(String(remoteDBState.dbCreds.lastConflictsViewed))
-  const mostRecentDate = (lastConflictsViewed > oneDayOldDate) ? lastConflictsViewed : oneDayOldDate;
+  const { globalState } = useContext(GlobalStateContext);
+  const [mostRecentDate,setMostRecentDate] = useState<Date>(new Date());
 
   const { docs: conflictDocs, loading: conflictsLoading, error } = useFind({
     index: { fields: ["type","docType","updatedAt"]},
     selector: { type: "conflictlog", docType: { $exists: true }, updatedAt: { $gt: mostRecentDate.toISOString()} },
     sort: [ "type", "docType","updatedAt" ]
   })
+
+  useEffect( () => {
+    const oneDayOldDate=new Date();
+    oneDayOldDate.setDate(oneDayOldDate.getDate()-Number(globalState.settings.daysOfConflictLog));
+    const lastConflictsViewed = new Date(String(remoteDBState.dbCreds.lastConflictsViewed))
+    setMostRecentDate((lastConflictsViewed > oneDayOldDate) ? lastConflictsViewed : oneDayOldDate);  
+  },[remoteDBState.dbCreds.lastConflictsViewed])
 
   return({conflictDocs, conflictsLoading});
 }

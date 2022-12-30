@@ -62,7 +62,7 @@ const Item: React.FC = () => {
     let newItemDoc = cloneDeep(itemDoc);
     if (!itemLoading && !listLoading) {
       if (globalState.itemMode === "new" && needInitItemDoc) {
-        newItemDoc = createEmptyItemDoc(listDocs,globalState.callingListID,globalState.newItemName)
+        newItemDoc = createEmptyItemDoc(listDocs,globalState.callingListID,globalState.newItemName,globalState.settings)
         setStateInfo("newItemMode","none");
         setNeedInitItemDoc(false);
       } else {

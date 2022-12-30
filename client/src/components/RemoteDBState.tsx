@@ -127,7 +127,8 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     }
 
     function setDBCredsValue(key: any, value: any) {
-        setRemoteDBState(prevState => ({...prevState, dbCreds: {...prevState.dbCreds,[key]: value}}))
+        setRemoteDBState(prevState => ({...prevState, dbCreds: {...prevState.dbCreds,[key]: value}}));
+        setPrefsDBCreds({...remoteDBState.dbCreds, [key]: value});
     }
 
     function startSync(remoteDB: PouchDB.Database) {

@@ -64,10 +64,10 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
     }
 
     async function updateSettingKey(key: string, value: any) {
-        console.log("updating ",key," to ",value);
         let updatedObj=await getSettings();
         updatedObj={...updatedObj, [key]: value}
         let settingsStr = JSON.stringify(updatedObj);
+        setGlobalState(prevState => ({...prevState,settings: {...prevState.settings, [key]: value}}))
         try { await Preferences.set({key: 'settings', value: settingsStr}) }
         catch(err) {console.log("ERROR setting prefs:",err); return false;}
         return true;
