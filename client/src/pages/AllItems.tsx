@@ -1,21 +1,40 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonButtons, 
-  IonMenuButton, IonButton, IonFab, IonFabButton, IonIcon } from '@ionic/react';
-import { add } from 'ionicons/icons';
+  IonMenuButton, IonButton, } from '@ionic/react';
 import { useFind } from 'use-pouchdb';
+import { useLists } from '../components/Usehooks';
+import { useContext } from 'react';
+import { RemoteDBStateContext } from '../components/RemoteDBState';
 import SyncIndicator from '../components/SyncIndicator';
 import './AllItems.css';
 
 const AllItems: React.FC = () => {
-
+  const { remoteDBState } = useContext(RemoteDBStateContext);
+  const { listDocs, listsLoading } = useLists(String(remoteDBState.dbCreds.dbUsername))
   const { docs, loading, error } = useFind({
   index: { fields: ["type","name"]},
   selector: { type: "item", name: { $exists: true }},
   sort: [ "type", "name" ]
   })
 
-  if (loading) { return (
+  if (loading || listsLoading ) { return (
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
   )}
+
+  let itemsElem : any[] = [];
+  docs.forEach((doc: any) => {
+    let hasValidList=false;
+    doc.lists.forEach((list: any) => {
+      let listIdx = listDocs.findIndex((el: any) => el._id == list.listID);
+      if (listIdx !== -1) { hasValidList = true}
+    })
+    if (hasValidList) {
+      itemsElem.push(
+        <IonItem key={(doc as any)._id} >
+          <IonButton slot="start" class="textButton" fill="clear" routerLink={("/item/edit/" + (doc as any)._id)}>{(doc as any).name}</IonButton>
+        </IonItem>  
+      )
+    }
+  });
 
   return (
     <IonPage>
@@ -28,11 +47,7 @@ const AllItems: React.FC = () => {
       </IonHeader>
       <IonContent fullscreen>
         <IonList lines="full">
-               {docs.map((doc) => (
-                  <IonItem key={(doc as any)._id} >
-                    <IonButton slot="start" class="textButton" fill="clear" routerLink={("/item/edit/" + (doc as any)._id)}>{(doc as any).name}</IonButton>
-                  </IonItem>  
-            ))}
+          {itemsElem}
         </IonList>
       </IonContent>
     </IonPage>
