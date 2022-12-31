@@ -9,10 +9,11 @@ import { cloneDeep } from 'lodash';
 import './Items.css';
 import { useUpdateCompleted, useUpdateGenericDocument, useLists } from '../components/Usehooks';
 import { AddListOptions, GlobalStateContext } from '../components/GlobalState';
-import {ItemRow, ItemSearch, SearchState, PageState} from '../components/DataTypes'
+import {ItemRow, ItemSearch, SearchState, PageState, ListRow} from '../components/DataTypes'
 import { getAllSearchRows, getItemRows, filterSearchRows } from '../components/ItemUtilities';
 import SyncIndicator from '../components/SyncIndicator';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
+import { isEqual } from 'lodash';
 
 const Items: React.FC = () => {
   const { remoteDBState} = useContext(RemoteDBStateContext);
@@ -36,7 +37,7 @@ const Items: React.FC = () => {
     },
     sort: [ "type", "name", "lists" ]
     })
-    const { listDocs, listsLoading} = useLists(String(remoteDBState.dbCreds.dbUsername));
+    const { listDocs, listsLoading, listRows, listRowsLoading} = useLists(String(remoteDBState.dbCreds.dbUsername));
     const { docs: categoryDocs, loading: categoryLoading, error: categoryError } = useFind({
       index: { fields: [ "type","name"] },
       selector: { type: "category", name: { $exists: true}},
@@ -56,13 +57,13 @@ const Items: React.FC = () => {
     },[routeListID])
 
     useEffect( () => {
-      if (!itemLoading && !listsLoading && !categoryLoading && !allItemsLoading) {
+      if (!itemLoading && !listsLoading && !listRowsLoading && !categoryLoading && !allItemsLoading) {
         setPageState({ ...pageState,
           doingUpdate: false,
           itemRows: getItemRows(itemDocs, listDocs, categoryDocs, pageState.selectedListID),
         })
       }
-    },[itemLoading, allItemsLoading, listsLoading, categoryLoading, itemDocs, listDocs, allItemDocs, categoryDocs, pageState.selectedListID]);
+    },[itemLoading, allItemsLoading, listsLoading, listRowsLoading, categoryLoading, itemDocs, listDocs, allItemDocs, categoryDocs, pageState.selectedListID]);
 
     useEffect( () => {
       setSearchRows(getAllSearchRows(allItemDocs,pageState.selectedListID));
@@ -73,7 +74,7 @@ const Items: React.FC = () => {
     },[searchState.searchCriteria])
 
   
-  if (itemLoading || listsLoading || categoryLoading || allItemsLoading || pageState.doingUpdate )  {return(
+  if (itemLoading || listsLoading || listRowsLoading || categoryLoading || allItemsLoading || pageState.doingUpdate )  {return(
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
   )};  
 
@@ -124,20 +125,24 @@ const Items: React.FC = () => {
 
   async function addExistingItemToList(itemID: string) {
     let existingItem: any = cloneDeep(allItemDocs.find((el: any) => el._id === itemID));
-    let idxInLists=existingItem.lists.findIndex((el: any) => el.listID === pageState.selectedListID);
+    let baseList = listRows.find((el: ListRow) => pageState.selectedListID === el.listDoc._id)
+    let baseParticipants = baseList?.participants;
+    
     console.log("Adding itemID: ", itemID, " to list");
 
-    listDocs.forEach((list: any) => {
-      console.log("looping through list, have list:",list);
-      let idxInLists=existingItem.lists.findIndex((el: any) => el.listID === list._id);
+    listRows.forEach((listRow: ListRow) => {
+      console.log("looping through list, have list:",listRow);
+      let idxInLists=existingItem.lists.findIndex((el: any) => el.listID === listRow.listDoc._id);
       let skipThisList=false;
-      console.log("list id: ",list._id," selected: ",pageState.selectedListID);
-      if (list._id !== pageState.selectedListID) {
+      if (!isEqual(listRow.participants,baseParticipants)) {skipThisList = true};
+      console.log("skip this list after comparison check");
+      console.log("list id: ",listRow.listDoc._id," selected: ",pageState.selectedListID);
+      if (listRow.listDoc._id !== pageState.selectedListID) {
         console.log("checking non-selected list, options: ",globalState.settings.addListOption);
         if (globalState.settings.addListOption == AddListOptions.dontAddAutomatically) {
           skipThisList=true;
         } else if (globalState.settings.addListOption == AddListOptions.addToListsWithCategoryAutomatically) {
-          if (!isCategoryInList(list._id,existingItem.categoryID)) {
+          if (!isCategoryInList(listRow.listDoc._id,existingItem.categoryID)) {
             skipThisList=true;
           }
         }
@@ -227,7 +232,7 @@ const Items: React.FC = () => {
       removeAll: globalState.settings.removeFromAllLists,
       newStatus: newStatus,
       listID: pageState.selectedListID,
-      listDocs: listDocs
+      listRows: listRows
     }
     setPageState({...pageState, itemRows: newItemRows, doingUpdate: true});
     let response=await updateCompleted(updateInfo);

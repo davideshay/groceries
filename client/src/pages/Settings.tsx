@@ -1,6 +1,6 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
         IonMenuButton, IonButtons, IonButton, useIonAlert, IonInput,
-        IonRadioGroup,IonLabel, NavContext, IonRadio, IonCheckbox} from '@ionic/react';
+        IonRadioGroup,IonLabel, NavContext, IonRadio, IonCheckbox, IonTextarea} from '@ionic/react';
 import { useContext, useEffect, useState } from 'react';        
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
@@ -87,6 +87,7 @@ const Settings: React.FC = (props) => {
             <IonLabel>Remove items from all lists when completed</IonLabel>
             <IonCheckbox slot="start" checked={localSettings.removeFromAllLists} onIonChange={(e) => changeSetting("removeFromAllLists",e.detail.checked)}></IonCheckbox>
           </IonItem>
+          <IonTextarea disabled={true}>NOTE: Adding and removing from all lists is only done with lists that have the same set of shared owners/participants.</IonTextarea>
           <IonItem key="dayslog">
             <IonLabel>Days of conflict log to view</IonLabel>
             <IonInput type="number" min="0" max="25" onIonChange={(e: any) => changeSetting("daysOfConflictLog", e.detail.value)} value={Number(localSettings?.daysOfConflictLog)}></IonInput>

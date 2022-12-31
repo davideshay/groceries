@@ -64,6 +64,12 @@ export interface ItemRow {
     friendStatusText: string,
   }
 
+  export type ListRow = {
+    listDoc: any,
+    participants: string[]
+  }
+
+
   export type PouchResponse = {
     pouchData: any,
     successful: boolean,

@@ -1,9 +1,9 @@
 import { useCallback, useState, useEffect, useContext } from 'react'
 import { usePouch, useFind } from 'use-pouchdb'
-import { cloneDeep } from 'lodash';
+import { cloneDeep, isEqual, union } from 'lodash';
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import { RemoteDBStateContext } from './RemoteDBState';
-import { FriendStatus, FriendRow, ResolvedFriendStatus, PouchResponse, PouchResponseInit } from './DataTypes';
+import { FriendStatus, FriendRow, ResolvedFriendStatus, ListRow, PouchResponse, PouchResponseInit } from './DataTypes';
 import { GlobalStateContext } from './GlobalState';
 
 
@@ -43,12 +43,15 @@ export function useUpdateCompleted() {
     async (updateInfo: any) => {
       let response: PouchResponse = PouchResponseInit;
       const newItemDoc = cloneDeep(updateInfo.itemDoc);
+      let baseList=updateInfo.listRows.find((el: ListRow) => (updateInfo.listID === el.listDoc._id));
+      let baseParticipants = baseList.participants;
       for (let i = 0; i < newItemDoc.lists.length; i++) {
-        let listIdx=updateInfo.listDocs.findIndex((el: any) => (el._id === newItemDoc.lists[i].listID));
+        let listIdx=updateInfo.listRows.findIndex((el: ListRow) => (el.listDoc._id === newItemDoc.lists[i].listID));
         if (listIdx !== -1) {
           let changeThisItem=false;
-          if ((newItemDoc.lists[i].listID === updateInfo.listID) ||
-              (updateInfo.removeAll && updateInfo.newStatus)) {
+          if (((newItemDoc.lists[i].listID === updateInfo.listID) ||
+              (updateInfo.removeAll && updateInfo.newStatus)) && 
+              (isEqual(baseParticipants,updateInfo.listRows[listIdx].participants))) {
                 changeThisItem=true;
               }
           if (changeThisItem) {
@@ -70,7 +73,9 @@ export function useUpdateCompleted() {
   )
 }
 
-export function useLists(username: string) : {listsLoading: boolean, listDocs: any} {
+export function useLists(username: string) : {listsLoading: boolean, listDocs: any, listRowsLoading: boolean, listRows: ListRow[]} {
+  const [listRows,setListRows] = useState<ListRow[]>([]);
+  const [listRowsLoading, setListRowsLoading] = useState(false);
   const { docs: listDocs, loading: listsLoading, error: listError} = useFind({
     index: { fields: ["type","name"] },
     selector: { "$and": [ 
@@ -82,7 +87,31 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
     ] },
     sort: [ "type","name"]
   });
-  return ({listsLoading, listDocs});
+
+  function buildListRows() {
+    setListRows(prevState => ([]));
+    listDocs.forEach((list: any) => {
+      let part = union([list.listOwner],list.sharedWith).sort();
+      let listRow: ListRow ={
+        listDoc: list,
+        participants: part
+      }
+      setListRows(prevArray => ([...prevArray,listRow]));
+    });
+  }
+
+  useEffect( () => {
+    if (listsLoading || listRowsLoading) { return };
+    if ( !listsLoading && !listRowsLoading)  {
+      setListRowsLoading(true);
+      buildListRows();
+      setListRowsLoading(false);
+    }
+
+  },[listsLoading,listRowsLoading,listDocs])
+
+
+  return ({listsLoading, listDocs, listRowsLoading, listRows});
 
 }
 
