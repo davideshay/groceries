@@ -1,7 +1,8 @@
-import { GlobalSettings } from "./GlobalState";
+import { GlobalSettings, AddListOptions } from "./GlobalState";
 
 export function createEmptyItemDoc(listDocs:any,listID: string | null | undefined, itemName: string | undefined, settings: GlobalSettings) {
-    let newItemLists: any =[];
+  console.log(settings.addListOption);
+  let newItemLists: any =[];
     listDocs.forEach((listDoc: any) => {
       let newListDoc={
         listID: listDoc._id,
@@ -9,10 +10,11 @@ export function createEmptyItemDoc(listDocs:any,listID: string | null | undefine
         active: true,
         completed: false
       };
-      if (listDoc._id !== listID) {
-        newListDoc.active = false;
-        newListDoc.completed = false;
-      } 
+      if (settings.addListOption == AddListOptions.addToAllListsAutomatically) {
+        newListDoc.active = true;
+      } else if (listDoc._id !== listID) {
+        newListDoc.active = false
+      }
       newItemLists.push(newListDoc);    
     });
     let newItemDoc={

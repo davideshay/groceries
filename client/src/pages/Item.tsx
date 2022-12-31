@@ -5,17 +5,18 @@ import { addOutline } from 'ionicons/icons';
 import { useParams } from 'react-router-dom';
 import { usePouch, useDoc, useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext } from 'react';
-import { useCreateGenericDocument, useUpdateGenericDocument } from '../components/Usehooks';
+import { useCreateGenericDocument, useUpdateGenericDocument, useLists } from '../components/Usehooks';
 import { createEmptyItemDoc } from '../components/DefaultDocs';
 import { GlobalStateContext } from '../components/GlobalState';
 import { cloneDeep, isEmpty } from 'lodash';
 import './Item.css';
 import SyncIndicator from '../components/SyncIndicator';
 import { PouchResponse } from '../components/DataTypes';
+import { RemoteDBStateContext } from '../components/RemoteDBState';
 
 const Item: React.FC = () => {
-
   let { mode, itemid: routeItemID  } = useParams<{mode: string, itemid: string}>();
+  const { remoteDBState } = useContext(RemoteDBStateContext);
   if ( mode === "new" ) { routeItemID = "<new>"};
   const [needInitItemDoc,setNeedInitItemDoc] = useState((mode === "new") ? true: false);
   const [stateItemDoc,setStateItemDoc] = useState({});
@@ -24,11 +25,7 @@ const Item: React.FC = () => {
   const addItem = useCreateGenericDocument();
   const addCategoryDoc = useCreateGenericDocument();
   const { doc: itemDoc, loading: itemLoading, state: itemState, error: itemError } = useDoc(routeItemID);
-  const { docs: listDocs, loading: listLoading, error: listError} = useFind({
-    index: { fields: ["type","name"] },
-    selector: { type: "list", name: { $exists: true} },
-    sort: [ "type","name"]
-  });
+  const { listDocs, listsLoading} = useLists(String(remoteDBState.dbCreds.dbUsername))
 
   const { docs: categoryDocs, loading: categoryLoading, error: categoryError } = useFind({
       index: { fields: [ "type","name"] },
@@ -60,7 +57,7 @@ const Item: React.FC = () => {
 
   useEffect( () => {
     let newItemDoc = cloneDeep(itemDoc);
-    if (!itemLoading && !listLoading) {
+    if (!itemLoading && !listsLoading) {
       if (globalState.itemMode === "new" && needInitItemDoc) {
         newItemDoc = createEmptyItemDoc(listDocs,globalState.callingListID,globalState.newItemName,globalState.settings)
         setStateInfo("newItemMode","none");
@@ -70,9 +67,9 @@ const Item: React.FC = () => {
       }
       setStateItemDoc(newItemDoc as any);
     }
-  },[itemLoading,itemDoc,listLoading,listDocs,globalState.itemMode,globalState.newItemName, globalState.callingListID]);
+  },[itemLoading,itemDoc,listsLoading,listDocs,globalState.itemMode,globalState.newItemName, globalState.callingListID]);
 
-  if (itemLoading || listLoading || categoryLoading || isEmpty(stateItemDoc))  {
+  if (itemLoading || listsLoading || categoryLoading || isEmpty(stateItemDoc))  {
     return(
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader></IonPage>
   )};
@@ -157,15 +154,17 @@ const Item: React.FC = () => {
   listsElem.push(<IonLabel key="listlabel" position='stacked'>Item is on these lists:</IonLabel>)
   for (let i = 0; i < (stateItemDoc as any).lists.length; i++) {
     let listID = (stateItemDoc as any).lists[i].listID;
-    let itemFoundIdx=listDocs.findIndex(element => (element._id === listID));
-    let itemActive=((itemFoundIdx !== -1) && ((stateItemDoc as any).lists[i].active));
-    let listName=(itemFoundIdx !== -1) ? (listDocs as any)[itemFoundIdx].name : "Undefined list: "+listID;
-    listsElem.push(
-      <IonItem key={listID}>
-        <IonCheckbox slot="start" onIonChange={(e: any) => selectList(listID,Boolean(e.detail.checked))} checked={itemActive}></IonCheckbox>
-        <IonLabel>{listName}</IonLabel>
-      </IonItem>
-    )
+    let itemFoundIdx=listDocs.findIndex((element: any) => (element._id === listID));
+    if (itemFoundIdx !== -1) {
+      let itemActive=(((stateItemDoc as any).lists[i].active));
+      let listName=(listDocs as any)[itemFoundIdx].name;
+      listsElem.push(
+        <IonItem key={listID}>
+          <IonCheckbox slot="start" onIonChange={(e: any) => selectList(listID,Boolean(e.detail.checked))} checked={itemActive}></IonCheckbox>
+          <IonLabel>{listName}</IonLabel>
+        </IonItem>
+      )
+    }
   }
   
   return (

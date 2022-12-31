@@ -5,7 +5,7 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonLis
 import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext } from 'react';
-import { useUpdateGenericDocument, useCreateGenericDocument, useFriends } from '../components/Usehooks';
+import { useUpdateGenericDocument, useCreateGenericDocument, useFriends, useLists } from '../components/Usehooks';
 import { cloneDeep, isEmpty, isEqual } from 'lodash';
 import './List.css';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
@@ -31,21 +31,10 @@ const List: React.FC = () => {
   })
   const updateListWhole  = useUpdateGenericDocument();
   const createList = useCreateGenericDocument();
-  const { remoteDBState, setRemoteDBState, startSync} = useContext(RemoteDBStateContext);
+  const { remoteDBState } = useContext(RemoteDBStateContext);
   const [ presentToast ] = useIonToast();
   const {friendsLoading,friendRowsLoading,friendRows} = useFriends(String(remoteDBState.dbCreds.dbUsername));
-
-  const { docs: listDocs, loading: listLoading, error: listError} = useFind({
-    index: { fields: ["type","name"] },
-    selector: { "$and": [ 
-      {  "type": "list",
-         "name": { "$exists": true } },
-      { "$or" : [{"listOwner": remoteDBState.dbCreds.dbUsername},
-                 {"sharedWith": { $elemMatch: {$eq: remoteDBState.dbCreds.dbUsername}}}]
-      }             
-    ] },
-    sort: [ "type","name"]
-  });
+  const { listDocs, listsLoading } = useLists(String(remoteDBState.dbCreds.dbUsername));
   const { docs: categoryDocs, loading: categoryLoading, error: categoryError } = useFind({
     index: { fields: [ "type","name"] },
     selector: { type: "category", name: { $exists: true}},
@@ -61,7 +50,7 @@ const List: React.FC = () => {
   function changeListUpdateState(listID: string) {
     console.log("in changeListUpdateState about to update listdoc");
     setPageState(prevState => ({...prevState,
-        listDoc: listDocs.find(el => el._id === listID),
+        listDoc: listDocs.find((el: any) => el._id === listID),
         selectedListID: listID}))
     navigate('/list/edit/'+listID);    
   }
@@ -69,7 +58,7 @@ const List: React.FC = () => {
   useEffect( () => {
     let newPageState=cloneDeep(pageState);
 //    console.log({listLoading,friendRowsLoading,friendsLoading,categoryLoading,mode,pageState})
-    if (!listLoading && !friendRowsLoading && !friendsLoading && !categoryLoading) {
+    if (!listsLoading && !friendRowsLoading && !friendsLoading && !categoryLoading) {
       if (mode === "new" && pageState.needInitListDoc) {
         console.log("in new useeffect, creating initlistdoc");
         let initCategories=categoryDocs.map(cat => cat._id);
@@ -85,7 +74,7 @@ const List: React.FC = () => {
       }
       else if (mode != "new") {
         console.log("in initDoc, doing lookup against listDocs");
-        let newListDoc = listDocs.find(el => el._id === pageState.selectedListID);
+        let newListDoc = listDocs.find((el: any) => el._id === pageState.selectedListID);
         newPageState.listDoc = newListDoc;
       }
       console.log("updating the entire pagestate including listdoc... could be bad (initlistdoc");
@@ -93,14 +82,14 @@ const List: React.FC = () => {
       console.log("setting to newPageState",{newPageState});
       setPageState(newPageState);
     }
-  },[listLoading,listDocs,friendsLoading, friendRowsLoading, friendRows, categoryLoading,categoryDocs,pageState.selectedListID]);
+  },[listsLoading,listDocs,friendsLoading, friendRowsLoading, friendRows, categoryLoading,categoryDocs,pageState.selectedListID]);
 
 //  console.log("almost going to render loading or real page");
   let ps=cloneDeep(pageState);
 //  console.log({listLoading,friendRowsLoading,friendsLoading,categoryLoading,ps});
 //  console.log("is empty listdoc:",isEmpty(pageState.listDoc));
 
-  if (listLoading || friendRowsLoading || friendsLoading || categoryLoading || isEmpty(pageState.listDoc))  {return(
+  if (listsLoading || friendRowsLoading || friendsLoading || categoryLoading || isEmpty(pageState.listDoc))  {return(
       <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
   )};
   
@@ -265,7 +254,7 @@ const List: React.FC = () => {
   categoryElem.push(catItemDivider(false,categoryLines));
 
   let selectOptionListElem=(
-    listDocs.map((list) => (
+    listDocs.map((list: any) => (
       <IonSelectOption key={"list-"+list._id} value={(list as any)._id}>
         {(list as any).name}
       </IonSelectOption>

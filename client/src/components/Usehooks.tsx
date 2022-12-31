@@ -14,10 +14,9 @@ export function useUpdateGenericDocument() {
           let curDateStr=(new Date()).toISOString()
           updatedDoc.updatedAt = curDateStr;
           let response: PouchResponse = PouchResponseInit;
-          try { response.pouchData = await db.put(updatedDoc); console.log(response.pouchData);}
+          try { response.pouchData = await db.put(updatedDoc); }
           catch(err) { response.successful = false; response.fullError = err;}
           if (!response.pouchData.ok) { response.successful = false;}
-          console.log(response);
       return response
     },[db])
 }
@@ -45,15 +44,20 @@ export function useUpdateCompleted() {
       let response: PouchResponse = PouchResponseInit;
       const newItemDoc = cloneDeep(updateInfo.itemDoc);
       for (let i = 0; i < newItemDoc.lists.length; i++) {
-        if (updateInfo.updateAll) {
-          newItemDoc.lists[i].completed = updateInfo.newStatus;
-          if (updateInfo.newStatus) {newItemDoc.lists[i].boughtCount++};
-        } else {
-          if (newItemDoc.lists[i].listID === updateInfo.listID) {
+        let listIdx=updateInfo.listDocs.findIndex((el: any) => (el._id === newItemDoc.lists[i].listID));
+        if (listIdx !== -1) {
+          let changeThisItem=false;
+          if ((newItemDoc.lists[i].listID === updateInfo.listID) ||
+              (updateInfo.removeAll && updateInfo.newStatus)) {
+                changeThisItem=true;
+              }
+          if (changeThisItem) {
             newItemDoc.lists[i].completed = updateInfo.newStatus;
-            if (updateInfo.newStatus) {newItemDoc.lists[i].boughtCount++};
+            if (newItemDoc.lists[i].listID === updateInfo.listID) {
+              newItemDoc.lists[i].boughtCount++
+            }
           }
-        }   
+        }  
       }
       let curDateStr=(new Date()).toISOString()
       newItemDoc.updatedAt = curDateStr;
@@ -64,6 +68,22 @@ export function useUpdateCompleted() {
     },
     [db]
   )
+}
+
+export function useLists(username: string) : {listsLoading: boolean, listDocs: any} {
+  const { docs: listDocs, loading: listsLoading, error: listError} = useFind({
+    index: { fields: ["type","name"] },
+    selector: { "$and": [ 
+      {  "type": "list",
+         "name": { "$exists": true } },
+      { "$or" : [{"listOwner": username},
+                 {"sharedWith": { $elemMatch: {$eq: username}}}]
+      }             
+    ] },
+    sort: [ "type","name"]
+  });
+  return ({listsLoading, listDocs});
+
 }
 
 export function useFriends(username: string) : {friendsLoading: boolean, friendRowsLoading: boolean, friendRows: FriendRow[]} {
@@ -85,21 +105,17 @@ export function useFriends(username: string) : {friendsLoading: boolean, friendR
     })
 
     useEffect( () => {
-      console.log("UseEffect in usefriend executing:",{friendsLoading,friendRowsLoading,friendDocs})
       if (friendsLoading || friendRowsLoading) { return };
       let response: HttpResponse | undefined;
 
       let userIDList : { userIDs: string[]} = { userIDs: []};
       friendDocs.forEach((element: any) => {
         if (element.friendStatus !== FriendStatus.Deleted) {
-          console.log({userIDList,element});
           if(username == element.friendID1) {userIDList.userIDs.push(element.friendID2)}
           else {userIDList.userIDs.push(element.friendID1)}
         }
       });
-      console.log("built the userID list:",{userIDList});
       const getUsers = async () => {
-        console.log("inside getUsers");
         const options = {
           url: String(remoteDBState.dbCreds?.apiServerURL+"/getusersinfo"),
           data: userIDList,
@@ -107,20 +123,15 @@ export function useFriends(username: string) : {friendsLoading: boolean, friendR
           headers: { 'Content-Type': 'application/json',
                      'Accept': 'application/json' }
         };
-        console.log("about to execute httpget with options: ", {options})
         response = await CapacitorHttp.post(options);
-        console.log("got httpget response: ",{response});
-        console.log("clearing friend rows");
         setFriendRows(prevState => ([]));
         if (response && response.data) {
           friendDocs.forEach((friendDoc: any) => {
-            console.log({friendDoc});
             let friendRow : any = {};
             friendRow.friendDoc=cloneDeep(friendDoc);
             if (friendRow.friendDoc.friendID1 == remoteDBState.dbCreds.dbUsername)
               { friendRow.targetUserName = friendRow.friendDoc.friendID2}
             else { friendRow.targetUserName = friendRow.friendDoc.friendID1}
-            console.log(friendRow.targetUserName);
             let user=response?.data?.users?.find((el: any) => el?.name == friendRow.targetUserName)
             if (user == undefined) {user = {email:"",fullname:""}};
             if (friendDoc.friendStatus == FriendStatus.WaitingToRegister) {
@@ -146,21 +157,14 @@ export function useFriends(username: string) : {friendsLoading: boolean, friendR
               friendRow.friendStatusText = "Needs to Register";
               friendRow.resolvedStatus = ResolvedFriendStatus.WaitingToRegister
             }
-            console.log("adding friend row to array",{friendRow});
             setFriendRows(prevArray => [...prevArray, friendRow])
           })
           
         }
-        console.log("exiting getUsers");
       }
-      console.log("anything else happen?");
       if ( !friendsLoading && !friendRowsLoading)  {
-        console.log("got a change in usehook");
-        console.log("set friends loading to true");
         setFriendRowsLoading(true);
-        console.log("called getusers");
         getUsers();
-        console.log("setting friendsrowloading to false");
         setFriendRowsLoading(false);
       }
     },[friendsLoading,friendRowsLoading,friendDocs]);

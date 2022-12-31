@@ -13,7 +13,6 @@ const InitialLoad: React.FC = () => {
 
     
     async function navigateToFirstListID() {
-        console.log("Navigating to first list ID");
         let listResults = await db.find({
             selector: { "$and": [ 
               {  "type": "list",
@@ -34,10 +33,8 @@ const InitialLoad: React.FC = () => {
       }
   
     useEffect(() => { 
-        console.log(remoteDBState.connectionStatus);
         if ((remoteDBState.connectionStatus == ConnectionStatus.loginComplete)) {
             setShowLoading(false);
-            console.log("about to dismiss...");
             dismiss();
             setRemoteDBState({...remoteDBState,connectionStatus: ConnectionStatus.initialNavComplete});
             // should do logic here around navigating to first list
@@ -49,14 +46,11 @@ const InitialLoad: React.FC = () => {
 
     useEffect(() => {
         if (remoteDBState.connectionStatus == ConnectionStatus.navToLoginScreen) {
-            console.log("nav to login based on conn status");
             setRemoteDBState({...remoteDBState,connectionStatus: ConnectionStatus.onLoginScreen});
             navigate("/login");
         }
 
     },[remoteDBState.connectionStatus])
-
-
 
     return (
         <IonPage>

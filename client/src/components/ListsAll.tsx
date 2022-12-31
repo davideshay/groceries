@@ -3,6 +3,7 @@ import { useContext } from 'react';
 import { useFind } from 'use-pouchdb';
 import { pencilOutline } from 'ionicons/icons';
 import { RemoteDBStateContext } from './RemoteDBState';
+import { useLists } from './Usehooks';
 import './ListsAll.css';
 
 interface ListsAllProps {
@@ -11,29 +12,13 @@ interface ListsAllProps {
 
 const ListsAll: React.FC<ListsAllProps> = ({separatePage}) => {
   const { remoteDBState } = useContext(RemoteDBStateContext);
-  const { docs: listDocs, loading: listLoading, error: listError} = useFind({
-    index: { fields: ["type","name"] },
-    selector: { "$and": [ 
-      {  "type": "list",
-         "name": { "$exists": true } },
-      { "$or" : [{"listOwner": remoteDBState.dbCreds.dbUsername},
-                 {"sharedWith": { $elemMatch: {$eq: remoteDBState.dbCreds.dbUsername}}}]
-      }             
-    ] },
-    sort: [ "type","name"]
-  });
+  const { listDocs, listsLoading } = useLists(String(remoteDBState.dbCreds.dbUsername));
 
-//  const { docs, loading, error } = useFind({
-//    index: { fields: ["type","name"] },
-//    selector: { type: "list", name: { $exists: true } },
-//    sort: [ "type", "name" ]
-//  })
-
-  if (listLoading) { return (<></>) }
+  if (listsLoading) { return (<></>) }
   
   if (separatePage) { return (
     <IonList lines="full">
-    {listDocs.map((doc) => (
+    {listDocs.map((doc: any) => (
        <IonItem key={(doc as any)._id} >
          <IonButton slot="start" class="textButton" fill="clear" routerLink={("/items/" + (doc as any)._id)}>{(doc as any).name}</IonButton>
          <IonButton routerLink={"/list/edit/" + (doc as any)._id} slot="end">
@@ -43,7 +28,7 @@ const ListsAll: React.FC<ListsAllProps> = ({separatePage}) => {
     </IonList> )
    } else { return (
     <IonList lines="full">
-    {listDocs.map((doc) => (
+    {listDocs.map((doc: any) => (
      <IonMenuToggle key={(doc as any)._id} autoHide={false}>
        <IonItem key={(doc as any)._id} >
          <IonButton slot="start" class="textButton" fill="clear" routerLink={("/items/" + (doc as any)._id)}>{(doc as any).name}</IonButton>

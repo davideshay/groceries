@@ -1,5 +1,4 @@
 import React, { createContext, useState, useContext, useEffect, useRef} from "react";
-import { NavContext } from "@ionic/react";
 import { usePouch} from 'use-pouchdb';
 import { Preferences } from '@capacitor/preferences';
 import { cloneDeep, pick, keys, isEqual } from 'lodash';
@@ -119,7 +118,6 @@ type RemoteDBStateProviderProps = {
 export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (props: RemoteDBStateProviderProps) => {
     const [remoteDBState,setRemoteDBState] = useState<RemoteDBState>(initialState);
     const db=usePouch();
-    const {navigate} = useContext(NavContext);
     const loginAttempted = useRef(false);
 
     function setSyncStatus(status: number) {
@@ -150,20 +148,14 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     }
 
     async function  getPrefsDBCreds()  {
-        console.log("in getprefsdbcreds");
         let { value: credsStr } = await Preferences.get({ key: 'dbcreds'});
         let credsObj: DBCreds = DBCredsInit;
         const credsOrigKeys = keys(credsObj);
         if (isJsonString(String(credsStr))) {
-          console.log("returning filtered creds");
-          console.log("incoming string : ",credsStr);
           credsObj=JSON.parse(String(credsStr));
-          console.log("parsed string: ",credsObj)
           let credsObjFiltered=pick(credsObj,['apiServerURL','couchBaseURL','database','dbUsername','email','fullName','JWT','lastConflictsViewed'])
-          console.log("credsObjFiltered:",cloneDeep(credsObjFiltered));
           setRemoteDBState(prevstate => ({...prevstate,dbCreds: credsObjFiltered}))
           credsObj = credsObjFiltered;
-          console.log("reassigned credsObj",cloneDeep(credsObj));
         }
         const credKeys = keys(credsObj);
         if (credsObj == null || (credsObj as any).apiServerURL == undefined || (!isEqual(credsOrigKeys.sort(),credKeys.sort()))) {
@@ -176,7 +168,6 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
                 fullName: "",
                 lastConflictsViewed: (new Date()).toISOString()
                 };
-            console.log("setting state DB Creds to ", {credsObj});    
             setRemoteDBState(prevstate => ({...prevstate, dbCreds: credsObj}))
         }
         return credsObj;
@@ -190,7 +181,6 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         function setError(err: string) {
             credsCheck.credsError = true; credsCheck.errorText=err;
         }
-        console.log({credsObj});
         if (background && (credsObj.JWT == null || credsObj.JWT == "")) {
             setError("No existing credentials found"); return credsCheck;}
         if (credsObj.apiServerURL == null || credsObj.apiServerURL == "") {
@@ -233,7 +223,6 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
               };
         try { response = await CapacitorHttp.get(options); }
         catch(err) {console.log("Got error:",err); serverAvailable=false}
-        console.log("got checkJWT response:",{response,serverAvailable});
         if (serverAvailable) {
             if ((response?.status == 200) && (response.data?.userCtx?.name != null)) {
                 JWTOK = true;
@@ -251,16 +240,13 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             checkOK: true,
             dbUUIDAction: DBUUIDAction.none
         }
-        console.log("In Compare Remote DBUUID");
         let UUIDResults = await (remoteDB as PouchDB.Database).find({
             selector: { "type": { "$eq": "dbuuid"} } })
         let UUIDResult : null|string = null;
         if (UUIDResults.docs.length > 0) {
           UUIDResult = (UUIDResults.docs[0] as any).uuid;
         }
-        console.log("Initial UUID Result: ", UUIDResult);
         if (UUIDResult == null) {
-          console.log("ERROR: No database UUID defined in server todos database. Cannot continue");
           UUIDCheck.checkOK = false; UUIDCheck.dbUUIDAction = DBUUIDAction.exit_no_uuid_on_server;
           return UUIDCheck;
         }
@@ -270,11 +256,9 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         let localDBUUID = null;
         try { localDBInfo = await db.info();} catch(e) {localHasRecords=false};
         if (localDBInfo != null && localDBInfo.doc_count > 0) { localHasRecords = true}
-        console.log({localDBInfo,localHasRecords});
         if (localHasRecords) {
           let localDBAllDocs = null;
           try { localDBAllDocs = await db.allDocs({include_docs: true});} catch(e) {console.log(e)};
-          console.log(localDBAllDocs);
           localHasRecords = false;
           if (localDBAllDocs != null) {
             localDBAllDocs.rows.forEach(row => {
@@ -288,29 +272,19 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             let localDBFindDocs = null;
             try { localDBFindDocs = await db.find({selector: { "type": { "$eq": "dbuuid"} }}) }
             catch(e) {console.log(e)};
-            console.log({localDBFindDocs});
             if ((localDBFindDocs != null) && localDBFindDocs.docs.length == 1) {
                 localDBUUID = (localDBFindDocs.docs[0] as any).uuid;
             }
         }
         
-        console.log({localHasRecords,localDBUUID});
-
         // compare to current DBCreds one.
         if (localDBUUID == UUIDResult) {
-        console.log("Compared the same");
         return UUIDCheck;
         } 
           
-        console.log("local has records ",localHasRecords);
-
-        //TODO : Need a check on the one in the database, not in localstorage? Should this be the main check?
-
-
           // if current DBCreds doesn't have one, set it to the remote one.
         if ((localDBUUID == null || localDBUUID == "" ) && !localHasRecords) {
  //           credsObj.remoteDBUUID = UUIDResult;
-          console.log("none defined locally, setting");
           return UUIDCheck;
         }
         UUIDCheck.checkOK = false; UUIDCheck.dbUUIDAction = DBUUIDAction.destroy_needed;
@@ -345,30 +319,23 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
 
     async function attemptFullLogin() {
         let credsObj = await getPrefsDBCreds();
-        console.log("returned credsObj: ",cloneDeep(credsObj));
         let credsCheck =  errorCheckCreds((credsObj as DBCreds),true);
-        console.log({credsCheck});
         if (credsCheck.credsError) {
             setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: credsCheck.errorText, connectionStatus: ConnectionStatus.navToLoginScreen}))
-            console.log("was creds error, about to navigate");
             return;
         } 
         let JWTCheck = await checkJWT(credsObj as DBCreds);
         if (!JWTCheck) {
-             console.log("JWT Check Error");
              setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: "Invalid JWT Token", connectionStatus: ConnectionStatus.navToLoginScreen}))
         }
         let assignSuccess = await assignDBAndSync(credsObj as DBCreds);
-        console.log("assign success: ",assignSuccess);
         if (!assignSuccess) {
             setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: "Unable to start sync", connectionStatus: ConnectionStatus.navToLoginScreen}))
         };
     }
 
     useEffect(() => {      
-        console.log("initializing in useeffect attempted:,",loginAttempted);;
         if (!loginAttempted.current) {
-            console.log("attempting login...");
             attemptFullLogin()
             loginAttempted.current = true;
             setRemoteDBState(prevState => ({...prevState,loginAttempted: true}))
@@ -381,13 +348,8 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         }
     },[remoteDBState.syncStatus])
 
-
-
     let value: any = {remoteDBState, setRemoteDBState, startSync, errorCheckCreds, checkDBUUID, assignDBAndSync, setDBCredsValue};
     return (
         <RemoteDBStateContext.Provider value={value}>{props.children}</RemoteDBStateContext.Provider>
       );
 }
-
-
-

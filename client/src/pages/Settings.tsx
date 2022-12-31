@@ -1,19 +1,29 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
         IonMenuButton, IonButtons, IonButton, useIonAlert, IonInput,
         IonRadioGroup,IonLabel, NavContext, IonRadio, IonCheckbox} from '@ionic/react';
-import { useContext } from 'react';        
+import { useContext, useEffect, useState } from 'react';        
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
 import './Settings.css';
 import SyncIndicator from '../components/SyncIndicator';
-import { GlobalStateContext } from '../components/GlobalState';
+import { GlobalStateContext, initSettings, GlobalSettings } from '../components/GlobalState';
 import { AddListOptions } from '../components/GlobalState';
+import { cloneDeep } from 'lodash';
 
 
 const Settings: React.FC = (props) => {
   const [presentAlert] = useIonAlert();
   const {navigate} = useContext(NavContext);
   const {globalState, updateSettingKey} = useContext(GlobalStateContext);
+  const [localSettings, setLocalSettings] = useState<GlobalSettings>(initSettings)
+  const [localSettingsInitialized,setLocalSettingsInitialized] = useState(false);
+
+  useEffect( () => {
+    if (!localSettingsInitialized && globalState.settingsLoaded) {
+      setLocalSettings((globalState.settings));
+      setLocalSettingsInitialized(true);
+    }
+  },[localSettings,globalState.settingsLoaded])
 
   async function stopSync() {
     let credsStr=JSON.stringify({});
@@ -35,8 +45,12 @@ const Settings: React.FC = (props) => {
         text:'Cancel',
         role: 'cancel',
         handler: () => {}}]
-
     })
+  }
+
+  function changeSetting(key: string, value: any) {
+    updateSettingKey(key,value);
+    setLocalSettings(prevState => ({...prevState,[key]: value}));
   }
 
   return (
@@ -53,7 +67,7 @@ const Settings: React.FC = (props) => {
           <IonItem key="logout">
             <IonButton onClick={() => stopSyncPopup()} key="stopitall">Stop Sync, Logout, and Remove Credentials</IonButton>
           </IonItem>
-          <IonRadioGroup value={globalState.settings.addListOption}>
+          <IonRadioGroup value={localSettings?.addListOption} onIonChange={(e) => changeSetting("addListOption",e.detail.value)}>
           <IonLabel position="stacked">Add To List Options</IonLabel>
           <IonItem key="addallauto">
              <IonLabel>Add Items to All Lists automatically</IonLabel>
@@ -71,11 +85,11 @@ const Settings: React.FC = (props) => {
           <IonLabel position="stacked">Other Settings</IonLabel>
           <IonItem key="removesettings">
             <IonLabel>Remove items from all lists when completed</IonLabel>
-            <IonCheckbox slot="start" checked={globalState.settings.removeFromAllLists}></IonCheckbox>
+            <IonCheckbox slot="start" checked={localSettings.removeFromAllLists} onIonChange={(e) => changeSetting("removeFromAllLists",e.detail.checked)}></IonCheckbox>
           </IonItem>
           <IonItem key="dayslog">
             <IonLabel>Days of conflict log to view</IonLabel>
-            <IonInput type="number" min="0" max="25" onIonInput={(e: any) => updateSettingKey("daysOfConflictLog", e.target.value)} value={Number(globalState.settings.daysOfConflictLog)}></IonInput>
+            <IonInput type="number" min="0" max="25" onIonChange={(e: any) => changeSetting("daysOfConflictLog", e.detail.value)} value={Number(localSettings?.daysOfConflictLog)}></IonInput>
           </IonItem>
         </IonList>
       </IonContent>

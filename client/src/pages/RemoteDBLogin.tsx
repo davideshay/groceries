@@ -50,11 +50,6 @@ states to support:
         API call will be made with await (either create new user or issue token)
           and if errors, will not proceed beyond init 
           if successful, populate and store creds and then await assigndb / sync
-
-    
-
-
-
  */
 
 const RemoteDBLogin: React.FC = () => {

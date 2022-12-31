@@ -4,9 +4,9 @@ import { keys,pick } from "lodash";
 import { isJsonString } from "./Utilities";
 
 export enum AddListOptions {
-    dontAddAutomatically,
-    addToAllListsAutomatically,
-    addToListsWithCategoryAutomatically
+    dontAddAutomatically = "D",
+    addToAllListsAutomatically = "ALL",
+    addToListsWithCategoryAutomatically = "CAT"
 }
 
 export type GlobalSettings = {
@@ -19,7 +19,8 @@ export type GlobalState = {
     itemMode?: string,
     newItemName?: string,
     callingListID?: string,
-    settings: GlobalSettings
+    settings: GlobalSettings,
+    settingsLoaded: boolean
 }
 
 export interface GlobalStateContextType {
@@ -29,7 +30,7 @@ export interface GlobalStateContextType {
     updateSettingKey: boolean
 }
 
-const initSettings: GlobalSettings = {
+export const initSettings: GlobalSettings = {
     addListOption: AddListOptions.addToAllListsAutomatically,
     removeFromAllLists: true,
     daysOfConflictLog: 2
@@ -39,7 +40,8 @@ const initialState: GlobalState = {
     itemMode: "none",
     newItemName: undefined,
     callingListID: undefined,
-    settings: initSettings
+    settings: initSettings,
+    settingsLoaded: false
 }
 
 const initialContext = {
@@ -64,10 +66,8 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
     }
 
     async function updateSettingKey(key: string, value: any) {
-        let updatedObj=await getSettings();
-        updatedObj={...updatedObj, [key]: value}
-        let settingsStr = JSON.stringify(updatedObj);
         setGlobalState(prevState => ({...prevState,settings: {...prevState.settings, [key]: value}}))
+        let settingsStr = JSON.stringify({...globalState.settings,[key]: value})
         try { await Preferences.set({key: 'settings', value: settingsStr}) }
         catch(err) {console.log("ERROR setting prefs:",err); return false;}
         return true;
@@ -77,26 +77,29 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         let { value: settingsStr } = await Preferences.get({ key: 'settings'});
         let settingsObj: GlobalSettings = initSettings;
         const settingsOrigKeys = keys(settingsObj);
-        if (isJsonString(String(settingsStr))) {
+        if (settingsStr != null && isJsonString(String(settingsStr))) {
             settingsObj=JSON.parse(String(settingsStr));
-            let settingsObjFiltered=pick(settingsObj,"addToAllLists","addToListsWithCategory","removeFromAllLists");
+            let settingsObjFiltered=pick(settingsObj,"addListOption","removeFromAllLists","daysOfConflictLog");
             setGlobalState(prevState => ({...prevState,settings: settingsObjFiltered}))
             settingsObj = settingsObjFiltered;
+        } else {
+            await Preferences.set({key: 'settings', value: JSON.stringify(initSettings)})
         }
-        const settingsKeys=keys(settingsObj);
         if (settingsObj == null || settingsObj.addListOption == undefined || settingsObj.removeFromAllLists == undefined) {
             settingsObj = initSettings;
             setGlobalState(prevState => ({...prevState,settings: settingsObj}));
         }
         setSettingsRetrieved(true);
+        setGlobalState(prevState => ({...prevState,settingsLoaded: true}));
         return settingsObj;
     }
 
     useEffect( () => {
-//        if (!setSettingsRetrieved) {
-//            getSettings()
-//        }
-    },[settingsRetrieved])
+        console.log("in global state useeffect, already:",settingsRetrieved);
+        if (!settingsRetrieved) {
+            getSettings()
+        }
+    },[])
 
 
     let value: any = {globalState, setGlobalState, setStateInfo, updateSettingKey};

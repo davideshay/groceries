@@ -7,14 +7,15 @@ import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
 import { cloneDeep } from 'lodash';
 import './Items.css';
-import { useUpdateCompleted, useUpdateGenericDocument } from '../components/Usehooks';
-import { GlobalStateContext } from '../components/GlobalState';
+import { useUpdateCompleted, useUpdateGenericDocument, useLists } from '../components/Usehooks';
+import { AddListOptions, GlobalStateContext } from '../components/GlobalState';
 import {ItemRow, ItemSearch, SearchState, PageState} from '../components/DataTypes'
 import { getAllSearchRows, getItemRows, filterSearchRows } from '../components/ItemUtilities';
 import SyncIndicator from '../components/SyncIndicator';
+import { RemoteDBStateContext } from '../components/RemoteDBState';
 
 const Items: React.FC = () => {
-
+  const { remoteDBState} = useContext(RemoteDBStateContext);
   let { id: routeListID  } = useParams<{id: string}>();
   const [searchRows,setSearchRows] = useState<ItemSearch[]>();
   const [searchState,setSearchState] = useState<SearchState>({searchCriteria:"",isOpen: false,event: undefined, filteredSearchRows: [], dismissEvent: undefined});
@@ -35,11 +36,7 @@ const Items: React.FC = () => {
     },
     sort: [ "type", "name", "lists" ]
     })
-    const { docs: listDocs, loading: listLoading, error: listError } = useFind({
-      index: { fields: [ "type","name"] },
-      selector: { type: "list", name: { $exists: true}},
-      sort: [ "type","name"]
-    })
+    const { listDocs, listsLoading} = useLists(String(remoteDBState.dbCreds.dbUsername));
     const { docs: categoryDocs, loading: categoryLoading, error: categoryError } = useFind({
       index: { fields: [ "type","name"] },
       selector: { type: "category", name: { $exists: true}},
@@ -59,13 +56,13 @@ const Items: React.FC = () => {
     },[routeListID])
 
     useEffect( () => {
-      if (!itemLoading && !listLoading && !categoryLoading && !allItemsLoading) {
+      if (!itemLoading && !listsLoading && !categoryLoading && !allItemsLoading) {
         setPageState({ ...pageState,
           doingUpdate: false,
           itemRows: getItemRows(itemDocs, listDocs, categoryDocs, pageState.selectedListID),
         })
       }
-    },[itemLoading, allItemsLoading, listLoading, categoryLoading, itemDocs, listDocs, allItemDocs, categoryDocs, pageState.selectedListID]);
+    },[itemLoading, allItemsLoading, listsLoading, categoryLoading, itemDocs, listDocs, allItemDocs, categoryDocs, pageState.selectedListID]);
 
     useEffect( () => {
       setSearchRows(getAllSearchRows(allItemDocs,pageState.selectedListID));
@@ -76,7 +73,7 @@ const Items: React.FC = () => {
     },[searchState.searchCriteria])
 
   
-  if (itemLoading || listLoading || categoryLoading || allItemsLoading || pageState.doingUpdate )  {return(
+  if (itemLoading || listsLoading || categoryLoading || allItemsLoading || pageState.doingUpdate )  {return(
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
   )};  
 
@@ -91,8 +88,6 @@ const Items: React.FC = () => {
   }
 
   function addNewItemToList(itemName: string) {
-//    let newItemDoc=createEmptyItemDoc(listDocs,pageState.selectedListID,itemName);
-//    let  newglobalState=cloneDeep(globalState);
     if (isItemAlreadyInList(itemName)) {
       setPageState(prevState => ({...prevState, showAlert: true, alertHeader: "Error adding to list", alertMessage: "Item already exists in the current list"}))
     } else {
@@ -116,22 +111,54 @@ const Items: React.FC = () => {
     addNewItemToList(searchState.searchCriteria);
   }
 
+  function isCategoryInList(listID: string, categoryID: string) {
+    console.log("checking catid :",categoryID," in list:",listID);
+    let listIdx = listDocs.findIndex((el: any) => el._id === listID);
+    console.log("listidx:",listIdx);
+    if (listIdx === -1) {console.log("returning false idx-1"); return false;}
+    console.log("categories array:",(listDocs[listIdx] as any).categories)
+    let catexists= (listDocs[listIdx] as any).categories.includes(categoryID);
+    console.log("catexists:",catexists);
+    return catexists;
+  }
 
   async function addExistingItemToList(itemID: string) {
     let existingItem: any = cloneDeep(allItemDocs.find((el: any) => el._id === itemID));
     let idxInLists=existingItem.lists.findIndex((el: any) => el.listID === pageState.selectedListID);
-    if (idxInLists === -1) {
-      const newListItem={
-        listID: pageState.selectedListID,
-        boughtCount: 0,
-        active: true,
-        completed: false
-      };
-      existingItem.lists.push(newListItem);
-    } else {
-      existingItem.lists[idxInLists].active = true;
-      existingItem.lists[idxInLists].completed = false;
-    }
+    console.log("Adding itemID: ", itemID, " to list");
+
+    listDocs.forEach((list: any) => {
+      console.log("looping through list, have list:",list);
+      let idxInLists=existingItem.lists.findIndex((el: any) => el.listID === list._id);
+      let skipThisList=false;
+      console.log("list id: ",list._id," selected: ",pageState.selectedListID);
+      if (list._id !== pageState.selectedListID) {
+        console.log("checking non-selected list, options: ",globalState.settings.addListOption);
+        if (globalState.settings.addListOption == AddListOptions.dontAddAutomatically) {
+          skipThisList=true;
+        } else if (globalState.settings.addListOption == AddListOptions.addToListsWithCategoryAutomatically) {
+          if (!isCategoryInList(list._id,existingItem.categoryID)) {
+            skipThisList=true;
+          }
+        }
+      }
+      console.log("Skip this list:",skipThisList);
+      if (!skipThisList) {
+        console.log("list not skipped, adding");
+        if (idxInLists === -1) {
+          const newListItem={
+            listID: pageState.selectedListID,
+            boughtCount: 0,
+            active: true,
+            completed: false
+          };
+          existingItem.lists.push(newListItem);    
+        } else {
+          existingItem.lists[idxInLists].active = true;
+          existingItem.lists[idxInLists].completed = false;     
+        }
+      }
+    });
     let result = await updateItemInList(existingItem);
     if (!result.successful) {
       presentToast({message: "Error updating item, please retry.",duration: 1500, position: "middle"});
@@ -169,7 +196,7 @@ const Items: React.FC = () => {
         <IonItem key="listselector">
         <IonLabel key="listselectlabel">Items on List:</IonLabel>
         <IonSelect interface="popover" onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListID}>
-            {listDocs.map((list) => (
+            {listDocs.map((list: any) => (
                 <IonSelectOption key={list._id} value={(list as any)._id}>
                   {(list as any).name}
                 </IonSelectOption>
@@ -197,9 +224,10 @@ const Items: React.FC = () => {
     let itemDoc = itemDocs.find(element => (element._id === id))
     let updateInfo = {
       itemDoc: itemDoc,
-      updateAll: true,
+      removeAll: globalState.settings.removeFromAllLists,
       newStatus: newStatus,
-      listID: pageState.selectedListID
+      listID: pageState.selectedListID,
+      listDocs: listDocs
     }
     setPageState({...pageState, itemRows: newItemRows, doingUpdate: true});
     let response=await updateCompleted(updateInfo);
