@@ -31,7 +31,7 @@ const Category: React.FC = () => {
     let newCategoryDoc = cloneDeep(stateCategoryDoc);
     if (!categoryLoading) {
       if (mode === "new" && needInitCategoryDoc) {
-        newCategoryDoc = {type: "category", name: ""}
+        newCategoryDoc = {type: "category", name: "", color:"#888888"}
         setNeedInitCategoryDoc(false);
       } else {
         newCategoryDoc = categoryDoc;
@@ -48,7 +48,7 @@ const Category: React.FC = () => {
     setFormError("");
     let categoryDup=false;
     categoryDocs.forEach((doc: any) => {
-      if (doc.name.toUpperCase() == stateCategoryDoc.name.toUpperCase()) {
+      if ((doc._id !== stateCategoryDoc._id) && (doc.name.toUpperCase() == stateCategoryDoc.name.toUpperCase())) {
         categoryDup = true;
       }
     });
@@ -70,6 +70,8 @@ const Category: React.FC = () => {
     } 
   }
   
+  if (stateCategoryDoc.color == undefined) {setStateCategoryDoc((prevState: any) => ({...prevState,color:"#888888"}))};
+
   return (
     <IonPage>
       <IonHeader>
@@ -84,6 +86,10 @@ const Category: React.FC = () => {
             <IonItem key="name">
               <IonLabel position="stacked">Name</IonLabel>
               <IonInput type="text" placeholder="<NEW>" onIonChange={(e: any) => setStateCategoryDoc({...stateCategoryDoc, name: e.detail.value})} value={(stateCategoryDoc as any).name}></IonInput>
+            </IonItem>
+            <IonItem key="color">
+              <IonLabel position="stacked">Color</IonLabel>
+              <input type="color" value={stateCategoryDoc.color} onChange={(e: any) => {console.log(e); console.log(e.target.value); setStateCategoryDoc((prevState: any) => ({...prevState,color: e.target.value}))}}></input>
             </IonItem>
           </IonList>
           <IonButton onClick={() => updateThisCategory()}>{(mode === "new") ? "Add" : "Update"}</IonButton>

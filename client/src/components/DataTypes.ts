@@ -10,6 +10,7 @@ export interface ItemRow {
     categoryID: string,
     categoryName: string,
     categorySeq: number,
+    categoryColor: string,
     quantity: number,
     completed: boolean | null
   }

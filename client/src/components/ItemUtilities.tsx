@@ -45,6 +45,7 @@ export function getItemRows(itemDocs: any, listDocs: any, categoryDocs: any, lis
         categoryID: "",
         categoryName: "",
         categorySeq: 0,
+        categoryColor: "",
         quantity: 0,
         completed: false
     };
@@ -54,8 +55,13 @@ export function getItemRows(itemDocs: any, listDocs: any, categoryDocs: any, lis
     if (itemRow.categoryID == null) {
         itemRow.categoryName = "Uncategorized";
         itemRow.categorySeq = -1;
+        itemRow.categoryColor = "primary"
     } else {
-        itemRow.categoryName = (categoryDocs.find((element: any) => (element._id === itemDoc.categoryID)) as any).name;
+        let thisCat = (categoryDocs.find((element: any) => (element._id === itemDoc.categoryID)) as any);
+        itemRow.categoryName = thisCat.name;
+        if (thisCat.color == undefined) {
+            itemRow.categoryColor = "primary"
+        } else { itemRow.categoryColor = thisCat.color; };
         const tmpIdx = ((listDoc as any).categories.findIndex((element: any) => (element === itemDoc.categoryID)));
         if (tmpIdx === -1) {itemRow.categorySeq=Number.MAX_VALUE} else {itemRow.categorySeq=tmpIdx}
     }
