@@ -73,8 +73,9 @@ export function useUpdateCompleted() {
   )
 }
 
-export function useLists(username: string) : {listsLoading: boolean, listDocs: any, listRowsLoading: boolean, listRows: ListRow[]} {
+export function useLists(username: string) : {listsLoading: boolean, listDocs: any, listRowsLoading: boolean, listRowsLoaded: boolean, listRows: ListRow[]} {
   const [listRows,setListRows] = useState<ListRow[]>([]);
+  const [listRowsLoaded, setListRowsLoaded] = useState(false);
   const [listRowsLoading, setListRowsLoading] = useState(false);
   const { docs: listDocs, loading: listsLoading, error: listError} = useFind({
     index: { fields: ["type","name"] },
@@ -101,17 +102,19 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
   }
 
   useEffect( () => {
-    if (listsLoading || listRowsLoading) { return };
-    if ( !listsLoading && !listRowsLoading)  {
+    if (listsLoading ) { setListRowsLoaded(false); return };
+    if ( !listsLoading && !listRowsLoaded)  {
       setListRowsLoading(true);
+      setListRowsLoaded(false);
       buildListRows();
-      setListRowsLoading(false);
+      setListRowsLoading(false)
+      setListRowsLoaded(true);
     }
 
   },[listsLoading,listRowsLoading,listDocs])
 
 
-  return ({listsLoading, listDocs, listRowsLoading, listRows});
+  return ({listsLoading, listDocs, listRowsLoading, listRowsLoaded, listRows});
 
 }
 

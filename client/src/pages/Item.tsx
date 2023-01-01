@@ -8,10 +8,10 @@ import { useState, useEffect, useContext } from 'react';
 import { useCreateGenericDocument, useUpdateGenericDocument, useLists } from '../components/Usehooks';
 import { createEmptyItemDoc } from '../components/DefaultDocs';
 import { GlobalStateContext } from '../components/GlobalState';
-import { cloneDeep, isEmpty } from 'lodash';
+import { cloneDeep, isEmpty, isEqual } from 'lodash';
 import './Item.css';
 import SyncIndicator from '../components/SyncIndicator';
-import { PouchResponse } from '../components/DataTypes';
+import { ListRow, PouchResponse } from '../components/DataTypes';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
 
 const Item: React.FC = () => {
@@ -25,7 +25,7 @@ const Item: React.FC = () => {
   const addItem = useCreateGenericDocument();
   const addCategoryDoc = useCreateGenericDocument();
   const { doc: itemDoc, loading: itemLoading, state: itemState, error: itemError } = useDoc(routeItemID);
-  const { listDocs, listsLoading} = useLists(String(remoteDBState.dbCreds.dbUsername))
+  const { listDocs, listsLoading, listRows, listRowsLoading, listRowsLoaded} = useLists(String(remoteDBState.dbCreds.dbUsername))
 
   const { docs: categoryDocs, loading: categoryLoading, error: categoryError } = useFind({
       index: { fields: [ "type","name"] },
@@ -41,11 +41,15 @@ const Item: React.FC = () => {
 
   function addListsIfNotExist(itemDoc: any) {
     let newItemDoc=cloneDeep(itemDoc);
-    for (let i = 0; i < listDocs.length; i++) {
-      let foundIdx=newItemDoc.lists.findIndex((el: any) => el.listID === listDocs[i]._id)
-      if (foundIdx === -1) {
+    let baseList = listRows.find((listRow: ListRow) => listRow.listDoc._id === globalState.callingListID)
+    let baseParticipants = baseList?.participants;
+    for (let i = 0; i < listRows.length; i++) {
+      console.log("listRow - i :",listRows[i]);
+      console.log("newItemDoc:",newItemDoc);
+      let foundIdx=newItemDoc.lists.findIndex((el: any) => el.listID === listRows[i].listDoc._id)
+      if (foundIdx === -1 && isEqual(listRows[i].participants,baseParticipants)) {
         newItemDoc.lists.push({
-          listID: listDocs[i]._id,
+          listID: listRows[i].listDoc._id,
           completed: false,
           active: false,
           boughtCount: 0
@@ -57,9 +61,14 @@ const Item: React.FC = () => {
 
   useEffect( () => {
     let newItemDoc = cloneDeep(itemDoc);
-    if (!itemLoading && !listsLoading) {
+    console.log("listRows:",cloneDeep(listRows),cloneDeep({listsLoading,listRowsLoading,listRowsLoaded}));
+    if (!itemLoading && !listsLoading && listRowsLoaded) {
+      console.log("mode:",globalState.itemMode," needInit:",needInitItemDoc);
       if (globalState.itemMode === "new" && needInitItemDoc) {
-        newItemDoc = createEmptyItemDoc(listDocs,globalState.callingListID,globalState.newItemName,globalState.settings)
+        console.log("creating new item doc");
+        console.log("passing in listRows:",cloneDeep(listRows));
+        newItemDoc = createEmptyItemDoc(listRows,globalState.callingListID,globalState.newItemName,globalState.settings)
+        console.log("created new item doc empty:",newItemDoc);
         setStateInfo("newItemMode","none");
         setNeedInitItemDoc(false);
       } else {
@@ -67,9 +76,9 @@ const Item: React.FC = () => {
       }
       setStateItemDoc(newItemDoc as any);
     }
-  },[itemLoading,itemDoc,listsLoading,listDocs,globalState.itemMode,globalState.newItemName, globalState.callingListID]);
+  },[itemLoading,itemDoc,listsLoading,listDocs,listRowsLoading,listRowsLoaded, listRows,globalState.itemMode,globalState.newItemName, globalState.callingListID]);
 
-  if (itemLoading || listsLoading || categoryLoading || isEmpty(stateItemDoc))  {
+  if (itemLoading || listsLoading || listRowsLoading || categoryLoading || isEmpty(stateItemDoc))  {
     return(
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader></IonPage>
   )};

@@ -87,7 +87,7 @@ export const DBCredsInit: DBCreds = {
     dbUsername: null, email: null, fullName: null, JWT: null, lastConflictsViewed: null
 }
 
-const initialState: RemoteDBState = {
+export const initialRemoteDBState: RemoteDBState = {
     remoteDB: undefined ,
     dbCreds: DBCredsInit,
     syncStatus: SyncStatus.init,
@@ -100,7 +100,7 @@ const initialState: RemoteDBState = {
 }
 
 const initialContext = {
-    remoteDBState: initialState,
+    remoteDBState: initialRemoteDBState,
     setRemoteDBState: (state: RemoteDBState ) => {},
     startSync: () => {},
     errorCheckCreds: (credsObj: DBCreds,background: boolean, creatingNewUser: boolean = false, password: string = "", verifyPassword: string = ""): CredsCheck => {return CredsCheckInit},
@@ -116,7 +116,7 @@ type RemoteDBStateProviderProps = {
 }
 
 export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (props: RemoteDBStateProviderProps) => {
-    const [remoteDBState,setRemoteDBState] = useState<RemoteDBState>(initialState);
+    const [remoteDBState,setRemoteDBState] = useState<RemoteDBState>(initialRemoteDBState);
     const db=usePouch();
     const loginAttempted = useRef(false);
 

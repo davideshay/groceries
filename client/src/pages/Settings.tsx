@@ -7,14 +7,14 @@ import { App } from '@capacitor/app';
 import './Settings.css';
 import SyncIndicator from '../components/SyncIndicator';
 import { GlobalStateContext, initSettings, GlobalSettings } from '../components/GlobalState';
+import { initialRemoteDBState, RemoteDBStateContext,  } from '../components/RemoteDBState';
 import { AddListOptions } from '../components/GlobalState';
-import { cloneDeep } from 'lodash';
-
 
 const Settings: React.FC = (props) => {
   const [presentAlert] = useIonAlert();
   const {navigate} = useContext(NavContext);
   const {globalState, updateSettingKey} = useContext(GlobalStateContext);
+  const { setRemoteDBState } = useContext(RemoteDBStateContext);
   const [localSettings, setLocalSettings] = useState<GlobalSettings>(initSettings)
   const [localSettingsInitialized,setLocalSettingsInitialized] = useState(false);
 
@@ -28,8 +28,9 @@ const Settings: React.FC = (props) => {
   async function stopSync() {
     let credsStr=JSON.stringify({});
     await Preferences.set({key: 'dbcreds', value: credsStr})
-    App.exitApp()
+//    setRemoteDBState(initialRemoteDBState);
     navigate("/","back","replace");
+    App.exitApp()
   }
 
   function stopSyncPopup() {
