@@ -21,6 +21,16 @@ export function emailPatternValidation(email: string) {
     return emailRegex.test(email);
 };
 
+export function usernamePatternValidation(username: string) {
+    const usernameRegex=/^[a-zA-Z0-9]*$/
+    return usernameRegex.test(username);
+}
+
+export function fullnamePatternValidation(fullname: string) {
+    const usernameRegex=/^[a-zA-Z0-9 ]*$/
+    return usernameRegex.test(fullname);
+}
+
 export async function checkUserByEmailExists(email: string, remoteDBState: RemoteDBState) {
     let response: HttpResponse | undefined;
     const options = {

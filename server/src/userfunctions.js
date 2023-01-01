@@ -39,6 +39,7 @@ let usersDBAsAdmin;
 const _ = require('lodash');
 const { v4: uuidv4 } = require('uuid');
 const { cloneDeep } = require('lodash');
+const {  emailPatternValidation, usernamePatternValidation, fullnamePatternValidation } = require('./utilities')
 
 async function couchLogin(username, password) {
     const loginResponse = {
@@ -515,20 +516,22 @@ async function createAccountUIPost(req,res) {
 
     if (req.body.fullname.length < 2 ) {
         respObj.formError = "Please enter a full name 3 characters or longer";
-        return (respObj);
-    } 
+        return (respObj);} 
+    if (!fullnamePatternValidation(req.body.fullname)) {
+        respObj.formError = "Please enter a valid full name";
+        return (respObj);}
     if (req.body.username.length < 5 ) {
         respObj.formError = "Please enter a username 5 characters or longer";
-        return (respObj);
-    } 
+        return (respObj); } 
+    if (!usernamePatternValidation(req.body.username)) {
+        respObj.formError = "Please enter a valid username";
+        return (respObj); }
     if (req.body.password.length < 5 ) {
         respObj.formError = "Please enter a password 5 characters or longer";
-        return (respObj);
-    } 
+        return (respObj);} 
     if (req.body.password != req.body.passwordverify) {
         respObj.formError = "Passwords do not match";
-        return (respObj);
-    }
+        return (respObj);}
     let foundUserDoc; let userAlreadyExists=true;
     try {
         foundUserDoc =  await usersDBAsAdmin.get(couchUserPrefix+":"+req.body.username);}

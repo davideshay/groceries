@@ -144,18 +144,21 @@ const RemoteDBLogin: React.FC = () => {
 //    setPrefsDBCreds();
     let createResponse: any;
     let credsCheck = errorCheckCreds(remoteDBState.dbCreds,false,true,remoteState.password,remoteState.verifyPassword);
+    console.log("got credsCheck:",cloneDeep(credsCheck));
     if (!credsCheck.credsError) {
+      console.log("WHY AM I HERE");
       createResponse = await createNewUser(remoteDBState,String(remoteState.password));
       console.log("now createResponse is ", {createResponse})
       if (!createResponse.data.createdSuccessfully) {
         let errorText="";
         if (createResponse.data.invalidData) {errorText = "Invalid Data Entered";} 
         else if (createResponse.data.userAlreadyExists) {errorText = "User Already Exists";}
-        setRemoteState(prevState => ({...prevState, formError: errorText}))
+        setRemoteState(prevState => ({...prevState, formError: credsCheck.errorText}))
         return;
       }
     } else {
-      setRemoteState(prevState => ({...prevState, formError: String(credsCheck.credsError)}));
+      setRemoteState(prevState => ({...prevState, formError: String(credsCheck.errorText)}));
+      return;
     }
     console.log({createResponse});
     let newCreds=updateDBCredsFromResponse(createResponse);

@@ -2,7 +2,7 @@ import React, { createContext, useState, useContext, useEffect, useRef} from "re
 import { usePouch} from 'use-pouchdb';
 import { Preferences } from '@capacitor/preferences';
 import { cloneDeep, pick, keys, isEqual } from 'lodash';
-import { isJsonString, urlPatternValidation, emailPatternValidation, DEFAULT_API_URL } from '../components/Utilities'; 
+import { isJsonString, urlPatternValidation, emailPatternValidation, usernamePatternValidation, fullnamePatternValidation, DEFAULT_API_URL } from '../components/Utilities'; 
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import PouchDB from 'pouchdb';
 
@@ -178,6 +178,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             credsError: false,
             errorText: ""
         }
+        console.log("in error check, creds:",cloneDeep(credsObj)," creatingNewUser: ",cloneDeep(creatingNewUser), " background: ",cloneDeep(background));
         function setError(err: string) {
             credsCheck.credsError = true; credsCheck.errorText=err;
         }
@@ -199,12 +200,22 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             setError("No database name found"); return credsCheck;}
         if (credsObj.dbUsername == null || credsObj.dbUsername == "") {
             setError("No database user name entered"); return credsCheck;}
+        if ((creatingNewUser) && credsObj.dbUsername.length < 5) {
+            setError("Please enter username of 6 characters or more");
+            return credsCheck; }    
+        if ((creatingNewUser) && !usernamePatternValidation(credsObj.dbUsername)) {
+            setError("Invalid username format"); return credsCheck; }
+        if ((creatingNewUser) && !fullnamePatternValidation(String(credsObj.fullName))) {
+            setError("Invalid full name format"); return credsCheck; }
         if ((creatingNewUser) && (credsObj.email == null || credsObj.email == "")) {
             setError("No email entered"); return credsCheck;}
         if ((creatingNewUser) && (!emailPatternValidation(String(credsObj.email)))) {
             setError("Invalid email format"); return credsCheck;}
         if ((!background && !creatingNewUser) && (password == undefined || password == "")) {
             setError("No password entered"); return credsCheck;}
+        if ((creatingNewUser) && password.length < 5) {
+            setError("Password not long enough. Please have 6 character or longer password");
+            return credsCheck;}
         if ((creatingNewUser) && (password != verifyPassword)) {
             setError("Passwords do not match"); return credsCheck;}
         return credsCheck;
