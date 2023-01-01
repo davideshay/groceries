@@ -1,16 +1,16 @@
 
 
-export function emailPatternValidation(email) {
+function emailPatternValidation(email) {
     const emailRegex=/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
     return emailRegex.test(email);
 };
 
-export function usernamePatternValidation(username) {
+function usernamePatternValidation(username) {
     const usernameRegex=/^[a-zA-Z0-9]*$/
     return usernameRegex.test(username);
 }
 
-export function fullnamePatternValidation(fullname) {
+function fullnamePatternValidation(fullname) {
     const usernameRegex=/^[a-zA-Z0-9 ]*$/
     return usernameRegex.test(fullname);
 }
