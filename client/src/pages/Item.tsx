@@ -83,7 +83,12 @@ const Item: React.FC = () => {
   )};
   
   async function updateThisItem() {
+    setFormError(prevState => (""));
     let result: PouchResponse;
+    if ((stateItemDoc as any).name == undefined || (stateItemDoc as any).name=="" || (stateItemDoc as any).name == null) {
+      setFormError(prevState => ("Name is required"));
+      return false;
+    }
     if (mode === "new") {
       result = await addItem(stateItemDoc);
     }  

@@ -1,7 +1,7 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput,
    IonItem, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonSelectOption,
    IonReorder, IonReorderGroup,ItemReorderEventDetail, IonButtons, IonMenuButton, NavContext,
-   useIonToast } from '@ionic/react';
+   useIonToast, IonFooter } from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext } from 'react';
@@ -16,7 +16,8 @@ interface PageState {
   needInitListDoc: boolean,
   listDoc: any,
   selectedListID: String,
-  changesMade: Boolean
+  changesMade: Boolean,
+  formError: string
 }  
 
 const List: React.FC = () => {
@@ -27,7 +28,8 @@ const List: React.FC = () => {
     needInitListDoc: (mode === "new") ? true : false,
     listDoc: {},
     selectedListID: routeID,
-    changesMade: false
+    changesMade: false,
+    formError: ""
   })
   const updateListWhole  = useUpdateGenericDocument();
   const createList = useCreateGenericDocument();
@@ -94,6 +96,10 @@ const List: React.FC = () => {
   )};
   
   async function updateThisItem() {
+    if (pageState.listDoc.name == "" || pageState.listDoc.name == undefined || pageState.listDoc.name == null) {
+      setPageState(prevState => ({...prevState,formError: "Must enter name for list"}));
+      return false;
+    }
     let response: PouchResponse;
     if (mode === "new") {
       response = await createList(pageState.listDoc);
@@ -114,7 +120,6 @@ const List: React.FC = () => {
     let newPageState=cloneDeep(pageState);
     newPageState.listDoc.categories.splice(event.detail.to,0,newPageState.listDoc.categories.splice(event.detail.from,1)[0]);
     newPageState.changesMade=true;
-    console.log("updating the entire pagestate again including listdoc");
     setPageState(newPageState);
 
     // Finish the reorder and position the item in the DOM based on
@@ -139,7 +144,6 @@ const List: React.FC = () => {
     if (updateVal && !foundIt) {
       currCategories.push(categoryID);
     }
-    console.log("I am in updateCat updating listDoc... problem?")
     setPageState(prevState => (
       {...prevState, changesMade: true, listDoc: {...prevState.listDoc, categories: currCategories}}))
 
@@ -161,7 +165,6 @@ const List: React.FC = () => {
     if (updateVal && !foundIt) {
       currUsers.push(userID);
     }
-    console.log("about to update listDoc with new data in selectUser");
     if (!isEqual(pageState.listDoc.sharedWith,currUsers)) {
       setPageState(prevState => (
         {...prevState, changesMade: true, listDoc: {...prevState.listDoc, sharedWith: currUsers}}))
@@ -170,7 +173,6 @@ const List: React.FC = () => {
 
   function updateName(updName: string) {
     if (pageState.listDoc.name !== updName) {
-      console.log("updating listDoc in updateName");
       setPageState(prevState => (
         {...prevState, changesMade: true, listDoc: {...prevState.listDoc, name: updName}}));
     }  
@@ -330,6 +332,9 @@ const List: React.FC = () => {
           {updateButton}
           <IonButton key="back" onClick={() => goBack("/lists")}>Cancel</IonButton>
       </IonContent>
+      <IonFooter>
+        <IonLabel>{pageState.formError}</IonLabel>
+      </IonFooter>
     </IonPage>
   );
 };

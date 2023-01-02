@@ -46,6 +46,10 @@ const Category: React.FC = () => {
   
   async function updateThisCategory() {
     setFormError("");
+    if (stateCategoryDoc.name == undefined || stateCategoryDoc.name == "" || stateCategoryDoc.name == null) {
+      setFormError("Must enter a name");
+      return false;
+    }
     let categoryDup=false;
     categoryDocs.forEach((doc: any) => {
       if ((doc._id !== stateCategoryDoc._id) && (doc.name.toUpperCase() == stateCategoryDoc.name.toUpperCase())) {

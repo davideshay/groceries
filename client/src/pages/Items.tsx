@@ -321,7 +321,7 @@ const Items: React.FC = () => {
           {contentElem}
       </IonContent>
       <IonFab slot="fixed" vertical="bottom" horizontal="end">
-        <IonFabButton>
+        <IonFabButton onClick={() => addNewItemToList("")}>
           <IonIcon icon={add}></IonIcon>
         </IonFabButton>
       </IonFab>
