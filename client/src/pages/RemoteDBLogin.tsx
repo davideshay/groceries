@@ -147,13 +147,14 @@ const RemoteDBLogin: React.FC = () => {
     const options = {
         url: String(remoteDBState.dbCreds.apiServerURL+"/issuetoken"),
         method: "POST",
-        headers: { 'Content-Type': 'application/json',
+        headers: { 'Content-Type': 'application/json; charset=UTF-8',
                    'Accept': 'application/json'},
         data: { username: remoteDBState.dbCreds.dbUsername,
                 password: remoteState.password},           
     };
+    console.log("options for post:",JSON.stringify(options));
     response = await CapacitorHttp.post(options);
-    console.log("got http response",cloneDeep(response));
+    console.log("got http response",JSON.stringify(response));
     if (!((response?.status == 200) && (response?.data?.loginSuccessful))) {
         setRemoteState(prevState => ({...prevState, formError: "Invalid Authentication"}))
         return
