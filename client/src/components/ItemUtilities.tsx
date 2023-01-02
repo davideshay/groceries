@@ -38,6 +38,7 @@ export function filterSearchRows(searchRows: ItemSearch[] | undefined, searchCri
 export function getItemRows(itemDocs: any, listDocs: any, categoryDocs: any, listID: string) {
     let itemRows: Array<ItemRow> =[];
     let listDoc=listDocs.find((el: any) => el._id === listID);
+    if (listDoc == undefined) {return itemRows};
     itemDocs.forEach((itemDoc: any) => {
     let itemRow: ItemRow = {
         itemID:"",

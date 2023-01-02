@@ -25,7 +25,8 @@ export interface RemoteDBStateContextType {
     errorCheckCreds: any,
     checkDBUUID: DBUUIDCheck,
     assignDBAndSync: boolean,
-    setDBCredsValue: any
+    setDBCredsValue: any,
+    setConnectionStatus: any
 }
 
 export enum SyncStatus {
@@ -96,7 +97,7 @@ export const initialRemoteDBState: RemoteDBState = {
     credsError: false,
     credsErrorText: "",
     serverAvailable: true,
-    workingOffline: false,
+    workingOffline: false
 }
 
 const initialContext = {
@@ -106,7 +107,8 @@ const initialContext = {
     errorCheckCreds: (credsObj: DBCreds,background: boolean, creatingNewUser: boolean = false, password: string = "", verifyPassword: string = ""): CredsCheck => {return CredsCheckInit},
     checkDBUUID: async (remoteDB: PouchDB.Database,credsObj: DBCreds): Promise<DBUUIDCheck> => {return DBUUIDCheckInit },
     assignDBAndSync: async (credsObj: DBCreds): Promise<boolean> => {return false},
-    setDBCredsValue: (key: any, value: any) => {}
+    setDBCredsValue: (key: any, value: any) => {},
+    setConnectionStatus: (value: ConnectionStatus) => {}
 }
 
 export const RemoteDBStateContext = createContext(initialContext)
@@ -117,8 +119,8 @@ type RemoteDBStateProviderProps = {
 
 export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (props: RemoteDBStateProviderProps) => {
     const [remoteDBState,setRemoteDBState] = useState<RemoteDBState>(initialRemoteDBState);
-    const db=usePouch();
     const loginAttempted = useRef(false);
+    const db=usePouch();
 
     function setSyncStatus(status: number) {
         setRemoteDBState(prevState => ({...prevState,syncStatus: status}))
@@ -127,6 +129,11 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     function setDBCredsValue(key: any, value: any) {
         setRemoteDBState(prevState => ({...prevState, dbCreds: {...prevState.dbCreds,[key]: value}}));
         setPrefsDBCreds({...remoteDBState.dbCreds, [key]: value});
+    }
+
+    function setConnectionStatus(value: ConnectionStatus) {
+        console.log("setting connection status to: ", value)
+        setRemoteDBState(prevState => ({...prevState, connectionStatus: value}));
     }
 
     function startSync(remoteDB: PouchDB.Database) {
@@ -178,7 +185,6 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             credsError: false,
             errorText: ""
         }
-        console.log("in error check, creds:",cloneDeep(credsObj)," creatingNewUser: ",cloneDeep(creatingNewUser), " background: ",cloneDeep(background));
         function setError(err: string) {
             credsCheck.credsError = true; credsCheck.errorText=err;
         }
@@ -345,13 +351,15 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         };
     }
 
-    useEffect(() => {      
-        if (!loginAttempted.current) {
+    useEffect(() => {
+        console.log("login attempted or connection status changed");      
+        if (!loginAttempted.current && !(remoteDBState.connectionStatus == ConnectionStatus.navToLoginScreen) && !(remoteDBState.connectionStatus == ConnectionStatus.onLoginScreen)) {
+            console.log("about to attempt full login...");
             attemptFullLogin()
             loginAttempted.current = true;
-            setRemoteDBState(prevState => ({...prevState,loginAttempted: true}))
+//            setRemoteDBState((prevState: any) => ({...prevState,loginAttempted: true}))
         }
-      },[])
+      },[loginAttempted,remoteDBState.connectionStatus])
   
     useEffect(() => {
         if (( remoteDBState.syncStatus == SyncStatus.active || remoteDBState.syncStatus == SyncStatus.paused) && (remoteDBState.connectionStatus !== ConnectionStatus.initialNavComplete)) {
@@ -359,7 +367,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         }
     },[remoteDBState.syncStatus])
 
-    let value: any = {remoteDBState, setRemoteDBState, startSync, errorCheckCreds, checkDBUUID, assignDBAndSync, setDBCredsValue};
+    let value: any = {remoteDBState, setRemoteDBState, startSync, errorCheckCreds, checkDBUUID, assignDBAndSync, setDBCredsValue, setConnectionStatus};
     return (
         <RemoteDBStateContext.Provider value={value}>{props.children}</RemoteDBStateContext.Provider>
       );

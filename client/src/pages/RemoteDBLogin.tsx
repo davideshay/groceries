@@ -1,5 +1,5 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
-  IonButtons, IonMenuButton, IonLabel, NavContext, IonText, useIonAlert, IonAlert } from '@ionic/react';
+  IonButtons, IonMenuButton, IonLabel, NavContext, IonText, useIonAlert, IonAlert, isPlatform } from '@ionic/react';
 import { useState, useEffect, useContext } from 'react';
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import { usePouch} from 'use-pouchdb';
@@ -8,7 +8,7 @@ import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
 import { createNewUser,  } from '../components/RemoteUtilities';
 import { cloneDeep } from 'lodash';
-import { RemoteDBStateContext, SyncStatus } from '../components/RemoteDBState';
+import { RemoteDBStateContext, SyncStatus, initialRemoteDBState } from '../components/RemoteDBState';
 
 export type RemoteState = {
   password: string | undefined,
@@ -17,6 +17,15 @@ export type RemoteState = {
   inCreateMode: boolean,
   loginByPassword: boolean,
   formError: string,
+}
+
+export const initRemoteState = {
+  password: "",
+  verifyPassword: "",
+  httpResponse: undefined,
+  inCreateMode: false,
+  loginByPassword: false,
+  formError: ""
 }
 
 /* 
@@ -76,7 +85,7 @@ const RemoteDBLogin: React.FC = () => {
             message: "The server is incorrectly configured with no unique ID. Please ensure server process is running.",
             buttons: ["OK"]
           });
-          App.exitApp();
+          exitApp();
           return;
         } else if (remoteDBState.dbUUIDAction === DBUUIDAction.destroy_needed) {
           presentAlert( {
@@ -84,17 +93,33 @@ const RemoteDBLogin: React.FC = () => {
             message: "The Database identifier on the server is not the same as the local copy. You should delete your local copy in order to continue. App will exit.",
             buttons: [
               {text: "Delete/Exit",handler: () => destroyAndExit()},
-              {text: "Cancel/Exit",handler: () => App.exitApp()}
+              {text: "Cancel/Exit",handler: () => exitApp()}
               ]
           })
         }
       }
     },[remoteDBState.dbUUIDAction])
 
+    useEffect( () => {
+      if (remoteDBState.connectionStatus == ConnectionStatus.cannotStart) {
+        console.log("Detected cannot start, setting initRemoteState");
+        setRemoteState(initRemoteState);
+      }
+
+    },[remoteDBState.connectionStatus])
+
     async function destroyAndExit() {
       await db.destroy();
       await Preferences.remove({key: 'dbcreds'});
-      App.exitApp();
+      exitApp();
+    }
+
+    function exitApp() {
+      if (!(isPlatform("desktop") || isPlatform("electron"))) {App.exitApp()}
+      console.log("RESETTING TO INITSTATE");
+      setRemoteDBState(initialRemoteDBState);
+      window.location.replace('/');
+  
     }
 
     function updateDBCredsFromResponse(response: HttpResponse): DBCreds {

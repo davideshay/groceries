@@ -1,6 +1,6 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
         IonMenuButton, IonButtons, IonButton, useIonAlert, IonInput,
-        IonRadioGroup,IonLabel, NavContext, IonRadio, IonCheckbox, IonTextarea} from '@ionic/react';
+        IonRadioGroup,IonLabel, NavContext, IonRadio, IonCheckbox, IonTextarea, isPlatform, getPlatforms} from '@ionic/react';
 import { useContext, useEffect, useState } from 'react';        
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
@@ -28,9 +28,12 @@ const Settings: React.FC = (props) => {
   async function stopSync() {
     let credsStr=JSON.stringify({});
     await Preferences.set({key: 'dbcreds', value: credsStr})
-//    setRemoteDBState(initialRemoteDBState);
-    navigate("/","back","replace");
-    App.exitApp()
+    if (!(isPlatform("desktop") || isPlatform("electron"))) {App.exitApp()}
+    console.log("RESETTING TO INITSTATE");
+    setRemoteDBState(initialRemoteDBState);
+    window.location.replace('/');
+//    navigate('/');
+    return false;
   }
 
   function stopSyncPopup() {

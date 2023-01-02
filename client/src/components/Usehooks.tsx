@@ -5,6 +5,7 @@ import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import { RemoteDBStateContext } from './RemoteDBState';
 import { FriendStatus, FriendRow, ResolvedFriendStatus, ListRow, PouchResponse, PouchResponseInit } from './DataTypes';
 import { GlobalStateContext } from './GlobalState';
+import { urlPatternValidation } from './Utilities';
 
 
 export function useUpdateGenericDocument() {
@@ -49,11 +50,20 @@ export function useUpdateCompleted() {
         let listIdx=updateInfo.listRows.findIndex((el: ListRow) => (el.listDoc._id === newItemDoc.lists[i].listID));
         if (listIdx !== -1) {
           let changeThisItem=false;
-          if (((newItemDoc.lists[i].listID === updateInfo.listID) ||
-              (updateInfo.removeAll && updateInfo.newStatus)) && 
+          // for checking the item complete, use this logic
+          if (updateInfo.newStatus) {
+            if (((newItemDoc.lists[i].listID === updateInfo.listID) || updateInfo.removeAll) && 
+            (isEqual(baseParticipants,updateInfo.listRows[listIdx].participants))) {
+              changeThisItem=true;
+            }
+          } else {
+          // for unchecking the item complete, use this logic
+          if (((newItemDoc.lists[i].listID === updateInfo.listID) || 
+              (updateInfo.removeAll && newItemDoc.lists[i].active && newItemDoc.lists[i].completed)) && 
               (isEqual(baseParticipants,updateInfo.listRows[listIdx].participants))) {
                 changeThisItem=true;
               }
+          }
           if (changeThisItem) {
             newItemDoc.lists[i].completed = updateInfo.newStatus;
             if (newItemDoc.lists[i].listID === updateInfo.listID) {
@@ -148,14 +158,19 @@ export function useFriends(username: string) : {friendsLoading: boolean, friendR
         }
       });
       const getUsers = async () => {
+        const usersUrl = remoteDBState.dbCreds?.apiServerURL+"/getusersinfo"
+        if (!urlPatternValidation(usersUrl)) {return}
         const options = {
-          url: String(remoteDBState.dbCreds?.apiServerURL+"/getusersinfo"),
+          url: String(usersUrl),
           data: userIDList,
           method: "POST",
           headers: { 'Content-Type': 'application/json',
                      'Accept': 'application/json' }
         };
-        response = await CapacitorHttp.post(options);
+        let response:HttpResponse;
+        let httpError=false;
+        try { response = await CapacitorHttp.post(options); }
+        catch(err) {httpError=true; console.log("HTTP Error: ",err); return}
         setFriendRows(prevState => ([]));
         if (response && response.data) {
           friendDocs.forEach((friendDoc: any) => {
@@ -194,6 +209,7 @@ export function useFriends(username: string) : {friendsLoading: boolean, friendR
           
         }
       }
+
       if ( !friendsLoading && !friendRowsLoading)  {
         setFriendRowsLoading(true);
         getUsers();

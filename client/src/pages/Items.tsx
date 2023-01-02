@@ -222,10 +222,7 @@ const Items: React.FC = () => {
   )};  
 
   async function completeItemRow(id: String, newStatus: boolean | null) {
-    let newItemRows: Array<ItemRow>=cloneDeep(pageState.itemRows);
-    let itemSeq = newItemRows.findIndex(element => (element.itemID === id))
-    newItemRows[itemSeq].completed = newStatus;
-    // get itemdoc from itemDocs
+    // make the update in the database, let the refresh of the view change state
     let itemDoc = itemDocs.find(element => (element._id === id))
     let updateInfo = {
       itemDoc: itemDoc,
@@ -234,7 +231,8 @@ const Items: React.FC = () => {
       listID: pageState.selectedListID,
       listRows: listRows
     }
-    setPageState({...pageState, itemRows: newItemRows, doingUpdate: true});
+    console.log({updateInfo});
+    setPageState(prevState=> ({...prevState,doingUpdate: true}));
     let response=await updateCompleted(updateInfo);
     if (!response.successful) {
       presentToast({message: "Error updating completed status. Please retry", duration: 1500, position: "middle"})

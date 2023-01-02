@@ -5,7 +5,7 @@ import { ConnectionStatus, RemoteDBStateContext } from '../components/RemoteDBSt
 
     
 const InitialLoad: React.FC = () => {
-    const { remoteDBState, setRemoteDBState, startSync} = useContext(RemoteDBStateContext);
+    const { remoteDBState, setRemoteDBState, setConnectionStatus} = useContext(RemoteDBStateContext);
     const [showLoading, setShowLoading] = useState(true);
     const {navigate} = useContext(NavContext);
     const [present,dismiss] = useIonLoading();
@@ -36,7 +36,7 @@ const InitialLoad: React.FC = () => {
         if ((remoteDBState.connectionStatus == ConnectionStatus.loginComplete)) {
             setShowLoading(false);
             dismiss();
-            setRemoteDBState({...remoteDBState,connectionStatus: ConnectionStatus.initialNavComplete});
+            setConnectionStatus(ConnectionStatus.initialNavComplete);
             // should do logic here around navigating to first list
             navigateToFirstListID();
         } else {
@@ -46,7 +46,7 @@ const InitialLoad: React.FC = () => {
 
     useEffect(() => {
         if (remoteDBState.connectionStatus == ConnectionStatus.navToLoginScreen) {
-            setRemoteDBState({...remoteDBState,connectionStatus: ConnectionStatus.onLoginScreen});
+            setConnectionStatus(ConnectionStatus.onLoginScreen);
             navigate("/login");
         }
 
