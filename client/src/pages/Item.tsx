@@ -42,13 +42,12 @@ const Item: React.FC = () => {
   function addListsIfNotExist(itemDoc: any) {
     let newItemDoc=cloneDeep(itemDoc);
     let baseList = listRows.find((listRow: ListRow) => listRow.listDoc._id === globalState.callingListID)
-    let baseParticipants = baseList?.participants;
     for (let i = 0; i < listRows.length; i++) {
       console.log("listRow - i :",listRows[i]);
       console.log("newItemDoc:",newItemDoc);
       let foundIdx=newItemDoc.lists.findIndex((el: any) => el.listID === listRows[i].listDoc._id)
-      if (foundIdx === -1 && isEqual(listRows[i].participants,baseParticipants)) {
-        newItemDoc.lists.push({
+      if (foundIdx === -1) {
+          newItemDoc.lists.push({
           listID: listRows[i].listDoc._id,
           completed: false,
           active: false,
