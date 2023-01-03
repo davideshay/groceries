@@ -4,6 +4,7 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
 import { add,checkmark } from 'ionicons/icons';
 import React, { useState, useEffect, useContext, useRef, KeyboardEvent } from 'react';
 import { useParams } from 'react-router-dom';
+import { Keyboard } from '@capacitor/keyboard';
 import { useFind } from 'use-pouchdb';
 import { cloneDeep } from 'lodash';
 import './Items.css';
@@ -104,10 +105,23 @@ const Items: React.FC = () => {
     }
   }
 
+  const getCircularReplacer = () => {
+    const seen = new WeakSet();
+    return (key: any, value: any) => {
+      if (typeof value === 'object' && value !== null) {
+        if (seen.has(value)) {
+          return;
+        }
+        seen.add(value);
+      }
+      return value;
+    };
+  };
+  
   function searchKeyPress(event: KeyboardEvent<HTMLElement>) {
-    if (event.code === "Enter") {
+    if (event.key === "Enter") {
       addNewItemToList(searchState.searchCriteria)
-    } 
+    }
   }
 
   function clickedSearchCheck() {
@@ -119,7 +133,9 @@ const Items: React.FC = () => {
   }
 
   function enterSearchBox(event: any) {
-    setSearchState(prevState => ({...prevState, event: event, isFocused: true,isOpen: true}));
+    let toOpen=true;
+    if (searchState.filteredSearchRows.length === 0) { toOpen = false}
+    setSearchState(prevState => ({...prevState, event: event, isFocused: true,isOpen: toOpen}));
   }
 
   function isCategoryInList(listID: string, categoryID: string) {
@@ -207,8 +223,8 @@ const Items: React.FC = () => {
           </IonSelect>
         </IonItem>
         <IonItem key="searchbar">
-          <IonSearchbar ref={searchRef} value={searchState.searchCriteria}
-              onKeyPress= {(e: any) => searchKeyPress(e)}
+          <IonSearchbar ref={searchRef} value={searchState.searchCriteria} inputmode="search" enterkeyhint="enter"
+              onKeyDown= {(e:any) => searchKeyPress(e)}
               onIonChange={(e: any) => updateSearchCriteria(e)}
               onIonBlur={(e: any) => leaveSearchBox(e)}
               onClick={(e: any) => enterSearchBox(e)}>
