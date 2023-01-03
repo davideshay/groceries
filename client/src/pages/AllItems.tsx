@@ -7,6 +7,11 @@ import { RemoteDBStateContext } from '../components/RemoteDBState';
 import SyncIndicator from '../components/SyncIndicator';
 import './AllItems.css';
 
+// The AllItems component is a master editor of all of the known items in the database.
+// Each item has a name, along with data about each list the item is on (list ID, quantity, count of number of times bought,
+// and status for active (on the list), and complete (on the list and checked off) )
+
+
 const AllItems: React.FC = () => {
   const { remoteDBState } = useContext(RemoteDBStateContext);
   const { listDocs, listsLoading } = useLists(String(remoteDBState.dbCreds.dbUsername))

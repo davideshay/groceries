@@ -70,7 +70,12 @@ const Items: React.FC = () => {
     },[allItemsLoading, allItemDocs, pageState.selectedListID])
 
     useEffect( () => {
-      setSearchState({...searchState, filteredSearchRows: filterSearchRows(searchRows, searchState.searchCriteria)});
+      let filterRows=filterSearchRows(searchRows, searchState.searchCriteria)
+      if (filterRows.length > 0) {
+        setSearchState(prevState => ({...prevState, filteredSearchRows: filterRows }));
+      } else {
+        setSearchState(prevState => ({...prevState, filteredSearchRows: [], isOpen: false}));
+      }  
     },[searchState.searchCriteria])
 
   
@@ -79,7 +84,7 @@ const Items: React.FC = () => {
   )};  
 
   function updateSearchCriteria(event: CustomEvent) {
-    setSearchState({...searchState,isOpen: (event.detail.value === "") ? false: true , event: event, searchCriteria: event.detail.value});
+    setSearchState(prevState => ({...prevState,isOpen: (event.detail.value === "") ? false: true , event: event, searchCriteria: event.detail.value}));
   }  
 
   function isItemAlreadyInList(itemName: string) {
@@ -95,7 +100,7 @@ const Items: React.FC = () => {
       setGlobalState({...globalState, itemMode: "new",
                                      callingListID: pageState.selectedListID,
                                      newItemName: itemName})
-      setSearchState({...searchState, isOpen: false})
+      setSearchState(prevState => ({...prevState, isOpen: false}))
       navigate("/item/new/");
     }
   }
@@ -172,11 +177,11 @@ const Items: React.FC = () => {
 
   function chooseSearchItem(itemID: string) {
     addExistingItemToList(itemID);
-    setSearchState({...searchState, searchCriteria: "", isOpen: false})
+    setSearchState(prevState => ({...prevState, searchCriteria: "", isOpen: false}))
   }
 
   let popOverElem = (
-    <IonPopover side="bottom" event={searchState.event} isOpen={searchState.isOpen} keyboardClose={false} onDidDismiss={() => {setSearchState({...searchState, isOpen: false, searchCriteria: ""})}}>
+    <IonPopover side="bottom" event={searchState.event} isOpen={searchState.isOpen} keyboardClose={false} onDidDismiss={() => {setSearchState(prevState => ({...prevState, isOpen: false}))}}>
     <IonContent><IonList key="popoverItemList">
       {(searchState.filteredSearchRows as ItemSearch[]).map((item: ItemSearch) => (
         <IonItem key={pageState.selectedListID+"-poilist-"+item.itemID} onClick={() => chooseSearchItem(item.itemID)}>{item.itemName}</IonItem>
