@@ -19,7 +19,7 @@ const Items: React.FC = () => {
   const { remoteDBState} = useContext(RemoteDBStateContext);
   let { id: routeListID  } = useParams<{id: string}>();
   const [searchRows,setSearchRows] = useState<ItemSearch[]>();
-  const [searchState,setSearchState] = useState<SearchState>({searchCriteria:"",isOpen: false,event: undefined, filteredSearchRows: [], dismissEvent: undefined});
+  const [searchState,setSearchState] = useState<SearchState>({searchCriteria:"",isOpen: false,isFocused: false,event: undefined, filteredSearchRows: [], dismissEvent: undefined});
   const [pageState, setPageState] = useState<PageState>({selectedListID: routeListID, doingUpdate: false, itemRows: [], showAlert: false, alertHeader: "", alertMessage: ""});
   const searchRef=useRef<HTMLIonSearchbarElement>(null);
   const [presentToast] = useIonToast();
@@ -71,12 +71,12 @@ const Items: React.FC = () => {
 
     useEffect( () => {
       let filterRows=filterSearchRows(searchRows, searchState.searchCriteria)
-      if (filterRows.length > 0) {
-        setSearchState(prevState => ({...prevState, filteredSearchRows: filterRows }));
+      if (filterRows.length > 0 && searchState.isFocused ) {
+        setSearchState(prevState => ({...prevState, filteredSearchRows: filterRows, isOpen: true }));
       } else {
         setSearchState(prevState => ({...prevState, filteredSearchRows: [], isOpen: false}));
       }  
-    },[searchState.searchCriteria])
+    },[searchState.searchCriteria,searchState.isFocused])
 
   
   if (itemLoading || listsLoading || listRowsLoading || categoryLoading || allItemsLoading || pageState.doingUpdate )  {return(
@@ -84,12 +84,11 @@ const Items: React.FC = () => {
   )};  
 
   function updateSearchCriteria(event: CustomEvent) {
-    setSearchState(prevState => ({...prevState,isOpen: (event.detail.value === "") ? false: true , event: event, searchCriteria: event.detail.value}));
+    setSearchState(prevState => ({...prevState, event: event, searchCriteria: event.detail.value}));
   }  
 
   function isItemAlreadyInList(itemName: string) {
     let existingItem: any = allItemDocs.find((el: any) => el.name.toUpperCase() === itemName.toUpperCase());
-    console.log("trying item name: ",{itemName,existingItem});
     return(!(existingItem == undefined));
   }
 
@@ -107,24 +106,26 @@ const Items: React.FC = () => {
 
   function searchKeyPress(event: KeyboardEvent<HTMLElement>) {
     if (event.code === "Enter") {
-      console.log("Got a new item");
       addNewItemToList(searchState.searchCriteria)
     } 
   }
 
   function clickedSearchCheck() {
-    console.log("clicked search check");
     addNewItemToList(searchState.searchCriteria);
   }
 
+  function leaveSearchBox(event: any) {
+    setSearchState(prevState => ({...prevState, searchCriteria: "", isOpen: false, isFocused: false}));
+  }
+
+  function enterSearchBox(event: any) {
+    setSearchState(prevState => ({...prevState, event: event, isFocused: true,isOpen: true}));
+  }
+
   function isCategoryInList(listID: string, categoryID: string) {
-    console.log("checking catid :",categoryID," in list:",listID);
     let listIdx = listDocs.findIndex((el: any) => el._id === listID);
-    console.log("listidx:",listIdx);
     if (listIdx === -1) {console.log("returning false idx-1"); return false;}
-    console.log("categories array:",(listDocs[listIdx] as any).categories)
     let catexists= (listDocs[listIdx] as any).categories.includes(categoryID);
-    console.log("catexists:",catexists);
     return catexists;
   }
 
@@ -133,17 +134,11 @@ const Items: React.FC = () => {
     let baseList = listRows.find((el: ListRow) => pageState.selectedListID === el.listDoc._id)
     let baseParticipants = baseList?.participants;
     
-    console.log("Adding itemID: ", itemID, " to list");
-
     listRows.forEach((listRow: ListRow) => {
-      console.log("looping through list, have list:",listRow);
       let idxInLists=existingItem.lists.findIndex((el: any) => el.listID === listRow.listDoc._id);
       let skipThisList=false;
       if (!isEqual(listRow.participants,baseParticipants)) {skipThisList = true};
-      console.log("skip this list after comparison check");
-      console.log("list id: ",listRow.listDoc._id," selected: ",pageState.selectedListID);
       if (listRow.listDoc._id !== pageState.selectedListID) {
-        console.log("checking non-selected list, options: ",globalState.settings.addListOption);
         if (globalState.settings.addListOption == AddListOptions.dontAddAutomatically) {
           skipThisList=true;
         } else if (globalState.settings.addListOption == AddListOptions.addToListsWithCategoryAutomatically) {
@@ -152,9 +147,7 @@ const Items: React.FC = () => {
           }
         }
       }
-      console.log("Skip this list:",skipThisList);
       if (!skipThisList) {
-        console.log("list not skipped, adding");
         if (idxInLists === -1) {
           const newListItem={
             listID: pageState.selectedListID,
@@ -214,7 +207,11 @@ const Items: React.FC = () => {
           </IonSelect>
         </IonItem>
         <IonItem key="searchbar">
-          <IonSearchbar ref={searchRef} value={searchState.searchCriteria} onKeyPress= {(e: any) => searchKeyPress(e)} onIonChange={(e: any) => updateSearchCriteria(e)}>
+          <IonSearchbar ref={searchRef} value={searchState.searchCriteria}
+              onKeyPress= {(e: any) => searchKeyPress(e)}
+              onIonChange={(e: any) => updateSearchCriteria(e)}
+              onIonBlur={(e: any) => leaveSearchBox(e)}
+              onClick={(e: any) => enterSearchBox(e)}>
           </IonSearchbar>
           <IonButton onClick={()=> clickedSearchCheck()}><IonIcon icon={checkmark} /></IonButton>
         </IonItem>
@@ -236,7 +233,6 @@ const Items: React.FC = () => {
       listID: pageState.selectedListID,
       listRows: listRows
     }
-    console.log({updateInfo});
     setPageState(prevState=> ({...prevState,doingUpdate: true}));
     let response=await updateCompleted(updateInfo);
     if (!response.successful) {

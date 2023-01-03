@@ -25,6 +25,7 @@ export interface ItemRow {
   export interface SearchState {
     searchCriteria: string,
     isOpen: boolean,
+    isFocused: boolean,
     event: Event | undefined,
     filteredSearchRows: Array<ItemSearch>,
     dismissEvent: CustomEvent | undefined
