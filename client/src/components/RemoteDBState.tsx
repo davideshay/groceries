@@ -108,7 +108,7 @@ const initialContext = {
     checkDBUUID: async (remoteDB: PouchDB.Database,credsObj: DBCreds): Promise<DBUUIDCheck> => {return DBUUIDCheckInit },
     assignDBAndSync: async (credsObj: DBCreds): Promise<boolean> => {return false},
     setDBCredsValue: (key: any, value: any) => {},
-    setConnectionStatus: (value: ConnectionStatus) => {}
+    setConnectionStatus: (value: ConnectionStatus) => {},
 }
 
 export const RemoteDBStateContext = createContext(initialContext)

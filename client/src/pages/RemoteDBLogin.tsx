@@ -153,8 +153,11 @@ const RemoteDBLogin: React.FC = () => {
                 password: remoteState.password},           
     };
     console.log("options for post:",JSON.stringify(options));
-    response = await CapacitorHttp.post(options);
-    console.log("got http response",JSON.stringify(response));
+    try {response = await CapacitorHttp.post(options)}
+    catch(err) {console.log("Error logging in...",err)
+                setRemoteState(prevState => ({...prevState, formError: "Cannot contact API server"}));
+                setRemoteDBState({...remoteDBState, serverAvailable: false});
+                return}
     if (!((response?.status == 200) && (response?.data?.loginSuccessful))) {
         setRemoteState(prevState => ({...prevState, formError: "Invalid Authentication"}))
         return
