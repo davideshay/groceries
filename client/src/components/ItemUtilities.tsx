@@ -59,10 +59,15 @@ export function getItemRows(itemDocs: any, listDocs: any, categoryDocs: any, lis
         itemRow.categoryColor = "primary"
     } else {
         let thisCat = (categoryDocs.find((element: any) => (element._id === itemDoc.categoryID)) as any);
-        itemRow.categoryName = thisCat.name;
-        if (thisCat.color == undefined) {
+        if (thisCat != undefined) {
+            itemRow.categoryName = thisCat.name;
+            if (thisCat.color == undefined) {
+                itemRow.categoryColor = "primary"
+            } else { itemRow.categoryColor = thisCat.color; };    
+        } else {
+            itemRow.categoryName = "UNDEFINED";
             itemRow.categoryColor = "primary"
-        } else { itemRow.categoryColor = thisCat.color; };
+        }
         const tmpIdx = ((listDoc as any).categories.findIndex((element: any) => (element === itemDoc.categoryID)));
         if (tmpIdx === -1) {itemRow.categorySeq=Number.MAX_VALUE} else {itemRow.categorySeq=tmpIdx}
     }

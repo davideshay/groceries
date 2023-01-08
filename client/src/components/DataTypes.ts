@@ -87,3 +87,21 @@ export interface ItemRow {
     errorText: "",
     fullError: undefined
   }
+
+  export type UserIDList = {
+    userIDs: string[]
+  }
+
+  export const initUserIDList:UserIDList = { userIDs: []};
+
+  export type UserInfo = {
+    name: string, email: string, fullname: string
+  }
+
+  export type UsersInfo = UserInfo[];
+
+  export const initUserInfo: UserInfo = {
+    name: "", email: "", fullname: ""
+  }
+
+  export const initUsersInfo: UserInfo[] = [];

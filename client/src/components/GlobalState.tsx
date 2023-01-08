@@ -1,6 +1,6 @@
 import React, { createContext, useEffect, useState} from "react";
 import { Preferences } from '@capacitor/preferences';
-import { keys,pick } from "lodash";
+import { keys,pick,cloneDeep } from "lodash";
 import { isJsonString } from "./Utilities";
 
 export enum AddListOptions {
@@ -75,7 +75,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
 
     async function getSettings() {
         let { value: settingsStr } = await Preferences.get({ key: 'settings'});
-        let settingsObj: GlobalSettings = initSettings;
+        let settingsObj: GlobalSettings = cloneDeep(initSettings);
         const settingsOrigKeys = keys(settingsObj);
         if (settingsStr != null && isJsonString(String(settingsStr))) {
             settingsObj=JSON.parse(String(settingsStr));
@@ -91,7 +91,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         }
         setSettingsRetrieved(true);
         setGlobalState(prevState => ({...prevState,settingsLoaded: true}));
-        return settingsObj;
+        return (settingsObj);
     }
 
     useEffect( () => {

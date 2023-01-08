@@ -3,12 +3,9 @@ import { ListRow } from "./DataTypes";
 import { isEqual } from "lodash";
 
 export function createEmptyItemDoc(listRows:ListRow[],listID: string | null | undefined, itemName: string | undefined, settings: GlobalSettings) {
-  console.log(settings.addListOption);
   let newItemLists: any =[];
-  console.log({listRows,listID});
   let baseList=listRows.find((listRow:ListRow) => listRow.listDoc._id === listID);
   let baseParticipants=baseList?.participants;
-  console.log("base participants:",baseParticipants);
     listRows.forEach((listRow: ListRow) => {
       let newListDoc={
         listID: listRow.listDoc._id,
@@ -21,7 +18,6 @@ export function createEmptyItemDoc(listRows:ListRow[],listID: string | null | un
       } else if (listRow.listDoc._id !== listID) {
         newListDoc.active = false
       }
-      console.log("list row participants:",listRow.participants)
       if (isEqual(baseParticipants,listRow.participants)) {
         newItemLists.push(newListDoc);    
       } else {

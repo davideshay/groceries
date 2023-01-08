@@ -156,7 +156,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
 
     async function  getPrefsDBCreds()  {
         let { value: credsStr } = await Preferences.get({ key: 'dbcreds'});
-        let credsObj: DBCreds = DBCredsInit;
+        let credsObj: DBCreds = cloneDeep(DBCredsInit);
         const credsOrigKeys = keys(credsObj);
         if (isJsonString(String(credsStr))) {
           credsObj=JSON.parse(String(credsStr));

@@ -1,4 +1,6 @@
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
+import { initUserInfo, initUsersInfo, UserIDList, UsersInfo } from './DataTypes';
+import { cloneDeep } from 'lodash';
 import { GlobalState } from './GlobalState';
 import { RemoteDBState } from './RemoteDBState';
 
@@ -47,6 +49,27 @@ export async function checkUserByEmailExists(email: string, remoteDBState: Remot
     response = await CapacitorHttp.post(options);
     console.log("got httpget response: ",{response});
     return response.data;
+}
+
+export async function getUsersInfo(userIDList: UserIDList,apiServerURL: string): Promise<UsersInfo> {
+    let usersInfo: UsersInfo = cloneDeep(initUsersInfo);
+    const usersUrl = apiServerURL+"/getusersinfo"
+    if (!urlPatternValidation(usersUrl)) {return usersInfo}
+    const options = {
+      url: String(usersUrl),
+      data: userIDList,
+      method: "POST",
+      headers: { 'Content-Type': 'application/json',
+                 'Accept': 'application/json' }
+    };
+    let response:HttpResponse;
+    let httpError=false;
+    try { response = await CapacitorHttp.post(options); }
+    catch(err) {httpError=true; console.log("HTTP Error: ",err); return usersInfo}
+    if (response && response.data) {
+        usersInfo = response.data.users
+    }
+    return usersInfo;
 }
 
 // export const DEFAULT_API_URL="https://groceries.shaytech.net/api"

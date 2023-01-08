@@ -23,6 +23,7 @@ const Items: React.FC = () => {
   const [searchState,setSearchState] = useState<SearchState>({searchCriteria:"",isOpen: false,isFocused: false,event: undefined, filteredSearchRows: [], dismissEvent: undefined});
   const [pageState, setPageState] = useState<PageState>({selectedListID: routeListID, doingUpdate: false, itemRows: [], showAlert: false, alertHeader: "", alertMessage: ""});
   const searchRef=useRef<HTMLIonSearchbarElement>(null);
+  const origSearchCriteria = useRef("");
   const [presentToast] = useIonToast();
   const updateCompleted = useUpdateCompleted();
   const updateItemInList = useUpdateGenericDocument();
@@ -86,6 +87,7 @@ const Items: React.FC = () => {
 
   function updateSearchCriteria(event: CustomEvent) {
     setSearchState(prevState => ({...prevState, event: event, searchCriteria: event.detail.value}));
+    origSearchCriteria.current=event.detail.value;
   }  
 
   function isItemAlreadyInList(itemName: string) {
@@ -104,19 +106,6 @@ const Items: React.FC = () => {
       navigate("/item/new/");
     }
   }
-
-  const getCircularReplacer = () => {
-    const seen = new WeakSet();
-    return (key: any, value: any) => {
-      if (typeof value === 'object' && value !== null) {
-        if (seen.has(value)) {
-          return;
-        }
-        seen.add(value);
-      }
-      return value;
-    };
-  };
   
   function searchKeyPress(event: KeyboardEvent<HTMLElement>) {
     if (event.key === "Enter") {
@@ -125,10 +114,11 @@ const Items: React.FC = () => {
   }
 
   function clickedSearchCheck() {
-    addNewItemToList(searchState.searchCriteria);
+    addNewItemToList(origSearchCriteria.current);
   }
 
   function leaveSearchBox(event: any) {
+    origSearchCriteria.current=searchState.searchCriteria;
     setSearchState(prevState => ({...prevState, searchCriteria: "", isOpen: false, isFocused: false}));
   }
 

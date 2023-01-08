@@ -1,11 +1,11 @@
 import { useCallback, useState, useEffect, useContext } from 'react'
 import { usePouch, useFind } from 'use-pouchdb'
-import { cloneDeep, isEqual, union } from 'lodash';
+import { cloneDeep, isEqual, union, pull } from 'lodash';
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import { RemoteDBStateContext } from './RemoteDBState';
-import { FriendStatus, FriendRow, ResolvedFriendStatus, ListRow, PouchResponse, PouchResponseInit } from './DataTypes';
+import { FriendStatus, FriendRow, ResolvedFriendStatus, ListRow, PouchResponse, PouchResponseInit, initUserInfo } from './DataTypes';
 import { GlobalStateContext } from './GlobalState';
-import { urlPatternValidation } from './Utilities';
+import { getUsersInfo, urlPatternValidation } from './Utilities';
 
 
 export function useUpdateGenericDocument() {
@@ -14,7 +14,7 @@ export function useUpdateGenericDocument() {
     async (updatedDoc: any) => {
           let curDateStr=(new Date()).toISOString()
           updatedDoc.updatedAt = curDateStr;
-          let response: PouchResponse = PouchResponseInit;
+          let response: PouchResponse = cloneDeep(PouchResponseInit);
           try { response.pouchData = await db.put(updatedDoc); }
           catch(err) { response.successful = false; response.fullError = err;}
           if (!response.pouchData.ok) { response.successful = false;}
@@ -28,11 +28,22 @@ export function useCreateGenericDocument() {
     async (updatedDoc: any) => {
           let curDateStr=(new Date()).toISOString()
           updatedDoc.updatedAt = curDateStr;
-          let response: PouchResponse = PouchResponseInit;
-          try { response.pouchData = await db.post(updatedDoc); console.log(response.pouchData);}
+          let response: PouchResponse = cloneDeep(PouchResponseInit);
+          try { response.pouchData = await db.post(updatedDoc);}
           catch(err) { response.successful = false; response.fullError = err;}
           if (!response.pouchData.ok) { response.successful = false;}
-          console.log(response);
+      return response
+    },[db])
+}
+
+export function useDeleteGenericDocument() {
+  const db = usePouch();
+  return useCallback(
+    async (updatedDoc: any) => {
+          let response: PouchResponse = cloneDeep(PouchResponseInit);
+          try { response.pouchData = await db.remove(updatedDoc);}
+          catch(err) { response.successful = false; response.fullError = err;}
+          if (!response.pouchData.ok) { response.successful = false;}
       return response
     },[db])
 }
@@ -42,7 +53,7 @@ export function useUpdateCompleted() {
 
   return useCallback(
     async (updateInfo: any) => {
-      let response: PouchResponse = PouchResponseInit;
+      let response: PouchResponse = cloneDeep(PouchResponseInit);
       const newItemDoc = cloneDeep(updateInfo.itemDoc);
       let baseList=updateInfo.listRows.find((el: ListRow) => (updateInfo.listID === el.listDoc._id));
       let baseParticipants = baseList.participants;
@@ -79,8 +90,97 @@ export function useUpdateCompleted() {
       if (!response.pouchData.ok) { response.successful = false};
       return response;
     },
-    [db]
-  )
+    [db])
+}
+
+export function useDeleteListFromItems() {
+  const db=usePouch()
+
+  return useCallback(
+    async (listID: string) => {
+      let response: PouchResponse = cloneDeep(PouchResponseInit);
+      let itemResults = await db.find({
+        selector: {
+          type: "item",
+          name: { $exists: true },
+          lists: { $elemMatch: { "listID": listID } }
+        }
+      })
+      for (let i = 0; i < itemResults.docs.length; i++) {
+        const itemDoc: any = itemResults.docs[i];
+        const newLists = []
+        for (let j = 0; j < itemDoc.lists.length; j++) {
+          if (itemDoc.lists[j].listID !== listID) {
+            newLists.push(itemDoc.lists[j])
+          }
+        }
+        itemDoc.lists = newLists;
+        let updResults ;
+        try {updResults = db.put(itemDoc)}
+        catch(err) {response.successful = false; response.fullError = err; }
+      }
+    
+      return response;
+    
+    },[db]) 
+}
+
+export function useDeleteCategoryFromItems() {
+  const db=usePouch()
+  return useCallback(
+    async (catID: string) => {
+      let response: PouchResponse = cloneDeep(PouchResponseInit);
+      let itemResults;
+      try {
+          itemResults = await db.find({
+          selector: {
+            type: "item",
+            name: { $exists: true },
+            categoryID: catID
+          }
+          })
+      } catch(err) {response.successful=false; response.fullError="Could not find items"; return response}
+      if (itemResults != undefined && itemResults.hasOwnProperty('docs')) {
+        for (let i = 0; i < itemResults.docs.length; i++) {
+          const itemDoc: any = cloneDeep(itemResults.docs[i]);
+          itemDoc.categoryID = null;
+          let updResults ;
+          try {updResults = db.put(itemDoc)}
+          catch(err) {response.successful = false; response.fullError = err; }
+        }  
+      }
+      return response;
+    },[db]) 
+}
+
+export function useDeleteCategoryFromLists() {
+  const db=usePouch()
+  return useCallback(
+    async (catID: string) => {
+      let response: PouchResponse = cloneDeep(PouchResponseInit);
+      let listResults;
+      try {
+          listResults = await db.find({
+          selector: {
+            type: "list",
+            name: { $exists: true },
+            categories: { $elemMatch : { $eq: catID} }
+          }
+          })
+      } catch(err) {response.successful=false; response.fullError="Could not find items"; return response}
+      if (listResults != undefined && listResults.hasOwnProperty('docs')) {
+        for (let i = 0; i < listResults.docs.length; i++) {
+          const listDoc: any = cloneDeep(listResults.docs[i]);
+          let newCats = cloneDeep(listDoc.categories);
+          pull(newCats,catID);
+          listDoc.categories = newCats;
+          let updResults ;
+          try {updResults = db.put(listDoc)}
+          catch(err) {response.successful = false; response.fullError = err; }
+        }  
+      }
+      return response;
+    },[db]) 
 }
 
 export function useLists(username: string) : {listsLoading: boolean, listDocs: any, listRowsLoading: boolean, listRowsLoaded: boolean, listRows: ListRow[]} {
@@ -122,10 +222,7 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
     }
 
   },[listsLoading,listRowsLoading,listDocs])
-
-
   return ({listsLoading, listDocs, listRowsLoading, listRowsLoaded, listRows});
-
 }
 
 export function useFriends(username: string) : {friendsLoading: boolean, friendRowsLoading: boolean, friendRows: FriendRow[]} {
@@ -158,35 +255,23 @@ export function useFriends(username: string) : {friendsLoading: boolean, friendR
         }
       });
       const getUsers = async () => {
-        const usersUrl = remoteDBState.dbCreds?.apiServerURL+"/getusersinfo"
-        if (!urlPatternValidation(usersUrl)) {return}
-        const options = {
-          url: String(usersUrl),
-          data: userIDList,
-          method: "POST",
-          headers: { 'Content-Type': 'application/json',
-                     'Accept': 'application/json' }
-        };
-        let response:HttpResponse;
-        let httpError=false;
-        try { response = await CapacitorHttp.post(options); }
-        catch(err) {httpError=true; console.log("HTTP Error: ",err); return}
+        const usersInfo = await getUsersInfo(userIDList,String(remoteDBState.dbCreds.apiServerURL));
         setFriendRows(prevState => ([]));
-        if (response && response.data) {
+        if (usersInfo.length > 0) {
           friendDocs.forEach((friendDoc: any) => {
             let friendRow : any = {};
             friendRow.friendDoc=cloneDeep(friendDoc);
             if (friendRow.friendDoc.friendID1 == remoteDBState.dbCreds.dbUsername)
               { friendRow.targetUserName = friendRow.friendDoc.friendID2}
             else { friendRow.targetUserName = friendRow.friendDoc.friendID1}
-            let user=response?.data?.users?.find((el: any) => el?.name == friendRow.targetUserName)
-            if (user == undefined) {user = {email:"",fullname:""}};
+            let user=usersInfo.find((el: any) => el?.name == friendRow.targetUserName)
+            if (user == undefined) {user = cloneDeep(initUserInfo)};
             if (friendDoc.friendStatus == FriendStatus.WaitingToRegister) {
               friendRow.targetEmail = friendDoc.inviteEmail
             } else {
-              friendRow.targetEmail = user.email;
+              friendRow.targetEmail = user?.email;
             }
-            friendRow.targetFullName = user.fullname;
+            friendRow.targetFullName = user?.fullname;
             if (friendDoc.friendStatus == FriendStatus.PendingFrom1 || friendDoc.friendStatus == FriendStatus.PendingFrom2) {
               if ((remoteDBState.dbCreds.dbUsername == friendDoc.friendID1 && friendDoc.friendStatus == FriendStatus.PendingFrom2) || 
                   (remoteDBState.dbCreds.dbUsername == friendDoc.friendID2 && friendDoc.friendStatus == FriendStatus.PendingFrom1))
@@ -206,7 +291,6 @@ export function useFriends(username: string) : {friendsLoading: boolean, friendR
             }
             setFriendRows(prevArray => [...prevArray, friendRow])
           })
-          
         }
       }
 

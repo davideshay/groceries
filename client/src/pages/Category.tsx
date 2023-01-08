@@ -1,13 +1,15 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, 
-  IonButtons, IonMenuButton, IonItem, IonLabel, IonFooter, NavContext } from '@ionic/react';
+  IonButtons, IonMenuButton, IonItem, IonLabel, IonFooter, NavContext, IonIcon,
+  useIonAlert } from '@ionic/react';
 import { RouteComponentProps,useParams } from 'react-router-dom';
-import { useDoc, useFind } from 'use-pouchdb';
+import { useDoc, useFind, usePouch } from 'use-pouchdb';
 import { useState, useEffect, useContext } from 'react';
-import { useUpdateGenericDocument, useCreateGenericDocument } from '../components/Usehooks';
+import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteCategoryFromItems, useDeleteGenericDocument, useDeleteCategoryFromLists } from '../components/Usehooks';
 import { cloneDeep } from 'lodash';
 import './Category.css';
 import { PouchResponse } from '../components/DataTypes';
 import SyncIndicator from '../components/SyncIndicator';
+import { addOutline, closeOutline, navigate, saveOutline, trashOutline } from 'ionicons/icons';
 
 const Category: React.FC = () => {
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
@@ -15,8 +17,13 @@ const Category: React.FC = () => {
   const [needInitCategoryDoc,setNeedInitCategoryDoc] = useState((mode === "new") ? true: false);
   const [stateCategoryDoc,setStateCategoryDoc] = useState<any>({});
   const [formError,setFormError] = useState<string>("");
+  const [deletingCategory,setDeletingCategory] = useState(false)
+  const [presentAlert,dismissAlert] = useIonAlert();
   const updateCategory  = useUpdateGenericDocument();
   const createCategory = useCreateGenericDocument();
+  const deleteCategory = useDeleteGenericDocument();
+  const deleteCategoryFromItems = useDeleteCategoryFromItems();
+  const deleteCategoryFromLists = useDeleteCategoryFromLists();
 
   const { doc: categoryDoc, loading: categoryLoading, state: categoryState, error: categoryError } = useDoc(routeID);
   const { docs: categoryDocs, loading: categoriesLoading, error: categoriesError } = useFind({
@@ -26,6 +33,7 @@ const Category: React.FC = () => {
   })
 
   const {goBack} = useContext(NavContext);
+  const db = usePouch();
 
   useEffect( () => {
     let newCategoryDoc = cloneDeep(stateCategoryDoc);
@@ -40,7 +48,7 @@ const Category: React.FC = () => {
     }
   },[categoryLoading,categoryDoc]);
 
-  if ( categoryLoading || categoriesLoading || !stateCategoryDoc )  {return(
+  if ( categoryLoading || categoriesLoading || !stateCategoryDoc || deletingCategory)  {return(
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
   )};
   
@@ -66,7 +74,6 @@ const Category: React.FC = () => {
     } else {
       result = await updateCategory(stateCategoryDoc);
     }
-    console.log(result);
     if (result.successful) {
         goBack("/categories");
     } else {
@@ -74,6 +81,90 @@ const Category: React.FC = () => {
     } 
   }
   
+  async function getNumberOfItemsUsingCategory() {
+    let numResults = 0;
+    if (stateCategoryDoc == null) return numResults;
+    let itemResults: any;
+    try {
+      itemResults = await db.find({
+        selector: {
+          type: "item",
+          name: { $exists: true },
+          categoryID: stateCategoryDoc._id
+        }
+      })
+    }
+    catch(err) {console.log("err: ",err); return numResults}
+    if (itemResults != undefined && itemResults.hasOwnProperty('docs')) {
+      numResults = itemResults.docs.length
+    }
+    return numResults;
+  }
+
+  async function getNumberOfListsUsingCategory() {
+    let numResults = 0;
+    if (stateCategoryDoc == null) return numResults;
+    let listResults: any;
+    try {
+      listResults = await db.find({
+        selector: {
+          type: "list",
+          name: { $exists: true },
+          categories: { $elemMatch : { $eq: stateCategoryDoc._id}
+        }
+      }})
+    }
+    catch(err) {return numResults}
+    if (listResults != undefined && listResults.hasOwnProperty('docs')) {
+      numResults = listResults.docs.length
+    }
+    return numResults;
+  }
+
+  async function deleteCategoryFromDB() {
+    let catItemDelResponse = await deleteCategoryFromItems(stateCategoryDoc._id);
+    if (!catItemDelResponse.successful) {
+      setFormError("Unable to remove category from items");
+      setDeletingCategory(false);
+      return;
+    }
+    let catListDelResponse = await deleteCategoryFromLists(stateCategoryDoc._id);
+    if (!catListDelResponse.successful) {
+      setFormError("Unable to remove category from lists");
+      setDeletingCategory(false);
+      return;
+    }
+   let catDelResponse = await deleteCategory(stateCategoryDoc);
+   if (!catDelResponse.successful) {
+     setFormError("Unable to delete category");
+     setDeletingCategory(false);
+     return;
+   }
+    goBack("/categories");
+    setDeletingCategory(false);
+  }
+
+  async function deletePrompt() {
+    const numItemsUsed = await getNumberOfItemsUsingCategory();
+    const numListsUsed = await getNumberOfListsUsingCategory();
+    const subItemText = (numItemsUsed > 0) ? 
+      ((numItemsUsed > 1) ? "There are "+numItemsUsed+" items using this category." : "There is 1 item using this category.")
+       : "There are no items using this category."
+    const subListText = (numListsUsed > 0) ? 
+      ((numListsUsed > 1) ? "There are "+numListsUsed+" lists using this category." : "There is 1 list using this category.")
+       : "There are no lists using this category."
+    setDeletingCategory(true);
+    presentAlert({
+      header: "Delete this list?",
+      subHeader: "Do you really want to delete this list? "+subItemText+ " " + subListText + "  All information on this list will be lost.",
+      buttons: [ { text: "Cancel", role: "Cancel" ,
+                  handler: () => setDeletingCategory(false)},
+                  { text: "Delete", role: "confirm",
+                  handler: () => deleteCategoryFromDB()}]
+    })
+    
+    }
+
   if (stateCategoryDoc.color == undefined) {setStateCategoryDoc((prevState: any) => ({...prevState,color:"#888888"}))};
 
   return (
@@ -93,11 +184,15 @@ const Category: React.FC = () => {
             </IonItem>
             <IonItem key="color">
               <IonLabel position="stacked">Color</IonLabel>
-              <input type="color" value={stateCategoryDoc.color} onChange={(e: any) => {console.log(e); console.log(e.target.value); setStateCategoryDoc((prevState: any) => ({...prevState,color: e.target.value}))}}></input>
+              <input type="color" value={stateCategoryDoc.color} onChange={(e: any) => {setStateCategoryDoc((prevState: any) => ({...prevState,color: e.target.value}))}}></input>
             </IonItem>
           </IonList>
-          <IonButton onClick={() => updateThisCategory()}>{(mode === "new") ? "Add" : "Update"}</IonButton>
-          <IonButton onClick={() => goBack("/categories")}>Cancel</IonButton>
+          <IonButton onClick={() => updateThisCategory()}>
+            <IonIcon slot="start" icon={(mode === "new" ? addOutline : saveOutline)}></IonIcon>
+            {(mode === "new") ? "Add" : "Update"}
+          </IonButton>
+          <IonButton onClick={() => deletePrompt()}><IonIcon slot="start" icon={trashOutline}></IonIcon>Delete</IonButton>
+          <IonButton onClick={() => goBack("/categories")}><IonIcon slot="start" icon={closeOutline}></IonIcon>Cancel</IonButton>
       </IonContent>
       <IonFooter>
         <IonLabel>{formError}</IonLabel>

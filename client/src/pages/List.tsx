@@ -1,23 +1,28 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput,
    IonItem, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonSelectOption,
    IonReorder, IonReorderGroup,ItemReorderEventDetail, IonButtons, IonMenuButton, NavContext,
-   useIonToast, IonFooter } from '@ionic/react';
+   useIonToast, IonFooter, useIonAlert } from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
-import { useState, useEffect, useContext } from 'react';
-import { useUpdateGenericDocument, useCreateGenericDocument, useFriends, useLists } from '../components/Usehooks';
+import { useState, useEffect, useContext, useInsertionEffect } from 'react';
+import { useUpdateGenericDocument, useCreateGenericDocument, useFriends, useLists, useDeleteGenericDocument, useDeleteListFromItems } from '../components/Usehooks';
 import { cloneDeep, isEmpty, isEqual } from 'lodash';
 import './List.css';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
-import { PouchResponse, ResolvedFriendStatus } from '../components/DataTypes';
+import { initUserIDList, initUsersInfo, PouchResponse, ResolvedFriendStatus, UserIDList, UsersInfo } from '../components/DataTypes';
 import SyncIndicator from '../components/SyncIndicator';
+import { getUsersInfo } from '../components/Utilities';
+import { UserInfo } from 'os';
 
 interface PageState {
   needInitListDoc: boolean,
   listDoc: any,
   selectedListID: String,
   changesMade: Boolean,
-  formError: string
+  formError: string,
+  usersLoaded: boolean,
+  usersInfo: UsersInfo,
+  deletingDoc: boolean
 }  
 
 const List: React.FC = () => {
@@ -29,10 +34,15 @@ const List: React.FC = () => {
     listDoc: {},
     selectedListID: routeID,
     changesMade: false,
-    formError: ""
+    formError: "",
+    usersLoaded: false,
+    usersInfo: cloneDeep(initUsersInfo),
+    deletingDoc: false
   })
   const updateListWhole  = useUpdateGenericDocument();
   const createList = useCreateGenericDocument();
+  const deleteList = useDeleteGenericDocument();
+  const deleteListFromItems = useDeleteListFromItems()
   const { remoteDBState } = useContext(RemoteDBStateContext);
   const [ presentToast ] = useIonToast();
   const {friendsLoading,friendRowsLoading,friendRows} = useFriends(String(remoteDBState.dbCreds.dbUsername));
@@ -44,6 +54,7 @@ const List: React.FC = () => {
   })
 
   const {goBack, navigate} = useContext(NavContext);
+  const [presentAlert,dismissAlert] = useIonAlert();
 
   useEffect( () => {
     setPageState(prevState => ({...prevState,selectedListID: routeID}))
@@ -58,6 +69,14 @@ const List: React.FC = () => {
   }
 
   useEffect( () => {
+    async function getUI(userIDList: UserIDList) {
+      let usersInfo: UsersInfo
+      if (userIDList.userIDs.length > 0) {
+        setPageState(prevState => ({...prevState,usersInfo:[],usersLoaded:false}));
+        usersInfo = await getUsersInfo(userIDList,String(remoteDBState.dbCreds.apiServerURL))  
+      }
+      setPageState(prevState => ({...prevState,usersInfo: usersInfo,usersLoaded: true}))
+    }
     let newPageState=cloneDeep(pageState);
 //    console.log({listLoading,friendRowsLoading,friendsLoading,categoryLoading,mode,pageState})
     if (!listsLoading && !friendRowsLoading && !friendsLoading && !categoryLoading) {
@@ -77,21 +96,20 @@ const List: React.FC = () => {
       else if (mode != "new") {
         console.log("in initDoc, doing lookup against listDocs");
         let newListDoc = listDocs.find((el: any) => el._id === pageState.selectedListID);
+        if (newListDoc == undefined) {return}
         newPageState.listDoc = newListDoc;
       }
-      console.log("updating the entire pagestate including listdoc... could be bad (initlistdoc");
       newPageState.changesMade=false;
-      console.log("setting to newPageState",{newPageState});
       setPageState(newPageState);
+      let userIDList: UserIDList = cloneDeep(initUserIDList);
+      newPageState.listDoc.sharedWith.forEach((user: any) => {
+        userIDList.userIDs.push(user);
+      });
+      getUI(userIDList);
     }
   },[listsLoading,listDocs,friendsLoading, friendRowsLoading, friendRows, categoryLoading,categoryDocs,pageState.selectedListID]);
 
-//  console.log("almost going to render loading or real page");
-  let ps=cloneDeep(pageState);
-//  console.log({listLoading,friendRowsLoading,friendsLoading,categoryLoading,ps});
-//  console.log("is empty listdoc:",isEmpty(pageState.listDoc));
-
-  if (listsLoading || friendRowsLoading || friendsLoading || categoryLoading || isEmpty(pageState.listDoc))  {return(
+  if (listsLoading || friendRowsLoading || friendsLoading || categoryLoading || isEmpty(pageState.listDoc) || !pageState.usersLoaded || pageState.deletingDoc)  {return(
       <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
   )};
   
@@ -191,43 +209,91 @@ const List: React.FC = () => {
 
   usersElem.push(<IonItemDivider key="listuserdivider">{ownerText}</IonItemDivider>)
   usersElem.push(<IonItemDivider key="listdivider">List is shared with these other users:</IonItemDivider>)
-  for (let i = 0; i < friendRows.length; i++) {
-    if (friendRows[i].resolvedStatus == ResolvedFriendStatus.Confirmed) {
-      const userID=friendRows[i].targetUserName;
-      const userName=friendRows[i].targetFullName;
-      const userEmail=friendRows[i].targetEmail;
-      const userFound=pageState.listDoc.sharedWith.find((element: string) => (element === userID));
-      if (iAmListOwner) {
-        usersElem.push(
-          <IonItem key={pageState.selectedListID+"-"+userID}>
-            <IonCheckbox key={pageState.selectedListID+"-"+userID} slot="start" onIonChange={(e: any) => selectUser(userID,Boolean(e.detail.checked))} checked={userFound}></IonCheckbox>
-            <IonLabel>{userName}</IonLabel>
-            <IonLabel>{userEmail}</IonLabel>
-          </IonItem>)
-      } else {
-        if (userFound) {
+
+  if (iAmListOwner) {
+    for (let i = 0; i < friendRows.length; i++) {
+      if (friendRows[i].resolvedStatus == ResolvedFriendStatus.Confirmed) {
+        const userID=friendRows[i].targetUserName;
+        const userName=friendRows[i].targetFullName;
+        const userEmail=friendRows[i].targetEmail;
+        const userFound=pageState.listDoc.sharedWith.find((element: string) => (element === userID));
+        if (iAmListOwner) {
           usersElem.push(
             <IonItem key={pageState.selectedListID+"-"+userID}>
+              <IonCheckbox key={pageState.selectedListID+"-"+userID} slot="start" onIonChange={(e: any) => selectUser(userID,Boolean(e.detail.checked))} checked={userFound}></IonCheckbox>
               <IonLabel>{userName}</IonLabel>
               <IonLabel>{userEmail}</IonLabel>
             </IonItem>)
-        }    
+        } 
       }
     }
+  } else { // not the list owner
+    pageState.usersInfo.forEach(user => {
+      console.log("getting data for userinfo user:",cloneDeep(user));
+      if (user.name != remoteDBState.dbCreds.dbUsername && user.name != pageState.listDoc.listOwner) {
+        usersElem.push(
+          <IonItem key={pageState.selectedListID+"-"+user.name}>
+            <IonLabel>{user.fullname}</IonLabel>
+            <IonLabel>{user.email}</IonLabel>
+          </IonItem>
+        )
+      }        
+    });
+}
+
+async function deleteListFromDB() {
+  // first, find 
+  let response = await deleteListFromItems(String(pageState.selectedListID));
+  if (response.successful) {
+    let delResponse = await deleteList((pageState.listDoc as any));
+    if (delResponse.successful) {
+      setPageState(prevState => ({...prevState,deletingDoc: false}));
+      goBack('/list');
+    } else {
+      setPageState(prevState => ({...prevState,formError: "Could not delete list"}));
+    }
+
+  } else {
+    setPageState(prevState => ({...prevState,formError: "Unable to remove list from all items"}));
   }
+
+}
+
+function deletePrompt() {
+  setPageState(prevState => ({...prevState,deletingDoc: true}));
+  presentAlert({
+    header: "Delete this list?",
+    subHeader: "Do you really want to delete this list?  All information on this list will be lost.",
+    buttons: [ { text: "Cancel", role: "Cancel" ,
+                handler: () => setPageState(prevState => ({...prevState,deletingDoc: false}))},
+               { text: "Delete", role: "confirm",
+                handler: () => deleteListFromDB()}]
+  })
+
+}
 
   let categoryElem=[];
   let categoryLines=[];
 
   function catItem(id: string, active: boolean) {
     const actname=active ? "active" : "inactive"
-    const name = (categoryDocs.find(element => (element._id === id)) as any).name
-    return (
-    <IonItem key={pageState.selectedListID+"-"+actname+"-"+id}>
-    <IonCheckbox key={pageState.selectedListID+"-"+actname+"-"+id} slot="start" onIonChange={(e: any) => updateCat(id,Boolean(e.detail.checked))} checked={active}></IonCheckbox>
-    <IonButton fill="clear" class="textButton">{name}</IonButton>
-    <IonReorder slot="end"></IonReorder>
-    </IonItem>)
+    const catDoc = (categoryDocs.find(element => (element._id === id)) as any)
+    if (catDoc != undefined) {
+      let name = catDoc.name;
+      return (
+        <IonItem key={pageState.selectedListID+"-"+actname+"-"+id}>
+        <IonCheckbox key={pageState.selectedListID+"-"+actname+"-"+id} slot="start" onIonChange={(e: any) => updateCat(id,Boolean(e.detail.checked))} checked={active}></IonCheckbox>
+        <IonButton fill="clear" class="textButton">{name}</IonButton>
+        <IonReorder slot="end"></IonReorder>
+        </IonItem>)    
+    } else {
+      console.log("cat doc not defined: id:",id);
+      return(
+      <IonItem key={pageState.selectedListID+"-"+actname+"-"+id}>
+          <IonButton fill="clear" class="textButton">UNDEFINED CATEGORY</IonButton>
+          <IonReorder slot="end"></IonReorder>
+      </IonItem>)
+    }
   }
 
   function catItemDivider(active: boolean, lines: any) {
@@ -304,6 +370,12 @@ const List: React.FC = () => {
     updateButton.push(<IonButton key="update" onClick={() => updateThisItem()}>Update</IonButton>)
   }
 
+  let deleteButton=[];
+  if (iAmListOwner) {
+    deleteButton.push(<IonButton key="delete" onClick={() => deletePrompt()}>Delete</IonButton>)
+  }
+
+
   return (
     <IonPage>
       <IonHeader>
@@ -317,7 +389,10 @@ const List: React.FC = () => {
           <IonList>
             <IonItem key="name">
               <IonLabel position="stacked">Name</IonLabel>
-              <IonInput type="text" placeholder="<New>" onIonChange={(e: any) => updateName(e.detail.value)} value={(pageState.listDoc as any).name}></IonInput>
+              <IonInput type="text" placeholder="<New>"
+                  onIonChange={(e: any) => updateName(e.detail.value)}
+                  value={(pageState.listDoc as any).name}
+                  readonly={iAmListOwner ? false: true}></IonInput>
             </IonItem>
             <IonItemGroup key="userlist">
             <IonItem key="listowner">
@@ -330,6 +405,7 @@ const List: React.FC = () => {
             </IonItemGroup>
           </IonList>
           {updateButton}
+          {deleteButton}
           <IonButton key="back" onClick={() => goBack("/lists")}>Cancel</IonButton>
       </IonContent>
       <IonFooter>

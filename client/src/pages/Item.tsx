@@ -1,11 +1,11 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
   IonButtons, IonMenuButton, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonIcon,
   IonSelectOption, NavContext, useIonAlert,useIonToast, IonTextarea } from '@ionic/react';
-import { addOutline } from 'ionicons/icons';
+import { addOutline, closeCircleOutline, trashOutline } from 'ionicons/icons';
 import { useParams } from 'react-router-dom';
 import { usePouch, useDoc, useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext } from 'react';
-import { useCreateGenericDocument, useUpdateGenericDocument, useLists } from '../components/Usehooks';
+import { useCreateGenericDocument, useUpdateGenericDocument, useLists, useDeleteGenericDocument } from '../components/Usehooks';
 import { createEmptyItemDoc } from '../components/DefaultDocs';
 import { GlobalStateContext } from '../components/GlobalState';
 import { cloneDeep, isEmpty, isEqual } from 'lodash';
@@ -24,6 +24,7 @@ const Item: React.FC = () => {
   const updateItem  = useUpdateGenericDocument();
   const addItem = useCreateGenericDocument();
   const addCategoryDoc = useCreateGenericDocument();
+  const delItem = useDeleteGenericDocument();
   const { doc: itemDoc, loading: itemLoading, state: itemState, error: itemError } = useDoc(routeItemID);
   const { listDocs, listsLoading, listRows, listRowsLoading, listRowsLoaded} = useLists(String(remoteDBState.dbCreds.dbUsername))
 
@@ -43,8 +44,6 @@ const Item: React.FC = () => {
     let newItemDoc=cloneDeep(itemDoc);
     let baseList = listRows.find((listRow: ListRow) => listRow.listDoc._id === globalState.callingListID)
     for (let i = 0; i < listRows.length; i++) {
-      console.log("listRow - i :",listRows[i]);
-      console.log("newItemDoc:",newItemDoc);
       let foundIdx=newItemDoc.lists.findIndex((el: any) => el.listID === listRows[i].listDoc._id)
       if (foundIdx === -1) {
           newItemDoc.lists.push({
@@ -60,20 +59,15 @@ const Item: React.FC = () => {
 
   useEffect( () => {
     let newItemDoc = cloneDeep(itemDoc);
-    console.log("listRows:",cloneDeep(listRows),cloneDeep({listsLoading,listRowsLoading,listRowsLoaded}));
     if (!itemLoading && !listsLoading && listRowsLoaded) {
-      console.log("mode:",globalState.itemMode," needInit:",needInitItemDoc);
       if (globalState.itemMode === "new" && needInitItemDoc) {
-        console.log("creating new item doc");
-        console.log("passing in listRows:",cloneDeep(listRows));
         newItemDoc = createEmptyItemDoc(listRows,globalState.callingListID,globalState.newItemName,globalState.settings)
-        console.log("created new item doc empty:",newItemDoc);
         setStateInfo("newItemMode","none");
         setNeedInitItemDoc(false);
       } else {
-      newItemDoc=addListsIfNotExist(itemDoc);
+      if (newItemDoc != null) {newItemDoc=addListsIfNotExist(itemDoc)};
       }
-      setStateItemDoc(newItemDoc as any);
+      if (newItemDoc != null) {setStateItemDoc(newItemDoc as any)};
     }
   },[itemLoading,itemDoc,listsLoading,listDocs,listRowsLoading,listRowsLoaded, listRows,globalState.itemMode,globalState.newItemName, globalState.callingListID]);
 
@@ -110,16 +104,13 @@ const Item: React.FC = () => {
   }
 
   async function addNewCategory(category: string) {
-    console.log("added new category");
     let alreadyFound=false;
     categoryDocs.forEach((cat: any) => 
       {
         if (category.toUpperCase() == cat.name.toUpperCase()) {alreadyFound=true}
       });
-    console.log("found: ",{alreadyFound})
     if (!alreadyFound) {
       let result = await addCategoryDoc({"type": "category", "name": category})
-      console.log(result);
       if (result.successful) {
         updateCategory(result.pouchData.id)
       } else {
@@ -138,7 +129,27 @@ const Item: React.FC = () => {
                 handler: (alertData) => {addNewCategory(alertData.category)}}
                 ]    
     })
+  }
 
+  async function deleteItemFromDB() {
+      setFormError(prevState => (""));
+      let result: PouchResponse;
+      result = await delItem(stateItemDoc);
+      if (result.successful) {
+        goBack("/lists");
+      } else {
+        setFormError("Error updating item. Please retry.");
+      }
+  }
+
+  function deleteItem() {
+    presentAlert({
+      header: "Delete this item?",
+      subHeader: "Do you really want to delete this item?",
+      buttons: [ { text: "Cancel", role: "Cancel"},
+                 { text: "Delete", role: "confirm",
+                  handler: () => deleteItemFromDB()}]
+    })
   }
 
   function selectList(listID: string, updateVal: boolean) {
@@ -221,7 +232,10 @@ const Item: React.FC = () => {
             {listsElem}
             <IonItem key="formErrors">{formError}</IonItem>
           </IonList>
-          <IonButton onClick={() => goBack("/lists")}>Cancel</IonButton>
+          <IonButton onClick={() => goBack("/lists")}><IonIcon slot="start" icon={closeCircleOutline}></IonIcon>Cancel</IonButton>
+          {mode !== "new" ? 
+            (<IonButton onClick={() => deleteItem()}><IonIcon slot="start" icon={trashOutline}></IonIcon>Delete</IonButton>)
+            : <></>}
           <IonButton onClick={() => updateThisItem()}>{mode === "new" ? "Add": "Update"}</IonButton>
       </IonContent>
     </IonPage>
