@@ -86,6 +86,7 @@ const Items: React.FC = () => {
   )};  
 
   function updateSearchCriteria(event: CustomEvent) {
+//    console.log("update search criteria, val:",event.detail.value);
     setSearchState(prevState => ({...prevState, event: event, searchCriteria: event.detail.value}));
     origSearchCriteria.current=event.detail.value;
   }  
@@ -108,6 +109,7 @@ const Items: React.FC = () => {
   }
   
   function searchKeyPress(event: KeyboardEvent<HTMLElement>) {
+//    console.log("in search key press, ",event);
     if (event.key === "Enter") {
       addNewItemToList(searchState.searchCriteria)
     }
@@ -213,7 +215,7 @@ const Items: React.FC = () => {
           </IonSelect>
         </IonItem>
         <IonItem key="searchbar">
-          <IonSearchbar ref={searchRef} value={searchState.searchCriteria} inputmode="search" enterkeyhint="enter"
+          <IonSearchbar debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="search" enterkeyhint="enter"
               onKeyDown= {(e:any) => searchKeyPress(e)}
               onIonChange={(e: any) => updateSearchCriteria(e)}
               onIonBlur={(e: any) => leaveSearchBox(e)}
