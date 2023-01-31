@@ -182,7 +182,7 @@ const Items: React.FC = () => {
   }
 
   let popOverElem = (
-    <IonPopover side="bottom" event={searchState.event} isOpen={searchState.isOpen} keyboardClose={false} onDidDismiss={() => {setSearchState(prevState => ({...prevState, isOpen: false}))}}>
+    <IonPopover side="bottom" event={searchState.event} isOpen={searchState.isOpen} keyboardClose={false} onDidDismiss={(e) => {leaveSearchBox(e)}}>
     <IonContent><IonList key="popoverItemList">
       {(searchState.filteredSearchRows as ItemSearch[]).map((item: ItemSearch) => (
         <IonItem key={pageState.selectedListID+"-poilist-"+item.itemID} onClick={() => chooseSearchItem(item.itemID)}>{item.itemName}</IonItem>
@@ -218,7 +218,7 @@ const Items: React.FC = () => {
           <IonSearchbar debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="search" enterkeyhint="enter"
               onKeyDown= {(e:any) => searchKeyPress(e)}
               onIonChange={(e: any) => updateSearchCriteria(e)}
-              onIonBlur={(e: any) => leaveSearchBox(e)}
+              // onIonBlur={(e: any) => leaveSearchBox(e)}
               onClick={(e: any) => enterSearchBox(e)}>
           </IonSearchbar>
           <IonButton onClick={()=> clickedSearchCheck()}><IonIcon icon={checkmark} /></IonButton>
