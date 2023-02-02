@@ -4,13 +4,12 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
 import { add,checkmark } from 'ionicons/icons';
 import React, { useState, useEffect, useContext, useRef, KeyboardEvent } from 'react';
 import { useParams } from 'react-router-dom';
-import { Keyboard } from '@capacitor/keyboard';
 import { useFind } from 'use-pouchdb';
 import { cloneDeep } from 'lodash';
 import './Items.css';
 import { useUpdateCompleted, useUpdateGenericDocument, useLists } from '../components/Usehooks';
 import { AddListOptions, GlobalStateContext } from '../components/GlobalState';
-import {ItemRow, ItemSearch, SearchState, PageState, ListRow} from '../components/DataTypes'
+import { ItemSearch, SearchState, PageState, ListRow} from '../components/DataTypes'
 import { getAllSearchRows, getItemRows, filterSearchRows } from '../components/ItemUtilities';
 import SyncIndicator from '../components/SyncIndicator';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
@@ -86,7 +85,6 @@ const Items: React.FC = () => {
   )};  
 
   function updateSearchCriteria(event: CustomEvent) {
-//    console.log("update search criteria, val:",event.detail.value);
     setSearchState(prevState => ({...prevState, event: event, searchCriteria: event.detail.value}));
     origSearchCriteria.current=event.detail.value;
   }  
@@ -103,13 +101,12 @@ const Items: React.FC = () => {
       setGlobalState({...globalState, itemMode: "new",
                                      callingListID: pageState.selectedListID,
                                      newItemName: itemName})
-      setSearchState(prevState => ({...prevState, isOpen: false}))
+      setSearchState(prevState => ({...prevState, isOpen: false,searchCriteria:"",isFocused: false}))
       navigate("/item/new/");
     }
   }
   
   function searchKeyPress(event: KeyboardEvent<HTMLElement>) {
-//    console.log("in search key press, ",event);
     if (event.key === "Enter") {
       addNewItemToList(searchState.searchCriteria)
     }
@@ -121,7 +118,7 @@ const Items: React.FC = () => {
 
   function leaveSearchBox(event: any) {
     origSearchCriteria.current=searchState.searchCriteria;
-    setSearchState(prevState => ({...prevState, searchCriteria: "", isOpen: false, isFocused: false}));
+    setSearchState(prevState => ({...prevState, isOpen: false, isFocused: false}));
   }
 
   function enterSearchBox(event: any) {
@@ -132,7 +129,7 @@ const Items: React.FC = () => {
 
   function isCategoryInList(listID: string, categoryID: string) {
     let listIdx = listDocs.findIndex((el: any) => el._id === listID);
-    if (listIdx === -1) {console.log("returning false idx-1"); return false;}
+    if (listIdx === -1) {return false;}
     let catexists= (listDocs[listIdx] as any).categories.includes(categoryID);
     return catexists;
   }
@@ -158,7 +155,7 @@ const Items: React.FC = () => {
       if (!skipThisList) {
         if (idxInLists === -1) {
           const newListItem={
-            listID: pageState.selectedListID,
+            listID: listRow.listDoc._id,
             boughtCount: 0,
             active: true,
             completed: false
@@ -178,7 +175,7 @@ const Items: React.FC = () => {
 
   function chooseSearchItem(itemID: string) {
     addExistingItemToList(itemID);
-    setSearchState(prevState => ({...prevState, searchCriteria: "", isOpen: false}))
+    setSearchState(prevState => ({...prevState, searchCriteria: "", filteredRows: [],isOpen: false, isFocused: false}))
   }
 
   let popOverElem = (

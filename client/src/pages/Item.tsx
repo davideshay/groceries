@@ -1,17 +1,17 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
-  IonButtons, IonMenuButton, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonIcon,
-  IonSelectOption, NavContext, useIonAlert,useIonToast, IonTextarea } from '@ionic/react';
+  IonButtons, IonMenuButton, IonLabel, IonSelect, IonCheckbox, IonIcon,
+  IonSelectOption, NavContext, useIonAlert,useIonToast, IonTextarea, IonGrid, IonRow, IonCol } from '@ionic/react';
 import { addOutline, closeCircleOutline, trashOutline } from 'ionicons/icons';
 import { useParams } from 'react-router-dom';
-import { usePouch, useDoc, useFind } from 'use-pouchdb';
+import { useDoc, useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext } from 'react';
 import { useCreateGenericDocument, useUpdateGenericDocument, useLists, useDeleteGenericDocument } from '../components/Usehooks';
 import { createEmptyItemDoc } from '../components/DefaultDocs';
 import { GlobalStateContext } from '../components/GlobalState';
-import { cloneDeep, isEmpty, isEqual } from 'lodash';
+import { cloneDeep, isEmpty } from 'lodash';
 import './Item.css';
 import SyncIndicator from '../components/SyncIndicator';
-import { ListRow, PouchResponse } from '../components/DataTypes';
+import { PouchResponse } from '../components/DataTypes';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
 
 const Item: React.FC = () => {
@@ -38,11 +38,10 @@ const Item: React.FC = () => {
   const { globalState, setStateInfo} = useContext(GlobalStateContext);
   const [presentAlert, dismissAlert] = useIonAlert();
   const [presentToast] = useIonToast();
-  const db = usePouch();
 
   function addListsIfNotExist(itemDoc: any) {
     let newItemDoc=cloneDeep(itemDoc);
-    let baseList = listRows.find((listRow: ListRow) => listRow.listDoc._id === globalState.callingListID)
+//    let baseList = listRows.find((listRow: ListRow) => listRow.listDoc._id === globalState.callingListID)
     for (let i = 0; i < listRows.length; i++) {
       let foundIdx=newItemDoc.lists.findIndex((el: any) => el.listID === listRows[i].listDoc._id)
       if (foundIdx === -1) {
@@ -174,22 +173,41 @@ const Item: React.FC = () => {
     setStateItemDoc(newItemDoc);
   }
 
+  function resetBoughtCount(listID: string) {
+    let newItemDoc=cloneDeep(stateItemDoc);
+    for (let i = 0; i < newItemDoc.lists.length; i++) {
+      if (newItemDoc.lists[i].listID === listID) {
+        newItemDoc.lists[i].boughtCount = 0;
+      }    
+    }
+    setStateItemDoc(newItemDoc);
+  }
+
   let listsElem=[];
-  listsElem.push(<IonLabel key="listlabel" position='stacked'>Item is on these lists:</IonLabel>)
+  let listsInnerElem=[];
+//  listsElem.push(<IonGrid>);
+  listsInnerElem.push(<IonRow key="listlabelrow">
+      <IonCol size="6"><IonLabel key="listlabel" position='stacked'>Item is on these lists:</IonLabel></IonCol>
+      <IonCol size="3"><IonLabel key="countlabel" position="stacked">Times Bought</IonLabel></IonCol>
+      <IonCol size="3"><IonLabel key="resetlabel" position="stacked">Reset</IonLabel></IonCol></IonRow>
+  )
   for (let i = 0; i < (stateItemDoc as any).lists.length; i++) {
     let listID = (stateItemDoc as any).lists[i].listID;
     let itemFoundIdx=listDocs.findIndex((element: any) => (element._id === listID));
     if (itemFoundIdx !== -1) {
       let itemActive=(((stateItemDoc as any).lists[i].active));
       let listName=(listDocs as any)[itemFoundIdx].name;
-      listsElem.push(
-        <IonItem key={listID}>
-          <IonCheckbox slot="start" onIonChange={(e: any) => selectList(listID,Boolean(e.detail.checked))} checked={itemActive}></IonCheckbox>
-          <IonLabel>{listName}</IonLabel>
-        </IonItem>
+      listsInnerElem.push(
+        <IonRow key={listID}>
+          <IonCol size="1"><IonCheckbox onIonChange={(e: any) => selectList(listID,Boolean(e.detail.checked))} checked={itemActive}></IonCheckbox></IonCol>
+          <IonCol size="5"><IonLabel>{listName}</IonLabel></IonCol>
+          <IonCol size="3">{(stateItemDoc as any).lists[i].boughtCount}</IonCol>
+          <IonCol size="3"><IonButton onClick={(e) => resetBoughtCount(listID)}>Reset</IonButton></IonCol>
+        </IonRow>
       )
     }
   }
+  listsElem.push(<IonItem key="listlist"><IonGrid>{listsInnerElem}</IonGrid></IonItem>)
   
   return (
     <IonPage>
