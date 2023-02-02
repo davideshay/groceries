@@ -170,12 +170,24 @@ async function addDBIdentifier() {
             type: "dbuuid",
             name: "Database UUID",
             "uuid": uuidv4(),
+            "uomContentVersion": 0,
             updatedAt: (new Date()).toISOString()
         }
         let dbResp = null;
         try { dbResp = await todosDBAsAdmin.insert(newDoc) }
         catch(err) { console.log("ERROR: problem creating UUID:",err)};
         if (dbResp != null) {console.log("STATUS: UUID created in DB: ", newDoc.uuid)}  
+    } else {
+        if (!foundIDDoc.hasOwnProperty("uuid")) {
+            console.log("ERROR: Database UUID doc exists without uuid. Please correct and restart.");
+            return false;
+        }
+        if (!foundIDDoc.hasOwnProperty("uomContentVersion")) {
+            foundIDDoc.uomContentVersion = 0;
+            let dbResp = null;
+            try { dbResp = await todosDBAsAdmin.insert(foundIDDoc); console.log("STATUS: Updated UOM Content Version, was missing.") }
+            catch(err) { console.log("ERROR: updating UUID record with uomContentVersion"); console.log(JSON.stringify(err));};
+        }
     }
 }
 
@@ -209,6 +221,7 @@ async function dbStartup() {
     todosDBAsAdmin = todosNanoAsAdmin.use(couchDatabase);
     usersDBAsAdmin = usersNanoAsAdmin.use("_users");
     await addDBIdentifier();
+    await checkAndCreateContent();
     await createConflictsView();
     if (enableScheduling) {
         if(isInteger(resolveConflictsFrequencyMinutes)) {
