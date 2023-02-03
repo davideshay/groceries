@@ -39,7 +39,9 @@ let usersDBAsAdmin;
 const _ = require('lodash');
 const { v4: uuidv4 } = require('uuid');
 const { cloneDeep } = require('lodash');
-const {  emailPatternValidation, usernamePatternValidation, fullnamePatternValidation } = require('./utilities')
+const {  emailPatternValidation, usernamePatternValidation, fullnamePatternValidation, uomContent } = require('./utilities')
+let uomContentVersion = 0;
+const targetUomContentVersion = 1;
 
 async function couchLogin(username, password) {
     const loginResponse = {
@@ -187,8 +189,54 @@ async function addDBIdentifier() {
             let dbResp = null;
             try { dbResp = await todosDBAsAdmin.insert(foundIDDoc); console.log("STATUS: Updated UOM Content Version, was missing.") }
             catch(err) { console.log("ERROR: updating UUID record with uomContentVersion"); console.log(JSON.stringify(err));};
+        } else {
+            uomContentVersion = foundIDDoc.uomContentVersion;
         }
     }
+}
+
+async function createUOMContent() {
+    const dbuomq = {
+        selector: { type: { "$eq": "uom" }}
+    }
+    let foundUOMDocs =  await todosDBAsAdmin.find(dbuomq);
+    uomContent.forEach(async uom => {
+        const docIdx=foundUOMDocs.docs.findIndex((el) => { el.name === uom.name });
+        if (docIdx == -1) {
+            console.log("STATUS: Adding uom ",uom.name, " ", uom.description);
+            let dbResp = null;
+            try { dbResp = await todosDBAsAdmin.insert(uom);}
+            catch(err) { console.log("ERROR: adding uom ",uom.uom, " error: ",err);}
+        } else {
+            console.log("STATUS: UOM ",uom.name," already exists...skipping");
+        }
+    });
+    console.log("STATUS: Finished adding units of measure, updating to UOM Content Version:",targetUomContentVersion);
+    const dbidq = {
+        selector: { type: { "$eq": "dbuuid" }}
+    }
+    let foundIDDocs =  await todosDBAsAdmin.find(dbidq);
+    let foundIDDoc = undefined;
+    if (foundIDDocs.docs.length > 0) {foundIDDoc = foundIDDocs.docs[0]}
+    if (foundIDDoc == undefined) {
+        console.log("ERROR: Couldn't update database content version record.");
+    } else {
+        foundIDDoc.uomContentVersion = targetUomContentVersion;
+        let dbResp = null;
+        try { dbResp = await todosDBAsAdmin.insert(foundIDDoc)}
+        catch(err) { console.log("ERROR: Couldn't update UOM target version.")};
+        console.log("STATUS: Updated UOM Target Version successfully.");
+    }
+}
+
+async function checkAndCreateContent() {
+    console.log("STATUS: Current UOM Content Version:",uomContentVersion," Target Version:",targetUomContentVersion);
+    if (uomContentVersion === targetUomContentVersion) {
+        console.log("STATUS: At current version, skipping UOM Content creation");
+        return true;
+    }
+    console.log("STATUS: Creating UOM Content...");
+    await createUOMContent();
 }
 
 async function createConflictsView() {

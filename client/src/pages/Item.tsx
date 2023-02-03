@@ -24,6 +24,7 @@ const Item: React.FC = () => {
   const updateItem  = useUpdateGenericDocument();
   const addItem = useCreateGenericDocument();
   const addCategoryDoc = useCreateGenericDocument();
+  const addUOMDoc = useCreateGenericDocument();
   const delItem = useDeleteGenericDocument();
   const { doc: itemDoc, loading: itemLoading, state: itemState, error: itemError } = useDoc(routeItemID);
   const { listDocs, listsLoading, listRows, listRowsLoading, listRowsLoaded} = useLists(String(remoteDBState.dbCreds.dbUsername))
@@ -33,6 +34,11 @@ const Item: React.FC = () => {
       selector: { type: "category", name: { $exists: true}},
       sort: [ "type","name"]
   });
+  const { docs: uomDocs, loading: uomLoading, error: uomError } = useFind({
+      index: { fields: [ "type","name"]},
+      selector: { type: "uom", name: { $exists: true}},
+      sort: [ "type","name"]
+  })
 
   const {goBack} = useContext(NavContext);
   const { globalState, setStateInfo} = useContext(GlobalStateContext);
@@ -66,11 +72,12 @@ const Item: React.FC = () => {
       } else {
       if (newItemDoc != null) {newItemDoc=addListsIfNotExist(itemDoc)};
       }
+      if (! newItemDoc.hasOwnProperty('uomName')) { newItemDoc.uomName = null};
       if (newItemDoc != null) {setStateItemDoc(newItemDoc as any)};
     }
   },[itemLoading,itemDoc,listsLoading,listDocs,listRowsLoading,listRowsLoaded, listRows,globalState.itemMode,globalState.newItemName, globalState.callingListID]);
 
-  if (itemLoading || listsLoading || listRowsLoading || categoryLoading || isEmpty(stateItemDoc))  {
+  if (itemLoading || listsLoading || listRowsLoading || categoryLoading || uomLoading || isEmpty(stateItemDoc))  {
     return(
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader></IonPage>
   )};
@@ -102,6 +109,13 @@ const Item: React.FC = () => {
     });
   }
 
+  function updateUOM(uomName: string) {
+    setStateItemDoc({
+      ...stateItemDoc,
+      uomName: uomName
+    });
+  }
+
   async function addNewCategory(category: string) {
     let alreadyFound=false;
     categoryDocs.forEach((cat: any) => 
@@ -119,6 +133,55 @@ const Item: React.FC = () => {
     }  
   }
 
+  async function addNewUOM(uomData: any) {
+    let alreadyFound = false;
+    uomDocs.forEach((uom: any) => {
+      if (uom.name.toUpperCase() === uomData.name.toUpperCase()) {alreadyFound=true;}
+    });
+    if (alreadyFound) {
+      presentToast({message: "Requested UOM Already exists. Please retry.", duration: 1500, position: "middle"});
+      return false;
+    }
+    if (uomData.name.length > 2) {
+      presentToast({message: "Units of measure must be 2 characters. Please retry.", duration: 1500, position: "middle"});
+      return false;
+    }
+    uomData.name = uomData.name.toUpperCase();
+    if (uomData.description == "") {
+      presentToast({message: "No UOM Description entered. Please retry.", duration: 1500, position: "middle"});
+      return false;
+    }
+    alreadyFound = false;
+    uomDocs.forEach((uom: any) => {
+      if (uom.description.toUpperCase() === uomData.description.toUpperCase()) {alreadyFound=true;}
+    });
+    if (alreadyFound) {
+      presentToast({message: "Requested UOM Description Already exists. Please retry.", duration: 1500, position: "middle"});
+      return false;
+    }
+    if (uomData.pluralDescription == "") {
+      presentToast({message: "No UOM Plural description entered. Please retry.", duration: 1500, position: "middle"});
+      return false;
+    }
+    alreadyFound = false;
+    uomDocs.forEach((uom: any) => {
+      if (uom.pluralDescription.toUpperCase() === uomData.pluralDescription.toUpperCase()) {alreadyFound=true;}
+    });
+    if (alreadyFound) {
+      presentToast({message: "Requested UOM Plural Description Already exists. Please retry.", duration: 1500, position: "middle"});
+      return false;
+    }
+    let result = await addUOMDoc({"type": "uom", "name": uomData.name, "description": uomData.description, "pluralDescription": uomData.pluralDescription});
+    if (result.successful) {
+      updateUOM(result.pouchData.id)
+    } else {
+      presentToast({message: "Error adding unit of measure. Please retry.",
+            duration: 1500, position: "middle"})
+    }  
+
+    console.log(uomData);
+  }
+
   function addCategoryPopup() {
     presentAlert({
       header: "Add new category",
@@ -127,6 +190,18 @@ const Item: React.FC = () => {
                 { text: "Add", role: 'confirm',
                 handler: (alertData) => {addNewCategory(alertData.category)}}
                 ]    
+    })
+  }
+
+  function addUOMPopup() {
+    presentAlert({
+      header: "Add new Unit of Measure",
+      inputs: [ {name: "name", placeholder: "Name", max: "2", type: "text"},
+                {name:"description", placeholder: "Description", type:"text"},
+                {name:"pluralDescription", placeholder: "Plural Description",type:"text"}],
+      buttons: [ {text: "Cancel", role: "cancel"},
+                 {text: "Add", role: "confirm", handler: (alertData) => {addNewUOM(alertData)}}
+    ]
     })
   }
 
@@ -225,8 +300,25 @@ const Item: React.FC = () => {
               <IonInput type="text" onIonChange={(e: any) => setStateItemDoc({...stateItemDoc, name: e.detail.value})} value={(stateItemDoc as any).name}></IonInput>
             </IonItem>
             <IonItem key="quantity">
-              <IonLabel position="stacked">Quantity</IonLabel>
-              <IonInput type="number" min="0" max="9999" onIonChange={(e: any) => setStateItemDoc({...stateItemDoc, quantity: e.detail.value})} value={(stateItemDoc as any).quantity}></IonInput>
+              <IonGrid>
+              <IonRow>
+                <IonCol size="3"><IonLabel >Quantity</IonLabel></IonCol>
+                <IonCol size="8"><IonLabel >UoM</IonLabel></IonCol>
+                <IonCol size="1"></IonCol>
+              </IonRow>
+              <IonRow>
+                <IonCol size="3"><IonInput type="number" min="0" max="9999" onIonChange={(e: any) => setStateItemDoc({...stateItemDoc, quantity: e.detail.value})} value={(stateItemDoc as any).quantity}></IonInput></IonCol>
+                <IonCol size="8">
+                  <IonSelect interface="popover" onIonChange={(ev) => updateUOM(ev.detail.value)} value={(stateItemDoc as any).uomName}>
+                  <IonSelectOption key="uom-undefined" value={null}>No UOM</IonSelectOption>
+                  {uomDocs.map((uom: any) => (
+                    <IonSelectOption key={uom.name} value={uom.name}>{uom.description}</IonSelectOption>
+                  ))}
+                  </IonSelect>
+                </IonCol>
+                <IonCol size="1"><IonButton fill="default" onClick={(e) => {addUOMPopup()}}><IonIcon icon={addOutline}></IonIcon></IonButton></IonCol>
+              </IonRow>
+              </IonGrid>
             </IonItem>
             <IonItem key="category">
               <IonLabel key="categorylabel" position="stacked">Category</IonLabel>

@@ -41,5 +41,6 @@ function fullnamePatternValidation(fullname) {
 module.exports = {
     emailPatternValidation,
     usernamePatternValidation,
-    fullnamePatternValidation
+    fullnamePatternValidation,
+    uomContent,
 }

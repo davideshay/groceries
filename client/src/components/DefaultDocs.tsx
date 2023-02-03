@@ -29,6 +29,7 @@ export function createEmptyItemDoc(listRows:ListRow[],listID: string | null | un
       type: "item",
       name: itemName,
       quantity: 1,
+      uomName: null,
       categoryID: null,
       note:"",
       lists: newItemLists
