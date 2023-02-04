@@ -32,13 +32,11 @@ const Item: React.FC = () => {
   const { docs: categoryDocs, loading: categoryLoading, error: categoryError } = useFind({
       index: { fields: [ "type","name"] },
       selector: { type: "category", name: { $exists: true}},
-      sort: [ "type","name"]
-  });
+      sort: [ "type","name"] });
   const { docs: uomDocs, loading: uomLoading, error: uomError } = useFind({
       index: { fields: [ "type","name"]},
       selector: { type: "uom", name: { $exists: true}},
-      sort: [ "type","name"]
-  })
+      sort: [ "type","name"] });
 
   const {goBack} = useContext(NavContext);
   const { globalState, setStateInfo} = useContext(GlobalStateContext);

@@ -35,7 +35,7 @@ export function filterSearchRows(searchRows: ItemSearch[] | undefined, searchCri
     return filteredSearchRows;
 }
 
-export function getItemRows(itemDocs: any, listDocs: any, categoryDocs: any, listID: string) {
+export function getItemRows(itemDocs: any, listDocs: any, categoryDocs: any, uomDocs: any, listID: string) {
     let itemRows: Array<ItemRow> =[];
     let listDoc=listDocs.find((el: any) => el._id === listID);
     if (listDoc == undefined) {return itemRows};
@@ -48,6 +48,7 @@ export function getItemRows(itemDocs: any, listDocs: any, categoryDocs: any, lis
         categorySeq: 0,
         categoryColor: "",
         quantity: 0,
+        uomDesc: "",
         completed: false
     };
     itemRow.itemID = itemDoc._id;
@@ -72,6 +73,17 @@ export function getItemRows(itemDocs: any, listDocs: any, categoryDocs: any, lis
         if (tmpIdx === -1) {itemRow.categorySeq=Number.MAX_VALUE} else {itemRow.categorySeq=tmpIdx}
     }
     itemRow.quantity = itemDoc.quantity;
+    const uomName = (itemDoc.hasOwnProperty('uomName')) ? itemDoc.uomName : null;
+    let uomDesc = "";
+    if (uomName != null) {
+        const uomDoc = uomDocs.find((el: any) => (el.name === uomName));
+        if (itemRow.quantity === 1) {
+            uomDesc = uomDoc.description;
+        } else {
+            uomDesc = uomDoc.pluralDescription;
+        }
+    }    
+    itemRow.uomDesc = uomDesc;
     const listIdx = itemDoc.lists.findIndex((element: any) => (element.listID === listID))
     if (listIdx === -1) {itemRow.completed=false} else {
         itemRow.completed = itemDoc.lists[listIdx].completed;

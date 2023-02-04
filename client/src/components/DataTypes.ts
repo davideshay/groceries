@@ -12,6 +12,7 @@ export interface ItemRow {
     categorySeq: number,
     categoryColor: string,
     quantity: number,
+    uomDesc: string,
     completed: boolean | null
   }
 

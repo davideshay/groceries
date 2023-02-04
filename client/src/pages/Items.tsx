@@ -28,57 +28,53 @@ const Items: React.FC = () => {
   const updateItemInList = useUpdateGenericDocument();
 
   const { docs: itemDocs, loading: itemLoading, error: itemError } = useFind({
-    index: {
-      fields: ["type","name","lists"]
-    },
+    index: { fields: ["type","name","lists"]},
     selector: {
-      type: "item",
-      name: { $exists: true },
-      lists: { $elemMatch: { "listID": pageState.selectedListID , "active" : true} }
-    },
-    sort: [ "type", "name", "lists" ]
-    })
-    const { listDocs, listsLoading, listRows, listRowsLoading} = useLists(String(remoteDBState.dbCreds.dbUsername));
-    const { docs: categoryDocs, loading: categoryLoading, error: categoryError } = useFind({
+      type: "item", name: { $exists: true },
+      lists: { $elemMatch: { "listID": pageState.selectedListID , "active" : true} } },
+    sort: [ "type", "name", "lists" ]})
+  const { listDocs, listsLoading, listRows, listRowsLoading} = useLists(String(remoteDBState.dbCreds.dbUsername));
+  const { docs: uomDocs, loading: uomLoading, error: uomError } = useFind({
+    index: { fields: [ "type","name"]},
+    selector: { type: "uom", name: { $exists: true}},
+    sort: [ "type","name"] })
+  const { docs: categoryDocs, loading: categoryLoading, error: categoryError } = useFind({
       index: { fields: [ "type","name"] },
       selector: { type: "category", name: { $exists: true}},
-      sort: [ "type","name"]
-    })
-    const { docs: allItemDocs, loading: allItemsLoading, error: allItemsError } = useFind({
+      sort: [ "type","name"] });
+  const { docs: allItemDocs, loading: allItemsLoading, error: allItemsError } = useFind({
       index: { fields: [ "type","name"] },
       selector: { type: "item", name: { $exists: true}},
-      sort: [ "type","name"]
-    })
+      sort: [ "type","name"] });
 
-    const {navigate} = useContext(NavContext);
-    const { globalState,setGlobalState} = useContext(GlobalStateContext);
+  const {navigate} = useContext(NavContext);
+  const { globalState,setGlobalState} = useContext(GlobalStateContext);
 
-    useEffect( () => {
-      setPageState(prevState => ({...prevState,selectedListID: routeListID}))
-    },[routeListID])
+  useEffect( () => {
+    setPageState(prevState => ({...prevState,selectedListID: routeListID}))
+  },[routeListID])
 
-    useEffect( () => {
-      if (!itemLoading && !listsLoading && !listRowsLoading && !categoryLoading && !allItemsLoading) {
-        setPageState({ ...pageState,
-          doingUpdate: false,
-          itemRows: getItemRows(itemDocs, listDocs, categoryDocs, pageState.selectedListID),
-        })
-      }
-    },[itemLoading, allItemsLoading, listsLoading, listRowsLoading, categoryLoading, itemDocs, listDocs, allItemDocs, categoryDocs, pageState.selectedListID]);
+  useEffect( () => {
+    if (!itemLoading && !listsLoading && !listRowsLoading && !categoryLoading && !allItemsLoading) {
+      setPageState({ ...pageState,
+        doingUpdate: false,
+        itemRows: getItemRows(itemDocs, listDocs, categoryDocs, uomDocs, pageState.selectedListID),
+      })
+    }
+  },[itemLoading, allItemsLoading, listsLoading, listRowsLoading, categoryLoading, itemDocs, listDocs, allItemDocs, categoryDocs, pageState.selectedListID]);
 
-    useEffect( () => {
-      setSearchRows(getAllSearchRows(allItemDocs,pageState.selectedListID));
-    },[allItemsLoading, allItemDocs, pageState.selectedListID])
+  useEffect( () => {
+    setSearchRows(getAllSearchRows(allItemDocs,pageState.selectedListID));
+  },[allItemsLoading, allItemDocs, pageState.selectedListID])
 
-    useEffect( () => {
-      let filterRows=filterSearchRows(searchRows, searchState.searchCriteria)
-      if (filterRows.length > 0 && searchState.isFocused ) {
-        setSearchState(prevState => ({...prevState, filteredSearchRows: filterRows, isOpen: true }));
-      } else {
-        setSearchState(prevState => ({...prevState, filteredSearchRows: [], isOpen: false}));
-      }  
-    },[searchState.searchCriteria,searchState.isFocused])
-
+  useEffect( () => {
+    let filterRows=filterSearchRows(searchRows, searchState.searchCriteria)
+    if (filterRows.length > 0 && searchState.isFocused ) {
+      setSearchState(prevState => ({...prevState, filteredSearchRows: filterRows, isOpen: true }));
+    } else {
+      setSearchState(prevState => ({...prevState, filteredSearchRows: [], isOpen: false}));
+    }  
+  },[searchState.searchCriteria,searchState.isFocused])
   
   if (itemLoading || listsLoading || listRowsLoading || categoryLoading || allItemsLoading || pageState.doingUpdate )  {return(
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
@@ -246,7 +242,7 @@ const Items: React.FC = () => {
   }
 
   function selectList(listID: string) {
-    setPageState({...pageState, selectedListID: listID, itemRows: getItemRows(itemDocs, listDocs, categoryDocs, listID)});
+    setPageState({...pageState, selectedListID: listID, itemRows: getItemRows(itemDocs, listDocs, categoryDocs, uomDocs, listID)});
     navigate('/items/'+listID);
   }
 
@@ -305,7 +301,7 @@ const Items: React.FC = () => {
             onIonChange={(e: any) => completeItemRow(pageState.itemRows[i].itemID,e.detail.checked)}
             checked={Boolean(pageState.itemRows[i].completed)}></IonCheckbox>
         <IonButton fill="clear" class="textButton" routerLink= {"/item/edit/"+pageState.itemRows[i].itemID}>
-          {pageState.itemRows[i].itemName + " ("+ pageState.itemRows[i].quantity.toString()+")"}</IonButton>
+          {pageState.itemRows[i].itemName + " ("+ item.quantity.toString()+(item.uomDesc == "" ? "" : " ")+item.uomDesc+")"}</IonButton>
       </IonItem>);
     if (lastCategoryFinished && !createdFinished) {
       listContent.push(completedDivider);

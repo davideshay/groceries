@@ -106,6 +106,11 @@ async function createDBIfNotExists() {
     return (dbCreated)
 }
 
+async function totalDocCount(db) {
+    const info = await db.info();
+    return info.doc_count;
+}
+
 async function setDBSecurity() {
     errorSettingSecurity = false;
     let config = {
@@ -197,11 +202,13 @@ async function addDBIdentifier() {
 
 async function createUOMContent() {
     const dbuomq = {
-        selector: { type: { "$eq": "uom" }}
+        selector: { type: { "$eq": "uom" }},
+        limit: await totalDocCount(todosDBAsAdmin)
     }
     let foundUOMDocs =  await todosDBAsAdmin.find(dbuomq);
-    uomContent.forEach(async uom => {
-        const docIdx=foundUOMDocs.docs.findIndex((el) => { el.name === uom.name });
+    for (let i = 0; i < uomContent.length; i++) {
+        uom = uomContent[i];
+        const docIdx=foundUOMDocs.docs.findIndex((el) => el.name === uom.name );
         if (docIdx == -1) {
             console.log("STATUS: Adding uom ",uom.name, " ", uom.description);
             let dbResp = null;
@@ -210,7 +217,7 @@ async function createUOMContent() {
         } else {
             console.log("STATUS: UOM ",uom.name," already exists...skipping");
         }
-    });
+    };
     console.log("STATUS: Finished adding units of measure, updating to UOM Content Version:",targetUomContentVersion);
     const dbidq = {
         selector: { type: { "$eq": "dbuuid" }}
@@ -422,7 +429,8 @@ async function createNewUser(userObj) {
 
 async function updateUnregisteredFriends(email) {
     const emailq = {
-        selector: { type: { "$eq": "friend" }, inviteEmail: { "$eq": email}}
+        selector: { type: { "$eq": "friend" }, inviteEmail: { "$eq": email}},
+        limit: await totalDocCount(todosDBAsAdmin)
     }
     foundFriendDocs =  await todosDBAsAdmin.find(emailq);
     console.log("updating unregistered friends..., full list:",{foundFriendDocs});
@@ -524,10 +532,10 @@ async function createAccountUIGet(req, res) {
         disableSubmit: false,
         createdSuccessfully: false
     }
-       
     const uuidq = {
         selector: { type: { "$eq": "friend" }, inviteUUID: { "$eq": req.query.uuid}},
-        fields: [ "friendID1","friendID2","inviteUUID","inviteEmail","friendStatus"]
+        fields: [ "friendID1","friendID2","inviteUUID","inviteEmail","friendStatus"],
+        limit: await totalDocCount(todosDBAsAdmin)
     }
     let foundFriendDocs =  await todosDBAsAdmin.find(uuidq);
     let foundFriendDoc;
@@ -551,7 +559,8 @@ async function createAccountUIGet(req, res) {
 
 async function getFriendDocByUUID(uuid) {
     const uuidq = {
-        selector: { type: { "$eq": "friend" }, inviteUUID: { "$eq": uuid}}
+        selector: { type: { "$eq": "friend" }, inviteUUID: { "$eq": uuid}},
+        limit: await totalDocCount(todosDBAsAdmin)
     }
     let foundFriendDocs =  await todosDBAsAdmin.find(uuidq);
     console.log("all docs found:",{foundFriendDocs});
@@ -559,7 +568,6 @@ async function getFriendDocByUUID(uuid) {
     if (foundFriendDocs.docs.length > 0) {foundFriendDoc = foundFriendDocs.docs[0]}
     return(foundFriendDoc);
 }
-
 
 async function createAccountUIPost(req,res) {
 
