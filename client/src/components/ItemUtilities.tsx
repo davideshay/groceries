@@ -77,10 +77,12 @@ export function getItemRows(itemDocs: any, listDocs: any, categoryDocs: any, uom
     let uomDesc = "";
     if (uomName != null) {
         const uomDoc = uomDocs.find((el: any) => (el.name === uomName));
-        if (itemRow.quantity === 1) {
-            uomDesc = uomDoc.description;
-        } else {
-            uomDesc = uomDoc.pluralDescription;
+        if (uomDoc != undefined) {
+            if (itemRow.quantity === 1) {
+                uomDesc = uomDoc.description;
+            } else {
+                uomDesc = uomDoc.pluralDescription;
+            }
         }
     }    
     itemRow.uomDesc = uomDesc;
