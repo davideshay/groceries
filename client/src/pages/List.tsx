@@ -9,7 +9,7 @@ import { useUpdateGenericDocument, useCreateGenericDocument, useFriends, useList
 import { cloneDeep, isEmpty, isEqual } from 'lodash';
 import './List.css';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
-import { initUserIDList, initUsersInfo, PouchResponse, ResolvedFriendStatus, UserIDList, UsersInfo } from '../components/DataTypes';
+import { initUserIDList, initUsersInfo, PouchResponse, ResolvedFriendStatus, UserIDList, UsersInfo, HistoryProps } from '../components/DataTypes';
 import SyncIndicator from '../components/SyncIndicator';
 import { getUsersInfo } from '../components/Utilities';
 import { UserInfo } from 'os';
@@ -25,7 +25,7 @@ interface PageState {
   deletingDoc: boolean
 }  
 
-const List: React.FC = () => {
+const List: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
   if ( mode === "new" ) { routeID = "<new>"};
@@ -53,7 +53,6 @@ const List: React.FC = () => {
     sort: [ "type","name"]
   })
 
-  const {goBack, navigate} = useContext(NavContext);
   const [presentAlert,dismissAlert] = useIonAlert();
 
   useEffect( () => {
@@ -65,7 +64,7 @@ const List: React.FC = () => {
     setPageState(prevState => ({...prevState,
         listDoc: listDocs.find((el: any) => el._id === listID),
         selectedListID: listID}))
-    navigate('/list/edit/'+listID);    
+    props.history.push('/list/edit/'+listID);    
   }
 
   useEffect( () => {
@@ -126,7 +125,7 @@ const List: React.FC = () => {
       response = await updateListWhole(pageState.listDoc);
     }
     if (response.successful) {
-      goBack("/lists");
+      props.history.goBack();  // back("lists")
     } else {
       presentToast({message: "Error Creating/Updating List", duration: 1500, position: "middle"});
     }
@@ -248,7 +247,7 @@ async function deleteListFromDB() {
     let delResponse = await deleteList((pageState.listDoc as any));
     if (delResponse.successful) {
       setPageState(prevState => ({...prevState,deletingDoc: false}));
-      goBack('/list');
+      props.history.push(); // back to "list"
     } else {
       setPageState(prevState => ({...prevState,formError: "Could not delete list"}));
     }
@@ -382,7 +381,7 @@ function deletePrompt() {
         <IonToolbar>
         <IonButtons slot="start"><IonMenuButton /></IonButtons>
             {selectDropDown}
-            <SyncIndicator />
+            <SyncIndicator history={props.history}/>
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>
@@ -406,7 +405,7 @@ function deletePrompt() {
           </IonList>
           {updateButton}
           {deleteButton}
-          <IonButton key="back" onClick={() => goBack("/lists")}>Cancel</IonButton>
+          <IonButton key="back" onClick={() => props.history.goBack()}>Cancel</IonButton>  
       </IonContent>
       <IonFooter>
         <IonLabel>{pageState.formError}</IonLabel>

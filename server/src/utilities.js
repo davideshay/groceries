@@ -14,6 +14,7 @@ const uomContent = [
     {type: "uom", name: "BX", description: "Box", pluralDescription: "Boxes"},
     {type: "uom", name: "BG", description: "Bag", pluralDescription: "Bags"},
     {type: "uom", name: "BO", description: "Bottle", pluralDescription: "Bottles"},
+    {type: "uom", name: "CA", description: "Case", pluralDescription: "Cases"},
     {type: "uom", name: "CN", description: "Can", pluralDescription: "Cans"},
     {type: "uom", name: "CU", description: "Cup", pluralDescription: "Cups"},
     {type: "uom", name: "CT", description: "Carton", pluralDescription: "Cartons"},

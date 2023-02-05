@@ -106,3 +106,5 @@ export interface ItemRow {
   }
 
   export const initUsersInfo: UserInfo[] = [];
+
+  export type HistoryProps =  { history: any }

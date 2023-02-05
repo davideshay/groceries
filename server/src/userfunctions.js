@@ -41,7 +41,7 @@ const { v4: uuidv4 } = require('uuid');
 const { cloneDeep } = require('lodash');
 const {  emailPatternValidation, usernamePatternValidation, fullnamePatternValidation, uomContent } = require('./utilities')
 let uomContentVersion = 0;
-const targetUomContentVersion = 1;
+const targetUomContentVersion = 2;
 
 async function couchLogin(username, password) {
     const loginResponse = {

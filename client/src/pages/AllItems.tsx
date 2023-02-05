@@ -5,6 +5,7 @@ import { useLists } from '../components/Usehooks';
 import { useContext } from 'react';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
 import SyncIndicator from '../components/SyncIndicator';
+import { HistoryProps } from '../components/DataTypes';
 import './AllItems.css';
 
 // The AllItems component is a master editor of all of the known items in the database.
@@ -12,7 +13,7 @@ import './AllItems.css';
 // and status for active (on the list), and complete (on the list and checked off) )
 
 
-const AllItems: React.FC = () => {
+const AllItems: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { remoteDBState } = useContext(RemoteDBStateContext);
   const { listDocs, listsLoading } = useLists(String(remoteDBState.dbCreds.dbUsername))
   const { docs, loading, error } = useFind({
@@ -47,10 +48,10 @@ const AllItems: React.FC = () => {
         <IonToolbar>
           <IonButtons slot="start"><IonMenuButton /></IonButtons>
           <IonTitle>All Items</IonTitle>
-          <SyncIndicator />
+          <SyncIndicator history={props.history}/>
         </IonToolbar>
       </IonHeader>
-      <IonContent fullscreen>
+      <IonContent id="main" fullscreen>
         <IonList lines="full">
           {itemsElem}
         </IonList>

@@ -50,7 +50,7 @@ const AppMenu: React.FC = () => {
 
   return (
   <IonMenu contentId="main" type="overlay">
-    <IonContent className="ion-padding">
+    <IonContent className="ion-padding" id="menucontent">
       <IonList><IonListHeader>Groceries Menu</IonListHeader></IonList>
       {listHeader("Lists")}
       <ListsAll separatePage={false}/>

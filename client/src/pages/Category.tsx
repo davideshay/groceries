@@ -7,11 +7,11 @@ import { useState, useEffect, useContext } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteCategoryFromItems, useDeleteGenericDocument, useDeleteCategoryFromLists } from '../components/Usehooks';
 import { cloneDeep } from 'lodash';
 import './Category.css';
-import { PouchResponse } from '../components/DataTypes';
+import { PouchResponse, HistoryProps } from '../components/DataTypes';
 import SyncIndicator from '../components/SyncIndicator';
 import { addOutline, closeOutline, navigate, saveOutline, trashOutline } from 'ionicons/icons';
 
-const Category: React.FC = () => {
+const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
   if ( mode === "new" ) { routeID = "<new>"};
   const [needInitCategoryDoc,setNeedInitCategoryDoc] = useState((mode === "new") ? true: false);
@@ -173,10 +173,10 @@ const Category: React.FC = () => {
         <IonToolbar>
         <IonButtons slot="start"><IonMenuButton /></IonButtons>
           <IonTitle>Editing Category: {(stateCategoryDoc as any).name}</IonTitle>
-          <SyncIndicator />
+          <SyncIndicator history={props.history}/>
         </IonToolbar>
       </IonHeader>
-      <IonContent fullscreen>
+      <IonContent fullscreen id="main">
           <IonList>
             <IonItem key="name">
               <IonLabel position="stacked">Name</IonLabel>

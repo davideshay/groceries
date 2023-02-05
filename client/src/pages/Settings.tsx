@@ -6,13 +6,12 @@ import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
 import './Settings.css';
 import SyncIndicator from '../components/SyncIndicator';
-import { GlobalStateContext, initSettings, GlobalSettings } from '../components/GlobalState';
+import { GlobalStateContext, initSettings, GlobalSettings, AddListOptions } from '../components/GlobalState';
 import { initialRemoteDBState, RemoteDBStateContext,  } from '../components/RemoteDBState';
-import { AddListOptions } from '../components/GlobalState';
+import { HistoryProps } from '../components/DataTypes';
 
-const Settings: React.FC = (props) => {
+const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
   const [presentAlert] = useIonAlert();
-  const {navigate} = useContext(NavContext);
   const {globalState, updateSettingKey} = useContext(GlobalStateContext);
   const { setRemoteDBState } = useContext(RemoteDBStateContext);
   const [localSettings, setLocalSettings] = useState<GlobalSettings>(initSettings)
@@ -63,7 +62,7 @@ const Settings: React.FC = (props) => {
         <IonToolbar>
         <IonButtons slot="start"><IonMenuButton /></IonButtons>
           <IonTitle>Settings</IonTitle>
-          <SyncIndicator />
+          <SyncIndicator history={props.history}/>
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>

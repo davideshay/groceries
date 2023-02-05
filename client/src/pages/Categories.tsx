@@ -3,9 +3,10 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
 import { add } from 'ionicons/icons';
 import { useFind } from 'use-pouchdb';
 import SyncIndicator from '../components/SyncIndicator';
+import { HistoryProps } from '../components/DataTypes';
 import './Categories.css';
 
-const Categories: React.FC = () => {
+const Categories: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   const { docs, loading, error } = useFind({
   index: { fields: ["type","name"]},
@@ -23,10 +24,10 @@ const Categories: React.FC = () => {
         <IonToolbar>
           <IonButtons slot="start"><IonMenuButton /></IonButtons>
           <IonTitle>Categories</IonTitle>
-          <SyncIndicator />
+          <SyncIndicator history={props.history}/>
         </IonToolbar>
       </IonHeader>
-      <IonContent fullscreen>
+      <IonContent fullscreen id="main">
         <IonList lines="full">
                {docs.map((doc) => (
                   <IonItem key={(doc as any)._id} >

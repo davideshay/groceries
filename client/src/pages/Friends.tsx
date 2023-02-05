@@ -10,7 +10,7 @@ import { useCreateGenericDocument, useFriends, useUpdateGenericDocument} from '.
 import { add } from 'ionicons/icons';
 import './Friends.css';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
-import { FriendRow, FriendStatus, ResolvedFriendStatus } from '../components/DataTypes';
+import { FriendRow, FriendStatus, ResolvedFriendStatus, HistoryProps } from '../components/DataTypes';
 import { checkUserByEmailExists, emailPatternValidation } from '../components/Utilities';
 import SyncIndicator from '../components/SyncIndicator';
 
@@ -56,7 +56,7 @@ interface PageState {
   registrationAlertSubheader: string,
 }  
               
-const Friends: React.FC = (props) => {
+const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { remoteDBState } = useContext(RemoteDBStateContext);
   const uname = (remoteDBState.dbCreds as any).dbUsername;
   const {friendRowsLoading,friendsLoading,friendRows} = useFriends(uname);
@@ -246,10 +246,10 @@ const Friends: React.FC = (props) => {
         <IonToolbar>
         <IonButtons key="buttonsinmenu" slot="start"><IonMenuButton key="menuhamburger" /></IonButtons>
           <IonTitle>Friends</IonTitle>
-          <SyncIndicator />
+          <SyncIndicator history={props.history}/>
         </IonToolbar>
       </IonHeader>
-      <IonContent fullscreen>
+      <IonContent fullscreen id="main">
         <IonAlert isOpen={pageState.showNewUserAlert}
                   header="User not found, send registration request?"
                   subHeader={pageState.newUserAlertSubheader}

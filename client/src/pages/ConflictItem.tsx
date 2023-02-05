@@ -3,11 +3,12 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonLis
 import { useParams } from 'react-router-dom';
 import { useDoc} from 'use-pouchdb';
 import { useContext } from 'react';
-import { cloneDeep, isEqual, reduce, pull } from 'lodash';
+import { isEqual, pull } from 'lodash';
+import { HistoryProps } from '../components/DataTypes';
 import './Category.css';
 import SyncIndicator from '../components/SyncIndicator';
 
-const ConflictItem: React.FC = () => {
+const ConflictItem: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { id: routeID } = useParams<{ id: string}>();
 
   const { doc: conflictDoc, loading: conflictLoading } = useDoc<any>(routeID);
@@ -55,10 +56,10 @@ const ConflictItem: React.FC = () => {
         <IonToolbar>
         <IonButtons slot="start"><IonMenuButton /></IonButtons>
           <IonTitle>Conflict Item: {(conflictDoc as any).docType} from {localDate}</IonTitle>
-          <SyncIndicator />
+          <SyncIndicator history={props.history}/>
         </IonToolbar>
       </IonHeader>
-      <IonContent fullscreen>
+      <IonContent fullscreen id="main"> 
           <IonList>
             <IonItem key="maindiffs">
               <IonLabel position="stacked">Main differences</IonLabel>

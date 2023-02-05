@@ -1,10 +1,12 @@
-import { Redirect, Route } from 'react-router-dom';
+import { Redirect, Route, useHistory, useLocation } from 'react-router-dom';
 import {
   IonApp,  IonRouterOutlet, IonSplitPane,
-  setupIonicReact
+  setupIonicReact, IonContent, useIonRouter
 } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
-import { useState } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
+import { useState, useContext } from 'react';
 import Lists from './pages/Lists';
 import List from "./pages/List";
 import Items from './pages/Items';
@@ -48,10 +50,21 @@ import AllItems from './pages/AllItems';
 
 setupIonicReact();
 
+
 const App: React.FC = () => {
 
   PouchDB.plugin(find);
   const [db, setDB] = useState(() => new PouchDB('local', {revs_limit: 10, auto_compaction: true, size: 250}))
+
+  if (Capacitor.isNativePlatform()) {
+    CapacitorApp.addListener('backButton', ({canGoBack}) => {
+      if (!canGoBack ) {
+        CapacitorApp.exitApp()
+      } else {
+//        history.goBack();
+      }
+    })
+  }
 
   return (
   <IonApp>
@@ -61,37 +74,24 @@ const App: React.FC = () => {
     <IonReactRouter>
       <IonSplitPane contentId="main">
       <AppMenu />
-        <IonRouterOutlet id="main">
-          <Route exact path="/lists">
-            <Lists />
-          </Route>
-          <Route path="/items/:id" component={Items}>
-          </Route>
-          <Route path="/item/:mode/:itemid?" component={Item}>
-          </Route>
-          <Route exact path="/allitems"><AllItems /></Route>
-          <Route exact path="/categories">
-            <Categories />
-          </Route>
-          <Route path="/category/:mode/:id?" component={Category}>
-          </Route>
-          <Route exact path="/settings">
-            <Settings />
-          </Route>
-          <Route exact path="/friends">
-            <Friends />
-          </Route>
+        <IonContent id="main">
+          <Route exact path="/lists" component={Lists} />
+          <Route path="/items/:id" component={Items} />
+          <Route path="/item/:mode/:itemid?" component={Item} />
+          <Route exact path="/allitems" component={AllItems} />
+          <Route exact path="/categories" component={Categories} />
+          <Route path="/category/:mode/:id?" component={Category} />
+          <Route exact path="/settings" component={Settings} />
+          <Route exact path="/friends" component={Friends} />
           <Route exact path="/">
             <Redirect to="/initialload" />
           </Route>
-          <Route path="/list/:mode/:id?" component={List}>
-          </Route>
-          <Route exact path="/login" component={RemoteDBLogin}>
-          </Route>
+          <Route path="/list/:mode/:id?" component={List} />
+          <Route exact path="/login" component={RemoteDBLogin} />
           <Route exact path="/initialload" component={InitialLoad}></Route>
           <Route exact path="/conflictlog" component={ConflictLog}></Route>
           <Route path="/conflictitem/:id" component={ConflictItem}></Route>
-        </IonRouterOutlet>
+        </IonContent>
       </IonSplitPane>
     </IonReactRouter>
     </RemoteDBStateProvider>

@@ -9,13 +9,13 @@ import { cloneDeep } from 'lodash';
 import './Items.css';
 import { useUpdateCompleted, useUpdateGenericDocument, useLists } from '../components/Usehooks';
 import { AddListOptions, GlobalStateContext } from '../components/GlobalState';
-import { ItemSearch, SearchState, PageState, ListRow} from '../components/DataTypes'
+import { ItemSearch, SearchState, PageState, ListRow, HistoryProps} from '../components/DataTypes'
 import { getAllSearchRows, getItemRows, filterSearchRows } from '../components/ItemUtilities';
 import SyncIndicator from '../components/SyncIndicator';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
 import { isEqual } from 'lodash';
 
-const Items: React.FC = () => {
+const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { remoteDBState} = useContext(RemoteDBStateContext);
   let { id: routeListID  } = useParams<{id: string}>();
   const [searchRows,setSearchRows] = useState<ItemSearch[]>();
@@ -47,7 +47,6 @@ const Items: React.FC = () => {
       selector: { type: "item", name: { $exists: true}},
       sort: [ "type","name"] });
 
-  const {navigate} = useContext(NavContext);
   const { globalState,setGlobalState} = useContext(GlobalStateContext);
 
   useEffect( () => {
@@ -98,7 +97,7 @@ const Items: React.FC = () => {
                                      callingListID: pageState.selectedListID,
                                      newItemName: itemName})
       setSearchState(prevState => ({...prevState, isOpen: false,searchCriteria:"",isFocused: false}))
-      navigate("/item/new/");
+      props.history.push("/item/new/");
     }
   }
   
@@ -218,7 +217,7 @@ const Items: React.FC = () => {
         </IonItem>
         {popOverElem}
         {alertElem}
-    </IonTitle><SyncIndicator /></IonToolbar></IonHeader>)
+    </IonTitle><SyncIndicator history={props.history}/></IonToolbar></IonHeader>)
 
   if (pageState.itemRows.length <=0 )  {return(
     <IonPage>{headerElem}<IonContent><IonItem key="nonefound"><IonLabel key="nothinghere">No Items On List</IonLabel></IonItem></IonContent></IonPage>
@@ -243,7 +242,7 @@ const Items: React.FC = () => {
 
   function selectList(listID: string) {
     setPageState({...pageState, selectedListID: listID, itemRows: getItemRows(itemDocs, listDocs, categoryDocs, uomDocs, listID)});
-    navigate('/items/'+listID);
+    props.history.push('/items/'+listID);
   }
 
   let listContent=[];
@@ -319,7 +318,7 @@ const Items: React.FC = () => {
   return (
     <IonPage>
       {headerElem}
-      <IonContent fullscreen>
+      <IonContent fullscreen id="main">
           {contentElem}
       </IonContent>
       <IonFab slot="fixed" vertical="bottom" horizontal="end">

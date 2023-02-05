@@ -4,10 +4,11 @@ import { useContext } from 'react';
 import { useFind } from 'use-pouchdb';
 import SyncIndicator from '../components/SyncIndicator';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
+import { HistoryProps } from '../components/DataTypes';
 import './Categories.css';
 import { useConflicts } from '../components/Usehooks';
 
-const ConflictLog: React.FC = () => {
+const ConflictLog: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { remoteDBState,setDBCredsValue } = useContext(RemoteDBStateContext);
   const { conflictDocs, conflictsLoading } = useConflicts();
   
@@ -28,10 +29,10 @@ const ConflictLog: React.FC = () => {
           <IonButtons slot="start"><IonMenuButton /></IonButtons>
           <IonTitle>Conflict Log</IonTitle>
           <IonButton slot="end" onClick={() => {setConflictsAsViewed()}}>Set As Viewed</IonButton>
-          <SyncIndicator />
+          <SyncIndicator history={props.history}/>
         </IonToolbar>
       </IonHeader>
-      <IonContent fullscreen>
+      <IonContent fullscreen id="main">
         <IonList lines="full">
                {conflictDocs.map((doc: any) => (
                   <IonItem key={doc._id} >

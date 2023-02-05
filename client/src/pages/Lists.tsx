@@ -4,8 +4,9 @@ import { add } from 'ionicons/icons';
 import './Lists.css';
 import ListsAll from '../components/ListsAll'
 import SyncIndicator from '../components/SyncIndicator';
+import { HistoryProps } from '../components/DataTypes';
 
-const Lists: React.FC = () => {
+const Lists: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   return (
     <IonPage>
@@ -13,7 +14,7 @@ const Lists: React.FC = () => {
         <IonToolbar>
         <IonButtons slot="start"><IonMenuButton /></IonButtons>
           <IonTitle>Shopping Lists</IonTitle>
-          <SyncIndicator />
+          <SyncIndicator history={props.history}/>
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>

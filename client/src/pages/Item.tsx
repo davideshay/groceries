@@ -11,10 +11,10 @@ import { GlobalStateContext } from '../components/GlobalState';
 import { cloneDeep, isEmpty } from 'lodash';
 import './Item.css';
 import SyncIndicator from '../components/SyncIndicator';
-import { PouchResponse } from '../components/DataTypes';
+import { PouchResponse, HistoryProps } from '../components/DataTypes';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
 
-const Item: React.FC = () => {
+const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode, itemid: routeItemID  } = useParams<{mode: string, itemid: string}>();
   const { remoteDBState } = useContext(RemoteDBStateContext);
   if ( mode === "new" ) { routeItemID = "<new>"};
@@ -38,7 +38,6 @@ const Item: React.FC = () => {
       selector: { type: "uom", name: { $exists: true}},
       sort: [ "type","name"] });
 
-  const {goBack} = useContext(NavContext);
   const { globalState, setStateInfo} = useContext(GlobalStateContext);
   const [presentAlert, dismissAlert] = useIonAlert();
   const [presentToast] = useIonToast();
@@ -94,7 +93,7 @@ const Item: React.FC = () => {
       result = await updateItem(stateItemDoc);
     }
     if (result.successful) {
-      goBack("/lists");
+      props.history.goBack();
     } else {
       setFormError("Error updating item. Please retry.");
     }
@@ -208,7 +207,7 @@ const Item: React.FC = () => {
       let result: PouchResponse;
       result = await delItem(stateItemDoc);
       if (result.successful) {
-        goBack("/lists");
+        props.history.goBack();
       } else {
         setFormError("Error updating item. Please retry.");
       }
@@ -288,10 +287,10 @@ const Item: React.FC = () => {
         <IonToolbar>
         <IonButtons slot="start"><IonMenuButton /></IonButtons>
           <IonTitle>Editing Item: {(stateItemDoc as any).name}</IonTitle>
-          <SyncIndicator />
+          <SyncIndicator history={props.history}/>
         </IonToolbar>
       </IonHeader>
-      <IonContent fullscreen>
+      <IonContent fullscreen id="main">
           <IonList>
             <IonItem key="name">
               <IonLabel position="stacked">Name</IonLabel>
@@ -340,7 +339,7 @@ const Item: React.FC = () => {
             {listsElem}
             <IonItem key="formErrors">{formError}</IonItem>
           </IonList>
-          <IonButton onClick={() => goBack("/lists")}><IonIcon slot="start" icon={closeCircleOutline}></IonIcon>Cancel</IonButton>
+          <IonButton onClick={() => props.history.goBack()}><IonIcon slot="start" icon={closeCircleOutline}></IonIcon>Cancel</IonButton>
           {mode !== "new" ? 
             (<IonButton onClick={() => deleteItem()}><IonIcon slot="start" icon={trashOutline}></IonIcon>Delete</IonButton>)
             : <></>}

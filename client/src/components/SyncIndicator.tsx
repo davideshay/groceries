@@ -3,11 +3,10 @@ import { cloudDoneOutline, cloudDownloadOutline, cloudOfflineOutline, warningOut
 import { useContext } from 'react';
 import { RemoteDBState, RemoteDBStateContext, RemoteDBStateContextType, SyncStatus } from '../components/RemoteDBState';
 import { useConflicts } from './Usehooks';
+import { HistoryProps } from './DataTypes';
 
-
-const SyncIndicator: React.FC = () => {
+const SyncIndicator: React.FC<HistoryProps> = (props: HistoryProps) => {
     const { remoteDBState } = useContext(RemoteDBStateContext);
-    const { navigate } = useContext(NavContext);
     const { conflictDocs, conflictsLoading } = useConflicts();
 
     const iconSize="medium"
@@ -26,7 +25,7 @@ const SyncIndicator: React.FC = () => {
     let conflictElem;
     if (!conflictsLoading) {
         if (conflictDocs.length > 0)
-        conflictElem=(<IonButton slot="end" fill="default" onClick={() => navigate("/conflictlog")}><IonIcon slot="end" size={iconSize} icon={warningOutline} /></IonButton>)
+        conflictElem=(<IonButton slot="end" fill="default" onClick={() => props.history.push("/conflictlog")}><IonIcon slot="end" size={iconSize} icon={warningOutline} /></IonButton>)
     }
 
     return (<>{conflictElem}{iconElem}</>)
