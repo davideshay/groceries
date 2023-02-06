@@ -1,8 +1,8 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, NavContext, useIonLoading } from '@ionic/react';
-import { useContext, useEffect, useState } from 'react';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, useIonLoading } from '@ionic/react';
+import { useContext, useEffect, } from 'react';
 import { usePouch } from 'use-pouchdb';
 import { ConnectionStatus, RemoteDBStateContext } from '../components/RemoteDBState';
-import { App as CapacitorApp } from '@capacitor/app';    
+import { navigateToFirstListID } from '../components/RemoteUtilities';
 
 type InitialLoadProps = {
   history : any
@@ -10,34 +10,13 @@ type InitialLoadProps = {
 
 const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
     const { remoteDBState, setRemoteDBState, setConnectionStatus} = useContext(RemoteDBStateContext);
-    const [present,dismiss] = useIonLoading();
+    const [ present,dismiss] = useIonLoading()
     const db=usePouch();
-    
-    async function navigateToFirstListID() {
-        let listResults = await db.find({
-            selector: { "$and": [ 
-              {  "type": "list",
-                  "name": { "$exists": true } },
-              { "$or" : [{"listOwner": remoteDBState.dbCreds.dbUsername},
-                          {"sharedWith": { $elemMatch: {$eq: remoteDBState.dbCreds.dbUsername}}}]
-              }] },
-            sort: [ "type","name"]})
-        let firstListID = null;
-        if (listResults.docs.length > 0) {
-          firstListID = listResults.docs[0]._id;
-        }
-        if (firstListID == null) {
-            props.history.push("/lists");
-        } else {
-            props.history.push("/items/"+firstListID)
-        }  
-      }
   
     useEffect(() => { 
         if ((remoteDBState.connectionStatus == ConnectionStatus.loginComplete)) {
-            dismiss();
             setConnectionStatus(ConnectionStatus.initialNavComplete);
-            navigateToFirstListID();
+            navigateToFirstListID(db,props.history,remoteDBState);
         } else {
             present({message: "Please wait, logging into server...", duration: 500})
         }   
@@ -48,8 +27,13 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
             setConnectionStatus(ConnectionStatus.onLoginScreen);
             props.history.push("/login");
         }
-
     },[remoteDBState.connectionStatus])
+
+    useEffect(() => {
+      if (remoteDBState.connectionStatus == ConnectionStatus.initialNavComplete) {
+          navigateToFirstListID(db,props.history,remoteDBState);
+      }
+  },[remoteDBState.connectionStatus])
 
     return (
         <IonPage>

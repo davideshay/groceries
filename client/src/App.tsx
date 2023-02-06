@@ -1,7 +1,7 @@
-import { Redirect, Route, useHistory, useLocation } from 'react-router-dom';
+import { Redirect, Route, } from 'react-router-dom';
 import {
-  IonApp,  IonRouterOutlet, IonSplitPane,
-  setupIonicReact, IonContent, useIonRouter
+  IonApp, IonSplitPane,
+  setupIonicReact, IonContent, 
 } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { Capacitor } from '@capacitor/core';

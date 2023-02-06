@@ -6,9 +6,10 @@ import { usePouch} from 'use-pouchdb';
 import { ConnectionStatus, DBCreds, DBUUIDAction } from '../components/RemoteDBState';
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
-import { createNewUser,  } from '../components/RemoteUtilities';
+import { createNewUser, navigateToFirstListID,  } from '../components/RemoteUtilities';
 import { cloneDeep } from 'lodash';
 import { RemoteDBStateContext, SyncStatus, initialRemoteDBState } from '../components/RemoteDBState';
+import { HistoryProps } from '../components/DataTypes';
 
 export type RemoteState = {
   password: string | undefined,
@@ -61,7 +62,7 @@ states to support:
           if successful, populate and store creds and then await assigndb / sync
  */
 
-const RemoteDBLogin: React.FC = () => {
+const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
 
     const db=usePouch();
     const [remoteState,setRemoteState]=useState<RemoteState>({
@@ -104,6 +105,8 @@ const RemoteDBLogin: React.FC = () => {
       if (remoteDBState.connectionStatus == ConnectionStatus.cannotStart) {
         console.log("Detected cannot start, setting initRemoteState");
         setRemoteState(initRemoteState);
+      } else if (remoteDBState.connectionStatus == ConnectionStatus.loginComplete) {
+        navigateToFirstListID(db,props.history,remoteDBState);
       }
 
     },[remoteDBState.connectionStatus])
@@ -124,7 +127,6 @@ const RemoteDBLogin: React.FC = () => {
 
     function updateDBCredsFromResponse(response: HttpResponse): DBCreds {
       let newDBCreds=cloneDeep(remoteDBState.dbCreds);
-      console.log("resdata:",response?.data)
       newDBCreds.couchBaseURL  = response?.data.couchdbUrl;
       newDBCreds.database = response?.data.couchdbDatabase;
       newDBCreds.email = response?.data.email;
@@ -135,12 +137,9 @@ const RemoteDBLogin: React.FC = () => {
     
   async function submitForm() {
 //    setPrefsDBCreds();
-    console.log("in submit form");
     let credsCheck = errorCheckCreds(remoteDBState.dbCreds,false,false,remoteState.password);
-    console.log(credsCheck);
     if (credsCheck.credsError ) {
       setRemoteState(prevState => ({...prevState,formError: String(credsCheck.errorText)}))
-      console.log("error found, exiting submit");
       return;
     }
     let response: HttpResponse;
@@ -152,7 +151,6 @@ const RemoteDBLogin: React.FC = () => {
         data: { username: remoteDBState.dbCreds.dbUsername,
                 password: remoteState.password},           
     };
-    console.log("options for post:",JSON.stringify(options));
     try {response = await CapacitorHttp.post(options)}
     catch(err) {console.log("Error logging in...",err)
                 setRemoteState(prevState => ({...prevState, formError: "Cannot contact API server"}));
@@ -173,11 +171,8 @@ const RemoteDBLogin: React.FC = () => {
 //    setPrefsDBCreds();
     let createResponse: any;
     let credsCheck = errorCheckCreds(remoteDBState.dbCreds,false,true,remoteState.password,remoteState.verifyPassword);
-    console.log("got credsCheck:",cloneDeep(credsCheck));
     if (!credsCheck.credsError) {
-      console.log("WHY AM I HERE");
       createResponse = await createNewUser(remoteDBState,String(remoteState.password));
-      console.log("now createResponse is ", {createResponse})
       if (!createResponse.data.createdSuccessfully) {
         let errorText="";
         if (createResponse.data.invalidData) {errorText = "Invalid Data Entered";} 
@@ -189,7 +184,6 @@ const RemoteDBLogin: React.FC = () => {
       setRemoteState(prevState => ({...prevState, formError: String(credsCheck.errorText)}));
       return;
     }
-    console.log({createResponse});
     let newCreds=updateDBCredsFromResponse(createResponse);
     let assignSuccess = assignDBAndSync(newCreds);
     if (!assignSuccess) {
@@ -198,7 +192,6 @@ const RemoteDBLogin: React.FC = () => {
   }
   
   async function callResetPasswordAPI() {
-    console.log("password API called");
     let response: HttpResponse;
     const options = {
         url: String(remoteDBState.dbCreds.apiServerURL+"/resetpassword"),
@@ -208,7 +201,6 @@ const RemoteDBLogin: React.FC = () => {
         data: { username: remoteDBState.dbCreds.dbUsername },           
     };
     response = await CapacitorHttp.post(options);
-    console.log("got http reset response",cloneDeep(response));
 //    presentAlert({
 //      header: "Password Request Sent",
 //      message: "Please check your email for the link to reset your password",
@@ -231,12 +223,12 @@ const RemoteDBLogin: React.FC = () => {
         }]
       })
     }
-    console.log("resetting password, email sent");
   }
 
   function setWorkingOffline() {
     setRemoteDBState({...remoteDBState,workingOffline: true,connectionStatus: ConnectionStatus.loginComplete, 
         syncStatus: SyncStatus.offline})
+    navigateToFirstListID(db,props.history,remoteDBState);    
   }
 
   function workOffline() {

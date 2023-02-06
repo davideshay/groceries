@@ -1,6 +1,26 @@
 import { RemoteDBState } from "./RemoteDBState";
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
-  
+
+export async function navigateToFirstListID(db: any,phistory: any,remoteDBState: RemoteDBState) {
+    let listResults = await db.find({
+        selector: { "$and": [ 
+          {  "type": "list",
+              "name": { "$exists": true } },
+          { "$or" : [{"listOwner": remoteDBState.dbCreds.dbUsername},
+                      {"sharedWith": { $elemMatch: {$eq: remoteDBState.dbCreds.dbUsername}}}]
+          }] },
+        sort: [ "type","name"]})
+    let firstListID = null;
+    if (listResults.docs.length > 0) {
+      firstListID = listResults.docs[0]._id;
+    }
+    if (firstListID == null) {
+        phistory.push("/lists");
+    } else {
+        phistory.push("/items/"+firstListID)
+    }  
+  }
+
 export async function createNewUser(remoteDBState: RemoteDBState,password: string) {
     let response: HttpResponse | undefined;
     const options = {

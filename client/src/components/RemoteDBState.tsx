@@ -5,6 +5,7 @@ import { cloneDeep, pick, keys, isEqual } from 'lodash';
 import { isJsonString, urlPatternValidation, emailPatternValidation, usernamePatternValidation, fullnamePatternValidation, DEFAULT_API_URL } from '../components/Utilities'; 
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import PouchDB from 'pouchdb';
+import { navigateToFirstListID } from "./RemoteUtilities";
 
 export type RemoteDBState = {
     remoteDB: PouchDB.Database | undefined,
@@ -132,7 +133,6 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     }
 
     function setConnectionStatus(value: ConnectionStatus) {
-        console.log("setting connection status to: ", value)
         setRemoteDBState(prevState => ({...prevState, connectionStatus: value}));
     }
 
@@ -351,8 +351,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         };
     }
 
-    useEffect(() => {
-        console.log("login attempted or connection status changed");      
+    useEffect(() => {    
         if (!loginAttempted.current && !(remoteDBState.connectionStatus == ConnectionStatus.navToLoginScreen) && !(remoteDBState.connectionStatus == ConnectionStatus.onLoginScreen)) {
             console.log("about to attempt full login...");
             attemptFullLogin()
