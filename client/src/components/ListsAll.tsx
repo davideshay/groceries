@@ -1,6 +1,5 @@
 import { IonList, IonItem, IonButton, IonMenuToggle, IonIcon } from '@ionic/react';
 import { useContext } from 'react';
-import { useFind } from 'use-pouchdb';
 import { pencilOutline } from 'ionicons/icons';
 import { RemoteDBStateContext } from './RemoteDBState';
 import { useLists } from './Usehooks';

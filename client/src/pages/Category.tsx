@@ -1,7 +1,7 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, 
   IonButtons, IonMenuButton, IonItem, IonLabel, IonFooter, NavContext, IonIcon,
   useIonAlert } from '@ionic/react';
-import { RouteComponentProps,useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useDoc, useFind, usePouch } from 'use-pouchdb';
 import { useState, useEffect, useContext } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteCategoryFromItems, useDeleteGenericDocument, useDeleteCategoryFromLists } from '../components/Usehooks';

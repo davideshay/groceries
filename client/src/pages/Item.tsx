@@ -34,9 +34,9 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
       selector: { type: "category", name: { $exists: true}},
       sort: [ "type","name"] });
   const { docs: uomDocs, loading: uomLoading, error: uomError } = useFind({
-      index: { fields: [ "type","name"]},
-      selector: { type: "uom", name: { $exists: true}},
-      sort: [ "type","name"] });
+      index: { fields: [ "type","description"]},
+      selector: { type: "uom", description: { $exists: true}},
+      sort: [ "type","description"] });
 
   const { globalState, setStateInfo} = useContext(GlobalStateContext);
   const [presentAlert, dismissAlert] = useIonAlert();
@@ -79,6 +79,8 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader></IonPage>
   )};
   
+  console.log(uomError);
+
   async function updateThisItem() {
     setFormError(prevState => (""));
     let result: PouchResponse;

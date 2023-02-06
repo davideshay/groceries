@@ -1,7 +1,7 @@
 import { useCallback, useState, useEffect, useContext } from 'react'
 import { usePouch, useFind } from 'use-pouchdb'
 import { cloneDeep, isEqual, union, pull } from 'lodash';
-import { CapacitorHttp, HttpResponse } from '@capacitor/core';
+import { HttpResponse } from '@capacitor/core';
 import { RemoteDBStateContext } from './RemoteDBState';
 import { FriendStatus, FriendRow, ResolvedFriendStatus, ListRow, PouchResponse, PouchResponseInit, initUserInfo } from './DataTypes';
 import { GlobalStateContext } from './GlobalState';
