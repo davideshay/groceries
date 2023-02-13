@@ -321,6 +321,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
 
     async function assignDBAndSync(credsObj: DBCreds, accessJWT: string): Promise<boolean> {
         console.log(cloneDeep(credsObj));
+        console.log("assignDB accessJWT:",accessJWT);
         let assignSuccessful = true;
         let remoteDB = new PouchDB(credsObj.couchBaseURL+"/"+credsObj.database, 
         { fetch: (url, opts: any) => ( 
@@ -354,7 +355,9 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: "Invalid JWT Token", connectionStatus: ConnectionStatus.navToLoginScreen}));
             return;
         }
+        credsObj.refreshJWT = refreshResponse.data.refreshJWT;
         let JWTCheck = await checkJWT(credsObj as DBCreds,refreshResponse.data.accessJWT);
+        await setPrefsDBCreds(credsObj);
         console.log("JWT Check: ",JWTCheck);
         if (!JWTCheck) {
              setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: "Invalid JWT Token", connectionStatus: ConnectionStatus.navToLoginScreen}))

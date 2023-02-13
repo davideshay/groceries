@@ -396,7 +396,6 @@ async function issueToken(req, res) {
          response.loginRoles = loginResponse.loginRoles;
          response.email = userDoc.email;
          response.fullname = userDoc.fullname;
-         response.jwt = await generateJWT(username,refreshTokenExpires);
          response.refreshJWT = await generateJWT(username,refreshTokenExpires);
          response.accessJWT = await generateJWT(username,accessTokenExpires);
      }
@@ -432,6 +431,9 @@ async function isValidToken(refreshJWT) {
 async function JWTMatchesUserDB(refreshJWT, username) {
     let userDoc = await getUserDoc(username);
     console.log("got userdoc:",{userDoc});
+    console.log("incoming JWT:",refreshJWT);
+    console.log("database JWT:",userDoc.fullDoc.refreshJWT);
+    console.log("are they equal:",userDoc.fullDoc.refreshJWT == refreshJWT);
     if (userDoc.error) { return false;}
     if (userDoc.fullDoc.name !== username) { return false;}
     if (!userDoc.fullDoc.hasOwnProperty("refreshJWT")) { return false;}
@@ -508,10 +510,10 @@ async function createNewUser(userObj) {
         email: userObj.email,
         fullname: userObj.fullname,
         roles: [couchStandardRole],
-        refreshjwt: await generateJWT(userObj.username,refreshTokenExpires),
+        refreshJWT: await generateJWT(userObj.username,refreshTokenExpires),
         type: "user"
     }
-    createResponse.refreshJWT = newDoc.refreshjwt;
+    createResponse.refreshJWT = newDoc.refreshJWT;
     createResponse.accessJWT = await generateJWT(userObj.username,accessTokenExpires);
     let res = null;
     try { res = await usersDBAsAdmin.insert(newDoc,couchUserPrefix+":"+userObj.username); }
@@ -554,7 +556,6 @@ async function registerNewUser(req, res) {
         userAlreadyExists: false,
         createdSuccessfully: false,
         idCreated: "",
-        jwt: "",
         refreshJWT: "",
         accessJWT: "",
         couchdbUrl: process.env.COUCHDB_URL,
@@ -576,8 +577,8 @@ async function registerNewUser(req, res) {
         let createResponse = await createNewUser({username: username, password: password, email: email, fullname: fullname})
         registerResponse.createdSuccessfully = !createResponse.error;
         registerResponse.idCreated = createResponse.idCreated;
-        registerResponse.jwt = createResponse.refreshJWT;
         registerResponse.refreshJWT = createResponse.refreshJWT;
+        registerResponse.accessJWT = createResponse.accessJWT;
         let updateFriendResponse = await updateUnregisteredFriends(email)
     }
     return (registerResponse);
@@ -853,7 +854,7 @@ async function resetPasswordUIPost(req, res) {
     if (!userDoc.error) {
         let newDoc=cloneDeep(userDoc.fullDoc);
         newDoc.password=req.body.password;
-        let newDocFiltered = _.pick(newDoc,['_id','_rev','name','email','fullname','roles','type','password','refreshjwt']);
+        let newDocFiltered = _.pick(newDoc,['_id','_rev','name','email','fullname','roles','type','password','refreshJWT']);
         let docupdate = await usersDBAsAdmin.insert(newDocFiltered);
     }
     respObj.resetSuccessfully = true;

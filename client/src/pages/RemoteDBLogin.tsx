@@ -186,9 +186,10 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       setRemoteState(prevState => ({...prevState, formError: String(credsCheck.errorText)}));
       return;
     }
+    console.log("SCF, creds OK, response:",{createResponse})
     let newCreds=updateDBCredsFromResponse(createResponse);
-    setRemoteDBState({...remoteDBState,accessJWT: createResponse.accessJWT});
-    let assignSuccess = assignDBAndSync(newCreds, createResponse.accessJWT);
+    setRemoteDBState({...remoteDBState,accessJWT: createResponse.data.accessJWT});
+    let assignSuccess = assignDBAndSync(newCreds, createResponse.data.accessJWT);
     if (!assignSuccess) {
       setRemoteState(prevState => ({...prevState, formError: "Error Starting Sync"}));
     }
