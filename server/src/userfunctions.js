@@ -310,10 +310,13 @@ async function getUserDoc(username) {
     return (userResponse);
 }
 
-async function generateJWT(username,timestring) {
+async function generateJWT(username,deviceUUID,timestring) {
     const alg = "HS256";
     const secret = new TextEncoder().encode(couchKey)
-    const jwt = await new jose.SignJWT({'sub': username, '_couchdb.roles': [couchStandardRole,couchAdminRole,"_admin"]})
+    const jwt = await new jose.SignJWT({'sub': username, 
+//                                        '_couchdb.roles': [couchStandardRole,couchAdminRole,"_admin"],
+                                        '_couchdb.roles': [couchStandardRole],
+                                        'deviceUUID': deviceUUID })
         .setProtectedHeader({ alg })
         .setIssuedAt()
         .setExpirationTime(timestring)
@@ -375,13 +378,13 @@ async function checkUserByEmailExists(req, res) {
 
 
 async function issueToken(req, res) {
-    const { username, password } = req.body;
+    const { username, password, deviceUUID } = req.body;
+    console.log("issuing token device ID:", JSON.stringify(deviceUUID));
     let response = {
         loginSuccessful: false,
         email: "",
         fullname: "",
         loginRoles: [],
-        jwt: "",
         refreshJWT: "",
         accessJWT: "",
         couchdbUrl: process.env.COUCHDB_URL,
@@ -396,10 +399,13 @@ async function issueToken(req, res) {
          response.loginRoles = loginResponse.loginRoles;
          response.email = userDoc.email;
          response.fullname = userDoc.fullname;
-         response.refreshJWT = await generateJWT(username,refreshTokenExpires);
-         response.accessJWT = await generateJWT(username,accessTokenExpires);
+         response.refreshJWT = await generateJWT(username,deviceUUID,refreshTokenExpires);
+         response.accessJWT = await generateJWT(username,deviceUUID,accessTokenExpires);
      }
-     userDoc.fullDoc.refreshJWT = response.refreshJWT;
+     if (!userDoc.fullDoc.hasOwnProperty('refreshJWTs')) {
+        userDoc.fullDoc.refreshJWTs = {};
+     }
+     userDoc.fullDoc.refreshJWTs[deviceUUID] = response.refreshJWT;
      let userUpd = usersDBAsAdmin.insert(userDoc.fullDoc);
     return(response);
 
@@ -428,16 +434,18 @@ async function isValidToken(refreshJWT) {
     return returnValue;
 }
 
-async function JWTMatchesUserDB(refreshJWT, username) {
+async function JWTMatchesUserDB(refreshJWT, deviceUUID, username) {
     let userDoc = await getUserDoc(username);
     console.log("got userdoc:",{userDoc});
     console.log("incoming JWT:",refreshJWT);
-    console.log("database JWT:",userDoc.fullDoc.refreshJWT);
-    console.log("are they equal:",userDoc.fullDoc.refreshJWT == refreshJWT);
+    if (userDoc.fullDoc.hasOwnProperty('refreshJWTs')) {
+        console.log("database JWT:",userDoc.fullDoc.refreshJWTs);
+        console.log("are they equal:",userDoc.fullDoc.refreshJWTs[deviceUUID] == refreshJWT);    
+    }
     if (userDoc.error) { return false;}
     if (userDoc.fullDoc.name !== username) { return false;}
-    if (!userDoc.fullDoc.hasOwnProperty("refreshJWT")) { return false;}
-    if (userDoc.fullDoc.refreshJWT !== refreshJWT) { return false;}
+    if (!userDoc.fullDoc.hasOwnProperty("refreshJWTs")) { return false;}
+    if (userDoc.fullDoc.refreshJWTs[deviceUUID] !== refreshJWT) { return false;}
     return true;
 }
 
@@ -447,8 +455,8 @@ async function invalidateToken(username) {
     console.log("got user doc:",{userDoc});
     if (userDoc.error) { return false;}
     if (userDoc.fullDoc.name !== username) { return false;}
-    if (!userDoc.fullDoc.hasOwnProperty("refreshJWT")) { return false;}
-    userDoc.fullDoc.refreshJWT = "";
+    if (!userDoc.fullDoc.hasOwnProperty("refreshJWTs")) { return false;}
+    userDoc.fullDoc.refreshJWTs = {};
     try { res = await usersDBAsAdmin.insert(userDoc.fullDoc); }
     catch(err) { console.log("ERROR: problem invalidating token: ",err); return false; }
     console.log("token now invalidated");
@@ -456,7 +464,8 @@ async function invalidateToken(username) {
 }
 
 async function refreshToken(req, res) {
-    const { refreshJWT } = req.body;
+    const { refreshJWT, deviceUUID } = req.body;
+    console.log("refreshToken, deviceUUID:",deviceUUID);
     // validate incoming refresh token
     //      valid by signature and expiration date
     //      matches most recent in user DB
@@ -470,7 +479,6 @@ async function refreshToken(req, res) {
         refreshJWT: "",
         accessJWT: ""
     }
-    console.log("refreshToken")
     const tokenDecode = await isValidToken(refreshJWT);
     console.log("refresh token: ",{tokenDecode});
     console.log("username:",tokenDecode.payload.sub);
@@ -478,31 +486,38 @@ async function refreshToken(req, res) {
         status = 403;
         return({status, response});
     }
-    if (! (await JWTMatchesUserDB(refreshJWT,tokenDecode.payload.sub))) {
+    if (! (await JWTMatchesUserDB(refreshJWT,deviceUUID, tokenDecode.payload.sub))) {
         console.log("JWT didn't match stored database JWT");
         status = 403;
         await invalidateToken(tokenDecode.payload.sub);
         return ({status, response});
     }
     response.valid = true;
-    response.refreshJWT = await generateJWT(tokenDecode.payload.sub,refreshTokenExpires);
-    response.accessJWT = await generateJWT(tokenDecode.payload.sub,accessTokenExpires);
+    response.refreshJWT = await generateJWT(tokenDecode.payload.sub,deviceUUID,refreshTokenExpires);
+    response.accessJWT = await generateJWT(tokenDecode.payload.sub,deviceUUID,accessTokenExpires);
     console.log("Calling get userdoc with:",tokenDecode.payload.sub);
     let userResponse = await getUserDoc(tokenDecode.payload.sub);
     console.log("userResponse:",userResponse);
-    userResponse.fullDoc.refreshJWT = response.refreshJWT;
+    userResponse.fullDoc.refreshJWTs[deviceUUID] = response.refreshJWT;
     let update = await usersDBAsAdmin.insert(userResponse.fullDoc);
     console.log("update",update);
     console.log("about to return from refresh Token:",{status},{response});
     return ({status, response});
 }
 
-async function createNewUser(userObj) {
+async function createNewUser(userObj, deviceUUID) {
+    console.log("In Create New User, deviceUUID is :",deviceUUID);
     const createResponse = {
         error: false,
         idCreated: "",
         refreshJWT: null,
         accessJWT: null
+    }
+    let refreshJWTs = {};
+    if (deviceUUID !== "") {
+        newJWT = await generateJWT(userObj.username,deviceUUID,refreshTokenExpires);
+        refreshJWTs = { deviceUUID: newJWT}
+        createResponse.refreshJWT = newJWT;
     }
     const newDoc = {
         name: userObj.username,
@@ -510,11 +525,12 @@ async function createNewUser(userObj) {
         email: userObj.email,
         fullname: userObj.fullname,
         roles: [couchStandardRole],
-        refreshJWT: await generateJWT(userObj.username,refreshTokenExpires),
+        refreshJWTs: refreshJWTs,
         type: "user"
     }
-    createResponse.refreshJWT = newDoc.refreshJWT;
-    createResponse.accessJWT = await generateJWT(userObj.username,accessTokenExpires);
+    if (deviceUUID !== "") {
+        createResponse.accessJWT = await generateJWT(userObj.username,deviceUUID,accessTokenExpires);
+    }    
     let res = null;
     try { res = await usersDBAsAdmin.insert(newDoc,couchUserPrefix+":"+userObj.username); }
     catch(err) { console.log("ERROR: problem creating user: ",err); createResponse.error= true }
@@ -550,7 +566,7 @@ function isNothing(obj) {
 }
 
 async function registerNewUser(req, res) {
-    const {username, password, email, fullname} = req.body;
+    const {username, password, email, fullname, deviceUUID} = req.body;
     const registerResponse = {
         invalidData: false,
         userAlreadyExists: false,
@@ -574,7 +590,7 @@ async function registerNewUser(req, res) {
         registerResponse.userAlreadyExists = true;
     } 
     if (!registerResponse.userAlreadyExists)  {
-        let createResponse = await createNewUser({username: username, password: password, email: email, fullname: fullname})
+        let createResponse = await createNewUser({username: username, password: password, email: email, fullname: fullname}, deviceUUID);
         registerResponse.createdSuccessfully = !createResponse.error;
         registerResponse.idCreated = createResponse.idCreated;
         registerResponse.refreshJWT = createResponse.refreshJWT;
@@ -713,7 +729,7 @@ async function createAccountUIPost(req,res) {
         password: req.body.password
     }
 
-    let userIDres = await createNewUser(userObj);
+    let userIDRes = await createNewUser(userObj,"");
     respObj.refreshjwt = userIDRes.refreshJWT;
 
     // change friend doc to registered
@@ -854,7 +870,7 @@ async function resetPasswordUIPost(req, res) {
     if (!userDoc.error) {
         let newDoc=cloneDeep(userDoc.fullDoc);
         newDoc.password=req.body.password;
-        let newDocFiltered = _.pick(newDoc,['_id','_rev','name','email','fullname','roles','type','password','refreshJWT']);
+        let newDocFiltered = _.pick(newDoc,['_id','_rev','name','email','fullname','roles','type','password','refreshJWTs']);
         let docupdate = await usersDBAsAdmin.insert(newDocFiltered);
     }
     respObj.resetSuccessfully = true;

@@ -7,6 +7,7 @@
     "@capacitor/app": "4.1.1",
     "@capacitor/clipboard": "^4.1.0",
     "@capacitor/core": "^4.6.1",
+    "@capacitor/device": "^4.1.0",
     "@capacitor/haptics": "4.1.0",
     "@capacitor/keyboard": "^4.1.0",
     "@capacitor/preferences": "^4.0.2",

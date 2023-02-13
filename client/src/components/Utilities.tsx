@@ -40,7 +40,7 @@ export async function checkUserByEmailExists(email: string, remoteDBState: Remot
         method: "POST",
         headers: { 'Content-Type': 'application/json',
                    'Accept': 'application/json',
-                   'Authorization': 'Bearer '+remoteDBState.dbCreds?.JWT },
+                   'Authorization': 'Bearer '+remoteDBState.dbCreds?.refreshJWT },
         data: {
             email: email,
         }           
@@ -51,7 +51,7 @@ export async function checkUserByEmailExists(email: string, remoteDBState: Remot
     return response.data;
 }
 
-export async function getUsersInfo(userIDList: UserIDList,apiServerURL: string): Promise<UsersInfo> {
+export async function getUsersInfo(userIDList: UserIDList,apiServerURL: string, refreshJWT: string): Promise<UsersInfo> {
     let usersInfo: UsersInfo = cloneDeep(initUsersInfo);
     const usersUrl = apiServerURL+"/getusersinfo"
     if (!urlPatternValidation(usersUrl)) {return usersInfo}
@@ -60,7 +60,8 @@ export async function getUsersInfo(userIDList: UserIDList,apiServerURL: string):
       data: userIDList,
       method: "POST",
       headers: { 'Content-Type': 'application/json',
-                 'Accept': 'application/json' }
+                 'Accept': 'application/json',
+                 'Authorization': 'Bearer '+refreshJWT }
     };
     let response:HttpResponse;
     let httpError=false;

@@ -162,7 +162,8 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
       url: String(remoteDBState.dbCreds.apiServerURL+"/triggerregemail"),
       method: "POST",
       headers: { 'Content-Type': 'application/json',
-                 'Accept': 'application/json'},
+                 'Accept': 'application/json',
+                 'Authorization': 'Bearer '+remoteDBState.dbCreds?.refreshJWT },
       data: { "uuid": invuid }           
       };
     console.log("about to execute triggerregemail httpget with options: ", {options})

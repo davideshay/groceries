@@ -255,7 +255,7 @@ export function useFriends(username: string) : {friendsLoading: boolean, friendR
         }
       });
       const getUsers = async () => {
-        const usersInfo = await getUsersInfo(userIDList,String(remoteDBState.dbCreds.apiServerURL));
+        const usersInfo = await getUsersInfo(userIDList,String(remoteDBState.dbCreds.apiServerURL), String(remoteDBState.dbCreds.refreshJWT));
         setFriendRows(prevState => ([]));
         if (usersInfo.length > 0) {
           friendDocs.forEach((friendDoc: any) => {

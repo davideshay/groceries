@@ -137,6 +137,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     
   async function submitForm() {
 //    setPrefsDBCreds();
+    console.log("in submit form, deviceUUID:", remoteDBState.deviceUUID);
     let credsCheck = errorCheckCreds(remoteDBState.dbCreds,false,false,remoteState.password);
     if (credsCheck.credsError ) {
       setRemoteState(prevState => ({...prevState,formError: String(credsCheck.errorText)}))
@@ -149,7 +150,8 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
         headers: { 'Content-Type': 'application/json; charset=UTF-8',
                    'Accept': 'application/json'},
         data: { username: remoteDBState.dbCreds.dbUsername,
-                password: remoteState.password},           
+                password: remoteState.password,
+                deviceUUID: remoteDBState.deviceUUID},           
     };
     try {response = await CapacitorHttp.post(options)}
     catch(err) {console.log("Error logging in...",err)

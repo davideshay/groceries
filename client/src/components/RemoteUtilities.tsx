@@ -33,14 +33,16 @@ export async function createNewUser(remoteDBState: RemoteDBState,password: strin
             username: remoteDBState.dbCreds.dbUsername,
             password: password,
             email: remoteDBState.dbCreds.email,
-            fullname: remoteDBState.dbCreds.fullName
+            fullname: remoteDBState.dbCreds.fullName,
+            deviceUUID: remoteDBState.deviceUUID
         }           
     };
     response = await CapacitorHttp.post(options);
     return response;
 }
 
-export async function refreshToken(dbCreds: DBCreds) {
+export async function refreshToken(dbCreds: DBCreds, devID: string) {
+    console.log("refreshing token, device id: ", devID);
     let response: HttpResponse | undefined;
     const options = {
         url: String(dbCreds.apiServerURL+"/refreshtoken"),
@@ -49,7 +51,8 @@ export async function refreshToken(dbCreds: DBCreds) {
                     'Accept': 'application/json',
                     'Authorization': 'Bearer '+dbCreds.refreshJWT},
         data: {
-            refreshJWT: dbCreds.refreshJWT
+            refreshJWT: dbCreds.refreshJWT,
+            deviceUUID: devID
         }            
     };
     response = await CapacitorHttp.post(options);

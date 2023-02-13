@@ -4,12 +4,14 @@ import { Preferences } from '@capacitor/preferences';
 import { cloneDeep, pick, keys, isEqual } from 'lodash';
 import { isJsonString, urlPatternValidation, emailPatternValidation, usernamePatternValidation, fullnamePatternValidation, DEFAULT_API_URL } from '../components/Utilities'; 
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
+import { Device } from '@capacitor/device';
 import PouchDB from 'pouchdb';
 import { refreshToken } from "./RemoteUtilities";
 
 export type RemoteDBState = {
     remoteDB: PouchDB.Database | undefined,
     dbCreds: DBCreds,
+    deviceUUID: string | null,
     accessJWT: string,
     syncStatus: SyncStatus,
     connectionStatus: ConnectionStatus,
@@ -81,19 +83,19 @@ export interface DBCreds {
     dbUsername: string | null,
     email: string | null,
     fullName: string | null,
-    JWT: string | null,
     refreshJWT: string | null,
     lastConflictsViewed: string | null;
 }
 
 export const DBCredsInit: DBCreds = {
     apiServerURL: null, couchBaseURL: null, database: null,
-    dbUsername: null, email: null, fullName: null, JWT: null, refreshJWT: null, lastConflictsViewed: null
+    dbUsername: null, email: null, fullName: null, refreshJWT: null, lastConflictsViewed: null
 }
 
 export const initialRemoteDBState: RemoteDBState = {
     remoteDB: undefined ,
     dbCreds: DBCredsInit,
+    deviceUUID: null,
     accessJWT: "",
     syncStatus: SyncStatus.init,
     connectionStatus: ConnectionStatus.cannotStart,
@@ -173,7 +175,6 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
                 couchBaseURL: "",
                 database: "",
                 dbUsername:"",
-                JWT:"",
                 refreshJWT: "",
                 email: "",
                 fullName: "",
@@ -341,6 +342,14 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     }
 
     async function attemptFullLogin() {
+        const devIDInfo = await Device.getId();
+        let devID = "";
+        if (devIDInfo.hasOwnProperty('uuid')) {
+            devID = devIDInfo.uuid;
+        }
+        console.log("Here is my devID:", devID);
+        console.log(Device.getId());
+        setRemoteDBState(prevState => ({...prevState,deviceUUID: devID}));
         let credsObj = await getPrefsDBCreds();
         console.log({credsObj});
         let credsCheck =  errorCheckCreds((credsObj as DBCreds),true);
@@ -349,7 +358,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: credsCheck.errorText, connectionStatus: ConnectionStatus.navToLoginScreen}))
             return;
         } 
-        let refreshResponse = await refreshToken(credsObj as DBCreds);
+        let refreshResponse = await refreshToken(credsObj as DBCreds,devID);
         console.log("Refresh token response:",refreshResponse);
         if (!refreshResponse.data.valid) {
             setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: "Invalid JWT Token", connectionStatus: ConnectionStatus.navToLoginScreen}));

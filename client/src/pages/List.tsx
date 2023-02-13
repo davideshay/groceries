@@ -72,7 +72,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
       let usersInfo: UsersInfo
       if (userIDList.userIDs.length > 0) {
         setPageState(prevState => ({...prevState,usersInfo:[],usersLoaded:false}));
-        usersInfo = await getUsersInfo(userIDList,String(remoteDBState.dbCreds.apiServerURL))  
+        usersInfo = await getUsersInfo(userIDList,String(remoteDBState.dbCreds.apiServerURL),String(remoteDBState.dbCreds.refreshJWT))  
       }
       setPageState(prevState => ({...prevState,usersInfo: usersInfo,usersLoaded: true}))
     }
