@@ -79,8 +79,6 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader></IonPage>
   )};
   
-  console.log(uomError);
-
   async function updateThisItem() {
     setFormError(prevState => (""));
     let result: PouchResponse;

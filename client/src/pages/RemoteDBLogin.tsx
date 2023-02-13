@@ -131,7 +131,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       newDBCreds.database = response?.data.couchdbDatabase;
       newDBCreds.email = response?.data.email;
       newDBCreds.fullName = response?.data.fullname;
-      newDBCreds.JWT = response?.data.jwt;
+      newDBCreds.refreshJWT = response?.data.refreshJWT;
       return newDBCreds;
     }
     
@@ -156,12 +156,14 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
                 setRemoteState(prevState => ({...prevState, formError: "Cannot contact API server"}));
                 setRemoteDBState({...remoteDBState, serverAvailable: false});
                 return}
+    console.log("got response from issuetoken: ", {response});            
     if (!((response?.status == 200) && (response?.data?.loginSuccessful))) {
         setRemoteState(prevState => ({...prevState, formError: "Invalid Authentication"}))
         return
     }
     let newCreds=updateDBCredsFromResponse(response);
-    let assignSuccess = assignDBAndSync(newCreds);
+    setRemoteDBState({...remoteDBState, accessJWT: response.data.accessJWT});
+    let assignSuccess = assignDBAndSync(newCreds,response.data.accessJWT);
     if (!assignSuccess) {
       setRemoteState(prevState => ({...prevState, formError: "Error Starting Sync"}))
     }
@@ -185,7 +187,8 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       return;
     }
     let newCreds=updateDBCredsFromResponse(createResponse);
-    let assignSuccess = assignDBAndSync(newCreds);
+    setRemoteDBState({...remoteDBState,accessJWT: createResponse.accessJWT});
+    let assignSuccess = assignDBAndSync(newCreds, createResponse.accessJWT);
     if (!assignSuccess) {
       setRemoteState(prevState => ({...prevState, formError: "Error Starting Sync"}));
     }

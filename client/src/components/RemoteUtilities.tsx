@@ -1,4 +1,4 @@
-import { RemoteDBState } from "./RemoteDBState";
+import { DBCreds, RemoteDBState } from "./RemoteDBState";
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 
 export async function navigateToFirstListID(db: any,phistory: any,remoteDBState: RemoteDBState) {
@@ -28,7 +28,7 @@ export async function createNewUser(remoteDBState: RemoteDBState,password: strin
         method: "POST",
         headers: { 'Content-Type': 'application/json',
                    'Accept': 'application/json',
-                   'Authorization': 'Bearer '+remoteDBState.dbCreds.JWT },
+                   'Authorization': 'Bearer '+remoteDBState.dbCreds.refreshJWT },
         data: {
             username: remoteDBState.dbCreds.dbUsername,
             password: password,
@@ -36,8 +36,22 @@ export async function createNewUser(remoteDBState: RemoteDBState,password: strin
             fullname: remoteDBState.dbCreds.fullName
         }           
     };
-    console.log("about to execute createnewuser httpget with options: ", {options})
     response = await CapacitorHttp.post(options);
-    console.log("got httpget response: ",{response});
+    return response;
+}
+
+export async function refreshToken(dbCreds: DBCreds) {
+    let response: HttpResponse | undefined;
+    const options = {
+        url: String(dbCreds.apiServerURL+"/refreshtoken"),
+        method: "POST",
+        headers: { 'Content-Type' : 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': 'Bearer '+dbCreds.refreshJWT},
+        data: {
+            refreshJWT: dbCreds.refreshJWT
+        }            
+    };
+    response = await CapacitorHttp.post(options);
     return response;
 }

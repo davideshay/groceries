@@ -39,9 +39,12 @@ let usersDBAsAdmin;
 const _ = require('lodash');
 const { v4: uuidv4 } = require('uuid');
 const { cloneDeep } = require('lodash');
-const {  emailPatternValidation, usernamePatternValidation, fullnamePatternValidation, uomContent } = require('./utilities')
+const {  emailPatternValidation, usernamePatternValidation, fullnamePatternValidation, uomContent } = require('./utilities');
 let uomContentVersion = 0;
 const targetUomContentVersion = 2;
+const refreshTokenExpires="30d";
+const accessTokenExpires="5m";
+const JWTKey = new TextEncoder().encode(couchKey);
 
 async function couchLogin(username, password) {
     const loginResponse = {
@@ -295,13 +298,8 @@ async function getUserDoc(username) {
         email: "",
         fullDoc: {}
     }
-    const config = {
-        method: 'get',
-        url: couchdbUrl+"/_users/"+ encodeURI(couchUserPrefix+":"+username),
-        auth: {username: couchAdminUser, password: couchAdminPassword},
-        responseType: 'json'
-    }
     let res = null;
+    console.log("getting user doc for user:",username);
     try { res = await usersDBAsAdmin.get(couchUserPrefix+":"+username)}
     catch(err) { console.log("ERROR GETTING USER:",err); userResponse.error= true }
     if (!userResponse.error) {
@@ -312,13 +310,13 @@ async function getUserDoc(username) {
     return (userResponse);
 }
 
-async function generateJWT(username) {
+async function generateJWT(username,timestring) {
     const alg = "HS256";
     const secret = new TextEncoder().encode(couchKey)
     const jwt = await new jose.SignJWT({'sub': username, '_couchdb.roles': [couchStandardRole,couchAdminRole,"_admin"]})
         .setProtectedHeader({ alg })
         .setIssuedAt()
-        .setExpirationTime("5s")
+        .setExpirationTime(timestring)
         .sign(secret);  
     return (jwt);
 }
@@ -345,7 +343,6 @@ async function getUserByEmailDoc(email) {
     let res = null;
     try { res = await usersDBAsAdmin.find(query);}
     catch(err) { console.log(err); userResponse.error= true }
-    console.log(res);
     if (!userResponse.error) {
         if (res.docs.length > 0) {
             userResponse.username = res.docs[0].name;
@@ -354,7 +351,6 @@ async function getUserByEmailDoc(email) {
         } else {
             userResponse.error = true;
         }
-
     }
     return (userResponse);
 }
@@ -386,6 +382,8 @@ async function issueToken(req, res) {
         fullname: "",
         loginRoles: [],
         jwt: "",
+        refreshJWT: "",
+        accessJWT: "",
         couchdbUrl: process.env.COUCHDB_URL,
         couchdbDatabase: process.env.COUCHDB_DATABASE
     }
@@ -398,16 +396,111 @@ async function issueToken(req, res) {
          response.loginRoles = loginResponse.loginRoles;
          response.email = userDoc.email;
          response.fullname = userDoc.fullname;
-         response.jwt = await generateJWT(username);
+         response.jwt = await generateJWT(username,refreshTokenExpires);
+         response.refreshJWT = await generateJWT(username,refreshTokenExpires);
+         response.accessJWT = await generateJWT(username,accessTokenExpires);
      }
+     userDoc.fullDoc.refreshJWT = response.refreshJWT;
+     let userUpd = usersDBAsAdmin.insert(userDoc.fullDoc);
     return(response);
 
+}
+
+async function isValidToken(refreshJWT) {
+    let jwtResponse = null;
+    let returnValue = {
+        isValid: false,
+        protectedHeader: null,
+        payload: null,
+        error : null
+    };
+    console.log("JWTKey:",JWTKey,"refreshJWT:",refreshJWT);
+    try { jwtResponse = await jose.jwtVerify(refreshJWT, JWTKey); }
+    catch(err) { returnValue.isValid = false; returnValue.error = err;
+            return returnValue;}
+    console.log("jwtResponse:",cloneDeep(jwtResponse));
+    if (jwtResponse.hasOwnProperty("payload") && jwtResponse.hasOwnProperty("protectedHeader")) {
+        if (jwtResponse.payload.hasOwnProperty("sub")) {
+            returnValue.isValid = true;
+            returnValue.protectedHeader = jwtResponse.protectedHeader;
+            returnValue.payload = jwtResponse.payload;
+        }
+    }        
+    return returnValue;
+}
+
+async function JWTMatchesUserDB(refreshJWT, username) {
+    let userDoc = await getUserDoc(username);
+    console.log("got userdoc:",{userDoc});
+    if (userDoc.error) { return false;}
+    if (userDoc.fullDoc.name !== username) { return false;}
+    if (!userDoc.fullDoc.hasOwnProperty("refreshJWT")) { return false;}
+    if (userDoc.fullDoc.refreshJWT !== refreshJWT) { return false;}
+    return true;
+}
+
+async function invalidateToken(username) {
+    console.log("invalidating token");
+    let userDoc = await getUserDoc(username);
+    console.log("got user doc:",{userDoc});
+    if (userDoc.error) { return false;}
+    if (userDoc.fullDoc.name !== username) { return false;}
+    if (!userDoc.fullDoc.hasOwnProperty("refreshJWT")) { return false;}
+    userDoc.fullDoc.refreshJWT = "";
+    try { res = await usersDBAsAdmin.insert(userDoc.fullDoc); }
+    catch(err) { console.log("ERROR: problem invalidating token: ",err); return false; }
+    console.log("token now invalidated");
+    return true;
+}
+
+async function refreshToken(req, res) {
+    const { refreshJWT } = req.body;
+    // validate incoming refresh token
+    //      valid by signature and expiration date
+    //      matches most recent in user DB
+    // if valid then:
+    //       generate new access and refresh JWT
+    //       update userDB with current JWT
+    //       return access and refresh JWT
+    let status = 200;
+    let response = {
+        valid : false,
+        refreshJWT: "",
+        accessJWT: ""
+    }
+    console.log("refreshToken")
+    const tokenDecode = await isValidToken(refreshJWT);
+    console.log("refresh token: ",{tokenDecode});
+    console.log("username:",tokenDecode.payload.sub);
+    if (!tokenDecode.isValid) {
+        status = 403;
+        return({status, response});
+    }
+    if (! (await JWTMatchesUserDB(refreshJWT,tokenDecode.payload.sub))) {
+        console.log("JWT didn't match stored database JWT");
+        status = 403;
+        await invalidateToken(tokenDecode.payload.sub);
+        return ({status, response});
+    }
+    response.valid = true;
+    response.refreshJWT = await generateJWT(tokenDecode.payload.sub,refreshTokenExpires);
+    response.accessJWT = await generateJWT(tokenDecode.payload.sub,accessTokenExpires);
+    console.log("Calling get userdoc with:",tokenDecode.payload.sub);
+    let userResponse = await getUserDoc(tokenDecode.payload.sub);
+    console.log("userResponse:",userResponse);
+    userResponse.fullDoc.refreshJWT = response.refreshJWT;
+    let update = await usersDBAsAdmin.insert(userResponse.fullDoc);
+    console.log("update",update);
+    console.log("about to return from refresh Token:",{status},{response});
+    return ({status, response});
 }
 
 async function createNewUser(userObj) {
     const createResponse = {
         error: false,
-        idCreated: ""
+        idCreated: "",
+        refreshJWT: null,
+        accessJWT: null
     }
     const newDoc = {
         name: userObj.username,
@@ -415,12 +508,14 @@ async function createNewUser(userObj) {
         email: userObj.email,
         fullname: userObj.fullname,
         roles: [couchStandardRole],
+        refreshjwt: await generateJWT(userObj.username,refreshTokenExpires),
         type: "user"
     }
+    createResponse.refreshJWT = newDoc.refreshjwt;
+    createResponse.accessJWT = await generateJWT(userObj.username,accessTokenExpires);
     let res = null;
     try { res = await usersDBAsAdmin.insert(newDoc,couchUserPrefix+":"+userObj.username); }
     catch(err) { console.log("ERROR: problem creating user: ",err); createResponse.error= true }
-    console.log({res});
     if (!createResponse.error) {
         createResponse.idCreated = res.id;
     }
@@ -433,20 +528,16 @@ async function updateUnregisteredFriends(email) {
         limit: await totalDocCount(todosDBAsAdmin)
     }
     foundFriendDocs =  await todosDBAsAdmin.find(emailq);
-    console.log("updating unregistered friends..., full list:",{foundFriendDocs});
     foundFriendDoc = undefined;
 //    if (foundFriendDocs.docs.length > 0) {foundFriendDoc = foundFriendDocs.docs[0]}
     foundFriendDocs.docs.forEach(async (doc) => {
-        console.log("processing one friend:",{doc});
         if (doc.friendStatus == "WAITREGISTER") {
             doc.friendID2 = req.body.username;
             doc.friendStatus = "PENDFROM1";
             doc.updatedAt = (new Date()).toISOString();
-            console.log("about to update record:", doc)
             update2Success=true;
             try { await todosDBAsAdmin.insert(doc);} 
             catch(e) {update2success = false;}
-            console.log("update2success:",{update2Success})
         }
     });
 }
@@ -464,6 +555,8 @@ async function registerNewUser(req, res) {
         createdSuccessfully: false,
         idCreated: "",
         jwt: "",
+        refreshJWT: "",
+        accessJWT: "",
         couchdbUrl: process.env.COUCHDB_URL,
         couchdbDatabase: process.env.COUCHDB_DATABASE,
         email: email,
@@ -483,7 +576,8 @@ async function registerNewUser(req, res) {
         let createResponse = await createNewUser({username: username, password: password, email: email, fullname: fullname})
         registerResponse.createdSuccessfully = !createResponse.error;
         registerResponse.idCreated = createResponse.idCreated;
-        registerResponse.jwt = await generateJWT(username);
+        registerResponse.jwt = createResponse.refreshJWT;
+        registerResponse.refreshJWT = createResponse.refreshJWT;
         let updateFriendResponse = await updateUnregisteredFriends(email)
     }
     return (registerResponse);
@@ -563,7 +657,6 @@ async function getFriendDocByUUID(uuid) {
         limit: await totalDocCount(todosDBAsAdmin)
     }
     let foundFriendDocs =  await todosDBAsAdmin.find(uuidq);
-    console.log("all docs found:",{foundFriendDocs});
     let foundFriendDoc;
     if (foundFriendDocs.docs.length > 0) {foundFriendDoc = foundFriendDocs.docs[0]}
     return(foundFriendDoc);
@@ -578,6 +671,7 @@ async function createAccountUIPost(req,res) {
         fullname: (req.body.fullname == undefined) ? "" : req.body.fullname,
         password: (req.body.password == undefined) ? "" : req.body.password,
         passwordverify: (req.body.passwordverify == undefined) ? "" : req.body.passwordverify,
+        refreshjwt: "",
         formError: "",
         disableSubmit: false,
         createdSuccessfully: false
@@ -618,34 +712,27 @@ async function createAccountUIPost(req,res) {
         password: req.body.password
     }
 
-    console.log("about to create new user: ",{userObj});
     let userIDres = await createNewUser(userObj);
+    respObj.refreshjwt = userIDRes.refreshJWT;
 
     // change friend doc to registered
     let foundFriendDoc = await getFriendDocByUUID(req.body.uuid);
-    console.log("getting friend doc by uuid",{foundFriendDoc});
     if (foundFriendDoc!=undefined) {
-        console.log("updating that friend doc to PENDFROM1");
         foundFriendDoc.friendID2 = req.body.username;
         foundFriendDoc.friendStatus = "PENDFROM1";
         foundFriendDoc.updatedAt = (new Date()).toISOString();
         updateSuccessful = true;
-        console.log("about to update/insert:",{foundFriendDoc});
         try { await todosDBAsAdmin.insert(foundFriendDoc); }
         catch(e) {updateSuccessful = false;}
-        console.log("update success:",{updateSuccessful});
     }
 
-    console.log("checking other friend records by email now");
     const emailq = {
         selector: { type: { "$eq": "friend" }, inviteEmail: { "$eq": req.body.email}}
     }
     foundFriendDocs =  await todosDBAsAdmin.find(emailq);
-    console.log("found complete list of friends to check:",{foundFriendDocs});
     foundFriendDoc = undefined;
     if (foundFriendDocs.docs.length > 0) {foundFriendDoc = foundFriendDocs.docs[0]}
     foundFriendDocs.docs.forEach(async (doc) => {
-        console.log("checking for other, existing doc:",{doc});
         if ((doc.inviteUUID != req.body.uuid) && (doc.friendStatus == "WAITREGISTER")) {
             doc.friendID2 = req.body.username;
             doc.friendStatus = "PENDFROM1";
@@ -657,7 +744,6 @@ async function createAccountUIPost(req,res) {
     });
 
     respObj.createdSuccessfully = true;
-    console.log("about to respond with :",{respObj});
     return(respObj);
 }
 
@@ -666,21 +752,16 @@ async function triggerRegEmail(req, res) {
         emailSent : false
     }
     const {uuid} = req.body;
-    console.log("about to trigger reg email for uuid: ", uuid);
-
     if (isNothing(uuid)) {return (triggerResponse);}
     let foundFriendDoc = await getFriendDocByUUID(req.body.uuid);
     if (foundFriendDoc == undefined) {return triggerResponse;};
-    console.log("Found Friend to trigger: ", {foundFriendDoc});
     let userDoc = await getUserDoc(foundFriendDoc.friendID1);
     if (userDoc.error) {return triggerResponse};
-    console.log("Got user Doc:",{userDoc});
     
     let transport = nodemailer.createTransport(smtpOptions);
     transport.verify(function (error,success) {
         if (error) {return triggerResponse}
     })
-    console.log("transport verified");
 
     let confURL = groceryAPIUrl + "/createaccountui?uuid="+foundFriendDoc.inviteUUID;
 
@@ -690,8 +771,6 @@ async function triggerRegEmail(req, res) {
         subject: "User Creation request from Groceries",
         text: userDoc.fullname+" has requested to share lists with you on the Groceries App. Please use the link to register for an account: "+confURL+ " . Once registered, visit "+groceryUrl+" to use the app."
     }
-
-    console.log("about to send message:",{message});
 
     transport.sendMail(message, function (error, success) {
         if (!error) {return triggerResponse}
@@ -774,14 +853,10 @@ async function resetPasswordUIPost(req, res) {
     if (!userDoc.error) {
         let newDoc=cloneDeep(userDoc.fullDoc);
         newDoc.password=req.body.password;
-        let newDocFiltered = _.pick(newDoc,['_id','_rev','name','email','fullname','roles','type','password']);
-        console.log(newDocFiltered)
+        let newDocFiltered = _.pick(newDoc,['_id','_rev','name','email','fullname','roles','type','password','refreshjwt']);
         let docupdate = await usersDBAsAdmin.insert(newDocFiltered);
-        console.log(docupdate);
     }
     respObj.resetSuccessfully = true;
-    // do actual password update
-    console.log("password updated to ",req.body.password);
     return(respObj);
 }
 
@@ -792,27 +867,21 @@ async function resolveConflicts() {
     if (conflicts.rows?.length <= 0) {console.log("STATUS: no conflicts found"); return};
     outerloop: for (let i = 0; i < conflicts.rows.length; i++) {
         const conflict = conflicts.rows[i];
-        console.log(conflict);
-        console.log(conflict.id);
         let curWinner;
         try { curWinner = await todosDBAsAdmin.get(conflict.id, {conflicts: true});}
         catch(err) { resolveFailure = true;}
         if (resolveFailure) {continue};
-        console.log(curWinner,resolveFailure);
         let latestDocTime = curWinner.updatedAt; 
         let latestIsCurrentWinner = true;
         let latestDoc = curWinner
         let bulkObj = { docs: []};
         let logObj = { type: "conflictlog", docType: curWinner.type, winner: {}, losers: []};
-        console.log({latestDocTime,latestIsCurrentWinner,latestDoc});
-        console.log
         for (let j = 0; j < curWinner._conflicts.length; j++) {
             const losingRev = curWinner._conflicts[j];
             let curLoser;
             try { curLoser = await todosDBAsAdmin.get(conflict.id,{ rev: losingRev})}
             catch(err) {resolveFailure=true;}
             if (resolveFailure) {continue outerloop};
-            console.log({curLoser});
             if (curLoser.updatedAt >= latestDocTime) {
                 latestIsCurrentWinner = false;
                 latestDocTime = curLoser.updatedAt;
@@ -831,8 +900,6 @@ async function resolveConflicts() {
             bulkObj.docs.push({_id: curWinner._id, _rev: curWinner._rev, _deleted: true});
             logObj.losers.push(curWinner);
         }
-        console.log("LogObj:",JSON.stringify(logObj));
-        console.log("BulkObj:", JSON.stringify(bulkObj));
         let bulkResult;
         try { bulkResult = await todosDBAsAdmin.bulk(bulkObj) }
         catch(err) {console.log("ERROR: Error updating bulk docs on conflict resolve"); resolveFailure=true;}
@@ -840,7 +907,6 @@ async function resolveConflicts() {
         let logResult;
         try { logResult = await todosDBAsAdmin.insert(logObj)}
         catch(err) { console.log("ERROR: creating conflict log document failed: ",err)};
-        console.log(bulkResult);
     }
 }
 
@@ -866,6 +932,7 @@ async function triggerDBCompact(req,res) {
 
 module.exports = {
     issueToken,
+    refreshToken,
     checkUserExists,
     checkUserByEmailExists,
     registerNewUser,

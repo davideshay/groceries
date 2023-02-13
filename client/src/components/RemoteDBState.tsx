@@ -1,15 +1,16 @@
-import React, { createContext, useState, useContext, useEffect, useRef} from "react";
+import React, { createContext, useState, useEffect, useRef} from "react";
 import { usePouch} from 'use-pouchdb';
 import { Preferences } from '@capacitor/preferences';
 import { cloneDeep, pick, keys, isEqual } from 'lodash';
 import { isJsonString, urlPatternValidation, emailPatternValidation, usernamePatternValidation, fullnamePatternValidation, DEFAULT_API_URL } from '../components/Utilities'; 
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import PouchDB from 'pouchdb';
-import { navigateToFirstListID } from "./RemoteUtilities";
+import { refreshToken } from "./RemoteUtilities";
 
 export type RemoteDBState = {
     remoteDB: PouchDB.Database | undefined,
     dbCreds: DBCreds,
+    accessJWT: string,
     syncStatus: SyncStatus,
     connectionStatus: ConnectionStatus,
     dbUUIDAction: DBUUIDAction,
@@ -81,17 +82,19 @@ export interface DBCreds {
     email: string | null,
     fullName: string | null,
     JWT: string | null,
+    refreshJWT: string | null,
     lastConflictsViewed: string | null;
 }
 
 export const DBCredsInit: DBCreds = {
     apiServerURL: null, couchBaseURL: null, database: null,
-    dbUsername: null, email: null, fullName: null, JWT: null, lastConflictsViewed: null
+    dbUsername: null, email: null, fullName: null, JWT: null, refreshJWT: null, lastConflictsViewed: null
 }
 
 export const initialRemoteDBState: RemoteDBState = {
     remoteDB: undefined ,
     dbCreds: DBCredsInit,
+    accessJWT: "",
     syncStatus: SyncStatus.init,
     connectionStatus: ConnectionStatus.cannotStart,
     dbUUIDAction: DBUUIDAction.none,
@@ -107,7 +110,7 @@ const initialContext = {
     startSync: () => {},
     errorCheckCreds: (credsObj: DBCreds,background: boolean, creatingNewUser: boolean = false, password: string = "", verifyPassword: string = ""): CredsCheck => {return CredsCheckInit},
     checkDBUUID: async (remoteDB: PouchDB.Database,credsObj: DBCreds): Promise<DBUUIDCheck> => {return DBUUIDCheckInit },
-    assignDBAndSync: async (credsObj: DBCreds): Promise<boolean> => {return false},
+    assignDBAndSync: async (credsObj: DBCreds, accessJWT: string): Promise<boolean> => {return false},
     setDBCredsValue: (key: any, value: any) => {},
     setConnectionStatus: (value: ConnectionStatus) => {},
 }
@@ -160,7 +163,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         const credsOrigKeys = keys(credsObj);
         if (isJsonString(String(credsStr))) {
           credsObj=JSON.parse(String(credsStr));
-          let credsObjFiltered=pick(credsObj,['apiServerURL','couchBaseURL','database','dbUsername','email','fullName','JWT','lastConflictsViewed'])
+          let credsObjFiltered=pick(credsObj,['apiServerURL','couchBaseURL','database','dbUsername','email','fullName','JWT','refreshJWT','lastConflictsViewed'])
           setRemoteDBState(prevstate => ({...prevstate,dbCreds: credsObjFiltered}))
           credsObj = credsObjFiltered;
         }
@@ -171,6 +174,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
                 database: "",
                 dbUsername:"",
                 JWT:"",
+                refreshJWT: "",
                 email: "",
                 fullName: "",
                 lastConflictsViewed: (new Date()).toISOString()
@@ -188,8 +192,8 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         function setError(err: string) {
             credsCheck.credsError = true; credsCheck.errorText=err;
         }
-        if (background && (credsObj.JWT == null || credsObj.JWT == "")) {
-            setError("No existing credentials found"); return credsCheck;}
+        if (background && (credsObj.refreshJWT == null || credsObj.refreshJWT == "")) {
+            setError("No existing credentials found (refresh)"); return credsCheck;}
         if (credsObj.apiServerURL == null || credsObj.apiServerURL == "") {
             setError("No API Server URL entered"); return credsCheck;}    
         if ((background) && (credsObj.couchBaseURL == null || credsObj.couchBaseURL == "")) {
@@ -227,7 +231,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         return credsCheck;
     }
     
-    async function checkJWT(credsObj: DBCreds) {
+    async function checkJWT(credsObj: DBCreds, accessJWT: string) {
         let JWTOK = false;
         let response: HttpResponse | undefined;
         let serverAvailable = true;
@@ -236,7 +240,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             method: "GET",
             headers: { 'Content-Type': 'application/json',
                        'Accept': 'application/json',
-                       'Authorization': 'Bearer '+ credsObj.JWT },
+                       'Authorization': 'Bearer '+ accessJWT },
               };
         try { response = await CapacitorHttp.get(options); }
         catch(err) {console.log("Got error:",err); serverAvailable=false}
@@ -315,12 +319,13 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         await Preferences.set({key: 'dbcreds', value: credsStr})  
     }
 
-    async function assignDBAndSync(credsObj: DBCreds): Promise<boolean> {
+    async function assignDBAndSync(credsObj: DBCreds, accessJWT: string): Promise<boolean> {
+        console.log(cloneDeep(credsObj));
         let assignSuccessful = true;
         let remoteDB = new PouchDB(credsObj.couchBaseURL+"/"+credsObj.database, 
         { fetch: (url, opts: any) => ( 
              fetch(url, { ...opts, credentials: 'include', headers:
-              { ...opts.headers, 'Authorization': 'Bearer '+credsObj.JWT, 'Content-type': 'application/json' }})
+              { ...opts.headers, 'Authorization': 'Bearer '+accessJWT, 'Content-type': 'application/json' }})
               )} );
         setRemoteDBState(prevState => ({...prevState,remoteDB: remoteDB}));
         let DBUUIDCheck = await checkDBUUID(remoteDB,credsObj);
@@ -336,16 +341,27 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
 
     async function attemptFullLogin() {
         let credsObj = await getPrefsDBCreds();
+        console.log({credsObj});
         let credsCheck =  errorCheckCreds((credsObj as DBCreds),true);
+        console.log("Creds check",credsCheck);
         if (credsCheck.credsError) {
             setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: credsCheck.errorText, connectionStatus: ConnectionStatus.navToLoginScreen}))
             return;
         } 
-        let JWTCheck = await checkJWT(credsObj as DBCreds);
+        let refreshResponse = await refreshToken(credsObj as DBCreds);
+        console.log("Refresh token response:",refreshResponse);
+        if (!refreshResponse.data.valid) {
+            setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: "Invalid JWT Token", connectionStatus: ConnectionStatus.navToLoginScreen}));
+            return;
+        }
+        let JWTCheck = await checkJWT(credsObj as DBCreds,refreshResponse.data.accessJWT);
+        console.log("JWT Check: ",JWTCheck);
         if (!JWTCheck) {
              setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: "Invalid JWT Token", connectionStatus: ConnectionStatus.navToLoginScreen}))
+             return;
         }
-        let assignSuccess = await assignDBAndSync(credsObj as DBCreds);
+        setRemoteDBState(prevState => ({...prevState, accessJWT: refreshResponse.data.accessJWT}));
+        let assignSuccess = await assignDBAndSync(credsObj as DBCreds, refreshResponse.data.accessJWT);
         if (!assignSuccess) {
             setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: "Unable to start sync", connectionStatus: ConnectionStatus.navToLoginScreen}))
         };
