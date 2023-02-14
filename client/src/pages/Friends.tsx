@@ -190,6 +190,7 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
     console.log("... add friend here ...");
     const response = await checkUserByEmailExists(pageState.newFriendEmail,remoteDBState);
     console.log("response to check user", response);
+    //TODO -- Need to check if user is already a friend (either by email or username)
     if (response.userExists) {
       let friend1 = ""; let friend2 = ""; let pendfrom1: boolean = false;
       if (response.username > String(remoteDBState.dbCreds.dbUsername)) {

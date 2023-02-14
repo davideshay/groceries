@@ -310,16 +310,20 @@ async function getUserDoc(username) {
     return (userResponse);
 }
 
-async function generateJWT(username,deviceUUID,timestring) {
+async function generateJWT({ username, deviceUUID, timeString, includeRoles}) {
     const alg = "HS256";
-    const secret = new TextEncoder().encode(couchKey)
-    const jwt = await new jose.SignJWT({'sub': username, 
-//                                        '_couchdb.roles': [couchStandardRole,couchAdminRole,"_admin"],
-                                        '_couchdb.roles': [couchStandardRole],
-                                        'deviceUUID': deviceUUID })
+    const secret = new TextEncoder().encode(couchKey);
+    const payload = {'sub': username, 'deviceUUID': deviceUUID};
+    if (includeRoles) { 
+        payload["_couchdb.roles"] =  [couchStandardRole];
+        payload["tokenType"] = "access"
+    } else {
+        payload["tokenType"] = "refresh"
+    }
+    const jwt = await new jose.SignJWT(payload)
         .setProtectedHeader({ alg })
         .setIssuedAt()
-        .setExpirationTime(timestring)
+        .setExpirationTime(timeString)
         .sign(secret);  
     return (jwt);
 }
@@ -399,8 +403,8 @@ async function issueToken(req, res) {
          response.loginRoles = loginResponse.loginRoles;
          response.email = userDoc.email;
          response.fullname = userDoc.fullname;
-         response.refreshJWT = await generateJWT(username,deviceUUID,refreshTokenExpires);
-         response.accessJWT = await generateJWT(username,deviceUUID,accessTokenExpires);
+         response.refreshJWT = await generateJWT({username: username, deviceUUID: deviceUUID, includeRoles:false, timeString: refreshTokenExpires});
+         response.accessJWT = await generateJWT({username: username, deviceUUID: deviceUUID, includeRoles:true, timeString: accessTokenExpires});
      }
      if (!userDoc.fullDoc.hasOwnProperty('refreshJWTs')) {
         userDoc.fullDoc.refreshJWTs = {};
@@ -493,8 +497,8 @@ async function refreshToken(req, res) {
         return ({status, response});
     }
     response.valid = true;
-    response.refreshJWT = await generateJWT(tokenDecode.payload.sub,deviceUUID,refreshTokenExpires);
-    response.accessJWT = await generateJWT(tokenDecode.payload.sub,deviceUUID,accessTokenExpires);
+    response.refreshJWT = await generateJWT({username: tokenDecode.payload.sub, deviceUUID: deviceUUID, includeRoles: false, timeString: refreshTokenExpires});
+    response.accessJWT = await generateJWT({username: tokenDecode.payload.sub, deviceUUID: deviceUUID, includeRoles: true, timeString: accessTokenExpires});
     console.log("Calling get userdoc with:",tokenDecode.payload.sub);
     let userResponse = await getUserDoc(tokenDecode.payload.sub);
     console.log("userResponse:",userResponse);
@@ -515,7 +519,7 @@ async function createNewUser(userObj, deviceUUID) {
     }
     let refreshJWTs = {};
     if (deviceUUID !== "") {
-        newJWT = await generateJWT(userObj.username,deviceUUID,refreshTokenExpires);
+        newJWT = await generateJWT({username: userObj.username,deviceUUID: deviceUUID,includeRoles: false, timeString: refreshTokenExpires});
         refreshJWTs = { deviceUUID: newJWT}
         createResponse.refreshJWT = newJWT;
     }
@@ -529,7 +533,7 @@ async function createNewUser(userObj, deviceUUID) {
         type: "user"
     }
     if (deviceUUID !== "") {
-        createResponse.accessJWT = await generateJWT(userObj.username,deviceUUID,accessTokenExpires);
+        createResponse.accessJWT = await generateJWT({username: userObj.username,deviceUUID: deviceUUID, includeRoles: true, timeString: accessTokenExpires});
     }    
     let res = null;
     try { res = await usersDBAsAdmin.insert(newDoc,couchUserPrefix+":"+userObj.username); }
@@ -538,6 +542,21 @@ async function createNewUser(userObj, deviceUUID) {
         createResponse.idCreated = res.id;
     }
     return (createResponse);
+}
+
+async function authenticateJWT(req,res,next) {
+    const authHeader = req.headers.authorization;
+    if (authHeader) {
+        const token = authHeader.split(' ')[1];
+        const tokenDecode = await isValidToken(token);
+        if (!tokenDecode.isValid) {
+            return res.sendStatus(403);
+        }
+        req.username = tokenDecode.payload.sub;
+        next();
+    } else {
+        res.sendStatus(401);
+    }
 }
 
 async function updateUnregisteredFriends(email) {
@@ -962,6 +981,7 @@ module.exports = {
     resetPasswordUIGet,
     resetPasswordUIPost,
     triggerResolveConflicts,
-    triggerDBCompact
+    triggerDBCompact,
+    authenticateJWT
 
 }

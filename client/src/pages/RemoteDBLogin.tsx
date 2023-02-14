@@ -158,7 +158,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
                 setRemoteState(prevState => ({...prevState, formError: "Cannot contact API server"}));
                 setRemoteDBState({...remoteDBState, serverAvailable: false});
                 return}
-    console.log("got response from issuetoken: ", {response});            
+    console.log("got response from issuetoken: ", JSON.stringify(response));            
     if (!((response?.status == 200) && (response?.data?.loginSuccessful))) {
         setRemoteState(prevState => ({...prevState, formError: "Invalid Authentication"}))
         return
