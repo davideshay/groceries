@@ -1,0 +1,31 @@
+// Connection flow
+Linkages between connectionStatus, where it is set, where it is processed
+Same with syncStatus
+
+
+export enum ConnectionStatus {
+    cannotStart = 0,
+    navToLoginScreen = 12,
+    onLoginScreen = 13,
+    loginComplete = 14,
+    initialNavComplete = 15
+}
+
+connectionStatus starts as / defaults to "cannotStart"
+while attempting automated login:
+    if errors in the creds (missing, etc.) -> "navToLoginScreen"
+    if JWT isn't valid against couchDB -> "navToLoginScreen"
+    if JWT refresh token isn't valid against API server -> "navToLoginScreen"
+    if "assignDBAndSync" returns an error, -> "navToLoginScreen"
+checking syncstatus in useeffect loop -->
+    if status is active or paused (as long as NOT connectionStatus of initialNavComplete) -> set to loginComplete    
+on initialLoad, if loginComplete ==> initialNavComplete
+on initialLoad, if navToLoginScreen ==> onLoginScreen
+
+where checked:
+    when connectionStatus changes (in remoteDBState): attempt login -- do only once, but only if not onLoginScreen or loginComplete
+    when connectionStatus changes (on initialLoad page) : if loginComplete, set to initialNavComplete and navigate to that onLoginScreen
+                                                          if navToLoginScreen, navigate to the login screen
+    when connectionStatus changes (on login) : if cannotStart, update state to initial,
+                                                if loginComplete, set to initialNavComplete
+

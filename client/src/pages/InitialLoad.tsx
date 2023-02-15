@@ -29,12 +29,6 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
         }
     },[remoteDBState.connectionStatus])
 
-    useEffect(() => {
-      if (remoteDBState.connectionStatus == ConnectionStatus.initialNavComplete) {
-          navigateToFirstListID(db,props.history,remoteDBState);
-      }
-  },[remoteDBState.connectionStatus])
-
     return (
         <IonPage>
         <IonHeader><IonToolbar>

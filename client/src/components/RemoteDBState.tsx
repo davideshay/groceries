@@ -155,7 +155,8 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             .on('active', () => { setSyncStatus(SyncStatus.active)})
             .on('denied', (err) => { setSyncStatus(SyncStatus.denied); console.log("sync denied: ",{err})})
             .on('error', (err) => { console.log ("error state",{err}) ; 
-                              setSyncStatus(SyncStatus.error)})
+                              setSyncStatus(SyncStatus.error);
+                              })
         console.log("sync started");
     }
 
@@ -348,7 +349,6 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             devID = devIDInfo.uuid;
         }
         console.log("Here is my devID:", devID);
-        console.log(Device.getId());
         setRemoteDBState(prevState => ({...prevState,deviceUUID: devID}));
         let credsObj = await getPrefsDBCreds();
         console.log({credsObj});
@@ -361,7 +361,9 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         let refreshResponse = await refreshToken(credsObj as DBCreds,devID);
         console.log("Refresh token response:",refreshResponse);
         if (!refreshResponse.data.valid) {
-            setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: "Invalid JWT Token", connectionStatus: ConnectionStatus.navToLoginScreen}));
+            credsObj.refreshJWT = "";
+            setPrefsDBCreds(credsObj);
+            setRemoteDBState(prevState => ({...prevState,dbCreds: {...prevState.dbCreds,refreshJWT:""},credsError: true, credsErrorText: "Invalid JWT Token", connectionStatus: ConnectionStatus.navToLoginScreen}));
             return;
         }
         credsObj.refreshJWT = refreshResponse.data.refreshJWT;
@@ -369,7 +371,9 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         await setPrefsDBCreds(credsObj);
         console.log("JWT Check: ",JWTCheck);
         if (!JWTCheck) {
-             setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: "Invalid JWT Token", connectionStatus: ConnectionStatus.navToLoginScreen}))
+            credsObj.refreshJWT = "";
+            setPrefsDBCreds(credsObj);
+            setRemoteDBState(prevState => ({...prevState,dbCreds: {...prevState.dbCreds,refreshJWT:""},credsError: true, credsErrorText: "Invalid JWT Token", connectionStatus: ConnectionStatus.navToLoginScreen}))
              return;
         }
         setRemoteDBState(prevState => ({...prevState, accessJWT: refreshResponse.data.accessJWT}));
@@ -377,6 +381,15 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         if (!assignSuccess) {
             setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: "Unable to start sync", connectionStatus: ConnectionStatus.navToLoginScreen}))
         };
+    }
+
+    async function retrySync() {
+        console.log("retrySync");
+        let refreshResponse = await refreshToken(remoteDBState.dbCreds,String(remoteDBState.deviceUUID));
+        console.log("token refreshed, response:",cloneDeep(refreshResponse));
+        if (refreshResponse.data.valid) {
+            assignDBAndSync(remoteDBState.dbCreds,refreshResponse.data.accessJWT);
+        }
     }
 
     useEffect(() => {    
@@ -391,6 +404,10 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     useEffect(() => {
         if (( remoteDBState.syncStatus == SyncStatus.active || remoteDBState.syncStatus == SyncStatus.paused) && (remoteDBState.connectionStatus !== ConnectionStatus.initialNavComplete)) {
             setRemoteDBState(prevState => ({...prevState,connectionStatus: ConnectionStatus.loginComplete}));
+        }
+        if (remoteDBState.syncStatus == SyncStatus.error) {
+            console.log("ERROR syncing, refreshing access token and retrying...");
+            retrySync();
         }
     },[remoteDBState.syncStatus])
 

@@ -124,7 +124,7 @@ async function setDBSecurity() {
     }
     let res = null;
     try { res = await axios(config)}
-    catch(err) { console.log(err); errorSettingSecurity= true }
+    catch(err) { console.log("ERROR setting security:",err); errorSettingSecurity= true }
     if (errorSettingSecurity) return (!errorSettingSecurity);
     let newSecurity = _.cloneDeep(res.data);
     let securityNeedsUpdated = false;
@@ -159,7 +159,7 @@ async function setDBSecurity() {
     }
     errorSettingSecurity = false;
     try { res = await axios(config)}
-    catch(err) { console.log("got error : ", err); errorSettingSecurity = true }
+    catch(err) { console.log("ERROR setting security:", err); errorSettingSecurity = true }
     if (errorSettingSecurity) {
         console.log("ERROR: Problem setting database security")
     } else {
@@ -299,7 +299,6 @@ async function getUserDoc(username) {
         fullDoc: {}
     }
     let res = null;
-    console.log("getting user doc for user:",username);
     try { res = await usersDBAsAdmin.get(couchUserPrefix+":"+username)}
     catch(err) { console.log("ERROR GETTING USER:",err); userResponse.error= true }
     if (!userResponse.error) {
@@ -349,7 +348,7 @@ async function getUserByEmailDoc(email) {
     const query={selector: {"email": {"$eq": email}}};
     let res = null;
     try { res = await usersDBAsAdmin.find(query);}
-    catch(err) { console.log(err); userResponse.error= true }
+    catch(err) { console.log("ERROR getting user by email:",err); userResponse.error= true }
     if (!userResponse.error) {
         if (res.docs.length > 0) {
             userResponse.username = res.docs[0].name;
@@ -383,7 +382,7 @@ async function checkUserByEmailExists(req, res) {
 
 async function issueToken(req, res) {
     const { username, password, deviceUUID } = req.body;
-    console.log("issuing token device ID:", JSON.stringify(deviceUUID));
+    console.log("issuing token for device ID:", JSON.stringify(deviceUUID));
     let response = {
         loginSuccessful: false,
         email: "",
@@ -423,11 +422,9 @@ async function isValidToken(refreshJWT) {
         payload: null,
         error : null
     };
-    console.log("JWTKey:",JWTKey,"refreshJWT:",refreshJWT);
     try { jwtResponse = await jose.jwtVerify(refreshJWT, JWTKey); }
     catch(err) { returnValue.isValid = false; returnValue.error = err;
             return returnValue;}
-    console.log("jwtResponse:",cloneDeep(jwtResponse));
     if (jwtResponse.hasOwnProperty("payload") && jwtResponse.hasOwnProperty("protectedHeader")) {
         if (jwtResponse.payload.hasOwnProperty("sub")) {
             returnValue.isValid = true;
@@ -440,11 +437,8 @@ async function isValidToken(refreshJWT) {
 
 async function JWTMatchesUserDB(refreshJWT, deviceUUID, username) {
     let userDoc = await getUserDoc(username);
-    console.log("got userdoc:",{userDoc});
-    console.log("incoming JWT:",refreshJWT);
     if (userDoc.fullDoc.hasOwnProperty('refreshJWTs')) {
-        console.log("database JWT:",userDoc.fullDoc.refreshJWTs);
-        console.log("are they equal:",userDoc.fullDoc.refreshJWTs[deviceUUID] == refreshJWT);    
+        console.log("Refresh JWT matches the database:",userDoc.fullDoc.refreshJWTs[deviceUUID] == refreshJWT);    
     }
     if (userDoc.error) { return false;}
     if (userDoc.fullDoc.name !== username) { return false;}
@@ -454,9 +448,8 @@ async function JWTMatchesUserDB(refreshJWT, deviceUUID, username) {
 }
 
 async function invalidateToken(username) {
-    console.log("invalidating token");
+    console.log("invalidating token now...");
     let userDoc = await getUserDoc(username);
-    console.log("got user doc:",{userDoc});
     if (userDoc.error) { return false;}
     if (userDoc.fullDoc.name !== username) { return false;}
     if (!userDoc.fullDoc.hasOwnProperty("refreshJWTs")) { return false;}
@@ -469,7 +462,7 @@ async function invalidateToken(username) {
 
 async function refreshToken(req, res) {
     const { refreshJWT, deviceUUID } = req.body;
-    console.log("refreshToken, deviceUUID:",deviceUUID);
+    console.log("Refreshing token for deviceUUID:",deviceUUID);
     // validate incoming refresh token
     //      valid by signature and expiration date
     //      matches most recent in user DB
@@ -484,8 +477,7 @@ async function refreshToken(req, res) {
         accessJWT: ""
     }
     const tokenDecode = await isValidToken(refreshJWT);
-    console.log("refresh token: ",{tokenDecode});
-    console.log("username:",tokenDecode.payload.sub);
+    console.log("username of decoded token:",tokenDecode.payload.sub);
     if (!tokenDecode.isValid) {
         status = 403;
         return({status, response});
@@ -499,12 +491,9 @@ async function refreshToken(req, res) {
     response.valid = true;
     response.refreshJWT = await generateJWT({username: tokenDecode.payload.sub, deviceUUID: deviceUUID, includeRoles: false, timeString: refreshTokenExpires});
     response.accessJWT = await generateJWT({username: tokenDecode.payload.sub, deviceUUID: deviceUUID, includeRoles: true, timeString: accessTokenExpires});
-    console.log("Calling get userdoc with:",tokenDecode.payload.sub);
     let userResponse = await getUserDoc(tokenDecode.payload.sub);
-    console.log("userResponse:",userResponse);
     userResponse.fullDoc.refreshJWTs[deviceUUID] = response.refreshJWT;
     let update = await usersDBAsAdmin.insert(userResponse.fullDoc);
-    console.log("update",update);
     console.log("about to return from refresh Token:",{status},{response});
     return ({status, response});
 }
