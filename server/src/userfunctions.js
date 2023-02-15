@@ -42,8 +42,8 @@ const { cloneDeep } = require('lodash');
 const {  emailPatternValidation, usernamePatternValidation, fullnamePatternValidation, uomContent } = require('./utilities');
 let uomContentVersion = 0;
 const targetUomContentVersion = 2;
-const refreshTokenExpires="30d";
-const accessTokenExpires="5m";
+const refreshTokenExpires = (process.env.REFRESH_TOKEN_EXPIRES == undefined) ? "30d" : process.env.REFRESH_TOKEN_EXPIRES;
+const accessTokenExpires = (process.env.ACCESS_TOKEN_EXPIRES == undefined) ? "5m" : process.env.ACCESS_TOKEN_EXPIRES;
 const JWTKey = new TextEncoder().encode(couchKey);
 
 async function couchLogin(username, password) {
@@ -274,6 +274,8 @@ async function dbStartup() {
     console.log("STATUS: Starting up auth server for couchdb...");
     console.log("STATUS: Database URL: ",couchdbUrl);
     console.log("STATUS: Using database: ",couchDatabase);
+    console.log("STATUS: Refresh token expires in ",refreshTokenExpires);
+    console.log("STATUS: Access token expires in ",accessTokenExpires);
     await createDBIfNotExists();
     await setDBSecurity();
     todosDBAsAdmin = todosNanoAsAdmin.use(couchDatabase);
@@ -494,7 +496,7 @@ async function refreshToken(req, res) {
     let userResponse = await getUserDoc(tokenDecode.payload.sub);
     userResponse.fullDoc.refreshJWTs[deviceUUID] = response.refreshJWT;
     let update = await usersDBAsAdmin.insert(userResponse.fullDoc);
-    console.log("about to return from refresh Token:",{status},{response});
+//    console.log("about to return from refresh Token:",{status},{response});
     return ({status, response});
 }
 
@@ -531,6 +533,19 @@ async function createNewUser(userObj, deviceUUID) {
         createResponse.idCreated = res.id;
     }
     return (createResponse);
+}
+
+async function logout(req, res) {
+    const { refreshJWT, deviceUUID, username } = req.body;
+    console.log("logging out user: ", username, " for device: ",deviceUUID);
+    let userResponse = await getUserDoc(username);
+    userResponse.fullDoc.refreshJWTs[deviceUUID] = ""; 
+    let update = null;
+    try { update = await usersDBAsAdmin.insert(userResponse.fullDoc); }
+    catch(err) { console.log("ERROR: problem logging out user: ",err); }
+
+
+
 }
 
 async function authenticateJWT(req,res,next) {
@@ -971,6 +986,7 @@ module.exports = {
     resetPasswordUIPost,
     triggerResolveConflicts,
     triggerDBCompact,
-    authenticateJWT
+    authenticateJWT,
+    logout
 
 }

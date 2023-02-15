@@ -5,7 +5,7 @@ const app = express();
 const { issueToken, refreshToken, checkUserExists, registerNewUser, dbStartup, getUsersInfo, 
         checkUserByEmailExists, createAccountUIGet, createAccountUIPost,
         triggerRegEmail, resetPassword, resetPasswordUIGet, resetPasswordUIPost,
-        triggerResolveConflicts, triggerDBCompact, authenticateJWT } = require('./userfunctions');
+        triggerResolveConflicts, triggerDBCompact, authenticateJWT, logout } = require('./userfunctions');
 
 app.use(cors());
 app.use(express.json());
@@ -18,8 +18,9 @@ app.set("views","./views");
 app.post('/issuetoken', async (req, res) => res.send(await issueToken(req,res)));
 app.post('/refreshtoken', authenticateJWT, async (req,res) => 
         { const {status,response} = await refreshToken(req,res);
-        console.log("in refresh token, returning:",{status},{response});
           res.status(status).send(response); } );
+app.post('/logout', authenticateJWT, async (req,res) => 
+        { const {status, response} = await logout(req,res); res.status(status).send(response); } );          
 app.post('/checkuserexists', authenticateJWT, async (req, res) => res.send(await checkUserExists(req,res)));
 app.post('/checkuserbyemailexists', authenticateJWT, async (req,res) => res.send(await checkUserByEmailExists(req,res)))
 app.post('/registernewuser', async (req, res) => res.send(await registerNewUser(req,res)));

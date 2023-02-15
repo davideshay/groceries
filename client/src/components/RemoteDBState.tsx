@@ -154,7 +154,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
           }).on('paused', () => { setSyncStatus(SyncStatus.paused)})
             .on('active', () => { setSyncStatus(SyncStatus.active)})
             .on('denied', (err) => { setSyncStatus(SyncStatus.denied); console.log("sync denied: ",{err})})
-            .on('error', (err) => { console.log ("error state",{err}) ; 
+            .on('error', (err) => { console.log ("db.sync error state",{err}) ; 
                               setSyncStatus(SyncStatus.error);
                               })
         console.log("sync started");
@@ -402,6 +402,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
       },[loginAttempted,remoteDBState.connectionStatus])
   
     useEffect(() => {
+        console.log("syncstatus changed to:", remoteDBState.syncStatus);
         if (( remoteDBState.syncStatus == SyncStatus.active || remoteDBState.syncStatus == SyncStatus.paused) && (remoteDBState.connectionStatus !== ConnectionStatus.initialNavComplete)) {
             setRemoteDBState(prevState => ({...prevState,connectionStatus: ConnectionStatus.loginComplete}));
         }
