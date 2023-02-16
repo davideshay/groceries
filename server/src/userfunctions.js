@@ -449,13 +449,17 @@ async function JWTMatchesUserDB(refreshJWT, deviceUUID, username) {
     return true;
 }
 
-async function invalidateToken(username) {
+async function invalidateToken(username, deviceUUID, invalidateAll) {
     console.log("invalidating token now...");
     let userDoc = await getUserDoc(username);
     if (userDoc.error) { return false;}
     if (userDoc.fullDoc.name !== username) { return false;}
     if (!userDoc.fullDoc.hasOwnProperty("refreshJWTs")) { return false;}
-    userDoc.fullDoc.refreshJWTs = {};
+    if (invalidateAll) {
+        userDoc.fullDoc.refreshJWTs = {};
+    } else {
+        userDoc.fullDoc.refreshJWTs[deviceUUID] = {};
+    }    
     try { res = await usersDBAsAdmin.insert(userDoc.fullDoc); }
     catch(err) { console.log("ERROR: problem invalidating token: ",err); return false; }
     console.log("token now invalidated");
@@ -484,10 +488,16 @@ async function refreshToken(req, res) {
         status = 403;
         return({status, response});
     }
-    if (! (await JWTMatchesUserDB(refreshJWT,deviceUUID, tokenDecode.payload.sub))) {
-        console.log("JWT didn't match stored database JWT");
+    if (tokenDecode.payload.deviceUUID !== deviceUUID) {
+        console.log("SECURITY: Attempt to use refresh token with mis-matched device UUIDs. Invalidating all JWTs for ",tokenDecode.payload.sub);
+        invalidateToken(tokenDecode.payload.sub,deviceUUID,true)
         status = 403;
-        await invalidateToken(tokenDecode.payload.sub);
+        return({status, response});
+    }
+    if (! (await JWTMatchesUserDB(refreshJWT,deviceUUID, tokenDecode.payload.sub))) {
+        console.log("SECURITY: Login for user ",tokenDecode.payload.sub,"  didn't match stored database JWT. Invalidating this device.");
+        status = 403;
+        await invalidateToken(tokenDecode.payload.sub, deviceUUID, false);
         return ({status, response});
     }
     response.valid = true;

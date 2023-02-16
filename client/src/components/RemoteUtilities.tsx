@@ -43,6 +43,7 @@ export async function createNewUser(remoteDBState: RemoteDBState,password: strin
 
 export async function refreshToken(dbCreds: DBCreds, devID: string) {
     console.log("refreshing token, device id: ", devID);
+    console.log("apiserverURL:", dbCreds.apiServerURL);
     let response: HttpResponse | undefined;
     const options = {
         url: String(dbCreds.apiServerURL+"/refreshtoken"),
