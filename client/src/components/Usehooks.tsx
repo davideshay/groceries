@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect, useContext } from 'react'
+import { useCallback, useState, useEffect, useContext, useRef } from 'react'
 import { usePouch, useFind } from 'use-pouchdb'
 import { cloneDeep, isEqual, union, pull } from 'lodash';
 import { HttpResponse } from '@capacitor/core';
@@ -228,7 +228,9 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
 export function useFriends(username: string) : {friendsLoading: boolean, friendRowsLoading: boolean, friendRows: FriendRow[]} {
   const [friendRows,setFriendRows] = useState<FriendRow[]>([]);
   const { remoteDBState } = useContext(RemoteDBStateContext);
-  const [friendRowsLoading,setFriendRowsLoading] = useState(false);
+  const friendRowsLoadingRef = useRef(false);
+//  const [friendRowsLoading,setFriendRowsLoading] = useState(false);
+
 
   const { docs: friendDocs, loading: friendsLoading, error: friendsError } = useFind({
     index: { fields: ["type","friendID1","friendID2"]},
@@ -244,7 +246,7 @@ export function useFriends(username: string) : {friendsLoading: boolean, friendR
     })
 
     useEffect( () => {
-      if (friendsLoading || friendRowsLoading) { return };
+      if (friendsLoading || friendRowsLoadingRef.current) { return };
       let response: HttpResponse | undefined;
 
       let userIDList : { userIDs: string[]} = { userIDs: []};
@@ -255,6 +257,8 @@ export function useFriends(username: string) : {friendsLoading: boolean, friendR
         }
       });
       const getUsers = async () => {
+        console.log("running getUsers...");
+        friendRowsLoadingRef.current = true;
         const usersInfo = await getUsersInfo(userIDList,String(remoteDBState.dbCreds.apiServerURL), String(remoteDBState.dbCreds.refreshJWT));
         setFriendRows(prevState => ([]));
         if (usersInfo.length > 0) {
@@ -292,17 +296,16 @@ export function useFriends(username: string) : {friendsLoading: boolean, friendR
             setFriendRows(prevArray => [...prevArray, friendRow])
           })
         }
+        friendRowsLoadingRef.current = false;
       }
 
-      if ( !friendsLoading && !friendRowsLoading)  {
-        setFriendRowsLoading(true);
+      if ( !friendsLoading && !friendRowsLoadingRef.current)  {
         getUsers();
-        setFriendRowsLoading(false);
       }
-    },[friendsLoading,friendRowsLoading,friendDocs]);
+    },[friendsLoading,friendRowsLoadingRef.current,friendDocs]);
 
-    if (friendsLoading || friendRowsLoading) { return({friendsLoading: true,friendRowsLoading: true,friendRows: []})}
-    return({friendsLoading, friendRowsLoading,friendRows});
+    if (friendsLoading || friendRowsLoadingRef.current) { return({friendsLoading: true,friendRowsLoading: true,friendRows: []})}
+    return({friendsLoading, friendRowsLoading: friendRowsLoadingRef.current,friendRows});
 
 }
 
