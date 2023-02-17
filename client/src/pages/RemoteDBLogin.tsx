@@ -6,7 +6,7 @@ import { usePouch} from 'use-pouchdb';
 import { ConnectionStatus, DBCreds, DBUUIDAction } from '../components/RemoteDBState';
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
-import { createNewUser, navigateToFirstListID,  } from '../components/RemoteUtilities';
+import { createNewUser, getTokenInfo, navigateToFirstListID,  } from '../components/RemoteUtilities';
 import { cloneDeep } from 'lodash';
 import { RemoteDBStateContext, SyncStatus, initialRemoteDBState } from '../components/RemoteDBState';
 import { HistoryProps } from '../components/DataTypes';
@@ -166,15 +166,12 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     let newCreds=updateDBCredsFromResponse(response);
     console.log("DBCreds updated... new creds:",cloneDeep(newCreds));
     console.log("trying to update remote DB state with access JWT value:", response.data.accessJWT);
-    setRemoteDBState({...remoteDBState, dbCreds: newCreds, accessJWT: response.data.accessJWT});
+    let tokenInfo = getTokenInfo(response.data.accessJWT);
+    setRemoteDBState({...remoteDBState, dbCreds: newCreds, accessJWT: response.data.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate});
     await assignDB(newCreds,response.data.accessJWT);
-//    if (!assignSuccess) {
-//      setRemoteState(prevState => ({...prevState, formError: "Error Starting Sync"}))
-//    }
   }
   
   async function submitCreateForm() {
-//    setPrefsDBCreds();
     let createResponse: any;
     let credsCheck = errorCheckCreds(remoteDBState.dbCreds,false,true,remoteState.password,remoteState.verifyPassword);
     if (!credsCheck.credsError) {
@@ -192,11 +189,9 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
     console.log("SCF, creds OK, response:",{createResponse})
     let newCreds=updateDBCredsFromResponse(createResponse);
-    setRemoteDBState({...remoteDBState,accessJWT: createResponse.data.accessJWT});
+    let tokenInfo = getTokenInfo(createResponse.data.accessJWT);
+    setRemoteDBState({...remoteDBState,accessJWT: createResponse.data.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate});
     await assignDB(newCreds, createResponse.data.accessJWT);
-//    if (!assignSuccess) {
-//      setRemoteState(prevState => ({...prevState, formError: "Error Starting Sync"}));
-//    }
   }
   
   async function callResetPasswordAPI() {
