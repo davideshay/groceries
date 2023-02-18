@@ -2,7 +2,7 @@ import { useCallback, useState, useEffect, useContext, useRef } from 'react'
 import { usePouch, useFind } from 'use-pouchdb'
 import { cloneDeep, isEqual, union, pull } from 'lodash';
 import { HttpResponse } from '@capacitor/core';
-import { RemoteDBStateContext } from './RemoteDBState';
+import { ConnectionStatus, RemoteDBStateContext, SyncStatus } from './RemoteDBState';
 import { FriendStatus, FriendRow, ResolvedFriendStatus, ListRow, PouchResponse, PouchResponseInit, initUserInfo } from './DataTypes';
 import { GlobalStateContext } from './GlobalState';
 import { getUsersInfo, urlPatternValidation } from './Utilities';
@@ -230,6 +230,7 @@ export function useFriends(username: string) : {friendsLoading: boolean, friendR
   const { remoteDBState } = useContext(RemoteDBStateContext);
   const friendRowsLoadingRef = useRef(false);
 //  const [friendRowsLoading,setFriendRowsLoading] = useState(false);
+  
 
 
   const { docs: friendDocs, loading: friendsLoading, error: friendsError } = useFind({
@@ -299,7 +300,7 @@ export function useFriends(username: string) : {friendsLoading: boolean, friendR
         friendRowsLoadingRef.current = false;
       }
 
-      if ( !friendsLoading && !friendRowsLoadingRef.current)  {
+      if ( !friendsLoading && !friendRowsLoadingRef.current && (remoteDBState.syncStatus == SyncStatus.active || remoteDBState.syncStatus == SyncStatus.paused)) {
         getUsers();
       }
     },[friendsLoading,friendRowsLoadingRef.current,friendDocs]);

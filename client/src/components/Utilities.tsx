@@ -53,7 +53,7 @@ export async function checkUserByEmailExists(email: string, remoteDBState: Remot
 
 export async function getUsersInfo(userIDList: UserIDList,apiServerURL: string, refreshJWT: string): Promise<UsersInfo> {
     let usersInfo: UsersInfo = cloneDeep(initUsersInfo);
-    console.log(cloneDeep(usersInfo));
+    if (refreshJWT == "") { return(usersInfo); }
     const usersUrl = apiServerURL+"/getusersinfo"
     if (!urlPatternValidation(usersUrl)) {return usersInfo}
     const options = {
