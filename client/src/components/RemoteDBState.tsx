@@ -8,7 +8,7 @@ import { Device } from '@capacitor/device';
 import PouchDB from 'pouchdb';
 import { getTokenInfo, refreshToken } from "./RemoteUtilities";
 
-const secondsBeforeAccessRefresh = 90;
+const secondsBeforeAccessRefresh = 180;
 
 let globalSync: any = null;
 let globalRemoteDB: PouchDB.Database | undefined = undefined;
@@ -142,8 +142,6 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     const remoteDBCreds = useRef(DBCredsInit);
     const db=usePouch();
 
-//    console.log("rendering, dbcreds: ",cloneDeep(remoteDBState.dbCreds.refreshJWT));
-
     function setSyncStatus(status: number) {
         setRemoteDBState(prevState => ({...prevState,syncStatus: status}))
     }
@@ -162,9 +160,6 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     }
 
     function startSync() {
-        console.log("before sync, :", cloneDeep(globalSync));
-        console.log("before sync, remoteDB: ", cloneDeep(globalRemoteDB));
-        console.log("before sync, refreshJWT:", cloneDeep(remoteDBCreds.current.refreshJWT));
         globalSync = db.sync((globalRemoteDB as any), {
             back_off_function: function(delay) {
                 console.log("going offline");
@@ -178,21 +173,18 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             .on('active', () => { setSyncStatus(SyncStatus.active)})
             .on('denied', (err) => { setSyncStatus(SyncStatus.denied); console.log("sync denied: ",{err})})
             .on('error', (err) => { console.log ("db.sync error state",{err}) ; 
+                                globalSync.cancel();
                                 setSyncStatus(SyncStatus.error);
                                 })
-        console.log("sync started");
-        console.log("started with refreshJWT : ", cloneDeep(remoteDBCreds.current.refreshJWT));
     }
 
     async function  getPrefsDBCreds()  {
-        console.log("setting dbcreds state from creds in preferences....");
         let { value: credsStr } = await Preferences.get({ key: 'dbcreds'});
         let credsObj: DBCreds = cloneDeep(DBCredsInit);
         const credsOrigKeys = keys(credsObj);
         if (isJsonString(String(credsStr))) {
           credsObj=JSON.parse(String(credsStr));
           let credsObjFiltered=pick(credsObj,['apiServerURL','couchBaseURL','database','dbUsername','email','fullName','JWT','refreshJWT','lastConflictsViewed'])
-          console.log("in getprefs, setting dbcreds to ",cloneDeep(credsObjFiltered));
           remoteDBCreds.current = credsObjFiltered;
         }
         const credKeys = keys(remoteDBCreds.current);
@@ -206,7 +198,6 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
                 fullName: "",
                 lastConflictsViewed: (new Date()).toISOString()
                 };
-            console.log("setting dbcreds to init state...");
             remoteDBCreds.current = credsObj;
         }
         return remoteDBCreds.current;
@@ -347,26 +338,18 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
       }
   
     async function setPrefsDBCreds() {
-        console.log("saving prefs to localstorage and state: RefreshJWT: ",cloneDeep(remoteDBCreds.current));
         let credsStr = JSON.stringify(remoteDBCreds.current);
         await Preferences.set({key: 'dbcreds', value: credsStr})  
     }
 
     async function assignDB(accessJWT: string) {
-        console.log("in assignDB, credsObj: ",cloneDeep(remoteDBCreds.current));
-        console.log("assignDB accessJWT:",accessJWT);
         if (globalRemoteDB != undefined) {
             if (!(globalSync == undefined || globalSync == null)) {
-                console.log("cancelling sync...");
                 await globalSync.cancel();
             }
-            console.log("current sync obj:", cloneDeep(globalSync));
-            console.log("closing current remoteDB...");
-            console.log("db before close:",cloneDeep(globalRemoteDB));
+            globalRemoteDB.removeAllListeners();
             await globalRemoteDB.close();
-            await globalRemoteDB.removeAllListeners();
             await new Promise(r => setTimeout(r,2000));
-            console.log("db after close:", cloneDeep(globalRemoteDB));
             globalRemoteDB = undefined;
         }
         globalRemoteDB = new PouchDB(remoteDBCreds.current.couchBaseURL+"/"+remoteDBCreds.current.database, 
@@ -374,7 +357,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
                 fetch(url, { ...opts, credentials: 'include', headers:
                 { ...opts.headers, 'Authorization': 'Bearer '+accessJWT, 'Content-type': 'application/json' }})
             )})
-//        globalRemoteDB.setMaxListeners(40);    
+        globalRemoteDB.setMaxListeners(40);    
         setRemoteDBState(prevState => ({...prevState,connectionStatus: ConnectionStatus.dbAssigned, 
                 accessJWT: accessJWT }));  
         setPrefsDBCreds(); 
@@ -395,18 +378,14 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         if (devIDInfo.hasOwnProperty('uuid')) {
             devID = devIDInfo.uuid;
         }
-        console.log("Here is my devID:", devID);
         setRemoteDBState(prevState => ({...prevState,deviceUUID: devID}));
         let credsObj = await getPrefsDBCreds();
-        console.log({credsObj});
         let credsCheck =  errorCheckCreds((credsObj as DBCreds),true);
-        console.log("Creds check",credsCheck);
         if (credsCheck.credsError) {
             setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: credsCheck.errorText, connectionStatus: ConnectionStatus.navToLoginScreen}))
             return;
         } 
         let refreshResponse = await refreshToken(credsObj as DBCreds,devID);
-        console.log("Refresh token response:",refreshResponse);
         if (!refreshResponse.data.valid) {
             credsObj.refreshJWT = "";
             remoteDBCreds.current = credsObj;
@@ -417,7 +396,6 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         remoteDBCreds.current = credsObj;
         remoteDBCreds.current.refreshJWT = refreshResponse.data.refreshJWT;
         let JWTCheck = await checkJWT(refreshResponse.data.accessJWT);
-        console.log("JWT Check: ",JWTCheck);
         await setPrefsDBCreds();
         if (!JWTCheck.JWTValid) {
             remoteDBCreds.current.refreshJWT = "";
@@ -427,27 +405,20 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         }
         setRemoteDBState(prevState => ({...prevState, accessJWT: refreshResponse.data.accessJWT, accessJWTExpirationTime: JWTCheck.JWTExpireDate}));
         await assignDB(refreshResponse.data.accessJWT);
-//        if (!assignSuccess) {
-//            setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: "Unable to start sync", connectionStatus: ConnectionStatus.navToLoginScreen}))
-//        };
     }
 
      async function retrySync() {
-         console.log("retrySync");
          refreshTokenAndUpdate();
      }
 
     async function refreshTokenAndUpdate() {
-        console.log("refreshTokenAndUpdate, sync is: ",globalSync)
         if (remoteDBCreds.current.refreshJWT !== "") {
-            console.log("attempting refresh with current refreshJWT :",cloneDeep(remoteDBCreds.current.refreshJWT));
             let refreshResponse = await refreshToken(remoteDBCreds.current,String(remoteDBState.deviceUUID));
-            console.log("token refreshed, response:",cloneDeep(refreshResponse));
             if (refreshResponse.data.valid) {
                 let tokenInfo = getTokenInfo(refreshResponse.data.accessJWT)
                 setRemoteDBState(prevState => ({...prevState, accessJWT: refreshResponse.data.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate, connectionStatus: ConnectionStatus.retry}));
                 remoteDBCreds.current.refreshJWT = refreshResponse.data.refreshJWT;
-                assignDB(refreshResponse.data.accessJWT);
+                await assignDB(refreshResponse.data.accessJWT);
             }
         } else {
             setRemoteDBState(prevState => ({...prevState, syncStatus: SyncStatus.error}));
@@ -455,8 +426,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     }
 
     useEffect(() => {
-        console.log("new connection status : ",remoteDBState.connectionStatus);    
-        if (!loginAttempted.current && !(remoteDBState.connectionStatus == ConnectionStatus.navToLoginScreen) && !(remoteDBState.connectionStatus == ConnectionStatus.onLoginScreen)) {
+        if (!loginAttempted.current && !(remoteDBState.connectionStatus === ConnectionStatus.navToLoginScreen) && !(remoteDBState.connectionStatus === ConnectionStatus.onLoginScreen)) {
             console.log("about to attempt full login...");
             attemptFullLogin()
             loginAttempted.current = true;
@@ -465,36 +435,27 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
       },[loginAttempted,remoteDBState.connectionStatus])
   
     useEffect(() => {
-        if (remoteDBState.connectionStatus == ConnectionStatus.dbAssigned) {
+        if (remoteDBState.connectionStatus === ConnectionStatus.dbAssigned) {
             CheckDBUUIDAndStartSync();
         }
     },[remoteDBState.connectionStatus])
 
-    useEffect(() => { console.log("refreshJWT changed to:",cloneDeep(remoteDBCreds.current.refreshJWT))
-    },[remoteDBCreds.current.refreshJWT]);
-
-
     useEffect(() => {
-        console.log("syncstatus changed to:", remoteDBState.syncStatus);
-        if (( remoteDBState.syncStatus == SyncStatus.active || remoteDBState.syncStatus == SyncStatus.paused) && (remoteDBState.connectionStatus !== ConnectionStatus.initialNavComplete)) {
+        if (( remoteDBState.syncStatus === SyncStatus.active || remoteDBState.syncStatus === SyncStatus.paused) && (remoteDBState.connectionStatus !== ConnectionStatus.initialNavComplete)) {
             setRemoteDBState(prevState => ({...prevState,connectionStatus: ConnectionStatus.loginComplete}));
         }
-        if (remoteDBState.syncStatus == SyncStatus.error) {
+        if (remoteDBState.syncStatus === SyncStatus.error) {
             console.log("ERROR syncing, refreshing access token and retrying...");
             retrySync();
         }
-        const logTimer = setInterval(() => {console.log("refresh:",cloneDeep(remoteDBCreds.current.refreshJWT))},5000);
-        return () => clearInterval(logTimer);
     },[remoteDBState.syncStatus])
 
     useEffect(() => {
-        console.log("Access JWT expiration time changed to:",remoteDBState.accessJWTExpirationTime);
-        if (remoteDBState.accessJWTExpirationTime == 0) {return;}
+        if (remoteDBState.accessJWTExpirationTime === 0) {return;}
         const secondsToRefresh = Number(remoteDBState.accessJWTExpirationTime) - (Math.round(Date.now() / 1000)) - secondsBeforeAccessRefresh;
         console.log("expires in seconds:",secondsToRefresh);
         const refreshTimer = setTimeout(() => {
             console.log("refreshing token now...");
-            console.log("... skipping actual refresh to create error...")
             refreshTokenAndUpdate();
         }, secondsToRefresh*1000);
         return () => clearTimeout(refreshTimer);
