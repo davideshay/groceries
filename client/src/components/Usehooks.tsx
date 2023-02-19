@@ -239,7 +239,7 @@ export function useFriends(username: string) : { useFriendState: UseFriendState,
   const [friendRows,setFriendRows] = useState<FriendRow[]>([]);
   const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
   const friendRowsLoadingRef = useRef(false);  
-  const useFriendState = useRef(UseFriendState.init);
+  const [useFriendState,setUseFriendState] = useState(UseFriendState.init);
   const { docs: friendDocs, loading: friendsLoading, error: friendsError, state: friendState } = useFind({
     index: { fields: ["type","friendID1","friendID2"]},
     selector: { "$and": [ {
@@ -253,23 +253,20 @@ export function useFriends(username: string) : { useFriendState: UseFriendState,
 //    fields: [ "type", "friendID1", "friendID2", "friendStatus"]
     })
 
-//    console.log("friendDocs: ",cloneDeep(friendDocs));
-
-
     useEffect( () => {
-      if (useFriendState.current == UseFriendState.baseFriendsLoaded) {
+      if (useFriendState == UseFriendState.baseFriendsLoaded) {
         if (remoteDBState.syncStatus == SyncStatus.active || remoteDBState.syncStatus == SyncStatus.paused) {
-          useFriendState.current = UseFriendState.rowsLoading;
+          setUseFriendState((prevState) => UseFriendState.rowsLoading);
           loadFriendRows();
         }  
       }
-    },[useFriendState.current,remoteDBState.syncStatus])
+    },[useFriendState,remoteDBState.syncStatus])
 
     useEffect( () => {
-      if (friendState == "error") {useFriendState.current = UseFriendState.error; return};
-      if (friendState == "loading") {useFriendState.current = UseFriendState.baseFriendsLoading};
-      if (friendState == "done" && useFriendState.current == UseFriendState.baseFriendsLoading) {
-        useFriendState.current = UseFriendState.baseFriendsLoaded
+      if (friendState == "error") {setUseFriendState((prevState) => UseFriendState.error); return};
+      if (friendState == "loading") {setUseFriendState((prevState) => UseFriendState.baseFriendsLoading)};
+      if (friendState == "done" && useFriendState == UseFriendState.baseFriendsLoading) {
+        setUseFriendState((prevState) => UseFriendState.baseFriendsLoaded);
       } 
     },[friendState] )
 
@@ -319,10 +316,10 @@ export function useFriends(username: string) : { useFriendState: UseFriendState,
           setFriendRows(prevArray => [...prevArray, friendRow])
         })
       }
-      useFriendState.current = UseFriendState.rowsLoaded;
+      setUseFriendState((prevState) => UseFriendState.rowsLoaded);
     }
 
-    return({useFriendState: useFriendState.current, friendRows});
+    return({useFriendState: useFriendState, friendRows});
 }
 
 export function useConflicts() : { conflictDocs: any[], conflictsLoading: boolean} {
