@@ -225,11 +225,22 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
   return ({listsLoading, listDocs, listRowsLoading, listRowsLoaded, listRows});
 }
 
-export function useFriends(username: string) : {friendsLoading: boolean, friendRowsLoading: boolean, friendRows: FriendRow[]} {
+export enum UseFriendState {
+  init = 0,
+  baseFriendsChanged = 0,
+  baseFriendsLoading = 1,
+  baseFriendsLoaded = 2,
+  rowsLoading = 3,
+  rowsLoaded = 4,
+  error = 99
+}
+
+export function useFriends(username: string) : { useFriendState: UseFriendState, friendRows: FriendRow[]} {
   const [friendRows,setFriendRows] = useState<FriendRow[]>([]);
   const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
   const friendRowsLoadingRef = useRef(false);  
-  const { docs: friendDocs, loading: friendsLoading, error: friendsError } = useFind({
+  const useFriendState = useRef(UseFriendState.init);
+  const { docs: friendDocs, loading: friendsLoading, error: friendsError, state: friendState } = useFind({
     index: { fields: ["type","friendID1","friendID2"]},
     selector: { "$and": [ {
         "type": "friend",
@@ -242,10 +253,28 @@ export function useFriends(username: string) : {friendsLoading: boolean, friendR
 //    fields: [ "type", "friendID1", "friendID2", "friendStatus"]
     })
 
-    useEffect( () => {
-      if (friendsLoading || friendRowsLoadingRef.current) { return };
-      let response: HttpResponse | undefined;
+//    console.log("friendDocs: ",cloneDeep(friendDocs));
 
+
+    useEffect( () => {
+      if (useFriendState.current == UseFriendState.baseFriendsLoaded) {
+        if (remoteDBState.syncStatus == SyncStatus.active || remoteDBState.syncStatus == SyncStatus.paused) {
+          useFriendState.current = UseFriendState.rowsLoading;
+          loadFriendRows();
+        }  
+      }
+    },[useFriendState.current,remoteDBState.syncStatus])
+
+    useEffect( () => {
+      if (friendState == "error") {useFriendState.current = UseFriendState.error; return};
+      if (friendState == "loading") {useFriendState.current = UseFriendState.baseFriendsLoading};
+      if (friendState == "done" && useFriendState.current == UseFriendState.baseFriendsLoading) {
+        useFriendState.current = UseFriendState.baseFriendsLoaded
+      } 
+    },[friendState] )
+
+
+    async function loadFriendRows() {
       let userIDList : { userIDs: string[]} = { userIDs: []};
       friendDocs.forEach((element: any) => {
         if (element.friendStatus !== FriendStatus.Deleted) {
@@ -253,56 +282,47 @@ export function useFriends(username: string) : {friendsLoading: boolean, friendR
           else {userIDList.userIDs.push(element.friendID1)}
         }
       });
-      const getUsers = async () => {
-        friendRowsLoadingRef.current = true;
-        const usersInfo = await getUsersInfo(userIDList,String(remoteDBCreds.apiServerURL), String(remoteDBState.accessJWT));
-        setFriendRows(prevState => ([]));
-        if (usersInfo.length > 0) {
-          friendDocs.forEach((friendDoc: any) => {
-            let friendRow : any = {};
-            friendRow.friendDoc=cloneDeep(friendDoc);
-            if (friendRow.friendDoc.friendID1 == remoteDBCreds.dbUsername)
-              { friendRow.targetUserName = friendRow.friendDoc.friendID2}
-            else { friendRow.targetUserName = friendRow.friendDoc.friendID1}
-            let user=usersInfo.find((el: any) => el?.name == friendRow.targetUserName)
-            if (user == undefined) {user = cloneDeep(initUserInfo)};
-            if (friendDoc.friendStatus == FriendStatus.WaitingToRegister) {
-              friendRow.targetEmail = friendDoc.inviteEmail
+      const usersInfo = await getUsersInfo(userIDList,String(remoteDBCreds.apiServerURL), String(remoteDBState.accessJWT));
+      setFriendRows(prevState => ([]));
+      if (usersInfo.length > 0) {
+        friendDocs.forEach((friendDoc: any) => {
+          let friendRow : any = {};
+          friendRow.friendDoc=cloneDeep(friendDoc);
+          if (friendRow.friendDoc.friendID1 == remoteDBCreds.dbUsername)
+            { friendRow.targetUserName = friendRow.friendDoc.friendID2}
+          else { friendRow.targetUserName = friendRow.friendDoc.friendID1}
+          let user=usersInfo.find((el: any) => el?.name == friendRow.targetUserName)
+          if (user == undefined) {user = cloneDeep(initUserInfo)};
+          if (friendDoc.friendStatus == FriendStatus.WaitingToRegister) {
+            friendRow.targetEmail = friendDoc.inviteEmail
+          } else {
+            friendRow.targetEmail = user?.email;
+          }
+          friendRow.targetFullName = user?.fullname;
+          if (friendDoc.friendStatus == FriendStatus.PendingFrom1 || friendDoc.friendStatus == FriendStatus.PendingFrom2) {
+            if ((remoteDBCreds.dbUsername == friendDoc.friendID1 && friendDoc.friendStatus == FriendStatus.PendingFrom2) || 
+                (remoteDBCreds.dbUsername == friendDoc.friendID2 && friendDoc.friendStatus == FriendStatus.PendingFrom1))
+            {
+              friendRow.friendStatusText = "Confirm?"
+              friendRow.resolvedStatus = ResolvedFriendStatus.PendingConfirmation;
             } else {
-              friendRow.targetEmail = user?.email;
+              friendRow.friendStatusText = "Requested";
+              friendRow.resolvedStatus = ResolvedFriendStatus.Requested;
             }
-            friendRow.targetFullName = user?.fullname;
-            if (friendDoc.friendStatus == FriendStatus.PendingFrom1 || friendDoc.friendStatus == FriendStatus.PendingFrom2) {
-              if ((remoteDBCreds.dbUsername == friendDoc.friendID1 && friendDoc.friendStatus == FriendStatus.PendingFrom2) || 
-                  (remoteDBCreds.dbUsername == friendDoc.friendID2 && friendDoc.friendStatus == FriendStatus.PendingFrom1))
-              {
-                friendRow.friendStatusText = "Confirm?"
-                friendRow.resolvedStatus = ResolvedFriendStatus.PendingConfirmation;
-              } else {
-                friendRow.friendStatusText = "Requested";
-                friendRow.resolvedStatus = ResolvedFriendStatus.Requested;
-              }
-            } else if (friendDoc.friendStatus == FriendStatus.Confirmed) {
-              friendRow.friendStatusText = "Confirmed";
-              friendRow.resolvedStatus = ResolvedFriendStatus.Confirmed;
-            } else if (friendDoc.friendStatus == FriendStatus.WaitingToRegister) {
-              friendRow.friendStatusText = "Needs to Register";
-              friendRow.resolvedStatus = ResolvedFriendStatus.WaitingToRegister
-            }
-            setFriendRows(prevArray => [...prevArray, friendRow])
-          })
-        }
-        friendRowsLoadingRef.current = false;
+          } else if (friendDoc.friendStatus == FriendStatus.Confirmed) {
+            friendRow.friendStatusText = "Confirmed";
+            friendRow.resolvedStatus = ResolvedFriendStatus.Confirmed;
+          } else if (friendDoc.friendStatus == FriendStatus.WaitingToRegister) {
+            friendRow.friendStatusText = "Needs to Register";
+            friendRow.resolvedStatus = ResolvedFriendStatus.WaitingToRegister
+          }
+          setFriendRows(prevArray => [...prevArray, friendRow])
+        })
       }
+      useFriendState.current = UseFriendState.rowsLoaded;
+    }
 
-      if ( !friendsLoading && !friendRowsLoadingRef.current && (remoteDBState.syncStatus == SyncStatus.active || remoteDBState.syncStatus == SyncStatus.paused)) {
-        getUsers();
-      }
-    },[friendsLoading,friendRowsLoadingRef.current,friendDocs, remoteDBState.syncStatus]);
-
-    if (friendsLoading || friendRowsLoadingRef.current) { return({friendsLoading: true,friendRowsLoading: true,friendRows: []})}
-    return({friendsLoading, friendRowsLoading: friendRowsLoadingRef.current,friendRows});
-
+    return({useFriendState: useFriendState.current, friendRows});
 }
 
 export function useConflicts() : { conflictDocs: any[], conflictsLoading: boolean} {

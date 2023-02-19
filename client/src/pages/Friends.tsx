@@ -6,7 +6,7 @@ import { Clipboard } from '@capacitor/clipboard';
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import { v4 as uuidv4 } from 'uuid';
 import { cloneDeep } from 'lodash';
-import { useCreateGenericDocument, useFriends, useUpdateGenericDocument} from '../components/Usehooks';
+import { useCreateGenericDocument, useFriends, UseFriendState, useUpdateGenericDocument} from '../components/Usehooks';
 import { add } from 'ionicons/icons';
 import './Friends.css';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
@@ -59,7 +59,7 @@ interface PageState {
 const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { remoteDBState, remoteDBCreds, remoteDB } = useContext(RemoteDBStateContext);
   const uname = (remoteDBCreds as any).dbUsername;
-  const {friendRowsLoading,friendsLoading,friendRows} = useFriends(uname);
+  const {useFriendState,friendRows} = useFriends(uname);
   const updateDoc = useUpdateGenericDocument();
   const createDoc = useCreateGenericDocument();
 //  const [friendsElem,setFriendsElem] = useState<any[]>([]);
@@ -242,6 +242,10 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
       <IonItem key="formerrors">{pageState.formError}</IonItem>
       </Fragment>
       )
+  }
+
+  if (useFriendState !== UseFriendState.rowsLoaded) {
+    return(<IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>)
   }
 
   return (

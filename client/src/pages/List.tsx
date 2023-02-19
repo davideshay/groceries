@@ -4,8 +4,9 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonLis
    useIonToast, IonFooter, useIonAlert } from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
-import { useState, useEffect, useContext, useInsertionEffect } from 'react';
-import { useUpdateGenericDocument, useCreateGenericDocument, useFriends, useLists, useDeleteGenericDocument, useDeleteListFromItems } from '../components/Usehooks';
+import { useState, useEffect, useContext } from 'react';
+import { useUpdateGenericDocument, useCreateGenericDocument, useFriends, 
+  UseFriendState, useLists, useDeleteGenericDocument, useDeleteListFromItems } from '../components/Usehooks';
 import { cloneDeep, isEmpty, isEqual } from 'lodash';
 import './List.css';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
@@ -44,7 +45,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   const deleteListFromItems = useDeleteListFromItems()
   const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
   const [ presentToast ] = useIonToast();
-  const {friendsLoading,friendRowsLoading,friendRows} = useFriends(String(remoteDBCreds.dbUsername));
+  const {useFriendState, friendRows} = useFriends(String(remoteDBCreds.dbUsername));
   const { listDocs, listsLoading } = useLists(String(remoteDBCreds.dbUsername));
   const { docs: categoryDocs, loading: categoryLoading, error: categoryError } = useFind({
     index: { fields: [ "type","name"] },
@@ -76,8 +77,8 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
       setPageState(prevState => ({...prevState,usersInfo: usersInfo,usersLoaded: true}))
     }
     let newPageState=cloneDeep(pageState);
-//    console.log({listLoading,friendRowsLoading,friendsLoading,categoryLoading,mode,pageState})
-    if (!listsLoading && !friendRowsLoading && !friendsLoading && !categoryLoading) {
+//    console.log({listsLoading,friendRowsLoading,friendsLoading, friendState, categoryLoading,mode,pageState})
+    if (!listsLoading && (useFriendState == UseFriendState.rowsLoaded) && !categoryLoading) {
       if (mode === "new" && pageState.needInitListDoc) {
         console.log("in new useeffect, creating initlistdoc");
         let initCategories=categoryDocs.map(cat => cat._id);
@@ -105,9 +106,9 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
       });
       getUI(userIDList);
     }
-  },[listsLoading,listDocs,friendsLoading, friendRowsLoading, friendRows, categoryLoading,categoryDocs,pageState.selectedListID]);
+  },[listsLoading,listDocs,useFriendState,friendRows, categoryLoading,categoryDocs,pageState.selectedListID]);
 
-  if (listsLoading || friendRowsLoading || friendsLoading || categoryLoading || isEmpty(pageState.listDoc) || !pageState.usersLoaded || pageState.deletingDoc)  {return(
+  if (listsLoading || (useFriendState !== UseFriendState.rowsLoaded) || categoryLoading || isEmpty(pageState.listDoc) || !pageState.usersLoaded || pageState.deletingDoc)  {return(
       <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
   )};
   

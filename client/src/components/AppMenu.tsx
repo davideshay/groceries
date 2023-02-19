@@ -1,15 +1,15 @@
 import { IonMenu, IonContent, IonMenuToggle, IonList, IonPage, IonHeader, IonToolbar,
     IonTitle, IonItem, IonItemDivider, IonListHeader, IonBadge } from '@ionic/react';
-import { useContext } from 'react';    
-import { useConflicts, useFriends } from './Usehooks';    
+import { useContext, useEffect } from 'react';    
+import { useConflicts, useFriends, UseFriendState } from './Usehooks';    
 import ListsAll from './ListsAll';
 import { RemoteDBStateContext } from './RemoteDBState';
 import { ResolvedFriendStatus } from './DataTypes';
 import { cloneDeep } from 'lodash';
 
 const AppMenu: React.FC = () => {
-  const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
-  const {friendRowsLoading,friendsLoading,friendRows} = useFriends((remoteDBCreds as any).dbUsername);
+  const { remoteDBCreds } = useContext(RemoteDBStateContext);
+  const {useFriendState,friendRows} = useFriends((remoteDBCreds as any).dbUsername);
   const { conflictDocs, conflictsLoading } = useConflicts();
  
   const listHeader = (headerName: string) => {
@@ -24,7 +24,7 @@ const AppMenu: React.FC = () => {
 
   const friendItem = () => {
     let pendingCount=0;
-    if (!friendRowsLoading && !friendsLoading) {
+    if (useFriendState == UseFriendState.rowsLoaded) {
       friendRows.forEach(friend => {
         if (friend.resolvedStatus == ResolvedFriendStatus.PendingConfirmation) {pendingCount++}
       })
@@ -45,7 +45,7 @@ const AppMenu: React.FC = () => {
               </IonItem></IonMenuToggle></IonList>) 
   }
 
-  if (friendRowsLoading || friendsLoading || conflictsLoading)  {return(
+  if (useFriendState !== UseFriendState.rowsLoaded || conflictsLoading)  {return(
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
   )};
 
