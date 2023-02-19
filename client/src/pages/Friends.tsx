@@ -57,8 +57,8 @@ interface PageState {
 }  
               
 const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
-  const { remoteDBState } = useContext(RemoteDBStateContext);
-  const uname = (remoteDBState.dbCreds as any).dbUsername;
+  const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
+  const uname = (remoteDBCreds as any).dbUsername;
   const {friendRowsLoading,friendsLoading,friendRows} = useFriends(uname);
   const updateDoc = useUpdateGenericDocument();
   const createDoc = useCreateGenericDocument();
@@ -95,7 +95,7 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function showURL(friendRow: FriendRow) {
-    let confURL = remoteDBState.dbCreds.apiServerURL + "/createaccountui?uuid="+friendRow.friendDoc.inviteUUID;
+    let confURL = remoteDBCreds.apiServerURL + "/createaccountui?uuid="+friendRow.friendDoc.inviteUUID;
     Clipboard.write({string: confURL});
     setPageState(prevState => ({...prevState,formError: "", inAddMode: false, newFriendEmail: "",
             showRegistrationURL: true,
@@ -142,7 +142,7 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
     const invuid=uuidv4();
     const newFriendDoc = {
       type: "friend",
-      friendID1: remoteDBState.dbCreds.dbUsername,
+      friendID1: remoteDBCreds.dbUsername,
       friendID2: null,
       inviteEmail: pageState.newFriendEmail,
       inviteUUID: invuid,
@@ -159,18 +159,18 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
 //    let result=await createDoc(newFriendDoc);
 //    console.log(result);
     const options = {
-      url: String(remoteDBState.dbCreds.apiServerURL+"/triggerregemail"),
+      url: String(remoteDBCreds.apiServerURL+"/triggerregemail"),
       method: "POST",
       headers: { 'Content-Type': 'application/json',
                  'Accept': 'application/json',
-                 'Authorization': 'Bearer '+remoteDBState.dbCreds?.refreshJWT },
+                 'Authorization': 'Bearer '+remoteDBCreds?.refreshJWT },
       data: { "uuid": invuid }           
       };
     console.log("about to execute triggerregemail httpget with options: ", {options})
     let response = await CapacitorHttp.post(options);
     console.log("got triggerregemail httpget response: ",{response});
 
-    let confURL = remoteDBState.dbCreds.apiServerURL + "/createaccountui?uuid="+invuid;
+    let confURL = remoteDBCreds.apiServerURL + "/createaccountui?uuid="+invuid;
     Clipboard.write({string: confURL});
     setPageState(prevState => ({...prevState,formError: "", inAddMode: false, newFriendEmail: "",
             showRegistrationURL: true,
@@ -188,18 +188,18 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
       setPageState(prevState => ({...prevState, formError: "Invalid email address"}));
     }
     console.log("... add friend here ...");
-    const response = await checkUserByEmailExists(pageState.newFriendEmail,remoteDBState);
+    const response = await checkUserByEmailExists(pageState.newFriendEmail,remoteDBCreds);
     console.log("response to check user", response);
     //TODO -- Need to check if user is already a friend (either by email or username)
     if (response.userExists) {
       let friend1 = ""; let friend2 = ""; let pendfrom1: boolean = false;
-      if (response.username > String(remoteDBState.dbCreds.dbUsername)) {
-        friend1 = String(remoteDBState.dbCreds.dbUsername);
+      if (response.username > String(remoteDBCreds.dbUsername)) {
+        friend1 = String(remoteDBCreds.dbUsername);
         friend2 = response.username;
         pendfrom1 = true;
       } else {
         friend1 = response.username
-        friend2 = String(remoteDBState.dbCreds.dbUsername);
+        friend2 = String(remoteDBCreds.dbUsername);
       }
       const newFriendDoc = {
         type: "friend",

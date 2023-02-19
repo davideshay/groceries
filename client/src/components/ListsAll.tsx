@@ -10,8 +10,8 @@ interface ListsAllProps {
 }
 
 const ListsAll: React.FC<ListsAllProps> = ({separatePage}) => {
-  const { remoteDBState } = useContext(RemoteDBStateContext);
-  const { listDocs, listsLoading } = useLists(String(remoteDBState.dbCreds.dbUsername));
+  const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
+  const { listDocs, listsLoading } = useLists(String(remoteDBCreds.dbUsername));
 
   if (listsLoading) { return (<></>) }
   

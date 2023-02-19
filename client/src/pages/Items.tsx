@@ -16,7 +16,7 @@ import { RemoteDBStateContext } from '../components/RemoteDBState';
 import { isEqual } from 'lodash';
 
 const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
-  const { remoteDBState} = useContext(RemoteDBStateContext);
+  const { remoteDBCreds} = useContext(RemoteDBStateContext);
   let { id: routeListID  } = useParams<{id: string}>();
   const [searchRows,setSearchRows] = useState<ItemSearch[]>();
   const [searchState,setSearchState] = useState<SearchState>({searchCriteria:"",isOpen: false,isFocused: false,event: undefined, filteredSearchRows: [], dismissEvent: undefined});
@@ -33,7 +33,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       type: "item", name: { $exists: true },
       lists: { $elemMatch: { "listID": pageState.selectedListID , "active" : true} } },
     sort: [ "type", "name", "lists" ]})
-  const { listDocs, listsLoading, listRows, listRowsLoading} = useLists(String(remoteDBState.dbCreds.dbUsername));
+  const { listDocs, listsLoading, listRows, listRowsLoading} = useLists(String(remoteDBCreds.dbUsername));
   const { docs: uomDocs, loading: uomLoading, error: uomError } = useFind({
     index: { fields: [ "type","name"]},
     selector: { type: "uom", name: { $exists: true}},

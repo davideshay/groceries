@@ -227,7 +227,7 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
 
 export function useFriends(username: string) : {friendsLoading: boolean, friendRowsLoading: boolean, friendRows: FriendRow[]} {
   const [friendRows,setFriendRows] = useState<FriendRow[]>([]);
-  const { remoteDBState } = useContext(RemoteDBStateContext);
+  const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
   const friendRowsLoadingRef = useRef(false);
 //  const [friendRowsLoading,setFriendRowsLoading] = useState(false);
   
@@ -260,13 +260,13 @@ export function useFriends(username: string) : {friendsLoading: boolean, friendR
       const getUsers = async () => {
         console.log("running getUsers...");
         friendRowsLoadingRef.current = true;
-        const usersInfo = await getUsersInfo(userIDList,String(remoteDBState.dbCreds.apiServerURL), String(remoteDBState.dbCreds.refreshJWT));
+        const usersInfo = await getUsersInfo(userIDList,String(remoteDBCreds.apiServerURL), String(remoteDBCreds.refreshJWT));
         setFriendRows(prevState => ([]));
         if (usersInfo.length > 0) {
           friendDocs.forEach((friendDoc: any) => {
             let friendRow : any = {};
             friendRow.friendDoc=cloneDeep(friendDoc);
-            if (friendRow.friendDoc.friendID1 == remoteDBState.dbCreds.dbUsername)
+            if (friendRow.friendDoc.friendID1 == remoteDBCreds.dbUsername)
               { friendRow.targetUserName = friendRow.friendDoc.friendID2}
             else { friendRow.targetUserName = friendRow.friendDoc.friendID1}
             let user=usersInfo.find((el: any) => el?.name == friendRow.targetUserName)
@@ -278,8 +278,8 @@ export function useFriends(username: string) : {friendsLoading: boolean, friendR
             }
             friendRow.targetFullName = user?.fullname;
             if (friendDoc.friendStatus == FriendStatus.PendingFrom1 || friendDoc.friendStatus == FriendStatus.PendingFrom2) {
-              if ((remoteDBState.dbCreds.dbUsername == friendDoc.friendID1 && friendDoc.friendStatus == FriendStatus.PendingFrom2) || 
-                  (remoteDBState.dbCreds.dbUsername == friendDoc.friendID2 && friendDoc.friendStatus == FriendStatus.PendingFrom1))
+              if ((remoteDBCreds.dbUsername == friendDoc.friendID1 && friendDoc.friendStatus == FriendStatus.PendingFrom2) || 
+                  (remoteDBCreds.dbUsername == friendDoc.friendID2 && friendDoc.friendStatus == FriendStatus.PendingFrom1))
               {
                 friendRow.friendStatusText = "Confirm?"
                 friendRow.resolvedStatus = ResolvedFriendStatus.PendingConfirmation;
@@ -311,7 +311,7 @@ export function useFriends(username: string) : {friendsLoading: boolean, friendR
 }
 
 export function useConflicts() : { conflictDocs: any[], conflictsLoading: boolean} {
-  const { remoteDBState } = useContext(RemoteDBStateContext);
+  const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
   const { globalState } = useContext(GlobalStateContext);
   const [mostRecentDate,setMostRecentDate] = useState<Date>(new Date());
 
@@ -324,9 +324,9 @@ export function useConflicts() : { conflictDocs: any[], conflictsLoading: boolea
   useEffect( () => {
     const oneDayOldDate=new Date();
     oneDayOldDate.setDate(oneDayOldDate.getDate()-Number(globalState.settings.daysOfConflictLog));
-    const lastConflictsViewed = new Date(String(remoteDBState.dbCreds.lastConflictsViewed))
+    const lastConflictsViewed = new Date(String(remoteDBCreds.lastConflictsViewed))
     setMostRecentDate((lastConflictsViewed > oneDayOldDate) ? lastConflictsViewed : oneDayOldDate);  
-  },[remoteDBState.dbCreds.lastConflictsViewed])
+  },[remoteDBCreds.lastConflictsViewed])
 
   return({conflictDocs, conflictsLoading});
 }

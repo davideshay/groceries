@@ -43,10 +43,10 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   const createList = useCreateGenericDocument();
   const deleteList = useDeleteGenericDocument();
   const deleteListFromItems = useDeleteListFromItems()
-  const { remoteDBState } = useContext(RemoteDBStateContext);
+  const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
   const [ presentToast ] = useIonToast();
-  const {friendsLoading,friendRowsLoading,friendRows} = useFriends(String(remoteDBState.dbCreds.dbUsername));
-  const { listDocs, listsLoading } = useLists(String(remoteDBState.dbCreds.dbUsername));
+  const {friendsLoading,friendRowsLoading,friendRows} = useFriends(String(remoteDBCreds.dbUsername));
+  const { listDocs, listsLoading } = useLists(String(remoteDBCreds.dbUsername));
   const { docs: categoryDocs, loading: categoryLoading, error: categoryError } = useFind({
     index: { fields: [ "type","name"] },
     selector: { type: "category", name: { $exists: true}},
@@ -72,7 +72,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
       let usersInfo: UsersInfo
       if (userIDList.userIDs.length > 0) {
         setPageState(prevState => ({...prevState,usersInfo:[],usersLoaded:false}));
-        usersInfo = await getUsersInfo(userIDList,String(remoteDBState.dbCreds.apiServerURL),String(remoteDBState.dbCreds.refreshJWT))  
+        usersInfo = await getUsersInfo(userIDList,String(remoteDBCreds.apiServerURL),String(remoteDBCreds.refreshJWT))  
       }
       setPageState(prevState => ({...prevState,usersInfo: usersInfo,usersLoaded: true}))
     }
@@ -85,7 +85,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
         let initListDoc = {
           type: "list",
           name: "",
-          listOwner: remoteDBState.dbCreds.dbUsername,
+          listOwner: remoteDBCreds.dbUsername,
           sharedWith: [],
           categories: initCategories
         }
@@ -198,7 +198,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   let usersElem=[];
   let ownerText="";
   let iAmListOwner=false;
-  if (pageState.listDoc.listOwner == remoteDBState.dbCreds.dbUsername) {
+  if (pageState.listDoc.listOwner == remoteDBCreds.dbUsername) {
     ownerText = "You are the list owner";
     iAmListOwner=true;
   } else {
@@ -229,7 +229,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   } else { // not the list owner
     pageState.usersInfo.forEach(user => {
       console.log("getting data for userinfo user:",cloneDeep(user));
-      if (user.name != remoteDBState.dbCreds.dbUsername && user.name != pageState.listDoc.listOwner) {
+      if (user.name != remoteDBCreds.dbUsername && user.name != pageState.listDoc.listOwner) {
         usersElem.push(
           <IonItem key={pageState.selectedListID+"-"+user.name}>
             <IonLabel>{user.fullname}</IonLabel>

@@ -2,13 +2,13 @@ import { DBCreds, RemoteDBState } from "./RemoteDBState";
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import jwt_decode from 'jwt-decode';
 
-export async function navigateToFirstListID(db: any,phistory: any,remoteDBState: RemoteDBState) {
+export async function navigateToFirstListID(db: any,phistory: any,remoteDBCreds: DBCreds) {
     let listResults = await db.find({
         selector: { "$and": [ 
           {  "type": "list",
               "name": { "$exists": true } },
-          { "$or" : [{"listOwner": remoteDBState.dbCreds.dbUsername},
-                      {"sharedWith": { $elemMatch: {$eq: remoteDBState.dbCreds.dbUsername}}}]
+          { "$or" : [{"listOwner": remoteDBCreds.dbUsername},
+                      {"sharedWith": { $elemMatch: {$eq: remoteDBCreds.dbUsername}}}]
           }] },
         sort: [ "type","name"]})
     let firstListID = null;
@@ -22,19 +22,19 @@ export async function navigateToFirstListID(db: any,phistory: any,remoteDBState:
     }  
   }
 
-export async function createNewUser(remoteDBState: RemoteDBState,password: string) {
+export async function createNewUser(remoteDBState: RemoteDBState,remoteDBCreds: DBCreds, password: string) {
     let response: HttpResponse | undefined;
     const options = {
-        url: String(remoteDBState.dbCreds.apiServerURL+"/registernewuser"),
+        url: String(remoteDBCreds.apiServerURL+"/registernewuser"),
         method: "POST",
         headers: { 'Content-Type': 'application/json',
                    'Accept': 'application/json',
-                   'Authorization': 'Bearer '+remoteDBState.dbCreds.refreshJWT },
+                   'Authorization': 'Bearer '+remoteDBCreds.refreshJWT },
         data: {
-            username: remoteDBState.dbCreds.dbUsername,
+            username: remoteDBCreds.dbUsername,
             password: password,
-            email: remoteDBState.dbCreds.email,
-            fullname: remoteDBState.dbCreds.fullName,
+            email: remoteDBCreds.email,
+            fullname: remoteDBCreds.fullName,
             deviceUUID: remoteDBState.deviceUUID
         }           
     };
@@ -58,18 +58,18 @@ export function getTokenInfo(JWT: string) {
     return(tokenResponse);
 }
 
-export async function refreshToken(dbCreds: DBCreds, devID: string) {
+export async function refreshToken(remoteDBCreds: DBCreds, devID: string) {
     console.log("refreshing token, device id: ", devID);
-    console.log("apiserverURL:", dbCreds.apiServerURL);
+    console.log("apiserverURL:", remoteDBCreds.apiServerURL);
     let response: HttpResponse | undefined;
     const options = {
-        url: String(dbCreds.apiServerURL+"/refreshtoken"),
+        url: String(remoteDBCreds.apiServerURL+"/refreshtoken"),
         method: "POST",
         headers: { 'Content-Type' : 'application/json',
                     'Accept': 'application/json',
-                    'Authorization': 'Bearer '+dbCreds.refreshJWT},
+                    'Authorization': 'Bearer '+remoteDBCreds.refreshJWT},
         data: {
-            refreshJWT: dbCreds.refreshJWT,
+            refreshJWT: remoteDBCreds.refreshJWT,
             deviceUUID: devID
         }            
     };

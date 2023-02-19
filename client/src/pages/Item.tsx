@@ -16,7 +16,7 @@ import { RemoteDBStateContext } from '../components/RemoteDBState';
 
 const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode, itemid: routeItemID  } = useParams<{mode: string, itemid: string}>();
-  const { remoteDBState } = useContext(RemoteDBStateContext);
+  const { remoteDBCreds } = useContext(RemoteDBStateContext);
   if ( mode === "new" ) { routeItemID = "<new>"};
   const [needInitItemDoc,setNeedInitItemDoc] = useState((mode === "new") ? true: false);
   const [stateItemDoc,setStateItemDoc] = useState({});
@@ -27,7 +27,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
   const addUOMDoc = useCreateGenericDocument();
   const delItem = useDeleteGenericDocument();
   const { doc: itemDoc, loading: itemLoading, state: itemState, error: itemError } = useDoc(routeItemID);
-  const { listDocs, listsLoading, listRows, listRowsLoading, listRowsLoaded} = useLists(String(remoteDBState.dbCreds.dbUsername))
+  const { listDocs, listsLoading, listRows, listRowsLoading, listRowsLoaded} = useLists(String(remoteDBCreds.dbUsername))
 
   const { docs: categoryDocs, loading: categoryLoading, error: categoryError } = useFind({
       index: { fields: [ "type","name"] },

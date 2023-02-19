@@ -9,14 +9,14 @@ type InitialLoadProps = {
 }
 
 const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
-    const { remoteDBState, setRemoteDBState, setConnectionStatus} = useContext(RemoteDBStateContext);
+    const { remoteDBState, remoteDBCreds, setRemoteDBState, setConnectionStatus} = useContext(RemoteDBStateContext);
     const [ present,dismiss] = useIonLoading()
     const db=usePouch();
   
     useEffect(() => { 
         if ((remoteDBState.connectionStatus == ConnectionStatus.loginComplete)) {
             setConnectionStatus(ConnectionStatus.initialNavComplete);
-            navigateToFirstListID(db,props.history,remoteDBState);
+            navigateToFirstListID(db,props.history,remoteDBCreds);
         } else {
             present({message: "Please wait, logging into server...", duration: 500})
         }   

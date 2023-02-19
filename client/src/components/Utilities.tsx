@@ -1,8 +1,7 @@
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import { initUserInfo, initUsersInfo, UserIDList, UsersInfo } from './DataTypes';
 import { cloneDeep } from 'lodash';
-import { GlobalState } from './GlobalState';
-import { RemoteDBState } from './RemoteDBState';
+import { DBCreds} from './RemoteDBState';
 
 export function isJsonString(str: string): boolean {
     try {
@@ -33,14 +32,14 @@ export function fullnamePatternValidation(fullname: string) {
     return usernameRegex.test(fullname);
 }
 
-export async function checkUserByEmailExists(email: string, remoteDBState: RemoteDBState) {
+export async function checkUserByEmailExists(email: string, remoteDBCreds: DBCreds) {
     let response: HttpResponse | undefined;
     const options = {
-        url: String(remoteDBState.dbCreds?.apiServerURL+"/checkuserbyemailexists"),
+        url: String(remoteDBCreds?.apiServerURL+"/checkuserbyemailexists"),
         method: "POST",
         headers: { 'Content-Type': 'application/json',
                    'Accept': 'application/json',
-                   'Authorization': 'Bearer '+remoteDBState.dbCreds?.refreshJWT },
+                   'Authorization': 'Bearer '+remoteDBCreds?.refreshJWT },
         data: {
             email: email,
         }           

@@ -7,8 +7,8 @@ import { RemoteDBStateContext } from './RemoteDBState';
 import { ResolvedFriendStatus } from './DataTypes';
 
 const AppMenu: React.FC = () => {
-  const { remoteDBState } = useContext(RemoteDBStateContext);
-  const {friendRowsLoading,friendsLoading,friendRows} = useFriends((remoteDBState.dbCreds as any).dbUsername);
+  const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
+  const {friendRowsLoading,friendsLoading,friendRows} = useFriends((remoteDBCreds as any).dbUsername);
   const { conflictDocs, conflictsLoading } = useConflicts();
  
   const listHeader = (headerName: string) => {
