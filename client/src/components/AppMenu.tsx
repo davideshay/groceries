@@ -5,6 +5,7 @@ import { useConflicts, useFriends } from './Usehooks';
 import ListsAll from './ListsAll';
 import { RemoteDBStateContext } from './RemoteDBState';
 import { ResolvedFriendStatus } from './DataTypes';
+import { cloneDeep } from 'lodash';
 
 const AppMenu: React.FC = () => {
   const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);

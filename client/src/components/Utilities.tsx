@@ -50,9 +50,9 @@ export async function checkUserByEmailExists(email: string, remoteDBCreds: DBCre
     return response.data;
 }
 
-export async function getUsersInfo(userIDList: UserIDList,apiServerURL: string, refreshJWT: string): Promise<UsersInfo> {
+export async function getUsersInfo(userIDList: UserIDList,apiServerURL: string, accessJWT: string): Promise<UsersInfo> {
     let usersInfo: UsersInfo = cloneDeep(initUsersInfo);
-    if (refreshJWT == "") { return(usersInfo); }
+    if (accessJWT == "") { return(usersInfo); }
     const usersUrl = apiServerURL+"/getusersinfo"
     if (!urlPatternValidation(usersUrl)) {return usersInfo}
     const options = {
@@ -61,13 +61,12 @@ export async function getUsersInfo(userIDList: UserIDList,apiServerURL: string, 
       method: "POST",
       headers: { 'Content-Type': 'application/json',
                  'Accept': 'application/json',
-                 'Authorization': 'Bearer '+refreshJWT }
+                 'Authorization': 'Bearer '+accessJWT }
     };
     let response:HttpResponse;
     let httpError=false;
     try { response = await CapacitorHttp.post(options); }
-    catch(err) {httpError=true; console.log("HTTP Error: ",err); console.log("Am I here?"); return usersInfo}
-    console.log("got response: ", cloneDeep(response));
+    catch(err) {httpError=true; console.log("HTTP Error: ",err); return usersInfo}
     if (response && response.data) {
         if (response.data.hasOwnProperty("users")) {
             usersInfo = response.data.users

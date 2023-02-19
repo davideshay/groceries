@@ -57,12 +57,13 @@ interface PageState {
 }  
               
 const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
-  const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
+  const { remoteDBState, remoteDBCreds, remoteDB } = useContext(RemoteDBStateContext);
   const uname = (remoteDBCreds as any).dbUsername;
   const {friendRowsLoading,friendsLoading,friendRows} = useFriends(uname);
   const updateDoc = useUpdateGenericDocument();
   const createDoc = useCreateGenericDocument();
-  const [friendsElem,setFriendsElem] = useState<any[]>([]);
+//  const [friendsElem,setFriendsElem] = useState<any[]>([]);
+  let friendsElem: any = [];
   const [pageState,setPageState] = useState<PageState>({
     newFriendEmail: "",
     newFriendName: "",
@@ -114,31 +115,21 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function updateFriendsElem() {
-    setFriendsElem(prevState => ([]));
+    friendsElem=[];
     if (friendRows.length > 0) {
-      console.log(friendRows);
       friendRows.forEach((friendRow: FriendRow) => {
         const itemKey = (friendRow.targetUserName == "" || friendRow.targetUserName == null) ? friendRow.targetEmail : friendRow.targetUserName;
         let elem: any =<IonItem key={itemKey}>{URLButtonElem(friendRow)}{statusItem(friendRow)}<IonLabel>{friendRow.targetEmail}</IonLabel><IonLabel>{friendRow.targetFullName}</IonLabel></IonItem>
-        setFriendsElem((prevState : any) => ([...prevState,elem]))
+        friendsElem.push(elem);
       });
     }
   }
    
-  useEffect( () => {
-    console.log("Friend Rows Changed: ",{friendRows,friendRowsLoading});
-    if (!friendRowsLoading) {
-      updateFriendsElem();
-    }  
-  },[friendRows,friendRowsLoading])
-
   function addNewFriend() {
     setPageState(prevState => ({...prevState,inAddMode: true, formError: "", newFriendEmail:"", newFriendName: ""}))
   }
 
   async function sendFriendRequest() {
-    console.log("in sendFriendRequest");
-//    hideAlert();
     const invuid=uuidv4();
     const newFriendDoc = {
       type: "friend",
@@ -151,10 +142,11 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
 
     }
     console.log(newFriendDoc);
-
+    console.log("about to create friend : ", newFriendDoc);
     let createFriendSuccessful=true; let createResults;
-    try { createResults = await remoteDBState.remoteDB?.post(newFriendDoc) } 
+    try { createResults = await (remoteDB as any).post(newFriendDoc) } 
     catch(e) {createFriendSuccessful=false; console.log(e)}
+    console.log("after create request: ")
     console.log({createResults});
 //    let result=await createDoc(newFriendDoc);
 //    console.log(result);
@@ -175,22 +167,30 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
     setPageState(prevState => ({...prevState,formError: "", inAddMode: false, newFriendEmail: "",
             showRegistrationURL: true,
             registrationAlertSubheader: "An email has been sent to "+pageState.newFriendEmail+" to confirm and create their account. The URL is here: " + confURL+ " . This has also been copied to the clipboard."}))
-    console.log("about to present new alert");
   }
 
   async function submitForm() {
-    console.log("in submit form");
     if (pageState.newFriendEmail == "") {
       setPageState(prevState => ({...prevState, formError: "Please enter an email address"}));
       return
     }
     if (!emailPatternValidation(pageState.newFriendEmail)) {
       setPageState(prevState => ({...prevState, formError: "Invalid email address"}));
+      return;
+    }
+    let friendExists=false;
+    friendRows.forEach((friendRow: FriendRow) => {
+      console.log("evaluating friendrow: ", friendRow, " email: ", friendRow.targetEmail)
+      if (friendRow.targetEmail == pageState.newFriendEmail) { friendExists = true}
+    })
+    console.log("friendExists:",friendExists);
+    if (friendExists) {
+      setPageState(prevState => ({...prevState, formError: "Friend already exists with this email"}));
+      return;
     }
     console.log("... add friend here ...");
     const response = await checkUserByEmailExists(pageState.newFriendEmail,remoteDBCreds);
     console.log("response to check user", response);
-    //TODO -- Need to check if user is already a friend (either by email or username)
     if (response.userExists) {
       let friend1 = ""; let friend2 = ""; let pendfrom1: boolean = false;
       if (response.username > String(remoteDBCreds.dbUsername)) {
@@ -222,6 +222,8 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
     setPageState(prevState => ({...prevState,showNewUserAlert: true ,newUserAlertSubheader: "There is no user with email "+pageState.newFriendEmail+" currently registered. Do you want to ask them to register?"}))
 
   }
+
+  updateFriendsElem();
 
   let formElem: any[] = [];
   if (pageState.inAddMode) {

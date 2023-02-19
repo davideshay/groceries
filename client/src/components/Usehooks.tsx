@@ -228,11 +228,7 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
 export function useFriends(username: string) : {friendsLoading: boolean, friendRowsLoading: boolean, friendRows: FriendRow[]} {
   const [friendRows,setFriendRows] = useState<FriendRow[]>([]);
   const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
-  const friendRowsLoadingRef = useRef(false);
-//  const [friendRowsLoading,setFriendRowsLoading] = useState(false);
-  
-
-
+  const friendRowsLoadingRef = useRef(false);  
   const { docs: friendDocs, loading: friendsLoading, error: friendsError } = useFind({
     index: { fields: ["type","friendID1","friendID2"]},
     selector: { "$and": [ {
@@ -258,9 +254,8 @@ export function useFriends(username: string) : {friendsLoading: boolean, friendR
         }
       });
       const getUsers = async () => {
-        console.log("running getUsers...");
         friendRowsLoadingRef.current = true;
-        const usersInfo = await getUsersInfo(userIDList,String(remoteDBCreds.apiServerURL), String(remoteDBCreds.refreshJWT));
+        const usersInfo = await getUsersInfo(userIDList,String(remoteDBCreds.apiServerURL), String(remoteDBState.accessJWT));
         setFriendRows(prevState => ([]));
         if (usersInfo.length > 0) {
           friendDocs.forEach((friendDoc: any) => {
@@ -303,7 +298,7 @@ export function useFriends(username: string) : {friendsLoading: boolean, friendR
       if ( !friendsLoading && !friendRowsLoadingRef.current && (remoteDBState.syncStatus == SyncStatus.active || remoteDBState.syncStatus == SyncStatus.paused)) {
         getUsers();
       }
-    },[friendsLoading,friendRowsLoadingRef.current,friendDocs]);
+    },[friendsLoading,friendRowsLoadingRef.current,friendDocs, remoteDBState.syncStatus]);
 
     if (friendsLoading || friendRowsLoadingRef.current) { return({friendsLoading: true,friendRowsLoading: true,friendRows: []})}
     return({friendsLoading, friendRowsLoading: friendRowsLoadingRef.current,friendRows});

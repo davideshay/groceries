@@ -12,7 +12,6 @@ import { RemoteDBStateContext } from '../components/RemoteDBState';
 import { initUserIDList, initUsersInfo, PouchResponse, ResolvedFriendStatus, UserIDList, UsersInfo, HistoryProps } from '../components/DataTypes';
 import SyncIndicator from '../components/SyncIndicator';
 import { getUsersInfo } from '../components/Utilities';
-import { UserInfo } from 'os';
 
 interface PageState {
   needInitListDoc: boolean,
@@ -72,7 +71,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
       let usersInfo: UsersInfo
       if (userIDList.userIDs.length > 0) {
         setPageState(prevState => ({...prevState,usersInfo:[],usersLoaded:false}));
-        usersInfo = await getUsersInfo(userIDList,String(remoteDBCreds.apiServerURL),String(remoteDBCreds.refreshJWT))  
+        usersInfo = await getUsersInfo(userIDList,String(remoteDBCreds.apiServerURL),String(remoteDBState.accessJWT))  
       }
       setPageState(prevState => ({...prevState,usersInfo: usersInfo,usersLoaded: true}))
     }

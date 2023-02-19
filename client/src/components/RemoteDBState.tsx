@@ -14,7 +14,6 @@ let globalSync: any = null;
 let globalRemoteDB: PouchDB.Database | undefined = undefined;
 
 export type RemoteDBState = {
-    remoteDB: PouchDB.Database | undefined,
     sync: any,
     deviceUUID: string | null,
     accessJWT: string,
@@ -31,6 +30,7 @@ export type RemoteDBState = {
 export interface RemoteDBStateContextType {
     remoteDBState: RemoteDBState,
     remoteDBCreds: DBCreds,
+    remoteDB: PouchDB.Database | undefined,
     setRemoteDBState: React.SetStateAction<RemoteDBState>,
     setRemoteDBCreds: any,
     startSync: any,
@@ -103,7 +103,6 @@ export const DBCredsInit: DBCreds = {
 }
 
 export const initialRemoteDBState: RemoteDBState = {
-    remoteDB: undefined ,
     sync: null,
     deviceUUID: null,
     accessJWT: "",
@@ -120,6 +119,7 @@ export const initialRemoteDBState: RemoteDBState = {
 const initialContext = {
     remoteDBState: initialRemoteDBState,
     remoteDBCreds: DBCredsInit,
+    remoteDB: undefined,
     setRemoteDBState: (state: RemoteDBState ) => {},
     setRemoteDBCreds: (dbCreds: DBCreds) => {},
     startSync: () => {},
@@ -461,7 +461,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         return () => clearTimeout(refreshTimer);
     },[remoteDBState.accessJWTExpirationTime])
 
-    let value: any = {remoteDBState, remoteDBCreds: remoteDBCreds.current, setRemoteDBState, setRemoteDBCreds, startSync, errorCheckCreds, checkDBUUID, assignDB, setDBCredsValue, setConnectionStatus};
+    let value: any = {remoteDBState, remoteDBCreds: remoteDBCreds.current, remoteDB: globalRemoteDB  , setRemoteDBState, setRemoteDBCreds, startSync, errorCheckCreds, checkDBUUID, assignDB, setDBCredsValue, setConnectionStatus};
     return (
         <RemoteDBStateContext.Provider value={value}>{props.children}</RemoteDBStateContext.Provider>
       );
