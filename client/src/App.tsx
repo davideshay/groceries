@@ -6,7 +6,7 @@ import {
 import { IonReactRouter } from '@ionic/react-router';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import Lists from './pages/Lists';
 import List from "./pages/List";
 import Items from './pages/Items';
@@ -65,6 +65,10 @@ const App: React.FC = () => {
       }
     })
   }
+
+  useEffect( () => {
+    db.setMaxListeners(20);
+  },[]);
 
   return (
   <IonApp>

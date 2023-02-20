@@ -11,7 +11,8 @@ export function createEmptyItemDoc(listRows:ListRow[],listID: string | null | un
         listID: listRow.listDoc._id,
         boughtCount: 0,
         active: true,
-        completed: false
+        completed: false,
+        stockedAt: true
       };
       if (settings.addListOption == AddListOptions.addToAllListsAutomatically) {
         newListDoc.active = true;

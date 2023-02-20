@@ -11,6 +11,8 @@ import { PouchResponse, HistoryProps } from '../components/DataTypes';
 import SyncIndicator from '../components/SyncIndicator';
 import { addOutline, closeOutline, navigate, saveOutline, trashOutline } from 'ionicons/icons';
 
+let changes:any = null;
+
 const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
   if ( mode === "new" ) { routeID = "<new>"};
@@ -24,8 +26,10 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   const deleteCategory = useDeleteGenericDocument();
   const deleteCategoryFromItems = useDeleteCategoryFromItems();
   const deleteCategoryFromLists = useDeleteCategoryFromLists();
+  const [categoryDoc, setCategoryDoc] = useState<any>(null);
+  const [categoryLoading,setCategoryLoading] = useState(true);
 
-  const { doc: categoryDoc, loading: categoryLoading, state: categoryState, error: categoryError } = useDoc(routeID);
+ // const { doc: categoryDoc, loading: categoryLoading, state: categoryState, error: categoryError } = useDoc(routeID);
   const { docs: categoryDocs, loading: categoriesLoading, error: categoriesError } = useFind({
     index: { fields: [ "type","name"] },
     selector: { type: "category", name: { $exists: true}},
@@ -34,6 +38,24 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   const {goBack} = useContext(NavContext);
   const db = usePouch();
+
+  useEffect( () => {
+    console.log("init effect running...");
+    async function getDoc() {
+      console.log("in get doc call");
+      let doc = await db.get(routeID);
+      setCategoryDoc(doc);
+      setCategoryLoading(false);
+      changes = await db.changes({since: 'now', live: true, include_docs: true, doc_ids: [routeID]})
+        .on('change', function(change) { console.log("changed",cloneDeep(change))})
+      console.log(cloneDeep(changes));  
+    }
+    console.log("calling getdoc");
+    getDoc()
+    return ( () => {console.log("changes is:",cloneDeep(changes)); 
+          if (changes) {changes.cancel()}; console.log("changes cancelled");})
+  },[])
+
 
   useEffect( () => {
     let newCategoryDoc = cloneDeep(stateCategoryDoc);
