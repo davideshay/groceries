@@ -245,6 +245,28 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
     setStateItemDoc(newItemDoc);
   }
 
+  function changeStockedAt(listID: string, updateVal: boolean) {
+    let newItemDoc=cloneDeep(stateItemDoc);
+    let listFound=false
+    for (let i = 0; i < newItemDoc.lists.length; i++) {
+      if (newItemDoc.lists[i].listID === listID) {
+        newItemDoc.lists[i].stockedAt = updateVal;
+        listFound=true;
+      }    
+    }
+    if (!listFound) {
+      let listobj={
+        listID: listID,
+        boughtCount: 0,
+        active: updateVal,
+        stockedAt: true,
+        checked: false
+      }
+      newItemDoc.lists.push(listobj);
+    }
+    setStateItemDoc(newItemDoc);
+  }
+
   function resetBoughtCount(listID: string) {
     let newItemDoc=cloneDeep(stateItemDoc);
     for (let i = 0; i < newItemDoc.lists.length; i++) {
@@ -259,9 +281,10 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
   let listsInnerElem=[];
 //  listsElem.push(<IonGrid>);
   listsInnerElem.push(<IonRow key="listlabelrow">
-      <IonCol size="6"><IonLabel key="listlabel" position='stacked'>Item is on these lists:</IonLabel></IonCol>
+      <IonCol size="5"><IonLabel key="listlabel" position='stacked'>Item is on these lists:</IonLabel></IonCol>
+      <IonCol size="2"><IonLabel key="stocklabel" position="stacked">Stocked</IonLabel></IonCol>
       <IonCol size="3"><IonLabel key="countlabel" position="stacked">Times Bought</IonLabel></IonCol>
-      <IonCol size="3"><IonLabel key="resetlabel" position="stacked">Reset</IonLabel></IonCol></IonRow>
+      <IonCol size="2"><IonLabel key="resetlabel" position="stacked">Reset</IonLabel></IonCol></IonRow>
   )
   for (let i = 0; i < (stateItemDoc as any).lists.length; i++) {
     let listID = (stateItemDoc as any).lists[i].listID;
@@ -269,12 +292,14 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
     if (itemFoundIdx !== -1) {
       let itemActive=(((stateItemDoc as any).lists[i].active));
       let listName=(listDocs as any)[itemFoundIdx].name;
+      let stockedAt=((stateItemDoc as any).lists[i].stockedAt);
       listsInnerElem.push(
         <IonRow key={listID}>
           <IonCol size="1"><IonCheckbox onIonChange={(e: any) => selectList(listID,Boolean(e.detail.checked))} checked={itemActive}></IonCheckbox></IonCol>
-          <IonCol size="5"><IonLabel>{listName}</IonLabel></IonCol>
+          <IonCol size="4"><IonLabel>{listName}</IonLabel></IonCol>
+          <IonCol size="2"><IonCheckbox onIonChange={(e: any) => changeStockedAt(listID,Boolean(e.detail.checked))} checked={stockedAt}></IonCheckbox></IonCol>
           <IonCol size="3">{(stateItemDoc as any).lists[i].boughtCount}</IonCol>
-          <IonCol size="3"><IonButton onClick={(e) => resetBoughtCount(listID)}>Reset</IonButton></IonCol>
+          <IonCol size="2"><IonButton onClick={(e) => resetBoughtCount(listID)}>Reset</IonButton></IonCol>
         </IonRow>
       )
     }

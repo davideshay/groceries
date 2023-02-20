@@ -42,6 +42,8 @@ const { cloneDeep } = require('lodash');
 const {  emailPatternValidation, usernamePatternValidation, fullnamePatternValidation, uomContent } = require('./utilities');
 let uomContentVersion = 0;
 const targetUomContentVersion = 2;
+let schemaVersion = 0;
+const targetSchemaVersion = 2;
 const refreshTokenExpires = (process.env.REFRESH_TOKEN_EXPIRES == undefined) ? "30d" : process.env.REFRESH_TOKEN_EXPIRES;
 const accessTokenExpires = (process.env.ACCESS_TOKEN_EXPIRES == undefined) ? "5m" : process.env.ACCESS_TOKEN_EXPIRES;
 const JWTKey = new TextEncoder().encode(couchKey);
@@ -181,6 +183,7 @@ async function addDBIdentifier() {
             name: "Database UUID",
             "uuid": uuidv4(),
             "uomContentVersion": 0,
+            "schemaVersion": 0,
             updatedAt: (new Date()).toISOString()
         }
         let dbResp = null;
@@ -199,6 +202,14 @@ async function addDBIdentifier() {
             catch(err) { console.log("ERROR: updating UUID record with uomContentVersion"); console.log(JSON.stringify(err));};
         } else {
             uomContentVersion = foundIDDoc.uomContentVersion;
+        }
+        if (!foundIDDoc.hasOwnProperty("schemaVersion")) {
+            foundIDDoc.schemaVersion = 0;
+            let dbResp = null;
+            try { dbResp = await todosDBAsAdmin.insert(foundIDDoc); console.log("STATUS: Updated Schema Version, was missing.") }
+            catch(err) { console.log("ERROR: updating UUID record with schemaVersion"); console.log(JSON.stringify(err));};
+        } else {
+            schemaVersion = foundIDDoc.schemaVersion;
         }
     }
 }
@@ -249,6 +260,69 @@ async function checkAndCreateContent() {
     await createUOMContent();
 }
 
+async function addStockedAtIndicatorToSchema() {
+    let updateSuccess = true;
+    console.log("STATUS: Upgrading schema to support stocked at indicators.");
+    const itemq = { selector: { type: { "$eq": "item"}},
+                    limit: await totalDocCount(todosDBAsAdmin)};
+    let foundItemDocs = await todosDBAsAdmin.find(itemq);
+    console.log("STATUS: Found items to update :", foundItemDocs.docs.length)
+    for (let i = 0; i < foundItemDocs.docs.length; i++) {
+        const foundItemDoc = foundItemDocs.docs[i];
+        console.log("Processing item: ", foundItemDoc.name);
+        let docChanged = false;
+        if (foundItemDoc.hasOwnProperty("lists")) {
+            for (let j = 0; j < foundItemDoc.lists.length; j++) {
+                console.log("list: ",JSON.stringify(foundItemDoc.lists[j]));
+                if (!foundItemDoc.lists[j].hasOwnProperty("stockedAt")) {
+                    console.log("Didn't have stockedAt property, adding...");
+                    foundItemDoc.lists[j].stockedAt = true;
+                    docChanged = true;
+                }
+            }
+        }
+        if (docChanged) {
+            let dbResp = null;
+            try { dbResp = await todosDBAsAdmin.insert(foundItemDoc)}
+            catch(err) { console.log("ERROR: Couldn't update item with stocked indicator.");
+                         updateSuccess = false;}
+        }
+    }
+    return updateSuccess;
+}
+
+async function setSchemaVersion(updSchemaVersion) {
+    console.log("STATUS: Finished schema updates, updating database to :",updSchemaVersion);
+    const dbidq = {
+        selector: { type: { "$eq": "dbuuid" }}
+    }
+    let foundIDDocs =  await todosDBAsAdmin.find(dbidq);
+    let foundIDDoc = undefined;
+    if (foundIDDocs.docs.length > 0) {foundIDDoc = foundIDDocs.docs[0]}
+    if (foundIDDoc == undefined) {
+        console.log("ERROR: Couldn't update database schema version record.");
+    } else {
+        foundIDDoc.schemaVersion = updSchemaVersion;
+        let dbResp = null;
+        try { dbResp = await todosDBAsAdmin.insert(foundIDDoc)}
+        catch(err) { console.log("ERROR: Couldn't update schema target version.")};
+        console.log("STATUS: Updated schema target version successfully.");
+    }
+}
+
+async function checkAndUpdateSchema() {
+    console.log("STATUS: Current Schema Version:",schemaVersion," Target Version:",targetSchemaVersion);
+    if (schemaVersion === targetSchemaVersion) {
+        console.log("STATUS: At current schema version, skipping schema update");
+        return true;
+    }
+    if (schemaVersion < 2) {
+        console.log("STATUS: Updating schema to rev. 2: Changes for 'stocked at' indicator on item/list.");
+        let schemaUpgradeSuccess = await addStockedAtIndicatorToSchema();
+        if (schemaUpgradeSuccess) { schemaVersion = 2; await setSchemaVersion(schemaVersion);}
+    }
+}
+
 async function createConflictsView() {
     let viewFound=true; let existingView;
     try {existingView = await todosDBAsAdmin.get("_design/"+conflictsViewID)}
@@ -282,6 +356,7 @@ async function dbStartup() {
     usersDBAsAdmin = usersNanoAsAdmin.use("_users");
     await addDBIdentifier();
     await checkAndCreateContent();
+    await checkAndUpdateSchema();
     await createConflictsView();
     if (enableScheduling) {
         if(isInteger(resolveConflictsFrequencyMinutes)) {

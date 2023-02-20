@@ -147,6 +147,11 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
           }
         }
       }
+      if (!skipThisList && (idxInLists !== -1) && listRow.listDoc._id !== pageState.selectedListID) {
+        if (!existingItem.lists[idxInLists].stockedAt) {
+          skipThisList = true;
+        }
+      }
       if (!skipThisList) {
         if (idxInLists === -1) {
           const newListItem={
