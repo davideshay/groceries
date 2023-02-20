@@ -1,11 +1,10 @@
 import { useCallback, useState, useEffect, useContext, useRef } from 'react'
 import { usePouch, useFind } from 'use-pouchdb'
 import { cloneDeep, isEqual, union, pull } from 'lodash';
-import { HttpResponse } from '@capacitor/core';
-import { ConnectionStatus, RemoteDBStateContext, SyncStatus } from './RemoteDBState';
+import { RemoteDBStateContext, SyncStatus } from './RemoteDBState';
 import { FriendStatus, FriendRow, ResolvedFriendStatus, ListRow, PouchResponse, PouchResponseInit, initUserInfo } from './DataTypes';
 import { GlobalStateContext } from './GlobalState';
-import { getUsersInfo, urlPatternValidation } from './Utilities';
+import { getUsersInfo } from './Utilities';
 
 
 export function useUpdateGenericDocument() {
@@ -115,13 +114,10 @@ export function useDeleteListFromItems() {
           }
         }
         itemDoc.lists = newLists;
-        let updResults ;
-        try {updResults = db.put(itemDoc)}
+        try {let updResults = db.put(itemDoc)}
         catch(err) {response.successful = false; response.fullError = err; }
       }
-    
       return response;
-    
     },[db]) 
 }
 
@@ -238,9 +234,8 @@ export enum UseFriendState {
 export function useFriends(username: string) : { useFriendState: UseFriendState, friendRows: FriendRow[]} {
   const [friendRows,setFriendRows] = useState<FriendRow[]>([]);
   const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
-  const friendRowsLoadingRef = useRef(false);  
   const [useFriendState,setUseFriendState] = useState(UseFriendState.init);
-  const { docs: friendDocs, loading: friendsLoading, error: friendsError, state: friendState } = useFind({
+  const { docs: friendDocs, error: friendsError, state: friendState } = useFind({
     index: { fields: ["type","friendID1","friendID2"]},
     selector: { "$and": [ {
         "type": "friend",

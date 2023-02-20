@@ -1,6 +1,6 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonItemGroup,
   IonItemDivider, IonButton, IonButtons, IonFab, IonFabButton, IonIcon, IonCheckbox, IonLabel, IonSelect,
-  IonSelectOption, IonSearchbar, IonPopover, IonAlert,IonMenuButton, NavContext, useIonToast} from '@ionic/react';
+  IonSelectOption, IonSearchbar, IonPopover, IonAlert,IonMenuButton, useIonToast} from '@ionic/react';
 import { add,checkmark } from 'ionicons/icons';
 import React, { useState, useEffect, useContext, useRef, KeyboardEvent } from 'react';
 import { useParams } from 'react-router-dom';
@@ -54,13 +54,13 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   },[routeListID])
 
   useEffect( () => {
-    if (!itemLoading && !listsLoading && !listRowsLoading && !categoryLoading && !allItemsLoading) {
+    if (!itemLoading && !listsLoading && !listRowsLoading && !categoryLoading && !allItemsLoading &&!uomLoading) {
       setPageState({ ...pageState,
         doingUpdate: false,
         itemRows: getItemRows(itemDocs, listDocs, categoryDocs, uomDocs, pageState.selectedListID),
       })
     }
-  },[itemLoading, allItemsLoading, listsLoading, listRowsLoading, categoryLoading, itemDocs, listDocs, allItemDocs, categoryDocs, pageState.selectedListID]);
+  },[itemLoading, allItemsLoading, listsLoading, listRowsLoading, categoryLoading, uomLoading, uomDocs, itemDocs, listDocs, allItemDocs, categoryDocs, pageState.selectedListID]);
 
   useEffect( () => {
     setSearchRows(getAllSearchRows(allItemDocs,pageState.selectedListID));
@@ -75,7 +75,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     }  
   },[searchState.searchCriteria,searchState.isFocused])
   
-  if (itemLoading || listsLoading || listRowsLoading || categoryLoading || allItemsLoading || pageState.doingUpdate )  {return(
+  if (itemLoading || listsLoading || listRowsLoading || categoryLoading || allItemsLoading || uomLoading || pageState.doingUpdate )  {return(
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
   )};  
 
@@ -139,9 +139,9 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       let skipThisList=false;
       if (!isEqual(listRow.participants,baseParticipants)) {skipThisList = true};
       if (listRow.listDoc._id !== pageState.selectedListID) {
-        if (globalState.settings.addListOption == AddListOptions.dontAddAutomatically) {
+        if (globalState.settings.addListOption === AddListOptions.dontAddAutomatically) {
           skipThisList=true;
-        } else if (globalState.settings.addListOption == AddListOptions.addToListsWithCategoryAutomatically) {
+        } else if (globalState.settings.addListOption === AddListOptions.addToListsWithCategoryAutomatically) {
           if (!isCategoryInList(listRow.listDoc._id,existingItem.categoryID)) {
             skipThisList=true;
           }
