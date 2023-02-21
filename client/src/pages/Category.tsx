@@ -2,7 +2,7 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonLis
   IonButtons, IonMenuButton, IonItem, IonLabel, IonFooter, NavContext, IonIcon,
   useIonAlert } from '@ionic/react';
 import { useParams } from 'react-router-dom';
-import { useDoc, useFind, usePouch } from 'use-pouchdb';
+import { useFind, usePouch } from 'use-pouchdb';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteCategoryFromItems, useDeleteGenericDocument, useDeleteCategoryFromLists, useGetOneDoc } from '../components/Usehooks';
 import { cloneDeep } from 'lodash';
@@ -24,11 +24,11 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   const deleteCategory = useDeleteGenericDocument();
   const deleteCategoryFromItems = useDeleteCategoryFromItems();
   const deleteCategoryFromLists = useDeleteCategoryFromLists();
-  const [categoryDoc, setCategoryDoc] = useState<any>(null);
-  const [categoryLoading,setCategoryLoading] = useState(true);
-  const categoryChanges = useRef<any>();
+//  const [categoryDoc, setCategoryDoc] = useState<any>(null);
+//  const [categoryLoading,setCategoryLoading] = useState(true);
+//  const categoryChanges = useRef<any>();
+  const { doc: categoryDoc, loading: categoryLoading} = useGetOneDoc(routeID);
 
- // const { doc: categoryDoc, loading: categoryLoading, state: categoryState, error: categoryError } = useDoc(routeID);
   const { docs: categoryDocs, loading: categoriesLoading, error: categoriesError } = useFind({
     index: { fields: [ "type","name"] },
     selector: { type: "category", name: { $exists: true}},
@@ -37,20 +37,6 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   const {goBack} = useContext(NavContext);
   const db = usePouch();
-
-  async function getDoc() {
-    categoryChanges.current = db.changes({since: 'now', live: true, include_docs: true, doc_ids: [routeID]})
-    .on('change', function(change) { setCategoryDoc(change.doc); })
-    let doc = await db.get(routeID);
-    setCategoryDoc(doc);
-    setCategoryLoading(false);
-  }
-
-  useEffect( () => {
-    getDoc()
-    return ( () => { if (categoryChanges.current) {categoryChanges.current.cancel()};})
-  },[])
-
 
   useEffect( () => {
     let newCategoryDoc = cloneDeep(stateCategoryDoc);

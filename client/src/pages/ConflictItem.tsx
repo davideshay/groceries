@@ -1,7 +1,7 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, 
   IonButtons, IonMenuButton, IonItem, IonLabel, IonFooter, IonTextarea, NavContext } from '@ionic/react';
 import { useParams } from 'react-router-dom';
-import { useDoc} from 'use-pouchdb';
+import { useGetOneDoc} from '../components/Usehooks';
 import { useContext } from 'react';
 import { isEqual, pull } from 'lodash';
 import { HistoryProps } from '../components/DataTypes';
@@ -11,7 +11,7 @@ import SyncIndicator from '../components/SyncIndicator';
 const ConflictItem: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { id: routeID } = useParams<{ id: string}>();
 
-  const { doc: conflictDoc, loading: conflictLoading } = useDoc<any>(routeID);
+  const { doc: conflictDoc, loading: conflictLoading } = useGetOneDoc(routeID);
 
   const {goBack} = useContext(NavContext);
 

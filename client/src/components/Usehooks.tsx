@@ -6,19 +6,30 @@ import { FriendStatus, FriendRow, ResolvedFriendStatus, ListRow, PouchResponse, 
 import { GlobalStateContext } from './GlobalState';
 import { getUsersInfo } from './Utilities';
 
-export function useGetOneDoc() {
+export function useGetOneDoc(docID: string) {
   const db = usePouch();
   const changesRef = useRef<any>();
+  const [doc,setDoc] = useState<any>(null);
+  const loadingRef = useRef(true);
 
-  return useCallback(
-
-    async (id: string) => {
+  async function getDoc(id: string) {
+      loadingRef.current = true;
       changesRef.current = db.changes({since: 'now', live: true, include_docs: true, doc_ids: [id]})
-      .on('change', function(change) { console.log("changed",cloneDeep(change)); return change.doc; })
-      let doc = await db.get(id);
-      return doc;
-    },[db])
+      .on('change', function(change) { console.log("changed",cloneDeep(change)); setDoc(change.doc); })
+      let success=true; 
+      let docRet = null;
+      try  {docRet = await db.get(id);}
+      catch(err) {success=false;}
+      loadingRef.current = false;
+      if (success) {setDoc(docRet)};
+    }
+    
+  useEffect( () => {
+      getDoc(docID)
+      return ( () => { if (changesRef.current) {changesRef.current.cancel()};})  
+  },[])  
 
+  return {loading: loadingRef.current, doc};
 }
 
 export function useUpdateGenericDocument() {

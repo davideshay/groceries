@@ -3,9 +3,9 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonLis
   IonSelectOption, NavContext, useIonAlert,useIonToast, IonTextarea, IonGrid, IonRow, IonCol } from '@ionic/react';
 import { addOutline, closeCircleOutline, trashOutline } from 'ionicons/icons';
 import { useParams } from 'react-router-dom';
-import { useDoc, useFind } from 'use-pouchdb';
+import { useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext } from 'react';
-import { useCreateGenericDocument, useUpdateGenericDocument, useLists, useDeleteGenericDocument } from '../components/Usehooks';
+import { useCreateGenericDocument, useUpdateGenericDocument, useLists, useDeleteGenericDocument, useGetOneDoc } from '../components/Usehooks';
 import { createEmptyItemDoc } from '../components/DefaultDocs';
 import { GlobalStateContext } from '../components/GlobalState';
 import { cloneDeep, isEmpty } from 'lodash';
@@ -26,7 +26,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
   const addCategoryDoc = useCreateGenericDocument();
   const addUOMDoc = useCreateGenericDocument();
   const delItem = useDeleteGenericDocument();
-  const { doc: itemDoc, loading: itemLoading, state: itemState, error: itemError } = useDoc(routeItemID);
+  const { doc: itemDoc, loading: itemLoading } = useGetOneDoc(routeItemID);
   const { listDocs, listsLoading, listRows, listRowsLoading, listRowsLoaded} = useLists(String(remoteDBCreds.dbUsername))
 
   const { docs: categoryDocs, loading: categoryLoading, error: categoryError } = useFind({
