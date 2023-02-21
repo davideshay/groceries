@@ -6,6 +6,20 @@ import { FriendStatus, FriendRow, ResolvedFriendStatus, ListRow, PouchResponse, 
 import { GlobalStateContext } from './GlobalState';
 import { getUsersInfo } from './Utilities';
 
+export function useGetOneDoc() {
+  const db = usePouch();
+  const changesRef = useRef<any>();
+
+  return useCallback(
+
+    async (id: string) => {
+      changesRef.current = db.changes({since: 'now', live: true, include_docs: true, doc_ids: [id]})
+      .on('change', function(change) { console.log("changed",cloneDeep(change)); return change.doc; })
+      let doc = await db.get(id);
+      return doc;
+    },[db])
+
+}
 
 export function useUpdateGenericDocument() {
   const db = usePouch();

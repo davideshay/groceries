@@ -3,15 +3,13 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonLis
   useIonAlert } from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useDoc, useFind, usePouch } from 'use-pouchdb';
-import { useState, useEffect, useContext } from 'react';
-import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteCategoryFromItems, useDeleteGenericDocument, useDeleteCategoryFromLists } from '../components/Usehooks';
+import { useState, useEffect, useContext, useRef } from 'react';
+import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteCategoryFromItems, useDeleteGenericDocument, useDeleteCategoryFromLists, useGetOneDoc } from '../components/Usehooks';
 import { cloneDeep } from 'lodash';
 import './Category.css';
 import { PouchResponse, HistoryProps } from '../components/DataTypes';
 import SyncIndicator from '../components/SyncIndicator';
 import { addOutline, closeOutline, navigate, saveOutline, trashOutline } from 'ionicons/icons';
-
-let changes:any = null;
 
 const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
@@ -28,6 +26,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   const deleteCategoryFromLists = useDeleteCategoryFromLists();
   const [categoryDoc, setCategoryDoc] = useState<any>(null);
   const [categoryLoading,setCategoryLoading] = useState(true);
+  const categoryChanges = useRef<any>();
 
  // const { doc: categoryDoc, loading: categoryLoading, state: categoryState, error: categoryError } = useDoc(routeID);
   const { docs: categoryDocs, loading: categoriesLoading, error: categoriesError } = useFind({
@@ -39,21 +38,17 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   const {goBack} = useContext(NavContext);
   const db = usePouch();
 
+  async function getDoc() {
+    categoryChanges.current = db.changes({since: 'now', live: true, include_docs: true, doc_ids: [routeID]})
+    .on('change', function(change) { setCategoryDoc(change.doc); })
+    let doc = await db.get(routeID);
+    setCategoryDoc(doc);
+    setCategoryLoading(false);
+  }
+
   useEffect( () => {
-    console.log("init effect running...");
-    async function getDoc() {
-      console.log("in get doc call");
-      let doc = await db.get(routeID);
-      setCategoryDoc(doc);
-      setCategoryLoading(false);
-      changes = await db.changes({since: 'now', live: true, include_docs: true, doc_ids: [routeID]})
-        .on('change', function(change) { console.log("changed",cloneDeep(change))})
-      console.log(cloneDeep(changes));  
-    }
-    console.log("calling getdoc");
     getDoc()
-    return ( () => {console.log("changes is:",cloneDeep(changes)); 
-          if (changes) {changes.cancel()}; console.log("changes cancelled");})
+    return ( () => { if (categoryChanges.current) {categoryChanges.current.cancel()};})
   },[])
 
 
