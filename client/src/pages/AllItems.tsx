@@ -26,6 +26,14 @@ const AllItems: React.FC<HistoryProps> = (props: HistoryProps) => {
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
   )}
 
+  docs.sort(function(a: any,b: any) {
+    var keyA = a.name.toUpperCase();
+    var keyB = b.name.toUpperCase();
+    if (keyA < keyB) return -1;
+    if (keyA > keyB) return 1;
+    return 0
+  })
+
   let itemsElem : any[] = [];
   docs.forEach((doc: any) => {
     let hasValidList=false;

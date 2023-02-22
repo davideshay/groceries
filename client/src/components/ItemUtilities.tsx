@@ -39,6 +39,13 @@ export function getItemRows(itemDocs: any, listDocs: any, categoryDocs: any, uom
     let itemRows: Array<ItemRow> =[];
     let listDoc=listDocs.find((el: any) => el._id === listID);
     if (listDoc == undefined) {return itemRows};
+    itemDocs.sort(function(a: any,b: any) {
+        var keyA = a.itemName.toUpperCase();
+        var keyB = b.itemName.toUpperCase();
+        if (keyA < keyB) return -1;
+        if (keyA > keyB) return 1;
+        return 0
+      })
     itemDocs.forEach((itemDoc: any) => {
     let itemRow: ItemRow = {
         itemID:"",

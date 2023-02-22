@@ -221,15 +221,23 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
   });
 
   function buildListRows() {
-    setListRows(prevState => ([]));
+    let newListRows: ListRow[] = [];
     listDocs.forEach((list: any) => {
       let part = union([list.listOwner],list.sharedWith).sort();
       let listRow: ListRow ={
         listDoc: list,
         participants: part
       }
-      setListRows(prevArray => ([...prevArray,listRow]));
+      newListRows.push(listRow);
     });
+    newListRows.sort(function (a: ListRow,b: ListRow) {
+      var keyA = a.listDoc.name.toUpperCase();
+      var keyB = b.listDoc.name.toUpperCase();
+      if (keyA < keyB) return -1;
+      if (keyA > keyB) return 1;
+      return 0
+    });
+    setListRows(newListRows);
   }
 
   useEffect( () => {
