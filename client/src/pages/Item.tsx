@@ -1,6 +1,6 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
   IonButtons, IonMenuButton, IonLabel, IonSelect, IonCheckbox, IonIcon,
-  IonSelectOption, NavContext, useIonAlert,useIonToast, IonTextarea, IonGrid, IonRow, IonCol } from '@ionic/react';
+  IonSelectOption, useIonAlert,useIonToast, IonTextarea, IonGrid, IonRow, IonCol } from '@ionic/react';
 import { addOutline, closeCircleOutline, trashOutline } from 'ionicons/icons';
 import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
@@ -29,11 +29,11 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { doc: itemDoc, loading: itemLoading } = useGetOneDoc(routeItemID);
   const { listDocs, listsLoading, listRows, listRowsLoading, listRowsLoaded} = useLists(String(remoteDBCreds.dbUsername))
 
-  const { docs: categoryDocs, loading: categoryLoading, error: categoryError } = useFind({
+  const { docs: categoryDocs, loading: categoryLoading } = useFind({
       index: { fields: [ "type","name"] },
       selector: { type: "category", name: { $exists: true}},
       sort: [ "type","name"] });
-  const { docs: uomDocs, loading: uomLoading, error: uomError } = useFind({
+  const { docs: uomDocs, loading: uomLoading } = useFind({
       index: { fields: [ "type","description"]},
       selector: { type: "uom", description: { $exists: true}},
       sort: [ "type","description"] });
@@ -117,7 +117,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
     let alreadyFound=false;
     categoryDocs.forEach((cat: any) => 
       {
-        if (category.toUpperCase() == cat.name.toUpperCase()) {alreadyFound=true}
+        if (category.toUpperCase() === cat.name.toUpperCase()) {alreadyFound=true}
       });
     if (!alreadyFound) {
       let result = await addCategoryDoc({"type": "category", "name": category})
@@ -144,7 +144,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
       return false;
     }
     uomData.name = uomData.name.toUpperCase();
-    if (uomData.description == "") {
+    if (uomData.description === "") {
       presentToast({message: "No UOM Description entered. Please retry.", duration: 1500, position: "middle"});
       return false;
     }
@@ -156,7 +156,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
       presentToast({message: "Requested UOM Description Already exists. Please retry.", duration: 1500, position: "middle"});
       return false;
     }
-    if (uomData.pluralDescription == "") {
+    if (uomData.pluralDescription === "") {
       presentToast({message: "No UOM Plural description entered. Please retry.", duration: 1500, position: "middle"});
       return false;
     }

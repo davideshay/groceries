@@ -9,12 +9,12 @@ type InitialLoadProps = {
 }
 
 const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
-    const { remoteDBState, remoteDBCreds, setRemoteDBState, setConnectionStatus} = useContext(RemoteDBStateContext);
+    const { remoteDBState, remoteDBCreds, setConnectionStatus} = useContext(RemoteDBStateContext);
     const [ present,dismiss] = useIonLoading()
     const db=usePouch();
   
     useEffect(() => { 
-        if ((remoteDBState.connectionStatus == ConnectionStatus.loginComplete)) {
+        if ((remoteDBState.connectionStatus === ConnectionStatus.loginComplete)) {
             setConnectionStatus(ConnectionStatus.initialNavComplete);
             navigateToFirstListID(db,props.history,remoteDBCreds);
         } else {
@@ -23,7 +23,7 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
     },[remoteDBState.connectionStatus])   
 
     useEffect(() => {
-        if (remoteDBState.connectionStatus == ConnectionStatus.navToLoginScreen) {
+        if (remoteDBState.connectionStatus === ConnectionStatus.navToLoginScreen) {
             setConnectionStatus(ConnectionStatus.onLoginScreen);
             props.history.push("/login");
         }

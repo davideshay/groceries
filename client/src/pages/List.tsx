@@ -1,6 +1,6 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput,
    IonItem, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonSelectOption,
-   IonReorder, IonReorderGroup,ItemReorderEventDetail, IonButtons, IonMenuButton, NavContext,
+   IonReorder, IonReorderGroup,ItemReorderEventDetail, IonButtons, IonMenuButton, 
    useIonToast, IonFooter, useIonAlert } from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
@@ -47,7 +47,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   const [ presentToast ] = useIonToast();
   const {useFriendState, friendRows} = useFriends(String(remoteDBCreds.dbUsername));
   const { listDocs, listsLoading } = useLists(String(remoteDBCreds.dbUsername));
-  const { docs: categoryDocs, loading: categoryLoading, error: categoryError } = useFind({
+  const { docs: categoryDocs, loading: categoryLoading } = useFind({
     index: { fields: [ "type","name"] },
     selector: { type: "category", name: { $exists: true}},
     sort: [ "type","name"]
@@ -77,8 +77,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
       setPageState(prevState => ({...prevState,usersInfo: usersInfo,usersLoaded: true}))
     }
     let newPageState=cloneDeep(pageState);
-//    console.log({listsLoading,friendRowsLoading,friendsLoading, friendState, categoryLoading,mode,pageState})
-    if (!listsLoading && (useFriendState == UseFriendState.rowsLoaded) && !categoryLoading) {
+    if (!listsLoading && (useFriendState === UseFriendState.rowsLoaded) && !categoryLoading) {
       if (mode === "new" && pageState.needInitListDoc) {
         console.log("in new useeffect, creating initlistdoc");
         let initCategories=categoryDocs.map(cat => cat._id);
@@ -92,7 +91,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
         newPageState.listDoc=initListDoc;
         newPageState.needInitListDoc=false;
       }
-      else if (mode != "new") {
+      else if (mode !== "new") {
         console.log("in initDoc, doing lookup against listDocs");
         let newListDoc = listDocs.find((el: any) => el._id === pageState.selectedListID);
         if (newListDoc == undefined) {return}
@@ -106,7 +105,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
       });
       getUI(userIDList);
     }
-  },[listsLoading,listDocs,useFriendState,friendRows, categoryLoading,categoryDocs,pageState.selectedListID]);
+  },[listsLoading,listDocs,useFriendState,friendRows, categoryLoading,categoryDocs,pageState.selectedListID, remoteDBState.accessJWT]);
 
   if (listsLoading || (useFriendState !== UseFriendState.rowsLoaded) || categoryLoading || isEmpty(pageState.listDoc) || !pageState.usersLoaded || pageState.deletingDoc)  {return(
       <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
@@ -198,11 +197,11 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   let usersElem=[];
   let ownerText="";
   let iAmListOwner=false;
-  if (pageState.listDoc.listOwner == remoteDBCreds.dbUsername) {
+  if (pageState.listDoc.listOwner === remoteDBCreds.dbUsername) {
     ownerText = "You are the list owner";
     iAmListOwner=true;
   } else {
-    let ownerRow=friendRows.find(el => (el.targetUserName == pageState.listDoc.listOwner));
+    let ownerRow=friendRows.find(el => (el.targetUserName === pageState.listDoc.listOwner));
     ownerText = ownerRow?.targetFullName + " is the list owner";
   }
 
@@ -211,7 +210,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   if (iAmListOwner) {
     for (let i = 0; i < friendRows.length; i++) {
-      if (friendRows[i].resolvedStatus == ResolvedFriendStatus.Confirmed) {
+      if (friendRows[i].resolvedStatus === ResolvedFriendStatus.Confirmed) {
         const userID=friendRows[i].targetUserName;
         const userName=friendRows[i].targetFullName;
         const userEmail=friendRows[i].targetEmail;
@@ -229,7 +228,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   } else { // not the list owner
     pageState.usersInfo.forEach(user => {
       console.log("getting data for userinfo user:",cloneDeep(user));
-      if (user.name != remoteDBCreds.dbUsername && user.name != pageState.listDoc.listOwner) {
+      if (user.name !== remoteDBCreds.dbUsername && user.name !== pageState.listDoc.listOwner) {
         usersElem.push(
           <IonItem key={pageState.selectedListID+"-"+user.name}>
             <IonLabel>{user.fullname}</IonLabel>
@@ -298,7 +297,7 @@ function deletePrompt() {
   function catItemDivider(active: boolean, lines: any) {
     const actname=active ? "Active" : "Inactive"
     return (
-      <div key={actname+"-"+"div"}>
+      <div key={actname+"-div"}>
       <IonItemDivider key={actname}><IonLabel>{actname}</IonLabel></IonItemDivider>
       <IonReorderGroup key={actname+"-reorder-group"} disabled={false} onIonItemReorder={handleReorder}>
           {lines}

@@ -1,5 +1,5 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
-  IonButtons, IonMenuButton, IonLabel, NavContext, IonText, useIonAlert, IonAlert, isPlatform } from '@ionic/react';
+  IonButtons, IonMenuButton, IonLabel, IonText, useIonAlert, isPlatform } from '@ionic/react';
 import { useState, useEffect, useContext } from 'react';
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import { usePouch} from 'use-pouchdb';
@@ -102,10 +102,10 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     },[remoteDBState.dbUUIDAction])
 
     useEffect( () => {
-      if (remoteDBState.connectionStatus == ConnectionStatus.cannotStart) {
+      if (remoteDBState.connectionStatus === ConnectionStatus.cannotStart) {
         console.log("Detected cannot start, setting initRemoteState");
         setRemoteState(initRemoteState);
-      } else if (remoteDBState.connectionStatus == ConnectionStatus.loginComplete) {
+      } else if (remoteDBState.connectionStatus === ConnectionStatus.loginComplete) {
         navigateToFirstListID(db,props.history,remoteDBCreds);
       }
 
@@ -137,7 +137,6 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     
   async function submitForm() {
 //    await setPrefsDBCreds();
-    console.log("in submit form, deviceUUID:", remoteDBState.deviceUUID);
     let credsCheck = errorCheckCreds(remoteDBCreds,false,false,remoteState.password);
     if (credsCheck.credsError ) {
       setRemoteState(prevState => ({...prevState,formError: String(credsCheck.errorText)}))
@@ -158,14 +157,11 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
                 setRemoteState(prevState => ({...prevState, formError: "Cannot contact API server"}));
                 setRemoteDBState({...remoteDBState, serverAvailable: false});
                 return}
-    console.log("got response from issuetoken: ", JSON.stringify(response));            
-    if (!((response?.status == 200) && (response?.data?.loginSuccessful))) {
+    if (!((response?.status === 200) && (response?.data?.loginSuccessful))) {
         setRemoteState(prevState => ({...prevState, formError: "Invalid Authentication"}))
         return
     }
     let newCreds=updateDBCredsFromResponse(response);
-    console.log("DBCreds updated... new creds:",cloneDeep(newCreds));
-    console.log("trying to update remote DB state with access JWT value:", response.data.accessJWT);
     let tokenInfo = getTokenInfo(response.data.accessJWT);
     setRemoteDBCreds(newCreds);
     setRemoteDBState({...remoteDBState, accessJWT: response.data.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate});
@@ -178,9 +174,9 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     if (!credsCheck.credsError) {
       createResponse = await createNewUser(remoteDBState,remoteDBCreds,String(remoteState.password));
       if (!createResponse.data.createdSuccessfully) {
-        let errorText="";
-        if (createResponse.data.invalidData) {errorText = "Invalid Data Entered";} 
-        else if (createResponse.data.userAlreadyExists) {errorText = "User Already Exists";}
+        credsCheck.errorText="";
+        if (createResponse.data.invalidData) {credsCheck.errorText = "Invalid Data Entered";} 
+        else if (createResponse.data.userAlreadyExists) {credsCheck.errorText = "User Already Exists";}
         setRemoteState(prevState => ({...prevState, formError: credsCheck.errorText}))
         return;
       }
@@ -188,15 +184,14 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       setRemoteState(prevState => ({...prevState, formError: String(credsCheck.errorText)}));
       return;
     }
-    console.log("SCF, creds OK, response:",{createResponse})
     let newCreds=updateDBCredsFromResponse(createResponse);
+    setRemoteDBCreds(newCreds);
     let tokenInfo = getTokenInfo(createResponse.data.accessJWT);
     setRemoteDBState({...remoteDBState,accessJWT: createResponse.data.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate});
     await assignDB(createResponse.data.accessJWT);
   }
   
   async function callResetPasswordAPI() {
-    let response: HttpResponse;
     const options = {
         url: String(remoteDBCreds.apiServerURL+"/resetpassword"),
         method: "POST",
@@ -204,7 +199,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
                    'Accept': 'application/json'},
         data: { username: remoteDBCreds.dbUsername },           
     };
-    response = await CapacitorHttp.post(options);
+    await CapacitorHttp.post(options);
 //    presentAlert({
 //      header: "Password Request Sent",
 //      message: "Please check your email for the link to reset your password",

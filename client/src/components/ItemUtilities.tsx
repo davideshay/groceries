@@ -1,4 +1,5 @@
 import {ItemRow, ItemSearch} from '../components/DataTypes';
+import { cloneDeep } from 'lodash';
 
 export function getAllSearchRows(allItemDocs: any, listID: string): ItemSearch[] {
     let searchRows: ItemSearch[] = [];
@@ -39,13 +40,16 @@ export function getItemRows(itemDocs: any, listDocs: any, categoryDocs: any, uom
     let itemRows: Array<ItemRow> =[];
     let listDoc=listDocs.find((el: any) => el._id === listID);
     if (listDoc == undefined) {return itemRows};
-    itemDocs.sort(function(a: any,b: any) {
-        var keyA = a.itemName.toUpperCase();
-        var keyB = b.itemName.toUpperCase();
-        if (keyA < keyB) return -1;
-        if (keyA > keyB) return 1;
-        return 0
+    console.log(cloneDeep(itemDocs));
+    if (itemDocs.length > 0) {
+        itemDocs.sort(function(a: any,b: any) {
+            var keyA = a.name.toUpperCase();
+            var keyB = b.name.toUpperCase();
+            if (keyA < keyB) return -1;
+            if (keyA > keyB) return 1;
+            return 0
       })
+    }  
     itemDocs.forEach((itemDoc: any) => {
     let itemRow: ItemRow = {
         itemID:"",

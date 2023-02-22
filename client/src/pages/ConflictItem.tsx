@@ -1,4 +1,4 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, 
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, 
   IonButtons, IonMenuButton, IonItem, IonLabel, IonFooter, IonTextarea, NavContext } from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useGetOneDoc} from '../components/Usehooks';

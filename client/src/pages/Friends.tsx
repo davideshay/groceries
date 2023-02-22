@@ -1,9 +1,9 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonLabel,
-        IonMenuButton, IonButtons, IonButton, useIonAlert, NavContext, useIonToast,
+        IonMenuButton, IonButtons, IonButton, useIonToast,
         IonFab, IonFabButton, IonIcon, IonInput, IonAlert } from '@ionic/react';
-import { useState, useEffect, useContext, Fragment } from 'react';
+import { useState, useContext, Fragment } from 'react';
 import { Clipboard } from '@capacitor/clipboard';
-import { CapacitorHttp, HttpResponse } from '@capacitor/core';
+import { CapacitorHttp } from '@capacitor/core';
 import { v4 as uuidv4 } from 'uuid';
 import { cloneDeep } from 'lodash';
 import { useCreateGenericDocument, useFriends, UseFriendState, useUpdateGenericDocument} from '../components/Usehooks';
@@ -57,7 +57,7 @@ interface PageState {
 }  
               
 const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
-  const { remoteDBState, remoteDBCreds, remoteDB } = useContext(RemoteDBStateContext);
+  const { remoteDBCreds, remoteDB } = useContext(RemoteDBStateContext);
   const uname = (remoteDBCreds as any).dbUsername;
   const {useFriendState,friendRows} = useFriends(uname);
   const updateDoc = useUpdateGenericDocument();
@@ -87,7 +87,7 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function statusItem(friendRow: FriendRow) {
-    if (friendRow.resolvedStatus == ResolvedFriendStatus.PendingConfirmation)
+    if (friendRow.resolvedStatus === ResolvedFriendStatus.PendingConfirmation)
     {
       return (<IonButton onClick={() => confirmFriend(friendRow)}>Confirm Friend</IonButton>)
     } else {
@@ -104,7 +104,7 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
 
   function URLButtonElem(friendRow: FriendRow) {
-    if (friendRow.resolvedStatus == ResolvedFriendStatus.WaitingToRegister) {
+    if (friendRow.resolvedStatus === ResolvedFriendStatus.WaitingToRegister) {
       return(
         <IonButton onClick={() => showURL(friendRow)}>Show URL</IonButton> 
       )
@@ -141,15 +141,12 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
       updatedAt: (new Date()).toISOString()
 
     }
-    console.log(newFriendDoc);
-    console.log("about to create friend : ", newFriendDoc);
-    let createFriendSuccessful=true; let createResults;
+    let createFriendSuccessful=true;
+    let createResults;
     try { createResults = await (remoteDB as any).post(newFriendDoc) } 
     catch(e) {createFriendSuccessful=false; console.log(e)}
-    console.log("after create request: ")
-    console.log({createResults});
-//    let result=await createDoc(newFriendDoc);
-//    console.log(result);
+    if (!createFriendSuccessful) { console.log("ERROR: Creating friend"); return false;}
+
     const options = {
       url: String(remoteDBCreds.apiServerURL+"/triggerregemail"),
       method: "POST",
@@ -158,9 +155,9 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
                  'Authorization': 'Bearer '+remoteDBCreds?.refreshJWT },
       data: { "uuid": invuid }           
       };
-    console.log("about to execute triggerregemail httpget with options: ", {options})
-    let response = await CapacitorHttp.post(options);
-    console.log("got triggerregemail httpget response: ",{response});
+      
+    try {await CapacitorHttp.post(options)}
+    catch(err) {console.log("ERROR sending friend email."); return false}
 
     let confURL = remoteDBCreds.apiServerURL + "/createaccountui?uuid="+invuid;
     Clipboard.write({string: confURL});
@@ -170,7 +167,7 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   async function submitForm() {
-    if (pageState.newFriendEmail == "") {
+    if (pageState.newFriendEmail === "") {
       setPageState(prevState => ({...prevState, formError: "Please enter an email address"}));
       return
     }
@@ -181,7 +178,7 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
     let friendExists=false;
     friendRows.forEach((friendRow: FriendRow) => {
       console.log("evaluating friendrow: ", friendRow, " email: ", friendRow.targetEmail)
-      if (friendRow.targetEmail == pageState.newFriendEmail) { friendExists = true}
+      if (friendRow.targetEmail === pageState.newFriendEmail) { friendExists = true}
     })
     console.log("friendExists:",friendExists);
     if (friendExists) {

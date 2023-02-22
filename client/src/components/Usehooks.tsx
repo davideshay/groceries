@@ -27,7 +27,7 @@ export function useGetOneDoc(docID: string) {
   useEffect( () => {
       getDoc(docID)
       return ( () => { if (changesRef.current) {changesRef.current.cancel()};})  
-  },[])  
+  },[docID])  
 
   return {loading: loadingRef.current, doc};
 }
@@ -139,7 +139,7 @@ export function useDeleteListFromItems() {
           }
         }
         itemDoc.lists = newLists;
-        try {let updResults = db.put(itemDoc)}
+        try {db.put(itemDoc)}
         catch(err) {response.successful = false; response.fullError = err; }
       }
       return response;

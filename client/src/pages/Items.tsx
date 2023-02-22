@@ -27,22 +27,22 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   const updateCompleted = useUpdateCompleted();
   const updateItemInList = useUpdateGenericDocument();
 
-  const { docs: itemDocs, loading: itemLoading, error: itemError } = useFind({
+  const { docs: itemDocs, loading: itemLoading } = useFind({
     index: { fields: ["type","name","lists"]},
     selector: {
       type: "item", name: { $exists: true },
       lists: { $elemMatch: { "listID": pageState.selectedListID , "active" : true} } },
     sort: [ "type", "name", "lists" ]})
   const { listDocs, listsLoading, listRows, listRowsLoading} = useLists(String(remoteDBCreds.dbUsername));
-  const { docs: uomDocs, loading: uomLoading, error: uomError } = useFind({
+  const { docs: uomDocs, loading: uomLoading } = useFind({
     index: { fields: [ "type","name"]},
     selector: { type: "uom", name: { $exists: true}},
     sort: [ "type","name"] })
-  const { docs: categoryDocs, loading: categoryLoading, error: categoryError } = useFind({
+  const { docs: categoryDocs, loading: categoryLoading } = useFind({
       index: { fields: [ "type","name"] },
       selector: { type: "category", name: { $exists: true}},
       sort: [ "type","name"] });
-  const { docs: allItemDocs, loading: allItemsLoading, error: allItemsError } = useFind({
+  const { docs: allItemDocs, loading: allItemsLoading } = useFind({
       index: { fields: [ "type","name"] },
       selector: { type: "item", name: { $exists: true}},
       sort: [ "type","name"] });
@@ -55,10 +55,10 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   useEffect( () => {
     if (!itemLoading && !listsLoading && !listRowsLoading && !categoryLoading && !allItemsLoading &&!uomLoading) {
-      setPageState({ ...pageState,
+      setPageState( (prevState) => ({ ...prevState,
         doingUpdate: false,
         itemRows: getItemRows(itemDocs, listDocs, categoryDocs, uomDocs, pageState.selectedListID),
-      })
+      }))
     }
   },[itemLoading, allItemsLoading, listsLoading, listRowsLoading, categoryLoading, uomLoading, uomDocs, itemDocs, listDocs, allItemDocs, categoryDocs, pageState.selectedListID]);
 
