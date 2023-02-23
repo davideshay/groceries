@@ -1,6 +1,7 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
-  IonButtons, IonMenuButton, IonLabel, IonText, useIonAlert, isPlatform } from '@ionic/react';
+  IonButtons, IonMenuButton, IonLabel, IonText, useIonAlert, isPlatform, IonIcon } from '@ionic/react';
 import { useState, useEffect, useContext } from 'react';
+import { eye, eyeOff} from 'ionicons/icons';
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import { usePouch} from 'use-pouchdb';
 import { ConnectionStatus, DBCreds, DBUUIDAction } from '../components/RemoteDBState';
@@ -18,6 +19,8 @@ export type RemoteState = {
   inCreateMode: boolean,
   loginByPassword: boolean,
   formError: string,
+  showMainPassword: boolean,
+  showVerifyPassword: boolean
 }
 
 export const initRemoteState = {
@@ -26,7 +29,9 @@ export const initRemoteState = {
   httpResponse: undefined,
   inCreateMode: false,
   loginByPassword: false,
-  formError: ""
+  formError: "",
+  showMainPassword: false,
+  showVerifyPassword: false
 }
 
 /* 
@@ -65,14 +70,7 @@ states to support:
 const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
 
     const db=usePouch();
-    const [remoteState,setRemoteState]=useState<RemoteState>({
-      password: undefined,
-      verifyPassword: undefined,
-      httpResponse: undefined,
-      inCreateMode: false,
-      loginByPassword: false,
-      formError: ""
-    });
+    const [remoteState,setRemoteState]=useState<RemoteState>(initRemoteState);
     const [presentAlert] = useIonAlert();
     const { remoteDBState, remoteDBCreds, setRemoteDBState, setRemoteDBCreds, errorCheckCreds, assignDB, setDBCredsValue} = useContext(RemoteDBStateContext);
 
@@ -256,8 +254,8 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       </IonInput>
       </IonItem>
       <IonItem><IonLabel position="stacked">Password</IonLabel>
-      <IonInput autocomplete="current-password" type="password" value={remoteState.password} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
-      </IonInput>
+      <IonInput autocomplete="current-password" type={remoteState.showMainPassword ? "text" : "password"} value={remoteState.password} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
+      </IonInput><IonIcon slot="end"  icon={remoteState.showMainPassword ? eyeOff : eye} onClick={() => {setRemoteState((prevState) => ({...prevState,showMainPassword: !prevState.showMainPassword}))}}></IonIcon>
       </IonItem>
       </>
     } else {
@@ -279,12 +277,12 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       </IonInput>
       </IonItem>
       <IonItem><IonLabel position="stacked">Password</IonLabel>
-      <IonInput autocomplete="current-password" type="password" value={remoteState.password} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
-      </IonInput>
+      <IonInput autocomplete="current-password" type={remoteState.showMainPassword ? "text" : "password"} value={remoteState.password} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
+      </IonInput><IonIcon slot="end"  icon={remoteState.showMainPassword ? eyeOff : eye} onClick={() => {setRemoteState((prevState) => ({...prevState,showMainPassword: !prevState.showMainPassword}))}}></IonIcon>
       </IonItem>
       <IonItem><IonLabel position="stacked">Confirm Password</IonLabel>
-      <IonInput autocomplete="current-password" type="password" value={remoteState.verifyPassword} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, verifyPassword: String(e.detail.value)}))}}>
-      </IonInput>
+      <IonInput autocomplete="current-password" type={remoteState.showVerifyPassword ? "text" : "password"} value={remoteState.verifyPassword} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, verifyPassword: String(e.detail.value)}))}}>
+      </IonInput><IonIcon slot="end"  icon={remoteState.showVerifyPassword ? eyeOff : eye} onClick={() => {setRemoteState((prevState) => ({...prevState,showVerifyPassword: !prevState.showVerifyPassword}))}}></IonIcon>
       </IonItem>
       </>
     }
