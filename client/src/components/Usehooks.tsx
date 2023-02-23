@@ -208,23 +208,43 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
   const [listRows,setListRows] = useState<ListRow[]>([]);
   const [listRowsLoaded, setListRowsLoaded] = useState(false);
   const [listRowsLoading, setListRowsLoading] = useState(false);
+  const { docs: listGroupDocs, loading: listGroupsLoading } = useFind({
+    index: { fields: ["type","name"]},
+    selector: { "$and": [
+      { "type": "list", "name": { "$xists": true}},
+      { "$or": [{"listGroupOwner": username},
+                {"sharedWith": { $elemMatch: {$eq: username}}}]}  ]},
+    sort: [ "type", "name"]  });
   const { docs: listDocs, loading: listsLoading, error: listError} = useFind({
     index: { fields: ["type","name"] },
     selector: { "$and": [ 
       {  "type": "list",
-         "name": { "$exists": true } },
-      { "$or" : [{"listOwner": username},
-                 {"sharedWith": { $elemMatch: {$eq: username}}}]
-      }             
+         "name": { "$exists": true } }
     ] },
-    sort: [ "type","name"]
-  });
+    sort: [ "type","name"] });
 
   function buildListRows() {
     let newListRows: ListRow[] = [];
     listDocs.forEach((list: any) => {
       let part = union([list.listOwner],list.sharedWith).sort();
+      let listGroupID=null;
+      let listGroupName=null;
+      let listGroupIncludesUser=false;
+      for (let i = 0; i < listGroupDocs.length; i++) {
+        const lgd = (listGroupDocs[i] as any);
+        if ( lgd.lists.includes(list._id) ) {
+          listGroupID=lgd._id
+          listGroupName=lgd.name
+        }
+        if ( lgd.listGroupOwner == username || lgd.sharedWith.includes(username)) {
+          listGroupIncludesUser=true;
+        }
+      }
+      if (list.listOwner !== username && !listGroupIncludesUser ) { return };
+      if (listGroupID == null) {listGroupName="Ungrouped"};
       let listRow: ListRow ={
+        listGroupID: listGroupID,
+        listGroupName: listGroupName,
         listDoc: list,
         participants: part
       }
@@ -241,8 +261,8 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
   }
 
   useEffect( () => {
-    if (listsLoading ) { setListRowsLoaded(false); return };
-    if ( !listsLoading && !listRowsLoaded)  {
+    if (listsLoading || listGroupsLoading) { setListRowsLoaded(false); return };
+    if ( !listsLoading && !listGroupsLoading && !listRowsLoaded)  {
       setListRowsLoading(true);
       setListRowsLoaded(false);
       buildListRows();

@@ -40,7 +40,6 @@ export function getItemRows(itemDocs: any, listDocs: any, categoryDocs: any, uom
     let itemRows: Array<ItemRow> =[];
     let listDoc=listDocs.find((el: any) => el._id === listID);
     if (listDoc == undefined) {return itemRows};
-    console.log(cloneDeep(itemDocs));
     if (itemDocs.length > 0) {
         itemDocs.sort(function(a: any,b: any) {
             var keyA = a.name.toUpperCase();

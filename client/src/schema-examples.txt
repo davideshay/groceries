@@ -1,0 +1,203 @@
+Examples of JSON objects
+
+
+Category:
+
+{
+  "_id": "5141db23-6aa9-4a06-b92c-7339348d6287",
+  "_rev": "3-e28b6afc6d8f8702408949663f3d8564",
+  "type": "category",
+  "name": "Chips",
+  "updatedAt": "2023-02-20T16:29:37.531Z",
+  "color": "#cba51a"
+}
+
+List : 
+
+{
+  "_id": "7784e3b6-a420-429a-8a97-db351b93a0d7",
+  "_rev": "3-9377495cff886c220c93ae2296c21ea0",
+  "type": "list",
+  "name": "Giant Eagle",
+  "listOwner": "davideshay",
+  "sharedWith": [
+    "Annemshay",
+    "georgiashay",
+    "rubieshay",
+    "dshay"
+  ],
+  "categories": [
+    "b7fea32a-f6b7-42bd-a244-ec490bb65c65",
+    "d1907207-dd3f-4c6e-aee3-b22901749713",
+    "5429f5fb-3454-424c-9e5f-1f54c1e89629",
+    "48f32bd5-d020-414a-9fb7-7c8c77bfc287",
+    "bd214dd7-0e36-4091-936c-0d05b0597ce0",
+  ],
+  "updatedAt": "2023-02-19T20:31:21.609Z"
+}
+
+Unit of Measure
+
+{
+  "_id": "2463fb773b8fc9a442c3699c62025580",
+  "_rev": "1-14523da3a2c3252720ee7470bf037a3e",
+  "type": "uom",
+  "name": "OZ",
+  "description": "Ounce",
+  "pluralDescription": "Ounces"
+}
+
+Friend
+
+{
+  "_id": "ed85d140-6108-4ee2-b82b-e2e5abad9fac",
+  "_rev": "2-b27231ab4db7047ceb4b191f26f54d79",
+  "type": "friend",
+  "friendID1": "davideshay",
+  "friendID2": "rubieshay",
+  "inviteEmail": "",
+  "inviteUUID": "",
+  "friendStatus": "CONFIRMED",
+  "updatedAt": "2022-12-31T06:05:40.264Z"
+}
+
+
+Item
+
+{
+  "_id": "042351e4-a13e-4807-ac1e-2676cc8d573b",
+  "_rev": "6-57430f65be3ad3d28e1923e370e34b36",
+  "type": "item",
+  "name": "frozen chopped spinach",
+  "quantity": 1,
+  "uomName": null,
+  "categoryID": "ad702733-8e53-490f-b2db-7cbfb5043137",
+  "note": "",
+  "lists": [
+    {
+      "listID": "798e5c12-eb5b-483b-972c-fde9cf9d46b6",
+      "boughtCount": 1,
+      "active": false,
+      "completed": true,
+      "stockedAt": true
+    },
+    {
+      "listID": "b7f29231-8edb-4cc8-a5d7-7a729714f523",
+      "boughtCount": 0,
+      "active": false,
+      "completed": true,
+      "stockedAt": true
+    },
+  ],
+  "updatedAt": "2023-02-04T22:47:43.627Z"
+}
+
+
+NEW: ListGroup
+{
+    _id: "xxx"
+    type: "listgroup"
+    name: "Copley Groceries"
+    lists: 
+    [ "111", "222", "333" ],
+    "listGroupOwner": "davideshay",
+    "sharedWith": [
+        "Annemshay",
+        "georgiashay"
+      ],
+    updatedAt: "2023-04-15T01:01:01.000Z"
+}
+
+CHANGED Item  (now tied at a master level to listGroup, so Banana in "Copley Groceries" is different than Banana in "Pittsburg Groceries")
+{
+    _id: "yyy"
+    type: "Item"
+    listGroup: "xxx" // Copley Groceries
+    name: "Bananas"
+    uom: "BN" // bunch
+    lists: {
+        {   listID: "xxx" // Acme
+            active: "true",
+            completed: "false",
+            stockedAt: "true",
+            boughtCount: 5,
+            note: "At Acme, pickup the yellower bananas",
+            quantity: 2
+            categoryID: "xxx" // Produce
+        },
+        {   listID: "yyy" // Giant Eagle
+            active: "true"
+            completed: "false"
+            stockedAt: "true"
+            boughtCount: 2
+            note: "At Giant eagle, get the cheaper green bunch",
+            quantity: 1
+            categoryID: "yyy" // Fruit
+
+        }
+    }
+
+}
+
+
+CHANGED: List
+
+List : 
+
+{
+  "_id": "7784e3b6-a420-429a-8a97-db351b93a0d7",
+  "_rev": "3-9377495cff886c220c93ae2296c21ea0",
+  "type": "list",
+  "name": "Giant Eagle",
+  "listOwner": "davideshay",
+  "categories": [
+    "b7fea32a-f6b7-42bd-a244-ec490bb65c65",
+    "d1907207-dd3f-4c6e-aee3-b22901749713",
+    "5429f5fb-3454-424c-9e5f-1f54c1e89629",
+  ],
+  "updatedAt": "2023-02-19T20:31:21.609Z"
+}
+
+
+Application Impacts:
+
+Main Items screen can be in "listgroup" mode vs. "list" mode
+
+Lists will not be in a listgroup by default -- group into a virtual "Undefined" group or something
+
+Need ListGroup creator/editor page
+    Can only add lists that aren't already a part of a list ListGroup. And you are the owner?
+    Sharing goes here
+
+List page:
+    Remove sharing part
+
+Items page:
+    Can be filtered by list or list group
+    Can the "AllItems" page just be a variant without a filter?
+    If an item is on multiple lists, maybe show in a small box/font the lists?
+    Auto-add functionality different:
+        Automatically add to everything in the listgroup if listgroup is the filter
+            Add if stocked at the store.
+            Optionally also check auto-add category setting.
+            Any edits to quantity would impact all list items 
+        Do we auto-add if the list is in a group but you select a specific list?  Probably not, then don't need a setting.
+        I guess still need a setting for "complete off all lists"
+
+
+Item editor:
+
+    Should I continue to have the grid of lists the item is in?
+        If so, need to add fields in the grid: quantity, category
+        That's a lot for one line... maybe need repeating sections/components? Use store name as itemlistdivider
+        Because also need to handle notes...
+
+    Should there be a filter by list or list group on the page?
+    Maybe you have a listgroup filter which controls which rows on the grid appear
+
+Should not need participants checks anymore ?
+change useLists to return listgroup as well as lists -- put logic in here for "undefined"/no listgroup name
+Do I need a listowner as well as a listgroup owner?
+
+
+
