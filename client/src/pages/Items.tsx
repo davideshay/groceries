@@ -9,7 +9,7 @@ import { cloneDeep } from 'lodash';
 import './Items.css';
 import { useUpdateCompleted, useUpdateGenericDocument, useLists } from '../components/Usehooks';
 import { AddListOptions, GlobalStateContext } from '../components/GlobalState';
-import { ItemSearch, SearchState, PageState, ListRow, HistoryProps} from '../components/DataTypes'
+import { ItemSearch, SearchState, PageState, ListRow, ListCombinedRow, HistoryProps, RowType, ItemDoc, ItemDocs} from '../components/DataTypes'
 import { getAllSearchRows, getItemRows, filterSearchRows } from '../components/ItemUtilities';
 import SyncIndicator from '../components/SyncIndicator';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
@@ -20,22 +20,21 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode: routeMode, id: routeListID  } = useParams<{mode: string, id: string}>();
   const [searchRows,setSearchRows] = useState<ItemSearch[]>();
   const [searchState,setSearchState] = useState<SearchState>({searchCriteria:"",isOpen: false,isFocused: false,event: undefined, filteredSearchRows: [], dismissEvent: undefined});
-  const [pageState, setPageState] = useState<PageState>({selectedListID: routeListID, doingUpdate: false, itemRows: [], showAlert: false, alertHeader: "", alertMessage: ""});
+  const [pageState, setPageState] = useState<PageState>({selectedListOrGroupID: routeListID, doingUpdate: false, itemRows: [], showAlert: false, alertHeader: "", alertMessage: ""});
   const searchRef=useRef<HTMLIonSearchbarElement>(null);
   const origSearchCriteria = useRef("");
   const [presentToast] = useIonToast();
   const updateCompleted = useUpdateCompleted();
   const updateItemInList = useUpdateGenericDocument();
 
-  console.log({routeMode, routeListID});
-
   const { docs: itemDocs, loading: itemLoading } = useFind({
     index: { fields: ["type","name","lists"]},
     selector: {
       type: "item", name: { $exists: true },
-      lists: { $elemMatch: { "listID": pageState.selectedListID , "active" : true} } },
+      "$or": [ {listGroupID: pageState.selectedListOrGroupID} , 
+               {lists: { $elemMatch: { "listID": pageState.selectedListOrGroupID , "active" : true} }}] },
     sort: [ "type", "name", "lists" ]})
-  const { listDocs, listsLoading, listRows, listRowsLoading} = useLists(String(remoteDBCreds.dbUsername));
+  const { listCombinedRows,listRows, listRowsLoading } = useLists(String(remoteDBCreds.dbUsername));
   const { docs: uomDocs, loading: uomLoading } = useFind({
     index: { fields: [ "type","name"]},
     selector: { type: "uom", name: { $exists: true}},
@@ -50,23 +49,24 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       sort: [ "type","name"] });
 
   const { globalState,setGlobalState} = useContext(GlobalStateContext);
+  const listType = (routeMode == "list") ? RowType.list : RowType.listGroup
 
   useEffect( () => {
     setPageState(prevState => ({...prevState,selectedListID: routeListID}))
   },[routeListID])
 
   useEffect( () => {
-    if (!itemLoading && !listsLoading && !listRowsLoading && !categoryLoading && !allItemsLoading &&!uomLoading) {
+    if (!itemLoading && !listRowsLoading && !categoryLoading && !allItemsLoading &&!uomLoading) {
       setPageState( (prevState) => ({ ...prevState,
         doingUpdate: false,
-        itemRows: getItemRows(itemDocs, listDocs, categoryDocs, uomDocs, pageState.selectedListID),
+        itemRows: getItemRows(itemDocs as ItemDocs, listCombinedRows, categoryDocs, uomDocs, listType, pageState.selectedListOrGroupID),
       }))
     }
-  },[itemLoading, allItemsLoading, listsLoading, listRowsLoading, categoryLoading, uomLoading, uomDocs, itemDocs, listDocs, allItemDocs, categoryDocs, pageState.selectedListID]);
+  },[itemLoading, allItemsLoading, listRowsLoading, categoryLoading, uomLoading, uomDocs, itemDocs, listCombinedRows, allItemDocs, categoryDocs, pageState.selectedListOrGroupID]);
 
   useEffect( () => {
-    setSearchRows(getAllSearchRows(allItemDocs,pageState.selectedListID));
-  },[allItemsLoading, allItemDocs, pageState.selectedListID])
+    setSearchRows(getAllSearchRows(allItemDocs,pageState.selectedListOrGroupID));
+  },[allItemsLoading, allItemDocs, pageState.selectedListOrGroupID])
 
   useEffect( () => {
     let filterRows=filterSearchRows(searchRows, searchState.searchCriteria)
@@ -77,7 +77,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     }  
   },[searchState.searchCriteria,searchState.isFocused])
   
-  if (itemLoading || listsLoading || listRowsLoading || categoryLoading || allItemsLoading || uomLoading || pageState.doingUpdate )  {return(
+  if (itemLoading || listRowsLoading || categoryLoading || allItemsLoading || uomLoading || pageState.doingUpdate )  {return(
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
   )};  
 
@@ -96,7 +96,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       setPageState(prevState => ({...prevState, showAlert: true, alertHeader: "Error adding to list", alertMessage: "Item already exists in the current list"}))
     } else {
       setGlobalState({...globalState, itemMode: "new",
-                                     callingListID: pageState.selectedListID,
+                                     callingListID: pageState.selectedListOrGroupID,
                                      newItemName: itemName})
       setSearchState(prevState => ({...prevState, isOpen: false,searchCriteria:"",isFocused: false}))
       props.history.push("/item/new/");
@@ -125,22 +125,24 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function isCategoryInList(listID: string, categoryID: string) {
-    let listIdx = listDocs.findIndex((el: any) => el._id === listID);
+    let listIdx = listRows.findIndex(el => el.listDoc._id === listID);
     if (listIdx === -1) {return false;}
-    let catexists= (listDocs[listIdx] as any).categories.includes(categoryID);
+    let catexists= listRows[listIdx].listDoc.categories.includes(categoryID);
     return catexists;
   }
 
   async function addExistingItemToList(itemID: string) {
     let existingItem: any = cloneDeep(allItemDocs.find((el: any) => el._id === itemID));
-    let baseList = listRows.find((el: ListRow) => pageState.selectedListID === el.listDoc._id)
+    //TODO
+    let baseList = listRows.find((el: ListRow) => pageState.selectedListOrGroupID === el.listDoc._id)
     let baseParticipants = baseList?.participants;
     
     listRows.forEach((listRow: ListRow) => {
       let idxInLists=existingItem.lists.findIndex((el: any) => el.listID === listRow.listDoc._id);
       let skipThisList=false;
       if (!isEqual(listRow.participants,baseParticipants)) {skipThisList = true};
-      if (listRow.listDoc._id !== pageState.selectedListID) {
+      //TODO
+      if (listRow.listDoc._id !== pageState.selectedListOrGroupID) {
         if (globalState.settings.addListOption === AddListOptions.dontAddAutomatically) {
           skipThisList=true;
         } else if (globalState.settings.addListOption === AddListOptions.addToListsWithCategoryAutomatically) {
@@ -149,7 +151,8 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
           }
         }
       }
-      if (!skipThisList && (idxInLists !== -1) && listRow.listDoc._id !== pageState.selectedListID) {
+      //TODO
+      if (!skipThisList && (idxInLists !== -1) && listRow.listDoc._id !== pageState.selectedListOrGroupID) {
         if (!existingItem.lists[idxInLists].stockedAt) {
           skipThisList = true;
         }
@@ -184,7 +187,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     <IonPopover side="bottom" event={searchState.event} isOpen={searchState.isOpen} keyboardClose={false} onDidDismiss={(e) => {leaveSearchBox(e)}}>
     <IonContent><IonList key="popoverItemList">
       {(searchState.filteredSearchRows as ItemSearch[]).map((item: ItemSearch) => (
-        <IonItem key={pageState.selectedListID+"-poilist-"+item.itemID} onClick={() => chooseSearchItem(item.itemID)}>{item.itemName}</IonItem>
+        <IonItem key={pageState.selectedListOrGroupID+"-poilist-"+item.itemID} onClick={() => chooseSearchItem(item.itemID)}>{item.itemName}</IonItem>
       ))}
     </IonList></IonContent>
     </IonPopover>
@@ -205,10 +208,11 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     <IonTitle>
         <IonItem key="listselector">
         <IonLabel key="listselectlabel">Items on List:</IonLabel>
-        <IonSelect interface="popover" onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListID}>
-            {listDocs.map((list: any) => (
-                <IonSelectOption key={list._id} value={(list as any)._id}>
-                  {(list as any).name}
+        // TODOFIRST
+        <IonSelect interface="popover" onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListOrGroupID}>
+            {listCombinedRows.map((listCombinedRow: ListCombinedRow) => (
+                <IonSelectOption key={listCombinedRow.listOrGroupID} value={listCombinedRow.listOrGroupID}>
+                  {listCombinedRow.rowName}
                 </IonSelectOption>
             ))}
           </IonSelect>
@@ -237,7 +241,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       itemDoc: itemDoc,
       removeAll: globalState.settings.removeFromAllLists,
       newStatus: newStatus,
-      listID: pageState.selectedListID,
+      listID: pageState.selectedListOrGroupID,
       listRows: listRows
     }
     setPageState(prevState=> ({...prevState,doingUpdate: true}));
@@ -247,9 +251,16 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   }
 
-  function selectList(listID: string) {
-    setPageState({...pageState, selectedListID: listID, itemRows: getItemRows(itemDocs, listDocs, categoryDocs, uomDocs, listID)});
-    props.history.push('/items/list/'+listID);
+  function selectList(listOrGroupID: string) {
+    //TODO
+      let combinedRow: ListCombinedRow | undefined = listCombinedRows.find(lcr => lcr.listOrGroupID = listOrGroupID);
+      setPageState({...pageState, selectedListOrGroupID: listOrGroupID, itemRows: getItemRows(itemDocs as ItemDocs, listCombinedRows, categoryDocs, uomDocs, listType, listOrGroupID)});
+      if (combinedRow == undefined) {return};
+      if (combinedRow.rowType == RowType.list) {
+        props.history.push('/items/list/'+combinedRow.listDoc._id);
+      } else {
+        props.history.push('/items/group/'+combinedRow.listGroupID);
+      }
   }
 
   let listContent=[];
@@ -280,7 +291,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     });
   }
 
-  let lastCategoryID="<INITIAL>";
+  let lastCategoryID : string | null ="<INITIAL>";
   let lastCategoryName="<INITIAL>";
   let lastCategoryFinished: boolean | null = null;
   let currentRows=[];
@@ -288,13 +299,13 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   const completedDivider=(
         <IonItemGroup key="completeddividergroup"><IonItemDivider key="Completed">
         <IonLabel key="completed-divider-label">Completed</IonLabel>
-        <IonButton slot="end" onClick={() => deleteCompletedItems(itemDocs,pageState.selectedListID)}>DELETE COMPLETED ITEMS</IonButton>
+        <IonButton slot="end" onClick={() => deleteCompletedItems(itemDocs,pageState.selectedListOrGroupID)}>DELETE COMPLETED ITEMS</IonButton>
         </IonItemDivider></IonItemGroup>);
   for (let i = 0; i < pageState.itemRows.length; i++) {
     const item = pageState.itemRows[i];
     if ((lastCategoryName !== item.categoryName )||(lastCategoryFinished !== item.completed)) { 
       if (currentRows.length > 0) {
-        addCurrentRows(listContent,currentRows,lastCategoryID,lastCategoryName,lastCategoryFinished);
+        addCurrentRows(listContent,currentRows,String(lastCategoryID),lastCategoryName,lastCategoryFinished);
         currentRows=[];
       }
       lastCategoryID = item.categoryID;
@@ -314,7 +325,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       createdFinished=true;
     }    
   }
-  addCurrentRows(listContent,currentRows,lastCategoryID,lastCategoryName,lastCategoryFinished);
+  addCurrentRows(listContent,currentRows,String(lastCategoryID),lastCategoryName,lastCategoryFinished);
   if (!createdFinished) {listContent.push(completedDivider)};
   let contentElem=(<IonList lines="full">{listContent}</IonList>)
 

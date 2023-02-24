@@ -2,7 +2,7 @@ import { useCallback, useState, useEffect, useContext, useRef } from 'react'
 import { usePouch, useFind } from 'use-pouchdb'
 import { cloneDeep, isEqual, union, pull } from 'lodash';
 import { RemoteDBStateContext, SyncStatus } from './RemoteDBState';
-import { FriendStatus, FriendRow, ResolvedFriendStatus, ListRow, PouchResponse, PouchResponseInit, initUserInfo } from './DataTypes';
+import { FriendStatus, FriendRow, ResolvedFriendStatus, ListRow, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType } from './DataTypes';
 import { GlobalStateContext } from './GlobalState';
 import { getUsersInfo } from './Utilities';
 
@@ -204,8 +204,9 @@ export function useDeleteCategoryFromLists() {
     },[db]) 
 }
 
-export function useLists(username: string) : {listsLoading: boolean, listDocs: any, listRowsLoading: boolean, listRowsLoaded: boolean, listRows: ListRow[]} {
+export function useLists(username: string) : {listsLoading: boolean, listDocs: any, listRowsLoading: boolean, listRowsLoaded: boolean, listRows: ListRow[], listCombinedRows: ListCombinedRow[]} {
   const [listRows,setListRows] = useState<ListRow[]>([]);
+  const [listCombinedRows,setListCombinedRows] = useState<ListCombinedRow[]>([]);
   const [listRowsLoaded, setListRowsLoaded] = useState(false);
   const [listRowsLoading, setListRowsLoading] = useState(false);
   const { docs: listGroupDocs, loading: listGroupsLoading } = useFind({
@@ -230,11 +231,13 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
       let listGroupID=null;
       let listGroupName=null;
       let listGroupIncludesUser=false;
+      let listGroupLists=[];
       for (let i = 0; i < listGroupDocs.length; i++) {
         const lgd = (listGroupDocs[i] as any);
         if ( lgd.lists.includes(list._id) ) {
           listGroupID=lgd._id
           listGroupName=lgd.name
+          listGroupLists=lgd.lists;
         }
         if ( lgd.listGroupOwner == username || lgd.sharedWith.includes(username)) {
           listGroupIncludesUser=true;
@@ -245,6 +248,7 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
       let listRow: ListRow ={
         listGroupID: listGroupID,
         listGroupName: listGroupName,
+        listGroupLists: listGroupLists,
         listDoc: list,
         participants: part
       }
@@ -261,7 +265,37 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
         return (keyA1 < keyB1 ? -1 : 1)
       }
     });
+
     setListRows(newListRows);
+    setListCombinedRows([]);
+    let lastGroupName: any = null;
+    newListRows.forEach(listRow => {
+      if (listRow.listGroupName != lastGroupName) {
+        let groupRow: ListCombinedRow = {
+          rowType : RowType.listGroup,
+          rowName : listRow.listGroupName,
+          rowKey: "G-"+listRow.listGroupID,
+          listOrGroupID: String(listRow.listGroupID),
+          listGroupID : listRow.listGroupID,
+          listGroupName : listRow.listGroupName,
+          listGroupLists: listRow.listGroupLists,
+          listDoc: listRow.listDoc
+        }
+        setListCombinedRows(prevArr => ([...prevArr,groupRow]));
+        lastGroupName = listRow.listGroupName;
+      }
+      let listListRow: ListCombinedRow = {
+        rowType: RowType.list,
+        rowName: listRow.listDoc.name,
+        rowKey: "L-"+listRow.listDoc._id,
+        listOrGroupID: listRow.listDoc._id,
+        listGroupID: listRow.listGroupID,
+        listGroupName: listRow.listGroupName,
+        listGroupLists: [],
+        listDoc: listRow.listDoc
+      }
+      setListCombinedRows(prevArr => ([...prevArr,listListRow]));
+    });
   }
 
   useEffect( () => {
@@ -275,7 +309,7 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
     }
 
   },[listsLoading,listRowsLoading,listDocs])
-  return ({listsLoading, listDocs, listRowsLoading, listRowsLoaded, listRows});
+  return ({listsLoading, listDocs, listRowsLoading, listRowsLoaded, listRows, listCombinedRows});
 }
 
 export enum UseFriendState {

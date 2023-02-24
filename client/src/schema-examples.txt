@@ -114,7 +114,6 @@ CHANGED Item  (now tied at a master level to listGroup, so Banana in "Copley Gro
     type: "Item"
     listGroup: "xxx" // Copley Groceries
     name: "Bananas"
-    uom: "BN" // bunch
     lists: {
         {   listID: "xxx" // Acme
             active: "true",
@@ -124,6 +123,7 @@ CHANGED Item  (now tied at a master level to listGroup, so Banana in "Copley Gro
             note: "At Acme, pickup the yellower bananas",
             quantity: 2
             categoryID: "xxx" // Produce
+            uomName: "BN" // bunch
         },
         {   listID: "yyy" // Giant Eagle
             active: "true"
@@ -133,7 +133,7 @@ CHANGED Item  (now tied at a master level to listGroup, so Banana in "Copley Gro
             note: "At Giant eagle, get the cheaper green bunch",
             quantity: 1
             categoryID: "yyy" // Fruit
-
+            uomName: "EA" // Each
         }
     }
 
@@ -198,6 +198,8 @@ Item editor:
 Should not need participants checks anymore ?
 change useLists to return listgroup as well as lists -- put logic in here for "undefined"/no listgroup name
 Do I need a listowner as well as a listgroup owner?
+
+Need to make sure before you save an item, you clean up the "list" entries and ensure all belong to the group. (?needed?)
 
 
 

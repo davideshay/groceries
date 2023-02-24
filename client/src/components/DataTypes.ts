@@ -7,7 +7,7 @@ export interface IToDoList {
 export interface ItemRow {
     itemID: string,
     itemName: string,
-    categoryID: string,
+    categoryID: string | null,
     categoryName: string,
     categorySeq: number,
     categoryColor: string,
@@ -15,6 +15,43 @@ export interface ItemRow {
     uomDesc: string,
     completed: boolean | null
   }
+
+export const initItemRow: ItemRow = {
+    itemID: "", itemName: "",categoryID: "", categoryName: "",
+    categorySeq: 0, categoryColor: "#ffffff", quantity: 0,
+    uomDesc: "", completed: false
+  }
+
+
+export interface ItemList {
+  listID: string,
+  active: boolean,
+  completed: boolean,
+  stockedAt: boolean,
+  boughtCount: number,
+  note: string,
+  quantity: number,
+  categoryID: string,
+  uomName: string
+}
+
+export interface ItemDoc {
+  _id: string,
+  _rev: string,
+  type: string,
+  listGroupID: string,
+  name: string,
+  uomName: string,
+  lists: ItemList[],
+  updatedAt: string
+}
+
+export type ItemDocs = ItemDoc[];
+
+
+
+
+
 
   export interface ItemSearch {
     itemID: string,
@@ -33,7 +70,7 @@ export interface ItemRow {
   }
 
   export interface PageState {
-    selectedListID: string,
+    selectedListOrGroupID: string,
     doingUpdate: boolean,
     itemRows: Array<ItemRow>,
     showAlert: boolean,
@@ -70,8 +107,25 @@ export interface ItemRow {
   export type ListRow = {
     listGroupID: string | null,
     listGroupName: string,
+    listGroupLists: string[],
     listDoc: any,
     participants: string[]
+  }
+
+  export enum RowType {
+    listGroup = "G",
+    list = "L"
+  }
+
+  export type ListCombinedRow = {
+    rowType: RowType,
+    rowName: string,
+    rowKey: string,
+    listOrGroupID: string,
+    listGroupID: string | null,
+    listGroupName: string,
+    listGroupLists: string[],
+    listDoc: any
   }
 
 

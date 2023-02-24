@@ -1,5 +1,6 @@
-import {ItemRow, ItemSearch} from '../components/DataTypes';
+import {initItemRow, ItemRow, ItemSearch, ListCombinedRow, ListRow, RowType, ItemDoc, ItemDocs, ItemList} from '../components/DataTypes';
 import { cloneDeep } from 'lodash';
+import { list } from 'ionicons/icons';
 
 export function getAllSearchRows(allItemDocs: any, listID: string): ItemSearch[] {
     let searchRows: ItemSearch[] = [];
@@ -36,12 +37,44 @@ export function filterSearchRows(searchRows: ItemSearch[] | undefined, searchCri
     return filteredSearchRows;
 }
 
-export function getItemRows(itemDocs: any, listDocs: any, categoryDocs: any, uomDocs: any, listID: string) {
+function findRightList(itemDoc: ItemDoc, listType: RowType, listOrGroupID: string, listCombinedRow: ListCombinedRow) {
+    let list: ItemList | undefined;
+    if (listType == RowType.list) {
+        list = itemDoc.lists.find((list : ItemList) => (list.listID == listOrGroupID));
+        if (list == undefined) {return undefined} else {return list}
+    }
+    for (let i = 0; i < itemDoc.lists.length; i++) {
+        if (listCombinedRow.listGroupLists.includes(itemDoc.lists[i].listID)) {
+            list = itemDoc.lists[i];
+            break
+        }
+    }
+    if (list == undefined) { return undefined} else {return list}
+}
+
+
+function findCategoryID(itemDoc: ItemDoc, listType: RowType, listOrGroupID: string, listCombinedRow: ListCombinedRow ) {
+    let list: ItemList | undefined;
+    if (listType == RowType.list) {
+        list = itemDoc.lists.find((list : ItemList) => (list.listID == listOrGroupID));
+        if (list == undefined) {return null} else {return list.categoryID}
+    }
+    for (let i = 0; i < itemDoc.lists.length; i++) {
+        if (listCombinedRow.listGroupLists.includes(itemDoc.lists[i].listID)) {
+            list = itemDoc.lists[i];
+            break
+        }
+    }
+    if (list == undefined) { return null} else {return list.categoryID}
+}
+
+export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRow[], categoryDocs: any, uomDocs: any, listType: RowType, listOrGroupID: string) {
     let itemRows: Array<ItemRow> =[];
-    let listDoc=listDocs.find((el: any) => el._id === listID);
-    if (listDoc == undefined) {return itemRows};
-    if (itemDocs.length > 0) {
-        itemDocs.sort(function(a: any,b: any) {
+    let listRow=listCombinedRows.find((el: ListCombinedRow) => (el.rowType === listType && el.listOrGroupID === listOrGroupID));
+    if (listRow == undefined) {return itemRows};
+    let sortedItemDocs = cloneDeep(itemDocs);
+    if (sortedItemDocs.length > 0) {
+        sortedItemDocs.sort(function(a: any,b: any) {
             var keyA = a.name.toUpperCase();
             var keyB = b.name.toUpperCase();
             if (keyA < keyB) return -1;
@@ -49,27 +82,19 @@ export function getItemRows(itemDocs: any, listDocs: any, categoryDocs: any, uom
             return 0
       })
     }  
-    itemDocs.forEach((itemDoc: any) => {
-    let itemRow: ItemRow = {
-        itemID:"",
-        itemName:"",
-        categoryID: "",
-        categoryName: "",
-        categorySeq: 0,
-        categoryColor: "",
-        quantity: 0,
-        uomDesc: "",
-        completed: false
-    };
+    sortedItemDocs.forEach((itemDoc: ItemDoc) => {
+    let itemRow: ItemRow = initItemRow;
     itemRow.itemID = itemDoc._id;
     itemRow.itemName = itemDoc.name;
-    itemRow.categoryID = itemDoc.categoryID;
+    let list = findRightList(itemDoc,listType,listOrGroupID,(listRow as ListCombinedRow));
+    if (list == undefined) {return itemRows};
+    itemRow.categoryID = list.categoryID;
     if (itemRow.categoryID == null) {
         itemRow.categoryName = "Uncategorized";
         itemRow.categorySeq = -1;
         itemRow.categoryColor = "primary"
     } else {
-        let thisCat = (categoryDocs.find((element: any) => (element._id === itemDoc.categoryID)) as any);
+        let thisCat = (categoryDocs.find((element: any) => (element._id === itemRow.categoryID)) as any);
         if (thisCat != undefined) {
             itemRow.categoryName = thisCat.name;
             if (thisCat.color == undefined) {
@@ -79,11 +104,15 @@ export function getItemRows(itemDocs: any, listDocs: any, categoryDocs: any, uom
             itemRow.categoryName = "UNDEFINED";
             itemRow.categoryColor = "primary"
         }
-        const tmpIdx = ((listDoc as any).categories.findIndex((element: any) => (element === itemDoc.categoryID)));
-        if (tmpIdx === -1) {itemRow.categorySeq=Number.MAX_VALUE} else {itemRow.categorySeq=tmpIdx}
+        if (listType ==  RowType.list) {
+            const tmpIdx = (listRow?.listDoc.categories.findIndex((element: any) => (element === itemRow.categoryID)));
+            if (tmpIdx === -1) {itemRow.categorySeq=Number.MAX_VALUE} else {itemRow.categorySeq=tmpIdx}
+        } else {
+            itemRow.categorySeq=0;
+        }    
     }
-    itemRow.quantity = itemDoc.quantity;
-    const uomName = (itemDoc.hasOwnProperty('uomName')) ? itemDoc.uomName : null;
+    itemRow.quantity = list.quantity;
+    const uomName = list.uomName;
     let uomDesc = "";
     if (uomName != null) {
         const uomDoc = uomDocs.find((el: any) => (el.name === uomName));
@@ -96,10 +125,12 @@ export function getItemRows(itemDocs: any, listDocs: any, categoryDocs: any, uom
         }
     }    
     itemRow.uomDesc = uomDesc;
-    const listIdx = itemDoc.lists.findIndex((element: any) => (element.listID === listID))
-    if (listIdx === -1) {itemRow.completed=false} else {
-        itemRow.completed = itemDoc.lists[listIdx].completed;
-    }  
+    if (listType == RowType.list) {
+        const listIdx = itemDoc.lists.findIndex((element: any) => (element.listID === listOrGroupID))
+        if (listIdx === -1) {itemRow.completed=false} else {
+            itemRow.completed = itemDoc.lists[listIdx].completed;
+        }     
+    } else { itemRow.completed = false }    
     itemRows.push(itemRow);
     })
     itemRows.sort((a,b) => (

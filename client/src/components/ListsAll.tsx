@@ -5,71 +5,58 @@ import { RemoteDBStateContext } from './RemoteDBState';
 import { useLists } from './Usehooks';
 import './ListsAll.css';
 import { cloneDeep } from 'lodash';
+import { RowType } from './DataTypes';
 
 interface ListsAllProps {
   separatePage: boolean
 }
 
 const ListsAll: React.FC<ListsAllProps> = ({separatePage}) => {
-  const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
-  const { listRows, listRowsLoading} = useLists(String(remoteDBCreds.dbUsername));
+  const { remoteDBCreds } = useContext(RemoteDBStateContext);
+  const { listRowsLoading, listCombinedRows} = useLists(String(remoteDBCreds.dbUsername));
 
   if (listRowsLoading) { return (<></>) }
   
-  console.log("listRows:",cloneDeep(listRows))
+  function addRow({separatePage, showLinkID, editLinkID, rowKey, rowName, extraClass }: 
+      { separatePage: boolean, showLinkID: string, editLinkID: string, rowKey: string, rowName: string, extraClass: string}) {
+    const baseRow = (
+    <IonItem key={rowKey} >
+      <IonButton slot="start" className={"textButton "+extraClass} fill="clear" routerLink={(showLinkID)}>{rowName}</IonButton>
+      <IonButton fill="clear" routerLink={editLinkID} slot="end">
+      <IonIcon slot="end" icon={pencilOutline}></IonIcon>
+      </IonButton>
+    </IonItem>)
+    if (separatePage) {return {baseRow}}
+    else {
+      return (<IonMenuToggle key={rowKey} autoHide={false}>
+        {baseRow}
+      </IonMenuToggle>)
+    }
+  }
 
   let listsElem : any = [];
-  let lastListGroupName: any = null;
-  listRows.forEach(listRow => {
-    if (listRow.listGroupName != lastListGroupName) {
-      console.log(listRow);
-      if (separatePage) {
-        listsElem.push(
-          <IonItem key={"G"+listRow.listGroupID+"-"+listRow.listDoc._id} >
-          <IonButton slot="start" class="textButton" fill="clear" routerLink={("/items/group/" + (listRow.listGroupID))}>{listRow.listGroupName}</IonButton>
-          <IonButton routerLink={"/listgroup/edit/" + listRow.listGroupID} slot="end">
-            Edit
-          </IonButton>
-        </IonItem>
-        )
-      } else {
-        listsElem.push(
-          <IonMenuToggle key={"G"+listRow.listGroupID+"-"+listRow.listDoc._id} autoHide={false}>
-          <IonItem key={"G"+listRow.listGroupID+"-"+listRow.listDoc._id} >
-            <IonButton slot="start" class="textButton" fill="clear" routerLink={("/items/group/" + (listRow.listGroupID))}>{listRow.listGroupName}</IonButton>
-            <IonButton fill="clear" routerLink={"/listgroup/edit/" + listRow.listGroupID} slot="end">
-            <IonIcon slot="end" icon={pencilOutline}></IonIcon>
-            </IonButton>
-          </IonItem>  
-          </IonMenuToggle>
-        )  
-      }
-      lastListGroupName = listRow.listGroupName;
+  
+  listCombinedRows.forEach(combinedRow => {
+    if (combinedRow.rowType == RowType.listGroup) {
+      listsElem.push(
+        addRow({separatePage: separatePage, showLinkID:"/items/group/"+combinedRow.listGroupID,
+              editLinkID: "/listgroup/edit/"+combinedRow.listGroupID,
+              rowKey: "G"+combinedRow.listGroupID+"-"+combinedRow.listDoc._id,
+              rowName: combinedRow.rowName,
+              extraClass: ""
+            })
+      )      
     } else {
-      console.log("in list mode (not group)",listRow);
-      if (separatePage) {
-        listsElem.push(
-          <IonItem key={"L"+listRow.listGroupID+"-"+listRow.listDoc._id} >
-          <IonButton slot="start" class="textButton" fill="clear" routerLink={("/items/list/" + (listRow.listDoc._id))}>{listRow.listDoc.name}</IonButton>
-          <IonButton routerLink={"/list/edit/" + listRow.listDoc._id} slot="end">
-            Edit
-          </IonButton>
-        </IonItem>
-        )
-      } else {
-        listsElem.push(
-          <IonMenuToggle key={"L"+listRow.listGroupID+"-"+listRow.listDoc._id} autoHide={false}>
-          <IonItem key={"L"+listRow.listGroupID+"-"+listRow.listDoc._id} >
-            <IonButton slot="start" class="textButton indented" fill="clear" routerLink={("/items/list/" + (listRow.listDoc._id))}>{listRow.listDoc.name}</IonButton>
-            <IonButton fill="clear" routerLink={"/list/edit/" + listRow.listDoc._id} slot="end">
-            <IonIcon slot="end" icon={pencilOutline}></IonIcon>
-            </IonButton>
-          </IonItem>  
-          </IonMenuToggle>
-        )  
-      }
-    }
-  });
+      listsElem.push(
+        addRow({separatePage: separatePage, showLinkID:"/items/list/"+combinedRow.listDoc._id,
+              editLinkID: "/list/edit/"+combinedRow.listDoc._id,
+              rowKey: "L"+combinedRow.listGroupID+"-"+combinedRow.listDoc._id,
+              rowName: combinedRow.rowName,
+              extraClass: "indented"
+            })
+      )      
+    }   
+  })
   
   return (
       <>

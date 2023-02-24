@@ -1,6 +1,6 @@
 import { IonMenu, IonContent, IonMenuToggle, IonList, IonPage, IonHeader, IonToolbar,
     IonTitle, IonItem, IonItemDivider, IonListHeader, IonBadge } from '@ionic/react';
-import { useContext, useEffect } from 'react';    
+import { useContext } from 'react';    
 import { useConflicts, useFriends, UseFriendState } from './Usehooks';    
 import ListsAll from './ListsAll';
 import { RemoteDBStateContext } from './RemoteDBState';
