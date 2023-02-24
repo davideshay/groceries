@@ -17,7 +17,7 @@ import { isEqual } from 'lodash';
 
 const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { remoteDBCreds} = useContext(RemoteDBStateContext);
-  let { id: routeListID  } = useParams<{id: string}>();
+  let { mode: routeMode, id: routeListID  } = useParams<{mode: string, id: string}>();
   const [searchRows,setSearchRows] = useState<ItemSearch[]>();
   const [searchState,setSearchState] = useState<SearchState>({searchCriteria:"",isOpen: false,isFocused: false,event: undefined, filteredSearchRows: [], dismissEvent: undefined});
   const [pageState, setPageState] = useState<PageState>({selectedListID: routeListID, doingUpdate: false, itemRows: [], showAlert: false, alertHeader: "", alertMessage: ""});
@@ -26,6 +26,8 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   const [presentToast] = useIonToast();
   const updateCompleted = useUpdateCompleted();
   const updateItemInList = useUpdateGenericDocument();
+
+  console.log({routeMode, routeListID});
 
   const { docs: itemDocs, loading: itemLoading } = useFind({
     index: { fields: ["type","name","lists"]},
@@ -247,7 +249,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   function selectList(listID: string) {
     setPageState({...pageState, selectedListID: listID, itemRows: getItemRows(itemDocs, listDocs, categoryDocs, uomDocs, listID)});
-    props.history.push('/items/'+listID);
+    props.history.push('/items/list/'+listID);
   }
 
   let listContent=[];

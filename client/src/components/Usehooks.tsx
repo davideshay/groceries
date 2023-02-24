@@ -251,11 +251,15 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
       newListRows.push(listRow);
     });
     newListRows.sort(function (a: ListRow,b: ListRow) {
-      var keyA = a.listDoc.name.toUpperCase();
-      var keyB = b.listDoc.name.toUpperCase();
-      if (keyA < keyB) return -1;
-      if (keyA > keyB) return 1;
-      return 0
+      var keyA1 = a.listGroupName.toUpperCase();
+      var keyB1 = b.listGroupName.toUpperCase();
+      var keyA2 = a.listDoc.name.toUpperCase();
+      var keyB2 = b.listDoc.name.toUpperCase();
+      if (keyA1 === keyB1) {
+        return (keyA2 < keyB2 ? -1 : ( keyA2 > keyB2 ? 1 : 0) )
+      } else {
+        return (keyA1 < keyB1 ? -1 : 1)
+      }
     });
     setListRows(newListRows);
   }

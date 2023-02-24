@@ -18,7 +18,7 @@ export async function navigateToFirstListID(db: any,phistory: any,remoteDBCreds:
     if (firstListID == null) {
         phistory.push("/lists");
     } else {
-        phistory.push("/items/"+firstListID)
+        phistory.push("/items/list/"+firstListID)
     }  
   }
 

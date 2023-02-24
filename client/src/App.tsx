@@ -13,6 +13,8 @@ import Items from './pages/Items';
 import Item from './pages/Item';
 import Categories from './pages/Categories';
 import Category from './pages/Category';
+import ListGroups from './pages/ListGroups';
+import ListGroup from './pages/ListGroup';
 import Settings from './pages/Settings';
 import Friends from './pages/Friends';
 import RemoteDBLogin from './pages/RemoteDBLogin';
@@ -80,11 +82,13 @@ const App: React.FC = () => {
       <AppMenu />
         <IonContent id="main">
           <Route exact path="/lists" component={Lists} />
-          <Route path="/items/:id" component={Items} />
+          <Route path="/items/:mode/:id" component={Items} />
           <Route path="/item/:mode/:itemid?" component={Item} />
           <Route exact path="/allitems" component={AllItems} />
           <Route exact path="/categories" component={Categories} />
           <Route path="/category/:mode/:id?" component={Category} />
+          <Route exact path="/listgroups" component={ListGroups} />
+          <Route path="/listgroup/:mode/:id?" component={ListGroup} />
           <Route exact path="/settings" component={Settings} />
           <Route exact path="/friends" component={Friends} />
           <Route exact path="/">

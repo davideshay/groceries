@@ -68,7 +68,7 @@ export interface ItemRow {
   }
 
   export type ListRow = {
-    listGroupID: string,
+    listGroupID: string | null,
     listGroupName: string,
     listDoc: any,
     participants: string[]

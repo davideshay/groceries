@@ -13,7 +13,7 @@ const AppMenu: React.FC = () => {
   const { conflictDocs, conflictsLoading } = useConflicts();
  
   const listHeader = (headerName: string) => {
-    return (<IonList key={headerName}><IonItemDivider>{headerName}</IonItemDivider></IonList>)
+    return (<IonItemDivider>{headerName}</IonItemDivider>)
   }
 
   const listItem = (listItem: string,link: string) => {
@@ -45,23 +45,27 @@ const AppMenu: React.FC = () => {
               </IonItem></IonMenuToggle></IonList>) 
   }
 
-  if (useFriendState !== UseFriendState.rowsLoaded || conflictsLoading)  {return(
+  if (useFriendState !== UseFriendState.rowsLoaded|| conflictsLoading)  {return(
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
   )};
 
   return (
   <IonMenu contentId="main" type="overlay">
     <IonContent className="ion-padding" id="menucontent">
-      <IonList><IonListHeader>Groceries Menu</IonListHeader></IonList>
-      {listHeader("Lists")}
-      <ListsAll separatePage={false}/>
-      {listItem("Create New List","/list/new/new")}
-      {listHeader("Other Actions")}
-      {listItem("Manage Categories","/categories")}
-      {listItem("Manage All Items","/allitems")}
-      {friendItem()}
-      {conflictItem()}
-      {listItem("Settings","/settings")}
+      <IonList>
+        <IonListHeader>Groceries Menu</IonListHeader>
+        <IonList>
+          {listHeader("Lists")}
+          <ListsAll separatePage={false}/>
+        </IonList>
+        {listItem("Create New List","/list/new/new")}
+        {listHeader("Other Actions")}
+        {listItem("Manage Categories","/categories")}
+        {listItem("Manage All Items","/allitems")}
+        {friendItem()}
+        {conflictItem()}
+        {listItem("Settings","/settings")}
+      </IonList>
     </IonContent>
   </IonMenu>
   );
