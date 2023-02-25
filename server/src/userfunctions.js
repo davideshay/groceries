@@ -43,7 +43,7 @@ const {  emailPatternValidation, usernamePatternValidation, fullnamePatternValid
 let uomContentVersion = 0;
 const targetUomContentVersion = 2;
 let schemaVersion = 0;
-const targetSchemaVersion = 2;
+const targetSchemaVersion = 3;
 const refreshTokenExpires = (process.env.REFRESH_TOKEN_EXPIRES == undefined) ? "30d" : process.env.REFRESH_TOKEN_EXPIRES;
 const accessTokenExpires = (process.env.ACCESS_TOKEN_EXPIRES == undefined) ? "5m" : process.env.ACCESS_TOKEN_EXPIRES;
 const JWTKey = new TextEncoder().encode(couchKey);
@@ -291,6 +291,54 @@ async function addStockedAtIndicatorToSchema() {
     return updateSuccess;
 }
 
+async function restructureListGroupSchema() {
+    let updateSuccess = true;
+    console.log("STATUS: Upgrading schema to support listGroups.");
+    console.log("STATUS: Upgrading lists");
+    const listq = { selector: { type: { "$eq": "list"}},
+                    limit: await totalDocCount(todosDBAsAdmin)};
+    let foundListDocs = await todosDBAsAdmin.find(listq);
+    console.log("STATUS: Found lists to update: ", foundListDocs.docs.length);
+    for (let i = 0; i < foundListDocs.docs.length; i++) {
+        const foundListDoc = foundListDocs.docs[i];
+        console.log("Processing list: ", foundListDoc.name);
+        delete foundListDoc.sharedWith;
+        let dbResp = null;
+        try { dbResp = await todosDBAsAdmin.insert(foundListDoc)}
+        catch(err) { console.log("ERROR: Couldn't update list to remove shared With.");
+                     updateSuccess = false;}
+    }
+    const itemq = { selector: { type: { "$eq": "item"}},
+                    limit: await totalDocCount(todosDBAsAdmin)};
+    let foundItemDocs = await todosDBAsAdmin.find(itemq);
+    console.log("STATUS: Found items to update :", foundItemDocs.docs.length)
+    for (let i = 0; i < foundItemDocs.docs.length; i++) {
+        const foundItemDoc = foundItemDocs.docs[i];
+        console.log("Processing item: ", foundItemDoc.name);
+        foundItemDoc.listGroupID = null;
+        let saveQuantity = foundItemDoc.quantity;
+        let saveUomName = foundItemDoc.uomName;
+        let saveCategoryID = foundItemDoc.categoryID;
+        let saveNote = foundItemDoc.saveNote;
+        delete foundItemDoc.quantity;
+        delete foundItemDoc.uomName;
+        delete foundItemDoc.categoryID;
+        delete foundItemDoc.note;
+        for (let j = 0; j < foundItemDoc.lists.length; j++) {
+            foundItemDoc.lists[j].quantity = saveQuantity;
+            foundItemDoc.lists[j].uomName = saveUomName;
+            foundItemDoc.lists[j].categoryID = saveCategoryID;
+            foundItemDoc.lists[j].saveNote = saveNote;
+        }
+        let dbResp = null;
+        try { dbResp = await todosDBAsAdmin.insert(foundItemDoc)}
+        catch(err) { console.log("ERROR: Couldn't update item to new Structure.");
+                     updateSuccess = false;}
+ 
+    }
+    return updateSuccess;
+}    
+
 async function setSchemaVersion(updSchemaVersion) {
     console.log("STATUS: Finished schema updates, updating database to :",updSchemaVersion);
     const dbidq = {
@@ -320,6 +368,11 @@ async function checkAndUpdateSchema() {
         console.log("STATUS: Updating schema to rev. 2: Changes for 'stocked at' indicator on item/list.");
         let schemaUpgradeSuccess = await addStockedAtIndicatorToSchema();
         if (schemaUpgradeSuccess) { schemaVersion = 2; await setSchemaVersion(schemaVersion);}
+    }
+    if (schemaVersion < 3) {
+        console.log("STATUS: Updating schema to rev. 3: Changes for restructuring/listgroups ");
+        let schemaUpgradeSuccess = await restructureListGroupSchema();
+        if (schemaUpgradeSuccess) { schemaVersion = 3; await setSchemaVersion(schemaVersion);}
     }
 }
 

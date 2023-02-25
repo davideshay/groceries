@@ -1,3 +1,7 @@
 .textButton {
     text-transform: none;
 }
+
+ion-item.select-interface-option.indented,ion-item.select-interface-option.indented:hover {
+    color: red;
+}

@@ -28,12 +28,12 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   const updateItemInList = useUpdateGenericDocument();
 
   const { docs: itemDocs, loading: itemLoading } = useFind({
-    index: { fields: ["type","name","lists"]},
+    index: { fields: ["type","name"]},
     selector: {
       type: "item", name: { $exists: true },
       "$or": [ {listGroupID: pageState.selectedListOrGroupID} , 
                {lists: { $elemMatch: { "listID": pageState.selectedListOrGroupID , "active" : true} }}] },
-    sort: [ "type", "name", "lists" ]})
+    sort: [ "type", "name"]})
   const { listCombinedRows,listRows, listRowsLoading } = useLists(String(remoteDBCreds.dbUsername));
   const { docs: uomDocs, loading: uomLoading } = useFind({
     index: { fields: [ "type","name"]},
@@ -52,7 +52,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   const listType = (routeMode == "list") ? RowType.list : RowType.listGroup
 
   useEffect( () => {
-    setPageState(prevState => ({...prevState,selectedListID: routeListID}))
+    setPageState(prevState => ({...prevState,selectedListOrGroupID: routeListID}))
   },[routeListID])
 
   useEffect( () => {
@@ -203,15 +203,16 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     />
   )
   
+  console.log("header value:",cloneDeep(pageState.selectedListOrGroupID));
+  console.log("listCombinedRows:",cloneDeep(listCombinedRows));
   let headerElem=(
     <IonHeader><IonToolbar><IonButtons slot="start"><IonMenuButton /></IonButtons>
     <IonTitle>
         <IonItem key="listselector">
         <IonLabel key="listselectlabel">Items on List:</IonLabel>
-        // TODOFIRST
         <IonSelect interface="popover" onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListOrGroupID}>
             {listCombinedRows.map((listCombinedRow: ListCombinedRow) => (
-                <IonSelectOption key={listCombinedRow.listOrGroupID} value={listCombinedRow.listOrGroupID}>
+                <IonSelectOption className={listCombinedRow.rowType == RowType.list ? "indented" : ""} key={listCombinedRow.listOrGroupID} value={listCombinedRow.listOrGroupID}>
                   {listCombinedRow.rowName}
                 </IonSelectOption>
             ))}
@@ -315,10 +316,10 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     currentRows.push(
       <IonItem key={pageState.itemRows[i].itemID} >
         <IonCheckbox slot="start"
-            onIonChange={(e: any) => completeItemRow(pageState.itemRows[i].itemID,e.detail.checked)}
+            onIonChange={(e: any) => completeItemRow(item.itemID,e.detail.checked)}
             checked={Boolean(pageState.itemRows[i].completed)}></IonCheckbox>
-        <IonButton fill="clear" class="textButton" routerLink= {"/item/edit/"+pageState.itemRows[i].itemID}>
-          {pageState.itemRows[i].itemName + " ("+ item.quantity.toString()+(item.uomDesc == "" ? "" : " ")+item.uomDesc+")"}</IonButton>
+        <IonButton fill="clear" class="textButton" routerLink= {"/item/edit/"+item.itemID}>
+          {item.itemName + " ("+ item.quantity.toString()+(item.uomDesc == "" ? "" : " ")+item.uomDesc+")"}</IonButton>
       </IonItem>);
     if (lastCategoryFinished && !createdFinished) {
       listContent.push(completedDivider);

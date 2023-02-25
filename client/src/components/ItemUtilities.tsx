@@ -69,6 +69,9 @@ function findCategoryID(itemDoc: ItemDoc, listType: RowType, listOrGroupID: stri
 }
 
 export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRow[], categoryDocs: any, uomDocs: any, listType: RowType, listOrGroupID: string) {
+    console.log("called get Item Rows");
+    console.log("itemDocs:",cloneDeep(itemDocs));
+    console.log("listCombinedRows",cloneDeep(listCombinedRows));
     let itemRows: Array<ItemRow> =[];
     let listRow=listCombinedRows.find((el: ListCombinedRow) => (el.rowType === listType && el.listOrGroupID === listOrGroupID));
     if (listRow == undefined) {return itemRows};
@@ -83,7 +86,7 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
       })
     }  
     sortedItemDocs.forEach((itemDoc: ItemDoc) => {
-    let itemRow: ItemRow = initItemRow;
+    let itemRow: ItemRow = cloneDeep(initItemRow);
     itemRow.itemID = itemDoc._id;
     itemRow.itemName = itemDoc.name;
     let list = findRightList(itemDoc,listType,listOrGroupID,(listRow as ListCombinedRow));
@@ -111,8 +114,8 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
             itemRow.categorySeq=0;
         }    
     }
-    itemRow.quantity = list.quantity;
-    const uomName = list.uomName;
+    itemRow.quantity =  list.hasOwnProperty("quantity") ? list.quantity : 0;
+    const uomName = list.hasOwnProperty("uomName") ? list.uomName : null;
     let uomDesc = "";
     if (uomName != null) {
         const uomDoc = uomDocs.find((el: any) => (el.name === uomName));
@@ -137,5 +140,6 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
     (Number(a.completed) - Number(b.completed)) || (a.categorySeq - b.categorySeq) || (a.categoryName.localeCompare(b.categoryName)) ||
     (a.itemName.localeCompare(b.itemName))
     ))
+    console.log("about to return itemRows: ", cloneDeep(itemRows));
     return (itemRows)
 }

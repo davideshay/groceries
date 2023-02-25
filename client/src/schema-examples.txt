@@ -12,7 +12,7 @@ Category:
   "color": "#cba51a"
 }
 
-List : 
+List :
 
 {
   "_id": "7784e3b6-a420-429a-8a97-db351b93a0d7",
@@ -98,7 +98,7 @@ NEW: ListGroup
     _id: "xxx"
     type: "listgroup"
     name: "Copley Groceries"
-    lists: 
+    lists:
     [ "111", "222", "333" ],
     "listGroupOwner": "davideshay",
     "sharedWith": [
@@ -139,10 +139,9 @@ CHANGED Item  (now tied at a master level to listGroup, so Banana in "Copley Gro
 
 }
 
-
 CHANGED: List
 
-List : 
+List :
 
 {
   "_id": "7784e3b6-a420-429a-8a97-db351b93a0d7",
@@ -157,6 +156,12 @@ List :
   ],
   "updatedAt": "2023-02-19T20:31:21.609Z"
 }
+
+
+
+
+
+
 
 
 Application Impacts:
@@ -180,7 +185,7 @@ Items page:
         Automatically add to everything in the listgroup if listgroup is the filter
             Add if stocked at the store.
             Optionally also check auto-add category setting.
-            Any edits to quantity would impact all list items 
+            Any edits to quantity would impact all list items
         Do we auto-add if the list is in a group but you select a specific list?  Probably not, then don't need a setting.
         I guess still need a setting for "complete off all lists"
 
@@ -200,6 +205,3 @@ change useLists to return listgroup as well as lists -- put logic in here for "u
 Do I need a listowner as well as a listgroup owner?
 
 Need to make sure before you save an item, you clean up the "list" entries and ensure all belong to the group. (?needed?)
-
-
-

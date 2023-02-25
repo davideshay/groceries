@@ -265,9 +265,8 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
         return (keyA1 < keyB1 ? -1 : 1)
       }
     });
-
     setListRows(newListRows);
-    setListCombinedRows([]);
+    let newCombinedRows: ListCombinedRow[] = [];
     let lastGroupName: any = null;
     newListRows.forEach(listRow => {
       if (listRow.listGroupName != lastGroupName) {
@@ -281,7 +280,7 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
           listGroupLists: listRow.listGroupLists,
           listDoc: listRow.listDoc
         }
-        setListCombinedRows(prevArr => ([...prevArr,groupRow]));
+        newCombinedRows.push(groupRow);
         lastGroupName = listRow.listGroupName;
       }
       let listListRow: ListCombinedRow = {
@@ -294,8 +293,9 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
         listGroupLists: [],
         listDoc: listRow.listDoc
       }
-      setListCombinedRows(prevArr => ([...prevArr,listListRow]));
+      newCombinedRows.push(listListRow);
     });
+    setListCombinedRows(newCombinedRows);
   }
 
   useEffect( () => {
@@ -307,8 +307,8 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
       setListRowsLoading(false)
       setListRowsLoaded(true);
     }
+  },[listsLoading,listRowsLoading,listDocs, listGroupDocs, listGroupsLoading])
 
-  },[listsLoading,listRowsLoading,listDocs])
   return ({listsLoading, listDocs, listRowsLoading, listRowsLoaded, listRows, listCombinedRows});
 }
 
