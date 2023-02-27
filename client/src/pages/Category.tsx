@@ -182,8 +182,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
       <IonContent fullscreen id="main">
           <IonList>
             <IonItem key="name">
-              <IonLabel position="stacked">Name</IonLabel>
-              <IonInput type="text" placeholder="<NEW>" onIonChange={(e: any) => setStateCategoryDoc({...stateCategoryDoc, name: e.detail.value})} value={(stateCategoryDoc as any).name}></IonInput>
+              <IonInput label="Name" labelPlacement="stacked" type="text" placeholder="<NEW>" onIonChange={(e: any) => setStateCategoryDoc({...stateCategoryDoc, name: e.detail.value})} value={(stateCategoryDoc as any).name}></IonInput>
             </IonItem>
             <IonItem key="color">
               <IonLabel position="stacked">Color</IonLabel>

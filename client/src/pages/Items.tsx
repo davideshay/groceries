@@ -1,9 +1,10 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonItemGroup,
   IonItemDivider, IonButton, IonButtons, IonFab, IonFabButton, IonIcon, IonCheckbox, IonLabel, IonSelect,
-  IonSelectOption, IonSearchbar, IonPopover, IonAlert,IonMenuButton, useIonToast} from '@ionic/react';
+  IonSelectOption, IonSearchbar, IonPopover, IonAlert,IonMenuButton, useIonToast, IonGrid, IonRow, 
+  IonRouterLink, IonCol} from '@ionic/react';
 import { add,checkmark } from 'ionicons/icons';
 import React, { useState, useEffect, useContext, useRef, KeyboardEvent } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
 import { cloneDeep } from 'lodash';
 import './Items.css';
@@ -203,16 +204,13 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     />
   )
   
-  console.log("header value:",cloneDeep(pageState.selectedListOrGroupID));
-  console.log("listCombinedRows:",cloneDeep(listCombinedRows));
   let headerElem=(
     <IonHeader><IonToolbar><IonButtons slot="start"><IonMenuButton /></IonButtons>
     <IonTitle>
         <IonItem key="listselector">
-        <IonLabel key="listselectlabel">Items on List:</IonLabel>
-        <IonSelect interface="popover" onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListOrGroupID}>
+        <IonSelect label="Items On List:" aria-label="Items On List:" interface="popover" onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListOrGroupID}>
             {listCombinedRows.map((listCombinedRow: ListCombinedRow) => (
-                <IonSelectOption className={listCombinedRow.rowType == RowType.list ? "indented" : ""} key={listCombinedRow.listOrGroupID} value={listCombinedRow.listOrGroupID}>
+                <IonSelectOption disabled={listCombinedRow.rowKey=="G-null"} className={listCombinedRow.rowType == RowType.list ? "indented" : ""} key={listCombinedRow.listOrGroupID} value={listCombinedRow.listOrGroupID}>
                   {listCombinedRow.rowName}
                 </IonSelectOption>
             ))}
@@ -253,17 +251,18 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function selectList(listOrGroupID: string) {
-    if (listOrGroupID == "null" ) { return }
+    if (listOrGroupID == "null" ) { console.log("ungrouped selected");  return }
     console.log("in select list: id:",listOrGroupID);
-    //TODO
-      let combinedRow: ListCombinedRow | undefined = listCombinedRows.find(lcr => lcr.listOrGroupID = listOrGroupID);
-      setPageState({...pageState, selectedListOrGroupID: listOrGroupID, itemRows: getItemRows(itemDocs as ItemDocs, listCombinedRows, categoryDocs, uomDocs, listType, listOrGroupID)});
-      if (combinedRow == undefined) {return};
-      if (combinedRow.rowType == RowType.list) {
-        props.history.push('/items/list/'+combinedRow.listDoc._id);
-      } else {
-        props.history.push('/items/group/'+combinedRow.listGroupID);
-      }
+    console.log("current list combined rows:",cloneDeep(listCombinedRows));
+    let combinedRow: ListCombinedRow | undefined = listCombinedRows.find(lcr => lcr.listOrGroupID == listOrGroupID);
+    console.log("found combined row: ", cloneDeep(combinedRow));
+    setPageState({...pageState, selectedListOrGroupID: listOrGroupID, itemRows: getItemRows(itemDocs as ItemDocs, listCombinedRows, categoryDocs, uomDocs, listType, listOrGroupID)});
+    if (combinedRow == undefined) {return};
+    if (combinedRow.rowType == RowType.list) {
+      props.history.push('/items/list/'+combinedRow.listDoc._id);
+    } else {
+      props.history.push('/items/group/'+combinedRow.listGroupID);
+    }
   }
 
   let listContent=[];
@@ -317,11 +316,16 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
     currentRows.push(
       <IonItem key={pageState.itemRows[i].itemID} >
-        <IonCheckbox slot="start"
+        <IonGrid><IonRow>
+        <IonCol size="1">
+        <IonCheckbox aria-label=""
             onIonChange={(e: any) => completeItemRow(item.itemID,e.detail.checked)}
             checked={Boolean(pageState.itemRows[i].completed)}></IonCheckbox>
-        <IonButton fill="clear" class="textButton" routerLink= {"/item/edit/"+item.itemID}>
-          {item.itemName + " ("+ item.quantity.toString()+(item.uomDesc == "" ? "" : " ")+item.uomDesc+")"}</IonButton>
+        </IonCol>
+        <IonCol size="11">
+          <IonRouterLink color="dark" href={"/item/edit/"+item.itemID}>{item.itemName + " ("+ item.quantity.toString()+(item.uomDesc == "" ? "" : " ")+item.uomDesc+")"}</IonRouterLink>
+        </IonCol>
+        </IonRow></IonGrid>
       </IonItem>);
     if (lastCategoryFinished && !createdFinished) {
       listContent.push(completedDivider);

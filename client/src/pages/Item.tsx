@@ -295,9 +295,9 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
       let stockedAt=((stateItemDoc as any).lists[i].stockedAt);
       listsInnerElem.push(
         <IonRow key={listID}>
-          <IonCol size="1"><IonCheckbox onIonChange={(e: any) => selectList(listID,Boolean(e.detail.checked))} checked={itemActive}></IonCheckbox></IonCol>
+          <IonCol size="1"><IonCheckbox aria-label="" onIonChange={(e: any) => selectList(listID,Boolean(e.detail.checked))} checked={itemActive}></IonCheckbox></IonCol>
           <IonCol size="4"><IonLabel>{listName}</IonLabel></IonCol>
-          <IonCol size="2"><IonCheckbox onIonChange={(e: any) => changeStockedAt(listID,Boolean(e.detail.checked))} checked={stockedAt}></IonCheckbox></IonCol>
+          <IonCol size="2"><IonCheckbox aria-label="" onIonChange={(e: any) => changeStockedAt(listID,Boolean(e.detail.checked))} checked={stockedAt}></IonCheckbox></IonCol>
           <IonCol size="3">{(stateItemDoc as any).lists[i].boughtCount}</IonCol>
           <IonCol size="2"><IonButton onClick={(e) => resetBoughtCount(listID)}>Reset</IonButton></IonCol>
         </IonRow>
@@ -318,8 +318,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
       <IonContent fullscreen id="main">
           <IonList>
             <IonItem key="name">
-              <IonLabel position="stacked">Name</IonLabel>
-              <IonInput type="text" onIonChange={(e: any) => setStateItemDoc({...stateItemDoc, name: e.detail.value})} value={(stateItemDoc as any).name}></IonInput>
+              <IonInput label="Name" labelPlacement="stacked" type="text" onIonChange={(e: any) => setStateItemDoc({...stateItemDoc, name: e.detail.value})} value={(stateItemDoc as any).name}></IonInput>
             </IonItem>
             <IonItem key="quantity">
               <IonGrid>

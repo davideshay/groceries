@@ -73,27 +73,22 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
           <IonRadioGroup value={localSettings?.addListOption} onIonChange={(e) => changeSetting("addListOption",e.detail.value)}>
           <IonLabel position="stacked">Add To List Options</IonLabel>
           <IonItem key="addallauto">
-             <IonLabel>Add Items to All Lists automatically</IonLabel>
-            <IonRadio value={AddListOptions.addToAllListsAutomatically} slot="start"></IonRadio>
+            <IonRadio value={AddListOptions.addToAllListsAutomatically} slot="start">Add Items To All Lists automatically</IonRadio>
           </IonItem>
           <IonItem key="addcategoryauto">
-             <IonLabel>Add Items to Lists with matching categories automatically</IonLabel>
-            <IonRadio value={AddListOptions.addToListsWithCategoryAutomatically} slot="start"></IonRadio>
+            <IonRadio value={AddListOptions.addToListsWithCategoryAutomatically} slot="start">Add Items to Lists with matching categories automatically</IonRadio>
           </IonItem>
           <IonItem key="dontaddauto">
-             <IonLabel>Don't Add items to other lists automatically</IonLabel>
-            <IonRadio value={AddListOptions.dontAddAutomatically} slot="start"></IonRadio>
+            <IonRadio value={AddListOptions.dontAddAutomatically} slot="start">Don't Add items to other lists automatically</IonRadio>
           </IonItem>
           </IonRadioGroup>
           <IonLabel position="stacked">Other Settings</IonLabel>
           <IonItem key="removesettings">
-            <IonLabel>Remove items from all lists when completed</IonLabel>
-            <IonCheckbox slot="start" checked={localSettings.removeFromAllLists} onIonChange={(e) => changeSetting("removeFromAllLists",e.detail.checked)}></IonCheckbox>
+            <IonCheckbox slot="start" checked={localSettings.removeFromAllLists} onIonChange={(e) => changeSetting("removeFromAllLists",e.detail.checked)}>Remove items from all lists when completed</IonCheckbox>
           </IonItem>
-          <IonTextarea disabled={true}>NOTE: Adding and removing from all lists is only done with lists that have the same set of shared owners/participants.</IonTextarea>
+          <IonTextarea aria-label="NOTE" disabled={true}>NOTE: Adding and removing from all lists is only done with lists that have the same set of shared owners/participants.</IonTextarea>
           <IonItem key="dayslog">
-            <IonLabel>Days of conflict log to view</IonLabel>
-            <IonInput type="number" min="0" max="25" onIonChange={(e: any) => changeSetting("daysOfConflictLog", e.detail.value)} value={Number(localSettings?.daysOfConflictLog)}></IonInput>
+            <IonInput label="Days of conflict log to view:" labelPlacement="start" type="number" min="0" max="25" onIonChange={(e: any) => changeSetting("daysOfConflictLog", e.detail.value)} value={Number(localSettings?.daysOfConflictLog)}></IonInput>
           </IonItem>
         </IonList>
       </IonContent>

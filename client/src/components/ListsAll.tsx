@@ -1,4 +1,4 @@
-import { IonList, IonItem, IonButton, IonMenuToggle, IonIcon } from '@ionic/react';
+import { IonList, IonItem, IonButton, IonMenuToggle, IonIcon, IonText } from '@ionic/react';
 import { useContext } from 'react';
 import { pencilOutline } from 'ionicons/icons';
 import { RemoteDBStateContext } from './RemoteDBState';
@@ -17,17 +17,21 @@ const ListsAll: React.FC<ListsAllProps> = ({separatePage}) => {
 
   if (listRowsLoading) { return (<></>) }
   
-  //TODO : don't add link to ungrouped button, don't add pencil either
   function addRow({separatePage, showLinkID, editLinkID, rowKey, rowName, extraClass }: 
       { separatePage: boolean, showLinkID: string, editLinkID: string, rowKey: string, rowName: string, extraClass: string}) {
-    const isUngroupedHeader = (rowKey.startsWith("Gnull"));
-    const baseRow = (
-    <IonItem key={rowKey} >
-      <IonButton slot="start" className={"textButton "+extraClass} fill="clear" routerLink={(showLinkID)}>{rowName}</IonButton>
-      <IonButton fill="clear" routerLink={editLinkID} slot="end">
-      <IonIcon slot="end" icon={pencilOutline}></IonIcon>
-      </IonButton>
-    </IonItem>)
+    const isUngroupedHeader = (rowKey.startsWith("G-null"));
+    let baseRow;
+    if (isUngroupedHeader) {
+      baseRow = (<IonItem key={rowKey}>{rowName}</IonItem>)
+    } else {
+      baseRow = (
+      <IonItem key={rowKey} >
+        <IonButton slot="start" className={"textButton "+extraClass} fill="clear" routerLink={(showLinkID)}>{rowName}</IonButton>
+        <IonButton fill="clear" routerLink={editLinkID} slot="end">
+        <IonIcon slot="end" icon={pencilOutline}></IonIcon>
+        </IonButton>
+      </IonItem>)
+    }
     if (separatePage) {return {baseRow}}
     else {
       return (<IonMenuToggle key={rowKey} autoHide={false}>
@@ -40,11 +44,10 @@ const ListsAll: React.FC<ListsAllProps> = ({separatePage}) => {
   
   listCombinedRows.forEach(combinedRow => {
     if (combinedRow.rowType == RowType.listGroup ) {
-
       listsElem.push(
         addRow({separatePage: separatePage, showLinkID:"/items/group/"+combinedRow.listGroupID,
               editLinkID: "/listgroup/edit/"+combinedRow.listGroupID,
-              rowKey: "G"+combinedRow.listGroupID+"-"+combinedRow.listDoc._id,
+              rowKey: combinedRow.rowKey,
               rowName: combinedRow.rowName,
               extraClass: ""
             })
@@ -53,7 +56,7 @@ const ListsAll: React.FC<ListsAllProps> = ({separatePage}) => {
       listsElem.push(
         addRow({separatePage: separatePage, showLinkID:"/items/list/"+combinedRow.listDoc._id,
               editLinkID: "/list/edit/"+combinedRow.listDoc._id,
-              rowKey: "L"+combinedRow.listGroupID+"-"+combinedRow.listDoc._id,
+              rowKey: combinedRow.rowKey,
               rowName: combinedRow.rowName,
               extraClass: "indented"
             })

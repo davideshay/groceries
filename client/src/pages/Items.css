@@ -3,5 +3,6 @@
 }
 
 ion-item.select-interface-option.indented,ion-item.select-interface-option.indented:hover {
-    color: red;
+    color: chartreuse;
+    margin-left: 1rem;
 }

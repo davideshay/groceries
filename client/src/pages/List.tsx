@@ -386,8 +386,7 @@ function deletePrompt() {
       <IonContent fullscreen>
           <IonList>
             <IonItem key="name">
-              <IonLabel position="stacked">Name</IonLabel>
-              <IonInput type="text" placeholder="<New>"
+              <IonInput label="Name" labelPlacement="stacked" type="text" placeholder="<New>"
                   onIonChange={(e: any) => updateName(e.detail.value)}
                   value={(pageState.listDoc as any).name}
                   readonly={iAmListOwner ? false: true}></IonInput>

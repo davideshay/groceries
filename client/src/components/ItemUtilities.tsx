@@ -69,9 +69,6 @@ function findCategoryID(itemDoc: ItemDoc, listType: RowType, listOrGroupID: stri
 }
 
 export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRow[], categoryDocs: any, uomDocs: any, listType: RowType, listOrGroupID: string) {
-    console.log("called get Item Rows");
-    console.log("itemDocs:",cloneDeep(itemDocs));
-    console.log("listCombinedRows",cloneDeep(listCombinedRows));
     let itemRows: Array<ItemRow> =[];
     let listRow=listCombinedRows.find((el: ListCombinedRow) => (el.rowType === listType && el.listOrGroupID === listOrGroupID));
     if (listRow == undefined) {return itemRows};
@@ -140,6 +137,5 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
     (Number(a.completed) - Number(b.completed)) || (a.categorySeq - b.categorySeq) || (a.categoryName.localeCompare(b.categoryName)) ||
     (a.itemName.localeCompare(b.itemName))
     ))
-    console.log("about to return itemRows: ", cloneDeep(itemRows));
     return (itemRows)
 }
