@@ -1,7 +1,7 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
   IonButtons, IonMenuButton, IonLabel, IonText, useIonAlert, isPlatform, IonIcon } from '@ionic/react';
 import { useState, useEffect, useContext } from 'react';
-import { eye, eyeOff} from 'ionicons/icons';
+import { eye, eyeOff } from 'ionicons/icons';
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import { usePouch} from 'use-pouchdb';
 import { ConnectionStatus, DBCreds, DBUUIDAction } from '../components/RemoteDBState';
@@ -107,7 +107,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
         navigateToFirstListID(db,props.history,remoteDBCreds);
       }
 
-    },[remoteDBState.connectionStatus])
+    },[remoteDBState.connectionStatus, db, props.history, remoteDBCreds]);
 
     async function destroyAndExit() {
       await db.destroy();
@@ -228,7 +228,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     navigateToFirstListID(db,props.history,remoteDBCreds);    
   }
 
-  function workOffline() {
+/*   function workOffline() {
     presentAlert({
       header: "Choose to work offline",
       message: "You can choose to work offline with your locally replicated data. Please be aware that your changes will not be synchronized back to the server until you restart the app and login again. The chance for conflicts also increases.",
@@ -237,6 +237,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
         { text: "Work Offline", role: "confirm", handler: () => setWorkingOffline()}
       ]})      
   }
+ */
 
   if (remoteDBState.syncStatus === SyncStatus.active || remoteDBState.syncStatus === SyncStatus.paused) {
     return (<></>)

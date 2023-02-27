@@ -8,7 +8,7 @@ import './ListGroups.css';
 
 const ListGroups: React.FC<HistoryProps> = (props: HistoryProps) => {
 
-  const { docs, loading, error } = useFind({
+  const { docs, loading } = useFind({
   index: { fields: ["type","name"]},
   selector: { type: "listgroup", name: { $exists: true }},
   sort: [ "type", "name" ]

@@ -1,6 +1,6 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
         IonMenuButton, IonButtons, IonButton, useIonAlert, IonInput,
-        IonRadioGroup,IonLabel, NavContext, IonRadio, IonCheckbox, IonTextarea, isPlatform, getPlatforms} from '@ionic/react';
+        IonRadioGroup,IonLabel, IonRadio, IonCheckbox, IonTextarea, isPlatform } from '@ionic/react';
 import { useContext, useEffect, useState } from 'react';        
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
@@ -19,10 +19,10 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   useEffect( () => {
     if (!localSettingsInitialized && globalState.settingsLoaded) {
-      setLocalSettings((globalState.settings));
+      setLocalSettings(prevState=>(globalState.settings));
       setLocalSettingsInitialized(true);
     }
-  },[localSettings,globalState.settingsLoaded])
+  },[globalState.settings,localSettingsInitialized,globalState.settingsLoaded])
 
   async function stopSync() {
     let credsStr=JSON.stringify({});
