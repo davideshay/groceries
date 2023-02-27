@@ -17,8 +17,10 @@ const ListsAll: React.FC<ListsAllProps> = ({separatePage}) => {
 
   if (listRowsLoading) { return (<></>) }
   
+  //TODO : don't add link to ungrouped button, don't add pencil either
   function addRow({separatePage, showLinkID, editLinkID, rowKey, rowName, extraClass }: 
       { separatePage: boolean, showLinkID: string, editLinkID: string, rowKey: string, rowName: string, extraClass: string}) {
+    const isUngroupedHeader = (rowKey.startsWith("Gnull"));
     const baseRow = (
     <IonItem key={rowKey} >
       <IonButton slot="start" className={"textButton "+extraClass} fill="clear" routerLink={(showLinkID)}>{rowName}</IonButton>
@@ -37,7 +39,8 @@ const ListsAll: React.FC<ListsAllProps> = ({separatePage}) => {
   let listsElem : any = [];
   
   listCombinedRows.forEach(combinedRow => {
-    if (combinedRow.rowType == RowType.listGroup) {
+    if (combinedRow.rowType == RowType.listGroup ) {
+
       listsElem.push(
         addRow({separatePage: separatePage, showLinkID:"/items/group/"+combinedRow.listGroupID,
               editLinkID: "/listgroup/edit/"+combinedRow.listGroupID,

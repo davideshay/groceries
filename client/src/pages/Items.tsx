@@ -253,6 +253,8 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function selectList(listOrGroupID: string) {
+    if (listOrGroupID == "null" ) { return }
+    console.log("in select list: id:",listOrGroupID);
     //TODO
       let combinedRow: ListCombinedRow | undefined = listCombinedRows.find(lcr => lcr.listOrGroupID = listOrGroupID);
       setPageState({...pageState, selectedListOrGroupID: listOrGroupID, itemRows: getItemRows(itemDocs as ItemDocs, listCombinedRows, categoryDocs, uomDocs, listType, listOrGroupID)});
