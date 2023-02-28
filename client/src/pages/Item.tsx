@@ -1,6 +1,6 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
   IonButtons, IonMenuButton, IonLabel, IonSelect, IonCheckbox, IonIcon,
-  IonSelectOption, useIonAlert,useIonToast, IonTextarea, IonGrid, IonRow, IonCol } from '@ionic/react';
+  IonSelectOption, useIonAlert,useIonToast, IonTextarea, IonGrid, IonRow, IonCol, IonText } from '@ionic/react';
 import { addOutline, closeCircleOutline, trashOutline } from 'ionicons/icons';
 import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
@@ -11,7 +11,7 @@ import { GlobalStateContext } from '../components/GlobalState';
 import { cloneDeep, isEmpty } from 'lodash';
 import './Item.css';
 import SyncIndicator from '../components/SyncIndicator';
-import { PouchResponse, HistoryProps } from '../components/DataTypes';
+import { PouchResponse, HistoryProps, ItemDoc, ItemDocInit } from '../components/DataTypes';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
 
 const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
@@ -19,7 +19,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { remoteDBCreds } = useContext(RemoteDBStateContext);
   if ( mode === "new" ) { routeItemID = "<new>"};
   const [needInitItemDoc,setNeedInitItemDoc] = useState((mode === "new") ? true: false);
-  const [stateItemDoc,setStateItemDoc] = useState({});
+  const [stateItemDoc,setStateItemDoc] = useState<ItemDoc>(ItemDocInit);
   const [formError,setFormError] = useState("");
   const updateItem  = useUpdateGenericDocument();
   const addItem = useCreateGenericDocument();
@@ -27,7 +27,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
   const addUOMDoc = useCreateGenericDocument();
   const delItem = useDeleteGenericDocument();
   const { doc: itemDoc, loading: itemLoading } = useGetOneDoc(routeItemID);
-  const { listDocs, listsLoading, listRows, listRowsLoading, listRowsLoaded} = useLists(String(remoteDBCreds.dbUsername))
+  const { listDocs, listCombinedRows, listsLoading, listRows, listRowsLoading, listRowsLoaded} = useLists(String(remoteDBCreds.dbUsername))
 
   const { docs: categoryDocs, loading: categoryLoading } = useFind({
       index: { fields: [ "type","name"] },
@@ -100,17 +100,17 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function updateCategory(catID: string) {
-    setStateItemDoc({
-      ...stateItemDoc,
-      categoryID: catID
-    });
+//    setStateItemDoc({
+//      ...stateItemDoc,
+//      categoryID: catID
+//    });
   }
 
   function updateUOM(uomName: string) {
-    setStateItemDoc({
-      ...stateItemDoc,
-      uomName: uomName
-    });
+//    setStateItemDoc({
+//      ...stateItemDoc,
+//      uomName: uomName
+//    });
   }
 
   async function addNewCategory(category: string) {
@@ -122,7 +122,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
     if (!alreadyFound) {
       let result = await addCategoryDoc({"type": "category", "name": category})
       if (result.successful) {
-        updateCategory(result.pouchData.id)
+//        updateCategory(result.pouchData.id)
       } else {
         presentToast({message: "Error adding category. Please retry.",
               duration: 1500, position: "middle"})
@@ -170,7 +170,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
     let result = await addUOMDoc({"type": "uom", "name": uomData.name, "description": uomData.description, "pluralDescription": uomData.pluralDescription});
     if (result.successful) {
-      updateUOM(result.pouchData.id)
+//      updateUOM(result.pouchData.id)
     } else {
       presentToast({message: "Error adding unit of measure. Please retry.",
             duration: 1500, position: "middle"})
@@ -306,6 +306,8 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
   listsElem.push(<IonItem key="listlist"><IonGrid>{listsInnerElem}</IonGrid></IonItem>)
   
+  let thisListGroup = listCombinedRows.find(el => el.listGroupID == stateItemDoc?.listGroupID);
+  
   return (
     <IonPage>
       <IonHeader>
@@ -320,6 +322,9 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
             <IonItem key="name">
               <IonInput label="Name" labelPlacement="stacked" type="text" onIonChange={(e: any) => setStateItemDoc({...stateItemDoc, name: e.detail.value})} value={(stateItemDoc as any).name}></IonInput>
             </IonItem>
+            <IonItem key="listgroup">
+              <IonText >List Group: {thisListGroup?.listGroupName}</IonText>
+            </IonItem>
             <IonItem key="quantity">
               <IonGrid>
               <IonRow>
@@ -328,7 +333,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
                 <IonCol size="1"></IonCol>
               </IonRow>
               <IonRow>
-                <IonCol size="3"><IonInput type="number" min="0" max="9999" onIonChange={(e: any) => setStateItemDoc({...stateItemDoc, quantity: e.detail.value})} value={(stateItemDoc as any).quantity}></IonInput></IonCol>
+                {/* <IonCol size="3"><IonInput type="number" min="0" max="9999" onIonChange={(e: any) => setStateItemDoc({...stateItemDoc, quantity: e.detail.value})} value={(stateItemDoc as any).quantity}></IonInput></IonCol> */}
                 <IonCol size="8">
                   <IonSelect interface="popover" onIonChange={(ev) => updateUOM(ev.detail.value)} value={(stateItemDoc as any).uomName}>
                   <IonSelectOption key="uom-undefined" value={null}>No UOM</IonSelectOption>

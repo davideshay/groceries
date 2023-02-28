@@ -48,10 +48,16 @@ export interface ItemDoc {
 
 export type ItemDocs = ItemDoc[];
 
-
-
-
-
+export const ItemDocInit:ItemDoc = {
+  _id: "",
+  _rev: "",
+  type: "",
+  listGroupID: "",
+  name: "",
+  uomName: "",
+  lists: [],
+  updatedAt: ""
+}
 
   export interface ItemSearch {
     itemID: string,
