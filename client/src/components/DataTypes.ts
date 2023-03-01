@@ -52,11 +52,37 @@ export type ItemDocs = ItemDoc[];
 export const ItemDocInit:ItemDoc = {
   _id: "",
   _rev: "",
-  type: "",
+  type: "item",
   listGroupID: "",
   name: "",
   uomName: "",
   lists: [],
+  updatedAt: ""
+}
+
+export interface ListGroupDoc {
+  _id: string,
+  _rev: string,
+  type: string,
+  name: string,
+  lists: string[];
+  default: boolean,
+  listGroupOwner: string,
+  sharedWith: string[];
+  updatedAt: string
+}
+
+export type ListGroupDocs = ListGroupDoc[];
+
+export const ListGroupDocInit:ListGroupDoc = {
+  _id: "",
+  _rev: "",
+  type: "listgroup",
+  name: "",
+  lists: [],
+  default: false,
+  listGroupOwner: "",
+  sharedWith: [],
   updatedAt: ""
 }
 
@@ -115,8 +141,8 @@ export const ItemDocInit:ItemDoc = {
     listGroupID: string | null,
     listGroupName: string,
     listGroupLists: string[],
+    listGroupDefault: boolean,
     listDoc: any,
-    participants: string[]
   }
 
   export enum RowType {
@@ -132,6 +158,7 @@ export const ItemDocInit:ItemDoc = {
     listGroupID: string | null,
     listGroupName: string,
     listGroupLists: string[],
+    listGroupDefault: boolean,
     listDoc: any
   }
 

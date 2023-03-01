@@ -2,7 +2,7 @@ import { useCallback, useState, useEffect, useContext, useRef } from 'react'
 import { usePouch, useFind } from 'use-pouchdb'
 import { cloneDeep, isEqual, union, pull } from 'lodash';
 import { RemoteDBStateContext, SyncStatus } from './RemoteDBState';
-import { FriendStatus, FriendRow, ResolvedFriendStatus, ListRow, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType } from './DataTypes';
+import { FriendStatus, FriendRow, ResolvedFriendStatus, ListRow, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType, ListGroupDoc } from './DataTypes';
 import { GlobalStateContext } from './GlobalState';
 import { getUsersInfo } from './Utilities';
 
@@ -229,15 +229,17 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
     listDocs.forEach((list: any) => {
       let part = union([list.listOwner],list.sharedWith).sort();
       let listGroupID=null;
-      let listGroupName=null;
+      let listGroupName="";
       let listGroupIncludesUser=false;
-      let listGroupLists=[];
+      let listGroupLists: string[]=[];
+      let listGroupDefault=false;
       for (let i = 0; i < listGroupDocs.length; i++) {
-        const lgd = (listGroupDocs[i] as any);
+        const lgd = (listGroupDocs[i] as ListGroupDoc);
         if ( lgd.lists.includes(list._id) ) {
           listGroupID=lgd._id
           listGroupName=lgd.name
           listGroupLists=lgd.lists;
+          listGroupDefault=lgd.default;
         }
         if ( lgd.listGroupOwner == username || lgd.sharedWith.includes(username)) {
           listGroupIncludesUser=true;
@@ -249,8 +251,9 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
         listGroupID: listGroupID,
         listGroupName: listGroupName,
         listGroupLists: listGroupLists,
+        listGroupDefault: listGroupDefault,
         listDoc: list,
-        participants: part
+
       }
       newListRows.push(listRow);
     });
@@ -268,6 +271,7 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
     setListRows(newListRows);
     let newCombinedRows: ListCombinedRow[] = [];
     let lastGroupName: any = null;
+    let lastGroupDefault: boolean = false;
     newListRows.forEach(listRow => {
       if (listRow.listGroupName != lastGroupName) {
         let groupRow: ListCombinedRow = {
@@ -278,10 +282,12 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
           listGroupID : listRow.listGroupID,
           listGroupName : listRow.listGroupName,
           listGroupLists: listRow.listGroupLists,
+          listGroupDefault: listRow.listGroupDefault,
           listDoc: listRow.listDoc
         }
         newCombinedRows.push(groupRow);
         lastGroupName = listRow.listGroupName;
+        lastGroupDefault = listRow.listGroupDefault;
       }
       let listListRow: ListCombinedRow = {
         rowType: RowType.list,
@@ -291,6 +297,7 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
         listGroupID: listRow.listGroupID,
         listGroupName: listRow.listGroupName,
         listGroupLists: [],
+        listGroupDefault: false,
         listDoc: listRow.listDoc
       }
       newCombinedRows.push(listListRow);

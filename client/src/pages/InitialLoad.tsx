@@ -3,6 +3,7 @@ import { useContext, useEffect, } from 'react';
 import { usePouch } from 'use-pouchdb';
 import { ConnectionStatus, RemoteDBStateContext } from '../components/RemoteDBState';
 import { navigateToFirstListID } from '../components/RemoteUtilities';
+import { initialSetupActivities } from '../components/Utilities';
 
 type InitialLoadProps = {
   history : any
@@ -13,10 +14,14 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
     const [ present,dismiss] = useIonLoading()
     const db=usePouch();
   
-    useEffect(() => { 
-        if ((remoteDBState.connectionStatus === ConnectionStatus.loginComplete)) {
+    useEffect(() => {
+        async function initialStartup() {
+            await initialSetupActivities(db as PouchDB.Database, String(remoteDBCreds.dbUsername));
+            await navigateToFirstListID(db,props.history,remoteDBCreds);
             setConnectionStatus(ConnectionStatus.initialNavComplete);
-            navigateToFirstListID(db,props.history,remoteDBCreds);
+        } 
+        if ((remoteDBState.connectionStatus === ConnectionStatus.loginComplete)) {
+            initialStartup();
         } else {
             present({message: "Please wait, logging into server...", duration: 500})
         }   

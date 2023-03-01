@@ -26,8 +26,6 @@ const AllItems: React.FC<HistoryProps> = (props: HistoryProps) => {
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
   )}
 
-  console.log("AllItems:",{docs, loading})
-
   docs.sort(function(a: any,b: any) {
     var keyA = a.name.toUpperCase();
     var keyB = b.name.toUpperCase();

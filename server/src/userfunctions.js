@@ -303,6 +303,7 @@ async function restructureListGroupSchema() {
         const foundListDoc = foundListDocs.docs[i];
         console.log("Processing list: ", foundListDoc.name);
         delete foundListDoc.sharedWith;
+        delete foundListDoc.listOwner;
         let dbResp = null;
         try { dbResp = await todosDBAsAdmin.insert(foundListDoc)}
         catch(err) { console.log("ERROR: Couldn't update list to remove shared With.");
@@ -314,27 +315,36 @@ async function restructureListGroupSchema() {
     console.log("STATUS: Found items to update :", foundItemDocs.docs.length)
     for (let i = 0; i < foundItemDocs.docs.length; i++) {
         const foundItemDoc = foundItemDocs.docs[i];
-        console.log("Processing item: ", foundItemDoc.name);
-        foundItemDoc.listGroupID = null;
-        let saveQuantity = foundItemDoc.quantity;
-        let saveUomName = foundItemDoc.uomName;
-        let saveCategoryID = foundItemDoc.categoryID;
-        let saveNote = foundItemDoc.saveNote;
-        delete foundItemDoc.quantity;
-        delete foundItemDoc.uomName;
-        delete foundItemDoc.categoryID;
-        delete foundItemDoc.note;
-        for (let j = 0; j < foundItemDoc.lists.length; j++) {
-            foundItemDoc.lists[j].quantity = saveQuantity;
-            foundItemDoc.lists[j].uomName = saveUomName;
-            foundItemDoc.lists[j].categoryID = saveCategoryID;
-            foundItemDoc.lists[j].saveNote = saveNote;
-        }
+        console.log("Deleting item: ", foundItemDoc.name);
         let dbResp = null;
-        try { dbResp = await todosDBAsAdmin.insert(foundItemDoc)}
-        catch(err) { console.log("ERROR: Couldn't update item to new Structure.");
+        try { dbResp = await todosDBAsAdmin.destroy(foundItemDoc._id,foundItemDoc._rev)}
+        catch(err) { console.log("ERROR: Couldn't delete item:",foundItemDoc.name);
                      updateSuccess = false;}
  
+    }
+    console.log("STATUS: Creating default listgroups for all users");
+    const userq = { selector: { type: "user", name: {$exists: true}}, limit: await totalDocCount(usersDBAsAdmin)};
+    let foundUserDocs = await usersDBAsAdmin.find(userq);
+    console.log("STATUS: Found users to create listgroups: ", foundUserDocs.docs.length);
+    for (let i = 0; i < foundUserDocs.docs.length; i++) {
+        const foundUserDoc = foundUserDocs.docs[i];
+        const listgroupq = { selector: { type: "listgroup", listGroupOwner: foundUserDoc.name, default: true}};
+        let foundListGroupDocs = await todosDBAsAdmin.find(listgroupq);
+        console.log("foundListGroupDocs:", JSON.stringify(foundListGroupDocs));
+        if (foundListGroupDocs.docs.length == 0) {
+            console.log("STATUS: No default listgroup found for :",foundUserDoc.name," ... creating...");
+            let newCurDateStr = (new Date()).toISOString()
+            const newListGroupDoc = {
+                type: "listgroup", name: (foundUserDoc.name + " (default)"),
+                lists: [], default: true, listGroupOwner: foundUserDoc.name, sharedWith: [], updatedAt: newCurDateStr
+            }
+            let dbResp = null;
+            try { dbResp = await todosDBAsAdmin.insert(newListGroupDoc)}
+            catch(err) { console.log("ERROR: Couldn't create new list group:",newListGroupDoc.name)
+                         updateSuccess = false;}
+        } else {
+            console.log("STATUS: Default List Group already exists for : ", foundUserDoc.name);
+        }
     }
     return updateSuccess;
 }    

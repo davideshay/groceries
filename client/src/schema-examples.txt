@@ -101,6 +101,7 @@ NEW: ListGroup
     lists:
     [ "111", "222", "333" ],
     "listGroupOwner": "davideshay",
+    default: true,
     "sharedWith": [
         "Annemshay",
         "georgiashay"
@@ -148,7 +149,7 @@ List :
   "_rev": "3-9377495cff886c220c93ae2296c21ea0",
   "type": "list",
   "name": "Giant Eagle",
-  "listOwner": "davideshay",
+  "listOwner": "davideshay", /// PROBABLY NOT NEEDED
   "categories": [
     "b7fea32a-f6b7-42bd-a244-ec490bb65c65",
     "d1907207-dd3f-4c6e-aee3-b22901749713",
@@ -157,18 +158,21 @@ List :
   "updatedAt": "2023-02-19T20:31:21.609Z"
 }
 
-
-
-
-
-
-
-
 Application Impacts:
+
+MIGRATION PROCESS:
+  Done automatically:
+    * Delete all items (no good way to migrate)
+    * Update list structure 
+    * Create default listgroups
+  Manually:
+    * Assign remaining lists to listgroups
+    * Re-share list groups
 
 Main Items screen can be in "listgroup" mode vs. "list" mode
 
 Lists will not be in a listgroup by default -- group into a virtual "Undefined" group or something
+  modification, see below: all lists will be put into a default listgroup.
 
 Need ListGroup creator/editor page
     Can only add lists that aren't already a part of a list ListGroup. And you are the owner?
@@ -205,3 +209,16 @@ change useLists to return listgroup as well as lists -- put logic in here for "u
 Do I need a listowner as well as a listgroup owner?
 
 Need to make sure before you save an item, you clean up the "list" entries and ensure all belong to the group. (?needed?)
+
+Ungrouped concept:
+  Lists start as a part of no group right now == null listGroupID
+  problem here is if you create "bananas" item, it is shared across all of these.
+  Not sure that is the best approach....
+  Perhaps every user should get their own "default" listGroupID.
+  ID could be stored with the user as well.
+
+  Ideally create that users' default listgroupID locally and then sync back.
+  That would make the functions work better in "full offline" mode.
+  How could you link the user to the default list group ID then though?
+    entry in todos ? if you create a listGroup entry, it would have the list
+
