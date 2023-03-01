@@ -78,7 +78,7 @@ const App: React.FC = () => {
     <Provider pouchdb={db}>
     <RemoteDBStateProvider>
     <IonReactRouter>
-      <IonSplitPane contentId="main">
+      <IonSplitPane when="xs" contentId="main">
       <AppMenu />
         <IonContent id="main">
           <Route exact path="/lists" component={Lists} />

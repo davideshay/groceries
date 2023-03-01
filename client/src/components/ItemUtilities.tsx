@@ -1,4 +1,4 @@
-import {initItemRow, ItemRow, ItemSearch, ListCombinedRow, ListRow, RowType, ItemDoc, ItemDocs, ItemList} from '../components/DataTypes';
+import {initItemRow, ItemRow, ItemSearch, ListCombinedRow, RowType, ItemDoc, ItemDocs, ItemList} from '../components/DataTypes';
 import { cloneDeep } from 'lodash';
 import { list } from 'ionicons/icons';
 
@@ -125,6 +125,11 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
         }
     }    
     itemRow.uomDesc = uomDesc;
+    let quantityUOMDesc = "";
+    if (itemRow.quantity !== 1 && itemRow.uomDesc !== "") {
+        quantityUOMDesc = itemRow.quantity.toString() + ((itemRow.uomDesc == "" ? "" : " " + itemRow.uomDesc));
+        itemRow.quantityUOMDesc = quantityUOMDesc;
+    }
     if (listType == RowType.list) {
         const listIdx = itemDoc.lists.findIndex((element: any) => (element.listID === listOrGroupID))
         if (listIdx === -1) {itemRow.completed=false} else {

@@ -13,13 +13,14 @@ export interface ItemRow {
     categoryColor: string,
     quantity: number,
     uomDesc: string,
+    quantityUOMDesc: string,
     completed: boolean | null
   }
 
 export const initItemRow: ItemRow = {
     itemID: "", itemName: "",categoryID: "", categoryName: "",
     categorySeq: 0, categoryColor: "#ffffff", quantity: 0,
-    uomDesc: "", completed: false
+    uomDesc: "", quantityUOMDesc: "", completed: false
   }
 
 

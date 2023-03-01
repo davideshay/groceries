@@ -323,7 +323,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
             checked={Boolean(pageState.itemRows[i].completed)}></IonCheckbox>
         </IonCol>
         <IonCol size="11">
-          <IonRouterLink color="dark" href={"/item/edit/"+item.itemID}>{item.itemName + " ("+ item.quantity.toString()+(item.uomDesc == "" ? "" : " ")+item.uomDesc+")"}</IonRouterLink>
+          <IonRouterLink color="dark" href={"/item/edit/"+item.itemID}>{item.itemName + (item.quantityUOMDesc == "" ? "" : " ("+ item.quantityUOMDesc+")")}</IonRouterLink>
         </IonCol>
         </IonRow></IonGrid>
       </IonItem>);
@@ -343,7 +343,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   return (
     <IonPage>
       {headerElem}
-      <IonContent fullscreen id="main">
+      <IonContent id="main" fullscreen>
           {contentElem}
       </IonContent>
       <IonFab slot="fixed" vertical="bottom" horizontal="end">
