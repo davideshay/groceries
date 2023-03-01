@@ -45,10 +45,10 @@ const AppMenu: React.FC = () => {
               </IonItem></IonMenuToggle></IonList>) 
   }
 
-  if (useFriendState !== UseFriendState.rowsLoaded|| conflictsLoading)  {return(
+/*   if (useFriendState !== UseFriendState.rowsLoaded|| conflictsLoading)  {return(
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
   )};
-
+ */
   return (
   <IonMenu contentId="main" type="overlay">
     <IonContent className="ion-padding">
