@@ -34,7 +34,7 @@ const ListsAll: React.FC<ListsAllProps> = ({separatePage}) => {
     }
     if (separatePage) {return {baseRow}}
     else {
-      return (<IonMenuToggle key={rowKey} autoHide={false}>
+      return (<IonMenuToggle key={rowKey} auto-hide={false}>
         {baseRow}
       </IonMenuToggle>)
     }

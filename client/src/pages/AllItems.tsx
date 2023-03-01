@@ -61,7 +61,7 @@ const AllItems: React.FC<HistoryProps> = (props: HistoryProps) => {
           <SyncIndicator history={props.history}/>
         </IonToolbar>
       </IonHeader>
-      <IonContent id="main" fullscreen>
+      <IonContent>
         <IonList lines="full">
           {itemsElem}
         </IonList>

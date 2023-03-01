@@ -254,7 +254,7 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
           <SyncIndicator history={props.history}/>
         </IonToolbar>
       </IonHeader>
-      <IonContent fullscreen id="main">
+      <IonContent>
         <IonAlert isOpen={pageState.showNewUserAlert}
                   header="User not found, send registration request?"
                   subHeader={pageState.newUserAlertSubheader}

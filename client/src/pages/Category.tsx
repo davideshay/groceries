@@ -179,7 +179,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
           <SyncIndicator history={props.history}/>
         </IonToolbar>
       </IonHeader>
-      <IonContent fullscreen id="main">
+      <IonContent>
           <IonList>
             <IonItem key="name">
               <IonInput label="Name" labelPlacement="stacked" type="text" placeholder="<NEW>" onIonChange={(e: any) => setStateCategoryDoc({...stateCategoryDoc, name: e.detail.value})} value={(stateCategoryDoc as any).name}></IonInput>

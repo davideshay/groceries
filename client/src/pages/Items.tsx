@@ -343,7 +343,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   return (
     <IonPage>
       {headerElem}
-      <IonContent id="main" fullscreen>
+      <IonContent>
           {contentElem}
       </IonContent>
       <IonFab slot="fixed" vertical="bottom" horizontal="end">

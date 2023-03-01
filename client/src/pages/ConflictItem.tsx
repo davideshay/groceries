@@ -59,7 +59,7 @@ const ConflictItem: React.FC<HistoryProps> = (props: HistoryProps) => {
           <SyncIndicator history={props.history}/>
         </IonToolbar>
       </IonHeader>
-      <IonContent fullscreen id="main"> 
+      <IonContent> 
           <IonList>
             <IonItem key="maindiffs">
               <IonLabel position="stacked">Main differences</IonLabel>

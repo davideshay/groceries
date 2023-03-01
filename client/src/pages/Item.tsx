@@ -317,7 +317,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
           <SyncIndicator history={props.history}/>
         </IonToolbar>
       </IonHeader>
-      <IonContent fullscreen id="main">
+      <IonContent>
           <IonList>
             <IonItem key="name">
               <IonInput label="Name" labelPlacement="stacked" type="text" onIonChange={(e: any) => setStateItemDoc({...stateItemDoc, name: e.detail.value})} value={(stateItemDoc as any).name}></IonInput>

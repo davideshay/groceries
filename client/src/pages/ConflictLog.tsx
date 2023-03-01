@@ -31,7 +31,7 @@ const ConflictLog: React.FC<HistoryProps> = (props: HistoryProps) => {
           <SyncIndicator history={props.history}/>
         </IonToolbar>
       </IonHeader>
-      <IonContent fullscreen id="main">
+      <IonContent>
         <IonList lines="full">
                {conflictDocs.map((doc: any) => (
                   <IonItem key={doc._id} >

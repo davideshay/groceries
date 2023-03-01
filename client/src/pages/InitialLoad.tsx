@@ -30,13 +30,12 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
     },[remoteDBState.connectionStatus])
 
     return (
-        <IonPage>
-        <IonHeader><IonToolbar>
-        <IonTitle id="initialloadtitle">Loading...</IonTitle>
-        </IonToolbar></IonHeader>
-    <IonContent>
-        
-    </IonContent>
+    <IonPage>
+        <IonHeader>
+            <IonToolbar>
+                <IonTitle id="initialloadtitle">Loading...</IonTitle>
+            </IonToolbar>
+        </IonHeader>
     </IonPage>
 
     )

@@ -1,7 +1,7 @@
 import { Redirect, Route, } from 'react-router-dom';
 import {
   IonApp, IonSplitPane,
-  setupIonicReact, IonContent, 
+  setupIonicReact, IonContent, IonRouterOutlet, 
 } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { Capacitor } from '@capacitor/core';
@@ -78,9 +78,9 @@ const App: React.FC = () => {
     <Provider pouchdb={db}>
     <RemoteDBStateProvider>
     <IonReactRouter>
-      <IonSplitPane when="xs" contentId="main">
+      <IonSplitPane contentId="main">
       <AppMenu />
-        <IonContent id="main">
+        <IonRouterOutlet id="main">
           <Route exact path="/lists" component={Lists} />
           <Route path="/items/:mode/:id" component={Items} />
           <Route path="/item/:mode/:itemid?" component={Item} />
@@ -99,7 +99,7 @@ const App: React.FC = () => {
           <Route exact path="/initialload" component={InitialLoad}></Route>
           <Route exact path="/conflictlog" component={ConflictLog}></Route>
           <Route path="/conflictitem/:id" component={ConflictItem}></Route>
-        </IonContent>
+        </IonRouterOutlet>
       </IonSplitPane>
     </IonReactRouter>
     </RemoteDBStateProvider>

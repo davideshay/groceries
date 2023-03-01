@@ -1,5 +1,5 @@
 import { IonMenu, IonContent, IonMenuToggle, IonList, IonPage, IonHeader, IonToolbar,
-    IonTitle, IonItem, IonItemDivider, IonListHeader, IonBadge } from '@ionic/react';
+    IonTitle, IonItem, IonItemDivider, IonListHeader, IonBadge, IonLabel } from '@ionic/react';
 import { useContext } from 'react';    
 import { useConflicts, useFriends, UseFriendState } from './Usehooks';    
 import ListsAll from './ListsAll';
@@ -18,7 +18,7 @@ const AppMenu: React.FC = () => {
 
   const listItem = (listItem: string,link: string) => {
     return (<IonList key={listItem}><IonMenuToggle key={listItem} autoHide={false}>
-              <IonItem key={"item-"+listItem} routerLink={link}>{listItem}</IonItem>
+              <IonItem key={"item-"+listItem} routerLink={link}><IonLabel>{listItem}</IonLabel></IonItem>
           </IonMenuToggle></IonList>)
   }
 
@@ -51,7 +51,7 @@ const AppMenu: React.FC = () => {
 
   return (
   <IonMenu contentId="main" type="overlay">
-    <IonContent className="ion-padding" id="menucontent">
+    <IonContent className="ion-padding">
       <IonList>
         <IonListHeader>Groceries Menu</IonListHeader>
         <IonList>

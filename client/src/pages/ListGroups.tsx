@@ -35,7 +35,7 @@ const ListGroups: React.FC<HistoryProps> = (props: HistoryProps) => {
           <SyncIndicator history={props.history}/>
         </IonToolbar>
       </IonHeader>
-      <IonContent fullscreen id="main">
+      <IonContent>
         <IonList lines="full">
                {docs.map((doc) => (
                   <IonItem key={(doc as any)._id} >
