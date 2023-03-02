@@ -86,6 +86,7 @@ export async function initialSetupActivities(db: PouchDB.Database, username: str
         const defaultListGroupDoc : ListGroupDoc = ListGroupDocInit;
         defaultListGroupDoc.default = true;
         defaultListGroupDoc.name = username+" (default)";
+        defaultListGroupDoc.listGroupOwner = username;
         let curDateStr=(new Date()).toISOString()
         defaultListGroupDoc.updatedAt = curDateStr;
         let response: PouchResponse = cloneDeep(PouchResponseInit);

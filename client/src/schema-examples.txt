@@ -222,3 +222,9 @@ Ungrouped concept:
   How could you link the user to the default list group ID then though?
     entry in todos ? if you create a listGroup entry, it would have the list
 
+  For now, once a list is in a listgroup, it cannot move.
+    Possible later addition:
+        allow it to move, but only within the same listgroupowners , and even then need cleanup of items when moving
+        i.e. no items move to new list, and existing items with the moved list need to have it deleted from lists array
+        possibly (hopefully not...) need to add the new list to the items in the moved-to-listgroup.
+        

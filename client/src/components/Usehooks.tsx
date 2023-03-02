@@ -213,7 +213,7 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
   const { docs: listGroupDocs, loading: listGroupsLoading } = useFind({
     index: { fields: ["type","name"]},
     selector: { "$and": [
-      { "type": "listgroup", "name": { "$xists": true}},
+      { "type": "listgroup", "name": { "$exists": true}},
       { "$or": [{"listGroupOwner": username},
                 {"sharedWith": { $elemMatch: {$eq: username}}}]}  ]},
     sort: [ "type", "name"]  });
@@ -226,7 +226,6 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
     sort: [ "type","name"] });
 
   function buildListRows() {
-    console.log("building list rows from :", cloneDeep({listGroupDocs, listDocs}))
     let newListRows: ListRow[] = [];
     listDocs.forEach((list: any) => {
       let listGroupID=null;

@@ -32,7 +32,7 @@ const ListsAll: React.FC<ListsAllProps> = ({separatePage}) => {
         </IonButton>
       </IonItem>)
     }
-    if (separatePage) {return {baseRow}}
+    if (separatePage) {return baseRow}
     else {
       return (<IonMenuToggle key={rowKey} auto-hide={false}>
         {baseRow}
@@ -45,13 +45,12 @@ const ListsAll: React.FC<ListsAllProps> = ({separatePage}) => {
   listCombinedRows.forEach(combinedRow => {
     if (combinedRow.rowType == RowType.listGroup ) {
       listsElem.push(
-        addRow({separatePage: separatePage, showLinkID:"/items/group/"+combinedRow.listGroupID,
+          addRow({separatePage: separatePage, showLinkID:"/items/group/"+combinedRow.listGroupID,
               editLinkID: "/listgroup/edit/"+combinedRow.listGroupID,
               rowKey: combinedRow.rowKey,
               rowName: combinedRow.rowName,
               extraClass: ""
-            })
-      )      
+            }) )
     } else {
       listsElem.push(
         addRow({separatePage: separatePage, showLinkID:"/items/list/"+combinedRow.listDoc._id,
