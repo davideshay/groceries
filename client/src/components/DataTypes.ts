@@ -9,7 +9,7 @@ export interface ItemRow {
     itemName: string,
     categoryID: string | null,
     categoryName: string,
-    categorySeq: number,
+    categorySeq: number | undefined,
     categoryColor: string,
     quantity: number,
     uomDesc: string,
@@ -60,12 +60,35 @@ export const ItemDocInit:ItemDoc = {
   updatedAt: ""
 }
 
+export interface ListDoc {
+  _id: string,
+  _rev: string,
+  type: string,
+  name: string,
+  listGroupID: string,
+  listOwner: string,
+  categories: string[],
+  updatedAt: string
+}
+
+export type ListDocs = ListDoc[];
+
+export const ListDocInit:ListDoc = {
+  _id: "",
+  _rev: "",
+  type: "list",
+  name: "",
+  listGroupID: "",
+  listOwner: "",
+  categories: [],
+  updatedAt: ""  
+}
+
 export interface ListGroupDoc {
   _id: string,
   _rev: string,
   type: string,
   name: string,
-  lists: string[];
   default: boolean,
   listGroupOwner: string,
   sharedWith: string[];
@@ -79,7 +102,6 @@ export const ListGroupDocInit:ListGroupDoc = {
   _rev: "",
   type: "listgroup",
   name: "",
-  lists: [],
   default: false,
   listGroupOwner: "",
   sharedWith: [],
@@ -140,7 +162,6 @@ export const ListGroupDocInit:ListGroupDoc = {
   export type ListRow = {
     listGroupID: string | null,
     listGroupName: string,
-    listGroupLists: string[],
     listGroupDefault: boolean,
     listDoc: any,
   }
@@ -154,14 +175,14 @@ export const ListGroupDocInit:ListGroupDoc = {
     rowType: RowType,
     rowName: string,
     rowKey: string,
-    listOrGroupID: string,
+    listOrGroupID: string | null,
     listGroupID: string | null,
     listGroupName: string,
-    listGroupLists: string[],
     listGroupDefault: boolean,
-    listDoc: any
+    listDoc: ListDoc 
   }
 
+  export type ListCombinedRows = ListCombinedRow[];
 
   export type PouchResponse = {
     pouchData: any,

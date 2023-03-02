@@ -2,7 +2,7 @@ import { useCallback, useState, useEffect, useContext, useRef } from 'react'
 import { usePouch, useFind } from 'use-pouchdb'
 import { cloneDeep, isEqual, union, pull } from 'lodash';
 import { RemoteDBStateContext, SyncStatus } from './RemoteDBState';
-import { FriendStatus, FriendRow, ResolvedFriendStatus, ListRow, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType, ListGroupDoc } from './DataTypes';
+import { FriendStatus, FriendRow, ResolvedFriendStatus, ListRow, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType, ListGroupDoc, ListDoc, ListDocs, ListGroupDocs, ListDocInit } from './DataTypes';
 import { GlobalStateContext } from './GlobalState';
 import { getUsersInfo } from './Utilities';
 import ListGroup from '../pages/ListGroup';
@@ -226,54 +226,47 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
     sort: [ "type","name"] });
 
   function buildListRows() {
+//    console.log("building list Rows from: ", cloneDeep(listGroupDocs), cloneDeep(listDocs));
+    let curListDocs: ListDocs = cloneDeep(listDocs);
     let newListRows: ListRow[] = [];
-    listDocs.forEach((list: any) => {
+    curListDocs.forEach((listDoc: ListDoc) => {
+//      console.log("analyzing list doc: ", cloneDeep(listDoc));
       let listGroupID=null;
       let listGroupName="";
-      let listGroupIncludesUser=false;
-      let listGroupLists: string[]=[];
+//      let listGroupIncludesUser=false;
       let listGroupDefault=false;
       for (let i = 0; i < listGroupDocs.length; i++) {
         const lgd = (listGroupDocs[i] as ListGroupDoc);
-        if ( lgd.lists.includes(list._id) ) {
+        if ( listDoc.listGroupID == lgd._id ) {
           listGroupID=lgd._id
           listGroupName=lgd.name
-          listGroupLists=lgd.lists;
           listGroupDefault=lgd.default;
         }
-        if ( lgd.listGroupOwner == username || lgd.sharedWith.includes(username)) {
-          listGroupIncludesUser=true;
-        }
+//        console.log("checking ",listDoc.name, " against listgroup: ",lgd.name, " with user:",username);
+//        console.log("owner match: ",lgd.listGroupOwner == username)
+//        if ( (lgd.listGroupOwner == username) || lgd.sharedWith.includes(username)) {
+//          listGroupIncludesUser=true;
+ //       }
       }
-      if (list.listOwner !== username && !listGroupIncludesUser ) { return };
-      if (listGroupID == null) {listGroupName="Ungrouped (ERROR)"};
+      if (listGroupID == null) { return };
+//      if (listDoc.listOwner !== username && !listGroupIncludesUser ) { return };
+//      if (listGroupID == null) {listGroupName="Ungrouped (ERROR)"};
       let listRow: ListRow ={
         listGroupID: listGroupID,
         listGroupName: listGroupName,
-        listGroupLists: listGroupLists,
         listGroupDefault: listGroupDefault,
-        listDoc: list,
-
+        listDoc: listDoc,
       }
       newListRows.push(listRow);
     });
-/*     newListRows.sort(function (a: ListRow,b: ListRow) {
-      var keyA1 = a.listGroupName.toUpperCase();
-      var keyB1 = b.listGroupName.toUpperCase();
-      var keyA2 = a.listDoc.name.toUpperCase();
-      var keyB2 = b.listDoc.name.toUpperCase();
-      if (keyA1 === keyB1) {
-        return (keyA2 < keyB2 ? -1 : ( keyA2 > keyB2 ? 1 : 0) )
-      } else {
-        return (keyA1 < keyB1 ? -1 : 1)
-      }
-    });
- */  
+
     newListRows.sort(function (a: ListRow, b: ListRow) {
       return a.listDoc.name.toUpperCase().localeCompare(b.listDoc.name.toUpperCase());
     })
+
+//    console.log("new list rows is: ", cloneDeep(newListRows));
     setListRows(newListRows);
-    const sortedListGroups = cloneDeep(listGroupDocs);
+    const sortedListGroups: ListGroupDocs = cloneDeep(listGroupDocs);
     sortedListGroups.sort(function (a: ListGroupDoc, b: ListGroupDoc) {
       return a.name.toUpperCase().localeCompare(b.name.toUpperCase());
     });
@@ -287,9 +280,8 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
           listOrGroupID: String(listGroup._id),
           listGroupID : listGroup._id,
           listGroupName : listGroup.name,
-          listGroupLists: listGroup.lists,
           listGroupDefault: listGroup.default,
-          listDoc: {}
+          listDoc: ListDocInit
         }
       newCombinedRows.push(groupRow);
       for (let i = 0; i < newListRows.length; i++) {
@@ -302,53 +294,36 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
             listOrGroupID: listRow.listDoc._id,
             listGroupID: listRow.listGroupID,
             listGroupName: listRow.listGroupName,
-            listGroupLists: [],
             listGroupDefault: false,
             listDoc: listRow.listDoc
           }
           newCombinedRows.push(listListRow);    
-        }
-        
-      }
-      
+        } 
+      }  
     });
-
-
-
-/*     let newCombinedRows: ListCombinedRow[] = [];
-    let lastGroupName: any = null;
-    let lastGroupDefault: boolean = false;
-    newListRows.forEach(listRow => {
-      if (listRow.listGroupName != lastGroupName) {
-        let groupRow: ListCombinedRow = {
-          rowType : RowType.listGroup,
-          rowName : listRow.listGroupName,
-          rowKey: "G-"+listRow.listGroupID,
-          listOrGroupID: String(listRow.listGroupID),
-          listGroupID : listRow.listGroupID,
-          listGroupName : listRow.listGroupName,
-          listGroupLists: listRow.listGroupLists,
-          listGroupDefault: listRow.listGroupDefault,
-          listDoc: listRow.listDoc
+//    console.log("new combined rows before adding ungrouped:",cloneDeep(newCombinedRows));
+    // now add any ungrouped (error) lists:
+    let testRow = newListRows.find(el => (el.listGroupID == null))
+    if (testRow != undefined) {
+      let groupRow: ListCombinedRow = {
+        rowType : RowType.listGroup, rowName : testRow.listGroupName,
+        rowKey: "G-null", listOrGroupID: null, listGroupID : null,
+        listGroupName : testRow.listGroupName, listGroupDefault: false,
+        listDoc: ListDocInit
+      }
+      newCombinedRows.push(groupRow);
+      newListRows.forEach(newListRow => {
+        if (newListRow.listGroupID == null) {
+          let listlistRow: ListCombinedRow = {
+            rowType: RowType.list, rowName: newListRow.listDoc.name,
+            rowKey: "L-"+newListRow.listDoc._id, listOrGroupID: newListRow.listDoc._id,listGroupID: null,
+            listGroupName: newListRow.listGroupName, listGroupDefault: false,
+            listDoc: newListRow.listDoc
+          }
+          newCombinedRows.push(listlistRow);  
         }
-        newCombinedRows.push(groupRow);
-        lastGroupName = listRow.listGroupName;
-        lastGroupDefault = listRow.listGroupDefault;
-      }
-      let listListRow: ListCombinedRow = {
-        rowType: RowType.list,
-        rowName: listRow.listDoc.name,
-        rowKey: "L-"+listRow.listDoc._id,
-        listOrGroupID: listRow.listDoc._id,
-        listGroupID: listRow.listGroupID,
-        listGroupName: listRow.listGroupName,
-        listGroupLists: [],
-        listGroupDefault: false,
-        listDoc: listRow.listDoc
-      }
-      newCombinedRows.push(listListRow);
-    });
- */
+      })
+    }
     setListCombinedRows(newCombinedRows);
   }
 

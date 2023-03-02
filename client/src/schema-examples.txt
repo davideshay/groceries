@@ -98,8 +98,6 @@ NEW: ListGroup
     _id: "xxx"
     type: "listgroup"
     name: "Copley Groceries"
-    lists:
-    [ "111", "222", "333" ],
     "listGroupOwner": "davideshay",
     default: true,
     "sharedWith": [
@@ -149,6 +147,7 @@ List :
   "_rev": "3-9377495cff886c220c93ae2296c21ea0",
   "type": "list",
   "name": "Giant Eagle",
+  "listGroupID": "xxx"
   "listOwner": "davideshay", /// PROBABLY NOT NEEDED
   "categories": [
     "b7fea32a-f6b7-42bd-a244-ec490bb65c65",
@@ -227,4 +226,3 @@ Ungrouped concept:
         allow it to move, but only within the same listgroupowners , and even then need cleanup of items when moving
         i.e. no items move to new list, and existing items with the moved list need to have it deleted from lists array
         possibly (hopefully not...) need to add the new list to the items in the moved-to-listgroup.
-        
