@@ -5,6 +5,7 @@ import { RemoteDBStateContext, SyncStatus } from './RemoteDBState';
 import { FriendStatus, FriendRow, ResolvedFriendStatus, ListRow, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType, ListGroupDoc } from './DataTypes';
 import { GlobalStateContext } from './GlobalState';
 import { getUsersInfo } from './Utilities';
+import ListGroup from '../pages/ListGroup';
 
 export function useGetOneDoc(docID: string) {
   const db = usePouch();
@@ -212,7 +213,7 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
   const { docs: listGroupDocs, loading: listGroupsLoading } = useFind({
     index: { fields: ["type","name"]},
     selector: { "$and": [
-      { "type": "list", "name": { "$xists": true}},
+      { "type": "listgroup", "name": { "$xists": true}},
       { "$or": [{"listGroupOwner": username},
                 {"sharedWith": { $elemMatch: {$eq: username}}}]}  ]},
     sort: [ "type", "name"]  });
@@ -225,9 +226,9 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
     sort: [ "type","name"] });
 
   function buildListRows() {
+    console.log("building list rows from :", cloneDeep({listGroupDocs, listDocs}))
     let newListRows: ListRow[] = [];
     listDocs.forEach((list: any) => {
-      let part = union([list.listOwner],list.sharedWith).sort();
       let listGroupID=null;
       let listGroupName="";
       let listGroupIncludesUser=false;
@@ -246,7 +247,7 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
         }
       }
       if (list.listOwner !== username && !listGroupIncludesUser ) { return };
-      if (listGroupID == null) {listGroupName="Ungrouped"};
+      if (listGroupID == null) {listGroupName="Ungrouped (ERROR)"};
       let listRow: ListRow ={
         listGroupID: listGroupID,
         listGroupName: listGroupName,
@@ -257,7 +258,7 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
       }
       newListRows.push(listRow);
     });
-    newListRows.sort(function (a: ListRow,b: ListRow) {
+/*     newListRows.sort(function (a: ListRow,b: ListRow) {
       var keyA1 = a.listGroupName.toUpperCase();
       var keyB1 = b.listGroupName.toUpperCase();
       var keyA2 = a.listDoc.name.toUpperCase();
@@ -268,8 +269,54 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
         return (keyA1 < keyB1 ? -1 : 1)
       }
     });
+ */  
+    newListRows.sort(function (a: ListRow, b: ListRow) {
+      return a.listDoc.name.toUpperCase().localeCompare(b.listDoc.name.toUpperCase());
+    })
     setListRows(newListRows);
+    const sortedListGroups = cloneDeep(listGroupDocs);
+    sortedListGroups.sort(function (a: ListGroupDoc, b: ListGroupDoc) {
+      return a.name.toUpperCase().localeCompare(b.name.toUpperCase());
+    });
+
     let newCombinedRows: ListCombinedRow[] = [];
+    sortedListGroups.forEach((listGroup: ListGroupDoc) => {
+      let groupRow: ListCombinedRow = {
+          rowType : RowType.listGroup,
+          rowName : listGroup.name,
+          rowKey: "G-"+listGroup._id,
+          listOrGroupID: String(listGroup._id),
+          listGroupID : listGroup._id,
+          listGroupName : listGroup.name,
+          listGroupLists: listGroup.lists,
+          listGroupDefault: listGroup.default,
+          listDoc: {}
+        }
+      newCombinedRows.push(groupRow);
+      for (let i = 0; i < newListRows.length; i++) {
+        const listRow = newListRows[i];
+        if (listGroup._id == listRow.listGroupID) {
+          let listListRow: ListCombinedRow = {
+            rowType: RowType.list,
+            rowName: listRow.listDoc.name,
+            rowKey: "L-"+listRow.listDoc._id,
+            listOrGroupID: listRow.listDoc._id,
+            listGroupID: listRow.listGroupID,
+            listGroupName: listRow.listGroupName,
+            listGroupLists: [],
+            listGroupDefault: false,
+            listDoc: listRow.listDoc
+          }
+          newCombinedRows.push(listListRow);    
+        }
+        
+      }
+      
+    });
+
+
+
+/*     let newCombinedRows: ListCombinedRow[] = [];
     let lastGroupName: any = null;
     let lastGroupDefault: boolean = false;
     newListRows.forEach(listRow => {
@@ -302,6 +349,7 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
       }
       newCombinedRows.push(listListRow);
     });
+ */
     setListCombinedRows(newCombinedRows);
   }
 

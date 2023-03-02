@@ -5,7 +5,7 @@ import { isEqual } from "lodash";
 export function createEmptyItemDoc(listRows:ListRow[],listID: string | null | undefined, itemName: string | undefined, settings: GlobalSettings) {
   let newItemLists: any =[];
   let baseList=listRows.find((listRow:ListRow) => listRow.listDoc._id === listID);
-  let baseParticipants=baseList?.participants;
+//  let baseParticipants=baseList?.participants;
     listRows.forEach((listRow: ListRow) => {
       let newListDoc={
         listID: listRow.listDoc._id,
@@ -19,12 +19,12 @@ export function createEmptyItemDoc(listRows:ListRow[],listID: string | null | un
       } else if (listRow.listDoc._id !== listID) {
         newListDoc.active = false
       }
-      if (isEqual(baseParticipants,listRow.participants)) {
-        newItemLists.push(newListDoc);    
-      } else {
-        newListDoc.active = false;
-        newItemLists.push(newListDoc);
-      } 
+//      if (isEqual(baseParticipants,listRow.participants)) {
+//        newItemLists.push(newListDoc);    
+//      } else {
+//        newListDoc.active = false;
+//        newItemLists.push(newListDoc);
+//      } 
     });
     let newItemDoc={
       type: "item",

@@ -136,12 +136,12 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     let existingItem: any = cloneDeep(allItemDocs.find((el: any) => el._id === itemID));
     //TODO
     let baseList = listRows.find((el: ListRow) => pageState.selectedListOrGroupID === el.listDoc._id)
-    let baseParticipants = baseList?.participants;
+//    let baseParticipants = baseList?.participants;
     
     listRows.forEach((listRow: ListRow) => {
       let idxInLists=existingItem.lists.findIndex((el: any) => el.listID === listRow.listDoc._id);
       let skipThisList=false;
-      if (!isEqual(listRow.participants,baseParticipants)) {skipThisList = true};
+//      if (!isEqual(listRow.participants,baseParticipants)) {skipThisList = true};
       //TODO
       if (listRow.listDoc._id !== pageState.selectedListOrGroupID) {
         if (globalState.settings.addListOption === AddListOptions.dontAddAutomatically) {
