@@ -1,11 +1,11 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput,
    IonItem, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonSelectOption,
-   IonReorder, IonReorderGroup,ItemReorderEventDetail, IonButtons, IonMenuButton, 
-   useIonToast, IonFooter, useIonAlert } from '@ionic/react';
+   IonReorder, IonReorderGroup,ItemReorderEventDetail, IonButtons, IonMenuButton, IonGrid,
+   useIonToast, IonFooter, useIonAlert, IonRow, IonCol, IonText } from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext } from 'react';
-import { useUpdateGenericDocument, useCreateGenericDocument, useFriends, 
+import { useUpdateGenericDocument, useCreateGenericDocument, useFriends, useGetOneDoc,
   UseFriendState, useLists, useDeleteGenericDocument, useDeleteListFromItems } from '../components/Usehooks';
 import { cloneDeep, isEmpty, isEqual } from 'lodash';
 import './List.css';
@@ -17,11 +17,10 @@ import { getUsersInfo } from '../components/Utilities';
 interface PageState {
   needInitListDoc: boolean,
   listDoc: any,
-  selectedListID: String,
-  changesMade: Boolean,
+  selectedListID: string,
+  listGroupID: string,
+  changesMade: boolean,
   formError: string,
-  usersLoaded: boolean,
-  usersInfo: UsersInfo,
   deletingDoc: boolean
 }  
 
@@ -33,10 +32,9 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
     needInitListDoc: (mode === "new") ? true : false,
     listDoc: {},
     selectedListID: routeID,
+    listGroupID: "",
     changesMade: false,
     formError: "",
-    usersLoaded: false,
-    usersInfo: cloneDeep(initUsersInfo),
     deletingDoc: false
   })
   const updateListWhole  = useUpdateGenericDocument();
@@ -52,6 +50,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
     selector: { type: "category", name: { $exists: true}},
     sort: [ "type","name"]
   })
+  const { loading: listGroupLoading, doc: listGroupDoc} = useGetOneDoc(pageState.listGroupID);
 
   const [presentAlert,dismissAlert] = useIonAlert();
 
@@ -60,7 +59,6 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   },[routeID])
 
   function changeListUpdateState(listID: string) {
-    console.log("in changeListUpdateState about to update listdoc");
     setPageState(prevState => ({...prevState,
         listDoc: listDocs.find((el: any) => el._id === listID),
         selectedListID: listID}))
@@ -68,14 +66,6 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   useEffect( () => {
-    async function getUI(userIDList: UserIDList) {
-      let usersInfo: UsersInfo
-      if (userIDList.userIDs.length > 0) {
-        setPageState(prevState => ({...prevState,usersInfo:[],usersLoaded:false}));
-        usersInfo = await getUsersInfo(userIDList,String(remoteDBCreds.apiServerURL),String(remoteDBState.accessJWT))  
-      }
-      setPageState(prevState => ({...prevState,usersInfo: usersInfo,usersLoaded: true}))
-    }
     let newPageState=cloneDeep(pageState);
     if (!listsLoading && (useFriendState === UseFriendState.rowsLoaded) && !categoryLoading) {
       if (mode === "new" && pageState.needInitListDoc) {
@@ -89,6 +79,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
           categories: initCategories
         }
         newPageState.listDoc=initListDoc;
+        newPageState.listGroupID="";
         newPageState.needInitListDoc=false;
       }
       else if (mode !== "new") {
@@ -96,18 +87,14 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
         let newListDoc = listDocs.find((el: any) => el._id === pageState.selectedListID);
         if (newListDoc == undefined) {return}
         newPageState.listDoc = newListDoc;
+        newPageState.listGroupID = newListDoc.listGroupID;
       }
       newPageState.changesMade=false;
       setPageState(newPageState);
-      let userIDList: UserIDList = cloneDeep(initUserIDList);
-      newPageState.listDoc.sharedWith.forEach((user: any) => {
-        userIDList.userIDs.push(user);
-      });
-      getUI(userIDList);
     }
-  },[listsLoading,listDocs,useFriendState,friendRows, categoryLoading,categoryDocs,pageState.selectedListID, remoteDBState.accessJWT]);
+  },[listsLoading,listGroupLoading, listDocs, listGroupDoc, useFriendState,friendRows, categoryLoading,categoryDocs,pageState.selectedListID, remoteDBState.accessJWT]);
 
-  if (listsLoading || (useFriendState !== UseFriendState.rowsLoaded) || categoryLoading || isEmpty(pageState.listDoc) || !pageState.usersLoaded || pageState.deletingDoc)  {return(
+  if (listsLoading || (useFriendState !== UseFriendState.rowsLoaded) || categoryLoading || isEmpty(pageState.listDoc) || listGroupLoading || pageState.deletingDoc)  {return(
       <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
   )};
   
@@ -165,79 +152,12 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   }
 
-  function selectUser(userID: string, updateVal: boolean) {
-    const currUsers: any=[];
-    let foundIt=false;
-    for (let i = 0; i < pageState.listDoc.sharedWith.length; i++) {
-      if (pageState.listDoc.sharedWith[i] === userID) {
-        foundIt = true;
-        if (updateVal) {
-          // shouldn't occur -- asking to change it to active but already in the list
-        } 
-      } else {
-        currUsers.push(pageState.listDoc.sharedWith[i])
-      }
-    }
-    if (updateVal && !foundIt) {
-      currUsers.push(userID);
-    }
-    if (!isEqual(pageState.listDoc.sharedWith,currUsers)) {
-      setPageState(prevState => (
-        {...prevState, changesMade: true, listDoc: {...prevState.listDoc, sharedWith: currUsers}}))
-    }
-  }
-
   function updateName(updName: string) {
     if (pageState.listDoc.name !== updName) {
       setPageState(prevState => (
         {...prevState, changesMade: true, listDoc: {...prevState.listDoc, name: updName}}));
     }  
   }
-
-  let usersElem=[];
-  let ownerText="";
-  let iAmListOwner=false;
-  if (pageState.listDoc.listOwner === remoteDBCreds.dbUsername) {
-    ownerText = "You are the list owner";
-    iAmListOwner=true;
-  } else {
-    let ownerRow=friendRows.find(el => (el.targetUserName === pageState.listDoc.listOwner));
-    ownerText = ownerRow?.targetFullName + " is the list owner";
-  }
-
-  usersElem.push(<IonItemDivider key="listuserdivider">{ownerText}</IonItemDivider>)
-  usersElem.push(<IonItemDivider key="listdivider">List is shared with these other users:</IonItemDivider>)
-
-  if (iAmListOwner) {
-    for (let i = 0; i < friendRows.length; i++) {
-      if (friendRows[i].resolvedStatus === ResolvedFriendStatus.Confirmed) {
-        const userID=friendRows[i].targetUserName;
-        const userName=friendRows[i].targetFullName;
-        const userEmail=friendRows[i].targetEmail;
-        const userFound=pageState.listDoc.sharedWith.find((element: string) => (element === userID));
-        if (iAmListOwner) {
-          usersElem.push(
-            <IonItem key={pageState.selectedListID+"-"+userID}>
-              <IonCheckbox key={pageState.selectedListID+"-"+userID} slot="start" onIonChange={(e: any) => selectUser(userID,Boolean(e.detail.checked))} checked={userFound}></IonCheckbox>
-              <IonLabel>{userName}</IonLabel>
-              <IonLabel>{userEmail}</IonLabel>
-            </IonItem>)
-        } 
-      }
-    }
-  } else { // not the list owner
-    pageState.usersInfo.forEach(user => {
-      console.log("getting data for userinfo user:",cloneDeep(user));
-      if (user.name !== remoteDBCreds.dbUsername && user.name !== pageState.listDoc.listOwner) {
-        usersElem.push(
-          <IonItem key={pageState.selectedListID+"-"+user.name}>
-            <IonLabel>{user.fullname}</IonLabel>
-            <IonLabel>{user.email}</IonLabel>
-          </IonItem>
-        )
-      }        
-    });
-}
 
 async function deleteListFromDB() {
   // first, find 
@@ -254,7 +174,6 @@ async function deleteListFromDB() {
   } else {
     setPageState(prevState => ({...prevState,formError: "Unable to remove list from all items"}));
   }
-
 }
 
 function deletePrompt() {
@@ -267,7 +186,6 @@ function deletePrompt() {
                { text: "Delete", role: "confirm",
                 handler: () => deleteListFromDB()}]
   })
-
 }
 
   let categoryElem=[];
@@ -280,9 +198,9 @@ function deletePrompt() {
       let name = catDoc.name;
       return (
         <IonItem key={pageState.selectedListID+"-"+actname+"-"+id}>
-        <IonCheckbox key={pageState.selectedListID+"-"+actname+"-"+id} slot="start" onIonChange={(e: any) => updateCat(id,Boolean(e.detail.checked))} checked={active}></IonCheckbox>
-        <IonButton fill="clear" class="textButton">{name}</IonButton>
-        <IonReorder slot="end"></IonReorder>
+            <IonCheckbox legacy={true} key={pageState.selectedListID+"-"+actname+"-"+id} slot="start" onIonChange={(e: any) => updateCat(id,Boolean(e.detail.checked))} checked={active}></IonCheckbox>
+            <IonText>{name}</IonText>
+            <IonReorder slot="end"></IonReorder>
         </IonItem>)    
     } else {
       console.log("cat doc not defined: id:",id);
@@ -333,7 +251,7 @@ function deletePrompt() {
       message: "List has been updated and not saved. Do you still want to change lists?"
     }
     selectElem.push(
-      <IonSelect key="list-changed" interface="alert" interfaceOptions={alertOptions}
+      <IonSelect label="Editing List:" key="list-changed" interface="alert" interfaceOptions={alertOptions}
         onIonChange={(ev) => changeListUpdateState(ev.detail.value)} value={pageState.selectedListID}>
         {selectOptionListElem}
       </IonSelect>
@@ -341,7 +259,7 @@ function deletePrompt() {
   } else {
     let iopts={};
     selectElem.push(
-      <IonSelect key="list-notchanged" interface="popover" interfaceOptions={iopts} onIonChange={(ev) => changeListUpdateState(ev.detail.value)} value={pageState.selectedListID}>
+      <IonSelect label="Editing List:" key="list-notchanged" interface="popover" interfaceOptions={iopts} onIonChange={(ev) => changeListUpdateState(ev.detail.value)} value={pageState.selectedListID}>
         {selectOptionListElem}
       </IonSelect>
     ) 
@@ -354,7 +272,6 @@ function deletePrompt() {
       selectDropDown.push(
         <IonTitle key="editexisting">
         <IonItem key="editexistingitem">
-        <IonLabel key="editexisting">Editing List:</IonLabel>
         {selectElem}
         </IonItem>
         </IonTitle>
@@ -369,10 +286,7 @@ function deletePrompt() {
   }
 
   let deleteButton=[];
-  if (iAmListOwner) {
-    deleteButton.push(<IonButton key="delete" onClick={() => deletePrompt()}>Delete</IonButton>)
-  }
-
+  deleteButton.push(<IonButton key="delete" onClick={() => deletePrompt()}>Delete</IonButton>)
 
   return (
     <IonPage>
@@ -388,15 +302,9 @@ function deletePrompt() {
             <IonItem key="name">
               <IonInput label="Name" labelPlacement="stacked" type="text" placeholder="<New>"
                   onIonChange={(e: any) => updateName(e.detail.value)}
-                  value={(pageState.listDoc as any).name}
-                  readonly={iAmListOwner ? false: true}></IonInput>
+                  value={(pageState.listDoc as any).name}>
+              </IonInput>
             </IonItem>
-            <IonItemGroup key="userlist">
-            <IonItem key="listowner">
-              <IonLabel>{}</IonLabel>
-            </IonItem>
-            {usersElem}
-            </IonItemGroup>
             <IonItemGroup key="categorylist">
             {categoryElem}
             </IonItemGroup>
