@@ -1,30 +1,20 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonButtons, 
-  IonMenuButton, IonButton, IonFab, IonFabButton, IonIcon } from '@ionic/react';
+  IonMenuButton, IonButton, IonFab, IonFabButton, IonIcon, IonText } from '@ionic/react';
 import { add } from 'ionicons/icons';
 import { useFind } from 'use-pouchdb';
 import SyncIndicator from '../components/SyncIndicator';
-import { HistoryProps } from '../components/DataTypes';
+import { HistoryProps, ListCombinedRow, RowType } from '../components/DataTypes';
 import './ListGroups.css';
+import { useLists } from '../components/Usehooks';
+import { cloneDeep } from 'lodash';
 
 const ListGroups: React.FC<HistoryProps> = (props: HistoryProps) => {
 
-  const { docs, loading } = useFind({
-  index: { fields: ["type","name"]},
-  selector: { type: "listgroup", name: { $exists: true }},
-  sort: [ "type", "name" ]
-  })
+  const { listRowsLoading, listCombinedRows} = useLists()
 
-  if (loading) { return (
+  if (listRowsLoading) { return (
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
   )}
-
-  docs.sort(function(a: any,b: any) {
-    var keyA = a.name.toUpperCase();
-    var keyB = b.name.toUpperCase();
-    if (keyA < keyB) return -1;
-    if (keyA > keyB) return 1;
-    return 0
-  })
 
   return (
     <IonPage>
@@ -37,15 +27,16 @@ const ListGroups: React.FC<HistoryProps> = (props: HistoryProps) => {
       </IonHeader>
       <IonContent>
         <IonList lines="full">
-               {docs.map((doc) => (
-                  <IonItem key={(doc as any)._id} >
-                    <IonButton slot="start" class="textButton" fill="clear" routerLink={("/listgroup/edit/" + (doc as any)._id)}>{(doc as any).name}</IonButton>
-                  </IonItem>  
-            ))}
+               {listCombinedRows.map((row: ListCombinedRow) => { 
+                  if (row.rowType == RowType.listGroup) return (
+                  (<IonItem key={row.rowKey} >
+                    <IonButton slot="start" class="textButton" fill="clear" routerLink={("/listgroup/edit/" + row.listGroupID)}>{row.rowName}</IonButton>
+                  </IonItem>)) }
+        )}
         </IonList>
       </IonContent>
       <IonFab slot="fixed" vertical="bottom" horizontal="end">
-        <IonFabButton routerLink={"/category/new/new"}>
+        <IonFabButton routerLink={"/listgroup/new/new"}>
           <IonIcon icon={add}></IonIcon>
         </IonFabButton>
       </IonFab>

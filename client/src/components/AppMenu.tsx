@@ -59,6 +59,7 @@ const AppMenu: React.FC = () => {
           <ListsAll separatePage={false}/>
         </IonList>
         {listItem("Create New List","/list/new/new")}
+        {listItem("Manage All Listgroups","/listgroups")}
         {listHeader("Other Actions")}
         {listItem("Manage Categories","/categories")}
         {listItem("Manage All Items","/allitems")}

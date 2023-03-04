@@ -44,7 +44,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
   const [ presentToast ] = useIonToast();
   const {useFriendState, friendRows} = useFriends(String(remoteDBCreds.dbUsername));
-  const { listDocs, listsLoading, listRowsLoading, listRows } = useLists(String(remoteDBCreds.dbUsername));
+  const { listDocs, listsLoading, listRowsLoading, listRows } = useLists();
   const { docs: categoryDocs, loading: categoryLoading } = useFind({
     index: { fields: [ "type","name"] },
     selector: { type: "category", name: { $exists: true}},

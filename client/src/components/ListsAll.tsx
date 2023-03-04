@@ -13,7 +13,7 @@ interface ListsAllProps {
 
 const ListsAll: React.FC<ListsAllProps> = ({separatePage}) => {
   const { remoteDBCreds } = useContext(RemoteDBStateContext);
-  const { listRowsLoading, listCombinedRows} = useLists(String(remoteDBCreds.dbUsername));
+  const { listRowsLoading, listCombinedRows} = useLists();
 
   if (listRowsLoading) { return (<></>) }
   

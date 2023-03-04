@@ -27,7 +27,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
   const addUOMDoc = useCreateGenericDocument();
   const delItem = useDeleteGenericDocument();
   const { doc: itemDoc, loading: itemLoading } = useGetOneDoc(routeItemID);
-  const { listDocs, listCombinedRows, listsLoading, listRows, listRowsLoading, listRowsLoaded} = useLists(String(remoteDBCreds.dbUsername))
+  const { listDocs, listCombinedRows, listsLoading, listRows, listRowsLoading, listRowsLoaded} = useLists()
 
   const { docs: categoryDocs, loading: categoryLoading } = useFind({
       index: { fields: [ "type","name"] },

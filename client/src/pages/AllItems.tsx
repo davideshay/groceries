@@ -14,8 +14,7 @@ import './AllItems.css';
 
 
 const AllItems: React.FC<HistoryProps> = (props: HistoryProps) => {
-  const { remoteDBCreds } = useContext(RemoteDBStateContext);
-  const { listDocs, listsLoading } = useLists(String(remoteDBCreds.dbUsername))
+  const { listDocs, listsLoading } = useLists()
   const { docs, loading, error } = useFind({
   index: { fields: ["type","name"]},
   selector: { type: "item", name: { $exists: true }},

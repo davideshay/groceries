@@ -16,7 +16,7 @@ export function useGetOneDoc(docID: string) {
   async function getDoc(id: string) {
       loadingRef.current = true;
       changesRef.current = db.changes({since: 'now', live: true, include_docs: true, doc_ids: [id]})
-      .on('change', function(change) { console.log("changed",cloneDeep(change)); setDoc(change.doc); })
+      .on('change', function(change) { setDoc(change.doc); })
       let success=true; 
       let docRet = null;
       try  {docRet = await db.get(id);}
@@ -205,7 +205,8 @@ export function useDeleteCategoryFromLists() {
     },[db]) 
 }
 
-export function useLists(username: string) : {listsLoading: boolean, listDocs: any, listRowsLoading: boolean, listRowsLoaded: boolean, listRows: ListRow[], listCombinedRows: ListCombinedRow[]} {
+export function useLists() : {listsLoading: boolean, listDocs: any, listRowsLoading: boolean, listRowsLoaded: boolean, listRows: ListRow[], listCombinedRows: ListCombinedRow[]} {
+  const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
   const [listRows,setListRows] = useState<ListRow[]>([]);
   const [listCombinedRows,setListCombinedRows] = useState<ListCombinedRow[]>([]);
   const [listRowsLoaded, setListRowsLoaded] = useState(false);
@@ -214,8 +215,8 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
     index: { fields: ["type","name"]},
     selector: { "$and": [
       { "type": "listgroup", "name": { "$exists": true}},
-      { "$or": [{"listGroupOwner": username},
-                {"sharedWith": { $elemMatch: {$eq: username}}}]}  ]},
+      { "$or": [{"listGroupOwner": remoteDBCreds.dbUsername},
+                {"sharedWith": { $elemMatch: {$eq: remoteDBCreds.dbUsername}}}]}  ]},
     sort: [ "type", "name"]  });
   const { docs: listDocs, loading: listsLoading, error: listError} = useFind({
     index: { fields: ["type","name"] },
@@ -248,7 +249,7 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
 //          listGroupIncludesUser=true;
  //       }
       }
-      if (listGroupID == null) { console.log("lgid null, exiting"); return };
+      if (listGroupID == null) { return };
 //      if (listDoc.listOwner !== username && !listGroupIncludesUser ) { return };
 //      if (listGroupID == null) {listGroupName="Ungrouped (ERROR)"};
       let listRow: ListRow ={
@@ -257,7 +258,6 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
         listGroupDefault: listGroupDefault,
         listDoc: listDoc,
       }
-      console.log("adding ",cloneDeep({listRow})," to newListRows");
       newListRows.push(listRow);
     });
 

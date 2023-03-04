@@ -35,7 +35,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       "$or": [ {listGroupID: pageState.selectedListOrGroupID} , 
                {lists: { $elemMatch: { "listID": pageState.selectedListOrGroupID , "active" : true} }}] },
     sort: [ "type", "name"]})
-  const { listCombinedRows,listRows, listRowsLoading } = useLists(String(remoteDBCreds.dbUsername));
+  const { listCombinedRows,listRows, listRowsLoading } = useLists();
   const { docs: uomDocs, loading: uomLoading } = useFind({
     index: { fields: [ "type","name"]},
     selector: { type: "uom", name: { $exists: true}},
