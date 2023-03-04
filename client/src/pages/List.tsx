@@ -10,7 +10,7 @@ import { useUpdateGenericDocument, useCreateGenericDocument, useFriends, useGetO
 import { cloneDeep, isEmpty, isEqual } from 'lodash';
 import './List.css';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
-import { initUserIDList, initUsersInfo, PouchResponse, ResolvedFriendStatus, UserIDList, UsersInfo, HistoryProps } from '../components/DataTypes';
+import { initUserIDList, initUsersInfo, PouchResponse, ResolvedFriendStatus, UserIDList, UsersInfo, HistoryProps, ListRow } from '../components/DataTypes';
 import SyncIndicator from '../components/SyncIndicator';
 import { getUsersInfo } from '../components/Utilities';
 
@@ -44,7 +44,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
   const [ presentToast ] = useIonToast();
   const {useFriendState, friendRows} = useFriends(String(remoteDBCreds.dbUsername));
-  const { listDocs, listsLoading } = useLists(String(remoteDBCreds.dbUsername));
+  const { listDocs, listsLoading, listRowsLoading, listRows } = useLists(String(remoteDBCreds.dbUsername));
   const { docs: categoryDocs, loading: categoryLoading } = useFind({
     index: { fields: [ "type","name"] },
     selector: { type: "category", name: { $exists: true}},
@@ -94,7 +94,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   },[listsLoading,listGroupLoading, listDocs, listGroupDoc, useFriendState,friendRows, categoryLoading,categoryDocs,pageState.selectedListID, remoteDBState.accessJWT]);
 
-  if (listsLoading || (useFriendState !== UseFriendState.rowsLoaded) || categoryLoading || isEmpty(pageState.listDoc) || listGroupLoading || pageState.deletingDoc)  {return(
+  if (listsLoading || listRowsLoading || (useFriendState !== UseFriendState.rowsLoaded) || categoryLoading || isEmpty(pageState.listDoc) || listGroupLoading || pageState.deletingDoc)  {return(
       <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
   )};
   
@@ -198,8 +198,7 @@ function deletePrompt() {
       let name = catDoc.name;
       return (
         <IonItem key={pageState.selectedListID+"-"+actname+"-"+id}>
-            <IonCheckbox legacy={true} key={pageState.selectedListID+"-"+actname+"-"+id} slot="start" onIonChange={(e: any) => updateCat(id,Boolean(e.detail.checked))} checked={active}></IonCheckbox>
-            <IonText>{name}</IonText>
+            <IonCheckbox labelPlacement="end" justify="start" key={pageState.selectedListID+"-"+actname+"-"+id} onIonChange={(e: any) => updateCat(id,Boolean(e.detail.checked))} checked={active}>{name}</IonCheckbox>
             <IonReorder slot="end"></IonReorder>
         </IonItem>)    
     } else {
@@ -238,9 +237,9 @@ function deletePrompt() {
   categoryElem.push(catItemDivider(false,categoryLines));
 
   let selectOptionListElem=(
-    listDocs.map((list: any) => (
-      <IonSelectOption key={"list-"+list._id} value={(list as any)._id}>
-        {(list as any).name}
+    listRows.map((list: ListRow) => (
+      <IonSelectOption key={"list-"+list.listDoc._id} value={list.listDoc._id}>
+        {list.listDoc.name}
       </IonSelectOption>
     )))
 

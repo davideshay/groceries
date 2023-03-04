@@ -248,7 +248,7 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
 //          listGroupIncludesUser=true;
  //       }
       }
-      if (listGroupID == null) { return };
+      if (listGroupID == null) { console.log("lgid null, exiting"); return };
 //      if (listDoc.listOwner !== username && !listGroupIncludesUser ) { return };
 //      if (listGroupID == null) {listGroupName="Ungrouped (ERROR)"};
       let listRow: ListRow ={
@@ -257,6 +257,7 @@ export function useLists(username: string) : {listsLoading: boolean, listDocs: a
         listGroupDefault: listGroupDefault,
         listDoc: listDoc,
       }
+      console.log("adding ",cloneDeep({listRow})," to newListRows");
       newListRows.push(listRow);
     });
 
