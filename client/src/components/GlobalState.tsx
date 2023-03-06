@@ -2,6 +2,7 @@ import React, { createContext, useEffect, useState} from "react";
 import { Preferences } from '@capacitor/preferences';
 import { pick,cloneDeep } from "lodash";
 import { isJsonString } from "./Utilities";
+import { RowType } from "./DataTypes";
 
 export enum AddListOptions {
     dontAddAutomatically = "D",
@@ -19,6 +20,7 @@ export type GlobalState = {
     itemMode?: string,
     newItemName?: string,
     callingListID?: string,
+    callingListType: RowType,
     settings: GlobalSettings,
     settingsLoaded: boolean
 }
@@ -40,6 +42,7 @@ const initialState: GlobalState = {
     itemMode: "none",
     newItemName: undefined,
     callingListID: undefined,
+    callingListType: RowType.list,
     settings: initSettings,
     settingsLoaded: false
 }

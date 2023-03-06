@@ -97,7 +97,7 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
     }  
     sortedItemDocs.forEach((itemDoc: ItemDoc) => {
         let itemRow: ItemRow = cloneDeep(initItemRow);
-        itemRow.itemID = itemDoc._id;
+        itemRow.itemID = String(itemDoc._id);
         itemRow.itemName = itemDoc.name;
         let list = findRightList(itemDoc,listType,listOrGroupID,(listRow as ListCombinedRow), listCombinedRows);
         if (list == undefined) {return itemRows};

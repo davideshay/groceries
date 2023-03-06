@@ -21,7 +21,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode: routeMode, id: routeListID  } = useParams<{mode: string, id: string}>();
   const [searchRows,setSearchRows] = useState<ItemSearch[]>();
   const [searchState,setSearchState] = useState<SearchState>({searchCriteria:"",isOpen: false,isFocused: false,event: undefined, filteredSearchRows: [], dismissEvent: undefined});
-  const [pageState, setPageState] = useState<PageState>({selectedListOrGroupID: routeListID, doingUpdate: false, itemRows: [], showAlert: false, alertHeader: "", alertMessage: ""});
+  const [pageState, setPageState] = useState<PageState>({selectedListOrGroupID: routeListID, selectedListType: (routeMode == "list" ? RowType.list : RowType.listGroup) ,doingUpdate: false, itemRows: [], showAlert: false, alertHeader: "", alertMessage: ""});
   const searchRef=useRef<HTMLIonSearchbarElement>(null);
   const origSearchCriteria = useRef("");
   const [presentToast] = useIonToast();
@@ -49,7 +49,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       selector: { type: "item", name: { $exists: true}},
       sort: [ "type","name"] });
 
-  const { globalState,setGlobalState} = useContext(GlobalStateContext);
+  const { globalState,setStateInfo} = useContext(GlobalStateContext);
   const listType = (routeMode == "list") ? RowType.list : RowType.listGroup
 
   useEffect( () => {
@@ -93,12 +93,15 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function addNewItemToList(itemName: string) {
+    console.log("add New Item To List: itemName is:",itemName);
+    console.log("current pagestate is: ",cloneDeep(pageState));
     if (isItemAlreadyInList(itemName)) {
       setPageState(prevState => ({...prevState, showAlert: true, alertHeader: "Error adding to list", alertMessage: "Item already exists in the current list"}))
     } else {
-      setGlobalState({...globalState, itemMode: "new",
-                                     callingListID: pageState.selectedListOrGroupID,
-                                     newItemName: itemName})
+      setStateInfo("itemMode","new");
+      setStateInfo("callingListID",pageState.selectedListOrGroupID);
+      setStateInfo("callingListType",pageState.selectedListType);
+      setStateInfo("newItemName",itemName);
       setSearchState(prevState => ({...prevState, isOpen: false,searchCriteria:"",isFocused: false}))
       props.history.push("/item/new/");
     }
@@ -219,7 +222,8 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         <IonItem key="searchbar">
           <IonSearchbar debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="search" enterkeyhint="enter"
               onKeyDown= {(e:any) => searchKeyPress(e)}
-              onIonChange={(e: any) => updateSearchCriteria(e)}
+              onIonInput={(e) => updateSearchCriteria(e)}
+//              onIonChange={(e: any) => updateSearchCriteria(e)}
               // onIonBlur={(e: any) => leaveSearchBox(e)}
               onClick={(e: any) => enterSearchBox(e)}>
           </IonSearchbar>

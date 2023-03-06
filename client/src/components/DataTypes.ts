@@ -32,30 +32,26 @@ export interface ItemList {
   boughtCount: number,
   note: string,
   quantity: number,
-  categoryID: string,
-  uomName: string
+  categoryID: string | null ,
+  uomName: string | null
 }
 
 export interface ItemDoc {
-  _id: string,
-  _rev: string,
+  _id?: string,
+  _rev?: string,
   type: string,
   listGroupID: string,
   name: string,
-  uomName: string,
   lists: ItemList[],
-  updatedAt: string
+  updatedAt?: string
 }
 
 export type ItemDocs = ItemDoc[];
 
 export const ItemDocInit:ItemDoc = {
-  _id: "",
-  _rev: "",
   type: "item",
   listGroupID: "",
   name: "",
-  uomName: "",
   lists: [],
   updatedAt: ""
 }
@@ -126,6 +122,7 @@ export const ListGroupDocInit:ListGroupDoc = {
 
   export interface PageState {
     selectedListOrGroupID: string,
+    selectedListType: RowType,
     doingUpdate: boolean,
     itemRows: Array<ItemRow>,
     showAlert: boolean,
