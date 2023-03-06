@@ -4,7 +4,6 @@ import { isEqual, cloneDeep } from "lodash";
 
 export function createEmptyItemDoc(listRows:ListRow[], globalState: GlobalState) {
   let newItemLists: any =[];
-  console.log("listrows:",cloneDeep(listRows));
   let listGroupID = "";
   if (globalState.callingListType == RowType.listGroup) {
     listGroupID = String(globalState.callingListID);
@@ -12,7 +11,6 @@ export function createEmptyItemDoc(listRows:ListRow[], globalState: GlobalState)
     let baseList=listRows.find((listRow:ListRow) => listRow.listDoc._id === globalState.callingListID);
     listGroupID = String(baseList?.listGroupID);  
   }
-  console.log("create empty:", cloneDeep(listGroupID));
   listRows.forEach((listRow: ListRow) => {
     if (listRow.listGroupID == listGroupID) {
       let newListDoc: ItemList ={

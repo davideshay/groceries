@@ -127,18 +127,14 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
       }
     });
     if (maxCnt = 0 && stateItemDoc.lists.length > 0 ) {maxKey = (stateItemDoc.lists[0] as any)[key]}
-    console.log("chekcing for key:",key," maxcnt:", maxCnt, " maxkey: ",maxKey, " from freqobj:",freqObj);
     return maxKey;
   }
 
   function listIsDifferentThanCommon(listIdx: number) {
-    console.log("checking list index: ",listIdx, "list is:",cloneDeep(stateItemDoc.lists[listIdx]));
-    console.log("full lists:", cloneDeep(stateItemDoc.lists));
     let anyDifferences=false;
     for (const [key, value] of Object.entries(stateItemDoc.lists[listIdx])) {
       if (key != "listID") { 
         let commonVal = getCommonKey(key);
-        console.log("for key: ",key," got common value:", commonVal, )
         if (commonVal != value) { anyDifferences=true}
       }  
     }
@@ -349,16 +345,12 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   let modalEditorElem: any = [];
   modalEditorElem.push(
-    <IonModal isOpen={modalState.isOpen}>
+    <IonModal key="item-modal" id="item-list" isOpen={modalState.isOpen}>
       <IonTitle>Editing Acme List values</IonTitle>
       <IonList>
-        <IonInput label="quantity"></IonInput>
-      </IonList>
-      <IonList>
-        <IonInput label="unit of measure"></IonInput>
-      </IonList>
-      <IonList>
-        <IonButton onClick={() => setModalState({...modalState,isOpen: false})}>Close Me</IonButton>
+        <IonInput key="modal-qty" label="quantity"></IonInput>
+        <IonInput key="modal-uom" label="unit of measure"></IonInput>
+        <IonButton key="modal-close" onClick={() => setModalState({...modalState,isOpen: false})}>Close Me</IonButton>
       </IonList>
     </IonModal>
 

@@ -1,0 +1,18 @@
+ion-modal#item-list {
+    --border-radius: 16px;
+    --border-width: 20px;
+    --border-color: blue;
+    --max-height: 80%;
+    --max-width: 90%;
+    --backdrop-opacity:50%;
+  }
+ 
+  ion-modal#item-list .content {
+    margin: 20px 20px 20px 20px;
+  }
+
+  ion-modal::part(content) {
+    color: pink;
+    padding-left: 20px;
+    padding-right: 20px;
+  }

@@ -93,8 +93,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function addNewItemToList(itemName: string) {
-    console.log("add New Item To List: itemName is:",itemName);
-    console.log("current pagestate is: ",cloneDeep(pageState));
     if (isItemAlreadyInList(itemName)) {
       setPageState(prevState => ({...prevState, showAlert: true, alertHeader: "Error adding to list", alertMessage: "Item already exists in the current list"}))
     } else {
