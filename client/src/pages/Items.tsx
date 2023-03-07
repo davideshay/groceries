@@ -8,9 +8,9 @@ import { useParams, Link } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
 import { cloneDeep } from 'lodash';
 import './Items.css';
-import { useUpdateCompleted, useUpdateGenericDocument, useLists } from '../components/Usehooks';
+import { useUpdateGenericDocument, useLists } from '../components/Usehooks';
 import { AddListOptions, GlobalStateContext } from '../components/GlobalState';
-import { ItemSearch, SearchState, PageState, ListRow, ListCombinedRow, HistoryProps, RowType, ItemDoc, ItemDocs, ItemListInit, ItemList} from '../components/DataTypes'
+import { ItemSearch, SearchState, PageState, ListRow, ListCombinedRow, HistoryProps, RowType, ItemDoc, ItemDocs, ItemListInit, ItemList, ItemRow} from '../components/DataTypes'
 import { getAllSearchRows, getItemRows, filterSearchRows } from '../components/ItemUtilities';
 import SyncIndicator from '../components/SyncIndicator';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
@@ -28,7 +28,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   const searchRef=useRef<HTMLIonSearchbarElement>(null);
   const origSearchCriteria = useRef("");
   const [presentToast] = useIonToast();
-  const updateCompleted = useUpdateCompleted();
   const updateItemInList = useUpdateGenericDocument();
 
   const { docs: itemDocs, loading: itemLoading } = useFind({
@@ -253,18 +252,33 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   async function completeItemRow(id: String, newStatus: boolean | null) {
     // make the update in the database, let the refresh of the view change state
-    let itemDoc = itemDocs.find(element => (element._id === id))
-    let updateInfo = {
-      itemDoc: itemDoc,
-      removeAll: globalState.settings.removeFromAllLists,
-      newStatus: newStatus,
-      listID: pageState.selectedListOrGroupID,
-      listRows: listRows
-    }
+    let itemDoc: ItemDoc = cloneDeep(itemDocs.find(element => (element._id === id)))
+    console.log("In CIR, itemDoc to update = ",cloneDeep(itemDoc));
     setPageState(prevState=> ({...prevState,doingUpdate: true}));
-    let response=await updateCompleted(updateInfo);
-    if (!response.successful) {
-      presentToast({message: "Error updating completed status. Please retry", duration: 1500, position: "middle"})
+    let listChanged=false;
+    itemDoc.lists.forEach((list: ItemList) => {
+      console.log("checking list to update:", cloneDeep(list));
+      let updateThisList=false;
+      if (pageState.selectedListOrGroupID == list.listID) {console.log("on exact list, true"); updateThisList = true;}
+      if (pageState.selectedListType == RowType.listGroup) {console.log("on list Group type, true"); updateThisList = true};
+      if (pageState.selectedListType == RowType.list && 
+          globalState.settings.removeFromAllLists &&
+          newStatus) { console.log("list mode, not current list, true"); updateThisList = true;}
+      if (updateThisList) {
+        list.completed = Boolean(newStatus);
+        if (newStatus) {
+          list.boughtCount=list.boughtCount+1;
+        }
+        listChanged=true;
+      }
+    });
+    console.log("new version of itemDoc:", cloneDeep(itemDoc), " listChanged:", listChanged);
+    if (listChanged) {
+      let response = await updateItemInList(itemDoc);
+      console.log("did update, response is:", cloneDeep(response));
+      if (!response.successful) {
+        presentToast({message: "Error updating completed status. Please retry", duration: 1500, position: "middle"})
+      }  
     }
   }
 

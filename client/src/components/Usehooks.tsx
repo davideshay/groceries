@@ -73,7 +73,7 @@ export function useDeleteGenericDocument() {
     },[db])
 }
 
-export function useUpdateCompleted() {
+/* export function useUpdateCompleted() {
   const db = usePouch();
 
   return useCallback(
@@ -81,7 +81,6 @@ export function useUpdateCompleted() {
       let response: PouchResponse = cloneDeep(PouchResponseInit);
       const newItemDoc = cloneDeep(updateInfo.itemDoc);
       let baseList=updateInfo.listRows.find((el: ListRow) => (updateInfo.listID === el.listDoc._id));
-      let baseParticipants = baseList.participants;
       for (let i = 0; i < newItemDoc.lists.length; i++) {
         let listIdx=updateInfo.listRows.findIndex((el: ListRow) => (el.listDoc._id === newItemDoc.lists[i].listID));
         if (listIdx !== -1) {
@@ -117,6 +116,8 @@ export function useUpdateCompleted() {
     },
     [db])
 }
+ */
+
 
 export function useDeleteItemsInListGroup() {
   const db=usePouch()

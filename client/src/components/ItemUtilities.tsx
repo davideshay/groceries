@@ -148,7 +148,13 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
             if (listIdx === -1) {itemRow.completed=false} else {
                 itemRow.completed = itemDoc.lists[listIdx].completed;
             }     
-        } else { itemRow.completed = false }    
+        } else { 
+            let allCompleted=true;
+            for (let i = 0; i < itemDoc.lists.length; i++) {
+                if (!itemDoc.lists[i].completed) {allCompleted=false; break;}
+            }
+            itemRow.completed = allCompleted;
+        }    
         itemRows.push(itemRow);
     })
     itemRows.sort((a,b) => (
