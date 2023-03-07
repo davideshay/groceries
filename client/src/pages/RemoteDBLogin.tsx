@@ -11,6 +11,7 @@ import { createNewUser, getTokenInfo, navigateToFirstListID,  } from '../compone
 import { cloneDeep } from 'lodash';
 import { RemoteDBStateContext, SyncStatus, initialRemoteDBState } from '../components/RemoteDBState';
 import { HistoryProps } from '../components/DataTypes';
+import { useLists } from '../components/Usehooks';
 
 export type RemoteState = {
   password: string | undefined,
@@ -73,6 +74,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     const [remoteState,setRemoteState]=useState<RemoteState>(initRemoteState);
     const [presentAlert] = useIonAlert();
     const { remoteDBState, remoteDBCreds, setRemoteDBState, setRemoteDBCreds, errorCheckCreds, assignDB, setDBCredsValue} = useContext(RemoteDBStateContext);
+    const { listRowsLoading, listRows } = useLists();
 
     // effect for dbuuidaction not none
     useEffect( () => {
@@ -100,14 +102,15 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     },[remoteDBState.dbUUIDAction])
 
     useEffect( () => {
-      if (remoteDBState.connectionStatus === ConnectionStatus.cannotStart) {
-        console.log("Detected cannot start, setting initRemoteState");
-        setRemoteState(initRemoteState);
-      } else if (remoteDBState.connectionStatus === ConnectionStatus.loginComplete) {
-        navigateToFirstListID(db,props.history,remoteDBCreds);
+      if (!listRowsLoading) {
+        if (remoteDBState.connectionStatus === ConnectionStatus.cannotStart) {
+          console.log("Detected cannot start, setting initRemoteState");
+          setRemoteState(initRemoteState);
+        } else if (remoteDBState.connectionStatus === ConnectionStatus.loginComplete) {
+          navigateToFirstListID(db,props.history,remoteDBCreds, listRows);
+        }
       }
-
-    },[remoteDBState.connectionStatus, db, props.history, remoteDBCreds]);
+    },[remoteDBState.connectionStatus, db, props.history, remoteDBCreds, listRowsLoading]);
 
     async function destroyAndExit() {
       await db.destroy();
@@ -225,7 +228,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
   function setWorkingOffline() {
     setRemoteDBState({...remoteDBState,workingOffline: true,connectionStatus: ConnectionStatus.loginComplete, 
         syncStatus: SyncStatus.offline})
-    navigateToFirstListID(db,props.history,remoteDBCreds);    
+    navigateToFirstListID(db,props.history,remoteDBCreds, listRows);    
   }
 
 /*   function workOffline() {

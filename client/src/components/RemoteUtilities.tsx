@@ -1,19 +1,12 @@
 import { DBCreds, RemoteDBState } from "./RemoteDBState";
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import jwt_decode from 'jwt-decode';
+import { ListRow } from "./DataTypes";
 
-export async function navigateToFirstListID(db: any,phistory: any,remoteDBCreds: DBCreds) {
-    let listResults = await db.find({
-        selector: { "$and": [ 
-          {  "type": "list",
-              "name": { "$exists": true } },
-          { "$or" : [{"listOwner": remoteDBCreds.dbUsername},
-                      {"sharedWith": { $elemMatch: {$eq: remoteDBCreds.dbUsername}}}]
-          }] },
-        sort: [ "type","name"]})
+export async function navigateToFirstListID(db: any,phistory: any,remoteDBCreds: DBCreds, listRows: ListRow[]) {
     let firstListID = null;
-    if (listResults.docs.length > 0) {
-      firstListID = listResults.docs[0]._id;
+    if (listRows.length > 0) {
+      firstListID = listRows[0].listDoc._id;
     }
     if (firstListID == null) {
         phistory.push("/lists");

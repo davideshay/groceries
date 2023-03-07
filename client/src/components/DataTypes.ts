@@ -56,6 +56,19 @@ export const ItemDocInit:ItemDoc = {
   updatedAt: ""
 }
 
+export const ItemListInit:ItemList = {
+  listID: "",
+  active: true,
+  completed: false,
+  stockedAt: true,
+  boughtCount: 0,
+  note: "",
+  quantity: 0,
+  categoryID: null,
+  uomName: null
+}
+
+
 export interface ListDoc {
   _id: string,
   _rev: string,
