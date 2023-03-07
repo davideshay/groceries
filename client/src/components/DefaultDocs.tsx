@@ -27,7 +27,9 @@ export function createEmptyItemDoc(listRows:ListRow[], globalState: GlobalState)
       if (globalState.settings.addListOption == AddListOptions.addToAllListsAutomatically) {
         newListDoc.active = true;
       } else if (listRow.listDoc._id !== globalState.callingListID && globalState.callingListType != RowType.listGroup) {
-        newListDoc.active = false
+        newListDoc.active = false;
+        newListDoc.stockedAt = false;
+        newListDoc.quantity = 0;
       }
       newItemLists.push(newListDoc);
     }

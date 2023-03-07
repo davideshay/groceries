@@ -6,13 +6,14 @@ import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useFriends, 
-  UseFriendState, useLists, useDeleteGenericDocument, useDeleteListFromItems, useGetOneDoc } from '../components/Usehooks';
+  UseFriendState, useLists, useDeleteGenericDocument, useDeleteItemsInListGroup, useGetOneDoc } from '../components/Usehooks';
 import { cloneDeep, isEmpty, isEqual } from 'lodash';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
 import { initUserIDList, initUsersInfo, PouchResponse, ResolvedFriendStatus, UserIDList, UsersInfo, HistoryProps, ListGroupDoc, ListGroupDocInit, ListCombinedRow, RowType } from '../components/DataTypes';
 import SyncIndicator from '../components/SyncIndicator';
 import { getUsersInfo } from '../components/Utilities';
 import './ListGroup.css';
+import { forEach } from 'lodash';
 
 interface PageState {
   needInitListGroupDoc: boolean,
@@ -42,11 +43,12 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   const updateListGroupWhole  = useUpdateGenericDocument();
   const createListGroup = useCreateGenericDocument();
   const deleteListGroup = useDeleteGenericDocument();
-  const deleteListFromItems = useDeleteListFromItems()
+  const deleteList = useDeleteGenericDocument();
+  const deleteItemsInListGroup = useDeleteItemsInListGroup();
   const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
   const [ presentToast ] = useIonToast();
   const {useFriendState, friendRows} = useFriends(String(remoteDBCreds.dbUsername));
-  const { listCombinedRows, listRowsLoading } = useLists();
+  const { listCombinedRows, listRows, listRowsLoading } = useLists();
   const { docs: categoryDocs, loading: categoryLoading } = useFind({
     index: { fields: [ "type","name"] },
     selector: { type: "category", name: { $exists: true}},
@@ -200,32 +202,49 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
     });
 }
 
-async function deleteListFromDB() {
-  // first, find 
-  let response = await deleteListFromItems(String(pageState.selectedListGroupID));
+async function deleteListGroupFromDB() {
+  // first, delete all lists in listgroup
+  // second, delete all items in listgroup
+  // third, delete listgroup itself
+  console.log("deleting list group from DB");
+  console.log("current listgroup:", cloneDeep(pageState));
+  if (pageState.listGroupDoc.default) {
+    dismissAlert();
+    setPageState(prevState => ({...prevState,formError: "Cannot delete default list group", deletingDoc: false}));
+    return false;
+  }
+  let delSuccess = true;
+  for (let i = 0; i < listRows.length; i++) {
+    let response = await deleteList(listRows[i].listDoc);
+    if (!response.successful) {delSuccess = false;}
+  }
+  let response = await deleteItemsInListGroup(String(pageState.selectedListGroupID));
   if (response.successful) {
     let delResponse = await deleteListGroup((pageState.listGroupDoc as any));
     if (delResponse.successful) {
       setPageState(prevState => ({...prevState,deletingDoc: false}));
+      dismissAlert();
       props.history.push(); // back to "list"
     } else {
-      setPageState(prevState => ({...prevState,formError: "Could not delete list group"}));
+      dismissAlert()
+      setPageState(prevState => ({...prevState,formError: "Could not delete list group", deletingDoc: false}));
     }
-
   } else {
-    setPageState(prevState => ({...prevState,formError: "Unable to remove list group from all items"}));
+    dismissAlert();
+    setPageState(prevState => ({...prevState,formError: "Unable to remove list group from all items", deletingDoc: false}));
   }
+  return delSuccess;
 }
 
 function deletePrompt() {
-  setPageState(prevState => ({...prevState,deletingDoc: true}));
+  setPageState(prevState => ({...prevState,deletingDoc: true, formError: ""}));
   presentAlert({
     header: "Delete this list group?",
     subHeader: "Do you really want to delete this list group?  All information on this list group will be lost (lists and items).",
     buttons: [ { text: "Cancel", role: "Cancel" ,
                 handler: () => setPageState(prevState => ({...prevState,deletingDoc: false}))},
                { text: "Delete", role: "confirm",
-                handler: () => deleteListFromDB()}]
+                handler: () => deleteListGroupFromDB()}]
   })
 }
 
@@ -317,10 +336,8 @@ function deletePrompt() {
           {updateButton}
           {deleteButton}
           <IonButton key="back" onClick={() => props.history.goBack()}>Cancel</IonButton>  
+         <IonItem key="formerror"><IonLabel>{pageState.formError}</IonLabel></IonItem> 
       </IonContent>
-      <IonFooter>
-        <IonLabel>{pageState.formError}</IonLabel>
-      </IonFooter>
     </IonPage>
   );
 };

@@ -229,11 +229,11 @@ Ungrouped concept:
 
 
 Changes left to do:
-  * Major fix left is item page -- 
-    * Add concept of "set across all lists" for the top values
-    * Then have a list of key values for each list, with a "*" to indicate that parts are different from the "master"
-    * Have modal to edit the values on an individual list
-  * When adding new list allow selection of listgroup. When editing, do not.  
-  * Go back and fix items page -- add modes
-  * Handle deleting a listgroup -- the code was written for lists not listgroups, now must delete associated lists and items
+D  * Major fix left is item page -- 
+D    * Add concept of "set across all lists" for the top values
+ D   * Then have a list of key values for each list, with a "*" to indicate that parts are different from the "master"
+D    * Have modal to edit the values on an individual list
+D  * When adding new list allow selection of listgroup. When editing, do not.  
+D  * Go back and fix items page -- add modes
+D  * Handle deleting a listgroup -- the code was written for lists not listgroups, now must delete associated lists and items
   * Maybe check default setting to make sure it's only on one listgroup at a time, and is always on one.

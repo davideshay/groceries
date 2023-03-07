@@ -1,22 +1,21 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput,
    IonItem, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonSelectOption,
-   IonReorder, IonReorderGroup,ItemReorderEventDetail, IonButtons, IonMenuButton, IonGrid,
-   useIonToast, IonFooter, useIonAlert, IonRow, IonCol, IonText } from '@ionic/react';
+   IonReorder, IonReorderGroup,ItemReorderEventDetail, IonButtons, IonMenuButton, 
+   useIonToast, IonFooter, useIonAlert } from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useFriends, useGetOneDoc,
   UseFriendState, useLists, useDeleteGenericDocument, useDeleteListFromItems } from '../components/Usehooks';
-import { cloneDeep, isEmpty, isEqual } from 'lodash';
+import { cloneDeep, isEmpty } from 'lodash';
 import './List.css';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
-import { initUserIDList, initUsersInfo, PouchResponse, ResolvedFriendStatus, UserIDList, UsersInfo, HistoryProps, ListRow } from '../components/DataTypes';
+import { PouchResponse, HistoryProps, ListRow, ListDocInit, ListDoc, RowType } from '../components/DataTypes';
 import SyncIndicator from '../components/SyncIndicator';
-import { getUsersInfo } from '../components/Utilities';
 
 interface PageState {
   needInitListDoc: boolean,
-  listDoc: any,
+  listDoc: ListDoc,
   selectedListID: string,
   listGroupID: string,
   changesMade: boolean,
@@ -30,7 +29,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   if ( mode === "new" ) { routeID = "<new>"};
   const [pageState,setPageState] = useState<PageState>({
     needInitListDoc: (mode === "new") ? true : false,
-    listDoc: {},
+    listDoc: cloneDeep(ListDocInit),
     selectedListID: routeID,
     listGroupID: "",
     changesMade: false,
@@ -44,7 +43,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
   const [ presentToast ] = useIonToast();
   const {useFriendState, friendRows} = useFriends(String(remoteDBCreds.dbUsername));
-  const { listDocs, listsLoading, listRowsLoading, listRows } = useLists();
+  const { listDocs, listsLoading, listRowsLoading, listRows, listCombinedRows } = useLists();
   const { docs: categoryDocs, loading: categoryLoading } = useFind({
     index: { fields: [ "type","name"] },
     selector: { type: "category", name: { $exists: true}},
@@ -69,21 +68,20 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
     let newPageState=cloneDeep(pageState);
     if (!listsLoading && (useFriendState === UseFriendState.rowsLoaded) && !categoryLoading) {
       if (mode === "new" && pageState.needInitListDoc) {
-        console.log("in new useeffect, creating initlistdoc");
         let initCategories=categoryDocs.map(cat => cat._id);
-        let initListDoc = {
-          type: "list",
-          name: "",
-          listOwner: remoteDBCreds.dbUsername,
-          sharedWith: [],
-          categories: initCategories
+        let initListDoc : ListDoc = cloneDeep(ListDocInit);
+        if (listCombinedRows.length > 0) {
+          initListDoc.listGroupID=String(listCombinedRows[0].listGroupID)
+        } else {
+          initListDoc.listGroupID=""
         }
+        console.log("new list group ID:",initListDoc.listGroupID)
+        initListDoc.categories = initCategories;
         newPageState.listDoc=initListDoc;
         newPageState.listGroupID="";
         newPageState.needInitListDoc=false;
       }
       else if (mode !== "new") {
-        console.log("in initDoc, doing lookup against listDocs");
         let newListDoc = listDocs.find((el: any) => el._id === pageState.selectedListID);
         if (newListDoc == undefined) {return}
         newPageState.listDoc = newListDoc;
@@ -157,6 +155,12 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
       setPageState(prevState => (
         {...prevState, changesMade: true, listDoc: {...prevState.listDoc, name: updName}}));
     }  
+  }
+
+  function updateListGroup(updGroup: string) {
+    if (pageState.listGroupID !== updGroup) {
+      setPageState(prevState => ({...prevState, changesMade: true, listDoc: {...prevState.listDoc, listGroupID: updGroup}}))
+    }
   }
 
 async function deleteListFromDB() {
@@ -303,6 +307,13 @@ function deletePrompt() {
                   onIonChange={(e: any) => updateName(e.detail.value)}
                   value={(pageState.listDoc as any).name}>
               </IonInput>
+            </IonItem>
+            <IonItem key="listgroup">
+              <IonSelect disabled={mode!=="new"} key="listgroupsel" label="List Group" labelPlacement='stacked' interface="popover" onIonChange={(e: any) => updateListGroup(e.detail.value)} value={pageState.listDoc.listGroupID}>
+                {listCombinedRows.map((lr) => {
+                  if (lr.rowType === RowType.listGroup) return ( <IonSelectOption key={lr.rowKey} value={lr.listGroupID}>{lr.listGroupName}</IonSelectOption> )
+                })}
+              </IonSelect>
             </IonItem>
             <IonItemGroup key="categorylist">
             {categoryElem}

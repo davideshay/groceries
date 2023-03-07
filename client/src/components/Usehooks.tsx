@@ -118,6 +118,27 @@ export function useUpdateCompleted() {
     [db])
 }
 
+export function useDeleteItemsInListGroup() {
+  const db=usePouch()
+
+  return useCallback(
+    async (listGroupID: string) => {
+      let response: PouchResponse = cloneDeep(PouchResponseInit);
+      let itemResults = await db.find({
+        selector: {
+          type: "item",
+          name: { $exists: true },
+          listGroupID: listGroupID}
+      })
+      for (let i = 0; i < itemResults.docs.length; i++) {
+        const itemDoc: any = itemResults.docs[i];
+        try {db.remove(itemDoc)}
+        catch(err) { response.successful= false; response.fullError = err; }
+        }
+      return response;
+    },[db]) 
+}
+
 export function useDeleteListFromItems() {
   const db=usePouch()
 

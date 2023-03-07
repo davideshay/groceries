@@ -73,7 +73,7 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
           <IonRadioGroup value={localSettings?.addListOption} onIonChange={(e) => changeSetting("addListOption",e.detail.value)}>
           <IonLabel position="stacked">Add To List Options</IonLabel>
           <IonItem key="addallauto">
-            <IonRadio value={AddListOptions.addToAllListsAutomatically} slot="start">Add Items To All Lists automatically</IonRadio>
+            <IonRadio value={AddListOptions.addToAllListsAutomatically} slot="start">Add Items To All Lists in Same List Group Automatically</IonRadio>
           </IonItem>
           <IonItem key="addcategoryauto">
             <IonRadio value={AddListOptions.addToListsWithCategoryAutomatically} slot="start">Add Items to Lists with matching categories automatically</IonRadio>

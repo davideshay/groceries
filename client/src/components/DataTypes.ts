@@ -136,6 +136,7 @@ export const ListGroupDocInit:ListGroupDoc = {
   export interface PageState {
     selectedListOrGroupID: string,
     selectedListType: RowType,
+    groupIDforSelectedList: string,
     doingUpdate: boolean,
     itemRows: Array<ItemRow>,
     showAlert: boolean,

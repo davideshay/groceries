@@ -130,7 +130,7 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
         if (uomName != null) {
             const uomDoc = uomDocs.find((el: any) => (el.name === uomName));
             if (uomDoc != undefined) {
-                if (itemRow.quantity === 1) {
+                if (Number(itemRow.quantity) === 1) {
                     uomDesc = uomDoc.description;
                 } else {
                     uomDesc = uomDoc.pluralDescription;
