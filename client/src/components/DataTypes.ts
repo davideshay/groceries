@@ -139,6 +139,7 @@ export const ListGroupDocInit:ListGroupDoc = {
     groupIDforSelectedList: string,
     doingUpdate: boolean,
     itemRows: Array<ItemRow>,
+    ignoreCheckOffWarning: boolean,
     showAlert: boolean,
     alertHeader: string,
     alertMessage: string

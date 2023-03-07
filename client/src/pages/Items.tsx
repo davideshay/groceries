@@ -1,7 +1,7 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonItemGroup,
   IonItemDivider, IonButton, IonButtons, IonFab, IonFabButton, IonIcon, IonCheckbox, IonLabel, IonSelect,
   IonSelectOption, IonSearchbar, IonPopover, IonAlert,IonMenuButton, useIonToast, IonGrid, IonRow, 
-  IonRouterLink, IonCol} from '@ionic/react';
+  IonRouterLink, IonCol, useIonAlert} from '@ionic/react';
 import { add,checkmark } from 'ionicons/icons';
 import React, { useState, useEffect, useContext, useRef, KeyboardEvent } from 'react';
 import { useParams, Link } from 'react-router-dom';
@@ -23,11 +23,13 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   const [searchState,setSearchState] = useState<SearchState>({searchCriteria:"",isOpen: false,isFocused: false,event: undefined, filteredSearchRows: [], dismissEvent: undefined});
   const [pageState, setPageState] = useState<PageState>({selectedListOrGroupID: routeListID, 
           selectedListType: (routeMode == "list" ? RowType.list : RowType.listGroup) ,
+          ignoreCheckOffWarning: false,
           groupIDforSelectedList: "",
           doingUpdate: false, itemRows: [], showAlert: false, alertHeader: "", alertMessage: ""});
   const searchRef=useRef<HTMLIonSearchbarElement>(null);
   const origSearchCriteria = useRef("");
   const [presentToast] = useIonToast();
+  const [presentAlert, dismissAlert] = useIonAlert();
   const updateItemInList = useUpdateGenericDocument();
 
   const { docs: itemDocs, loading: itemLoading } = useFind({
@@ -251,6 +253,17 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   )};  
 
   async function completeItemRow(id: String, newStatus: boolean | null) {
+    if (pageState.selectedListType == RowType.listGroup && !pageState.ignoreCheckOffWarning) {
+       await presentAlert({
+        header: "Checking Items in List Group",
+        subHeader: "Warning: You are checking off/on items while in List Group mode. Normally you would change to the shopping list first to make these changes. Continue? ",
+        buttons: [ { text: "Cancel", role: "Cancel" ,
+                    handler: () => dismissAlert()},
+                    { text: "Continue/Ignore", role: "confirm",
+                    handler: () => {setPageState(prevState => ({...prevState,ignoreCheckOffWarning: true})); dismissAlert()}}]
+      })
+    }
+    console.log("proceeding past alert...");
     // make the update in the database, let the refresh of the view change state
     let itemDoc: ItemDoc = cloneDeep(itemDocs.find(element => (element._id === id)))
     console.log("In CIR, itemDoc to update = ",cloneDeep(itemDoc));
