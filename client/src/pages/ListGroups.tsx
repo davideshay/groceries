@@ -1,12 +1,10 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonButtons, 
-  IonMenuButton, IonButton, IonFab, IonFabButton, IonIcon, IonText } from '@ionic/react';
+  IonMenuButton, IonButton, IonFab, IonFabButton, IonIcon} from '@ionic/react';
 import { add } from 'ionicons/icons';
-import { useFind } from 'use-pouchdb';
 import SyncIndicator from '../components/SyncIndicator';
 import { HistoryProps, ListCombinedRow, RowType } from '../components/DataTypes';
 import './ListGroups.css';
 import { useLists } from '../components/Usehooks';
-import { cloneDeep } from 'lodash';
 
 const ListGroups: React.FC<HistoryProps> = (props: HistoryProps) => {
 
@@ -28,10 +26,10 @@ const ListGroups: React.FC<HistoryProps> = (props: HistoryProps) => {
       <IonContent>
         <IonList lines="full">
                {listCombinedRows.map((row: ListCombinedRow) => { 
-                  if (row.rowType == RowType.listGroup) return (
+                  if (row.rowType === RowType.listGroup) { return (
                   (<IonItem key={row.rowKey} >
                     <IonButton slot="start" class="textButton" fill="clear" routerLink={("/listgroup/edit/" + row.listGroupID)}>{row.rowName}</IonButton>
-                  </IonItem>)) }
+                  </IonItem>))} }
         )}
         </IonList>
       </IonContent>

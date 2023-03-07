@@ -16,7 +16,9 @@ import { PouchResponse, HistoryProps, ItemDoc, ItemDocInit, ItemList, ListRow } 
 import { RemoteDBStateContext } from '../components/RemoteDBState';
 
 type ModalState = {
+  selectedListId: string,
   selectedListIdx: number,
+  selectedListName: string,
   isOpen: boolean
 }
 
@@ -26,7 +28,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
   if ( mode === "new" ) { routeItemID = "<new>"};
   const [needInitItemDoc,setNeedInitItemDoc] = useState((mode === "new") ? true: false);
   const [stateItemDoc,setStateItemDoc] = useState<ItemDoc>(ItemDocInit);
-  const [modalState, setModalState] = useState<ModalState>({selectedListIdx: 0, isOpen: false})
+  const [modalState, setModalState] = useState<ModalState>({selectedListId: "", selectedListIdx: 0, selectedListName: "", isOpen: false})
   const [formError,setFormError] = useState("");
   const updateItem  = useUpdateGenericDocument();
   const addItem = useCreateGenericDocument();
@@ -306,11 +308,17 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function editListModal(listID: string) {
-    setModalState({...modalState,isOpen: true});
+    console.log("in ELM: list: ",listID);
+    let listIdx = 0;
+    for (let i = 0; i < stateItemDoc.lists.length; i++) {
+      if (stateItemDoc.lists[i].listID == listID) { listIdx=i; break;}
+    }
+    let listFoundIdx=listDocs.findIndex((element: any) => (element._id === listID));
+    let listName = (listFoundIdx == -1) ? "" : listDocs[listFoundIdx].name
+    console.log("edit list modal, listID: ",listID, listIdx);
+    setModalState(prevState => ({...prevState,isOpen: true, selectedListId: listID, 
+      selectedListName: listName, selectedListIdx: listIdx}));
   }
-
-
-
 
   let listsElem=[];
   let listsInnerElem=[];
@@ -336,24 +344,39 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
           <IonCol size="2"><IonCheckbox aria-label="" onIonChange={(e: any) => changeStockedAt(listID,Boolean(e.detail.checked))} checked={stockedAt}></IonCheckbox></IonCol>
           <IonCol size="2">{stateItemDoc.lists[i].quantity}</IonCol>
           <IonCol size="2">{listIsDifferentThanCommon(i)}</IonCol>
-          <IonCol size="1"><IonButton onClick={(e) => editListModal(listID)}><IonIcon icon={pencilOutline}></IonIcon></IonButton></IonCol>
+          <IonCol size="1"><IonButton onClick={(e) => {console.log(e); editListModal(listID)}} ><IonIcon icon={pencilOutline}></IonIcon></IonButton></IonCol>
         </IonRow>
       )
     }
   }
   listsElem.push(<IonItem key="listlist"><IonGrid>{listsInnerElem}</IonGrid></IonItem>)
+  listsElem.push(<IonItem key="diffNote"><IonText>A * in diff indicates that this list contains values different than the common ones show above.</IonText></IonItem>)
 
   let modalEditorElem: any = [];
   modalEditorElem.push(
     <IonModal key="item-modal" id="item-list" isOpen={modalState.isOpen}>
-      <IonTitle>Editing Acme List values</IonTitle>
+      <IonTitle>Editing {modalState.selectedListName} List values</IonTitle>
       <IonList>
-        <IonInput key="modal-qty" label="quantity"></IonInput>
-        <IonInput key="modal-uom" label="unit of measure"></IonInput>
-        <IonButton key="modal-close" onClick={() => setModalState({...modalState,isOpen: false})}>Close Me</IonButton>
+        <IonGrid>
+          <IonRow>
+            <IonCol size="4">Active</IonCol>
+            <IonCol size="4">Completed</IonCol>
+            <IonCol size="4">Stocked Here</IonCol>
+          </IonRow>
+          <IonRow>
+            <IonCol size="4"><IonCheckbox aria-label="" labelPlacement="end" checked={stateItemDoc.lists[modalState.selectedListIdx].active}></IonCheckbox></IonCol>
+            <IonCol size="4"><IonCheckbox aria-label="" labelPlacement="end" checked={stateItemDoc.lists[modalState.selectedListIdx].completed}></IonCheckbox></IonCol>
+            <IonCol size="4"><IonCheckbox aria-label="" labelPlacement="end" checked={stateItemDoc.lists[modalState.selectedListIdx].stockedAt}></IonCheckbox></IonCol>
+          </IonRow>
+        </IonGrid>
+        <IonItem><IonText>Category is: {stateItemDoc.lists[modalState.selectedListIdx].categoryID}</IonText></IonItem>
+        <IonItem><IonInput key="modal-qty" label="quantity" value={stateItemDoc.lists[modalState.selectedListIdx].quantity}></IonInput></IonItem>
+        <IonItem><IonInput key="modal-uom" label="unit of measure" value={stateItemDoc.lists[modalState.selectedListIdx].uomName}></IonInput></IonItem>
+        <IonItem><IonText>Item was purchased from here {stateItemDoc.lists[modalState.selectedListIdx].boughtCount} times</IonText><IonButton slot="end">Reset</IonButton></IonItem>
+        <IonItem><IonTextarea label='Note' labelPlacement='stacked' value={stateItemDoc.lists[modalState.selectedListIdx].note}></IonTextarea></IonItem>
+        <IonItem><IonButton key="modal-close" onClick={() => setModalState({...modalState,isOpen: false})}>Close Me</IonButton></IonItem>
       </IonList>
     </IonModal>
-
   )
   
   let thisListGroup = listCombinedRows.find(el => el.listGroupID == stateItemDoc.listGroupID);
