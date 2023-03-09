@@ -13,9 +13,9 @@ interface ListsAllProps {
 
 const ListsAll: React.FC<ListsAllProps> = ({separatePage}) => {
   const { remoteDBCreds } = useContext(RemoteDBStateContext);
-  const { listRowsLoading, listCombinedRows} = useLists();
+  const { listRowsLoaded, listCombinedRows} = useLists();
 
-  if (listRowsLoading) { return (<></>) }
+  if (!listRowsLoaded) { return (<></>) }
   
   function addRow({separatePage, showLinkID, editLinkID, rowKey, rowName, extraClass }: 
       { separatePage: boolean, showLinkID: string, editLinkID: string, rowKey: string, rowName: string, extraClass: string}) {

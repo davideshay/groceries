@@ -5,6 +5,7 @@ import { useLists } from '../components/Usehooks';
 import { ConnectionStatus, RemoteDBStateContext } from '../components/RemoteDBState';
 import { navigateToFirstListID } from '../components/RemoteUtilities';
 import { initialSetupActivities } from '../components/Utilities';
+import { cloneDeep } from 'lodash';
 
 type InitialLoadProps = {
   history : any
@@ -13,7 +14,7 @@ type InitialLoadProps = {
 const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
     const { remoteDBState, remoteDBCreds, setConnectionStatus} = useContext(RemoteDBStateContext);
     const [ present,dismiss] = useIonLoading()
-    const { listRowsLoading, listRows } = useLists()
+    const { listRowsLoaded, listRows } = useLists()
     const db=usePouch();
   
     useEffect(() => {
@@ -22,14 +23,16 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
             await navigateToFirstListID(db,props.history,remoteDBCreds,listRows);
             setConnectionStatus(ConnectionStatus.initialNavComplete);
         }
-        if (!listRowsLoading) {
+        console.log(cloneDeep({listRowsLoaded,listRows}));
+        if (listRowsLoaded) {
+            console.log("listRows in initialLoad:",cloneDeep(listRows));
             if ((remoteDBState.connectionStatus === ConnectionStatus.loginComplete)) {
                 initialStartup();
             } else {
                 present({message: "Please wait, logging into server...", duration: 500})
             }
         }      
-    },[remoteDBState.connectionStatus, listRowsLoading])   
+    },[remoteDBState.connectionStatus, listRowsLoaded])   
 
     useEffect(() => {
         if (remoteDBState.connectionStatus === ConnectionStatus.navToLoginScreen) {

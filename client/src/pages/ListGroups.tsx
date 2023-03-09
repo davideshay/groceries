@@ -8,9 +8,9 @@ import { useLists } from '../components/Usehooks';
 
 const ListGroups: React.FC<HistoryProps> = (props: HistoryProps) => {
 
-  const { listRowsLoading, listCombinedRows} = useLists()
+  const { listRowsLoaded, listCombinedRows} = useLists()
 
-  if (listRowsLoading) { return (
+  if (!listRowsLoaded) { return (
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
   )}
 

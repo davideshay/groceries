@@ -9,7 +9,7 @@ import { useUpdateGenericDocument, useCreateGenericDocument, useFriends,
   UseFriendState, useLists, useDeleteGenericDocument, useDeleteItemsInListGroup, useGetOneDoc } from '../components/Usehooks';
 import { cloneDeep, isEmpty, isEqual } from 'lodash';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
-import { initUserIDList, initUsersInfo, PouchResponse, ResolvedFriendStatus, UserIDList, UsersInfo, HistoryProps, ListGroupDoc, ListGroupDocInit, ListCombinedRow, RowType } from '../components/DataTypes';
+import { initUserIDList, initUsersInfo, PouchResponse, ResolvedFriendStatus, UserIDList, UsersInfo, HistoryProps, ListGroupDoc, ListGroupDocInit, ListCombinedRow, RowType, FriendRow } from '../components/DataTypes';
 import SyncIndicator from '../components/SyncIndicator';
 import { getUsersInfo } from '../components/Utilities';
 import './ListGroup.css';
@@ -37,7 +37,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
     changesMade: false,
     formError: "",
     usersLoaded: false,
-    usersInfo: cloneDeep(initUsersInfo),
+    usersInfo: [],
     deletingDoc: false
   })
   const updateListGroupWhole  = useUpdateGenericDocument();
@@ -48,7 +48,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
   const [ presentToast ] = useIonToast();
   const {useFriendState, friendRows} = useFriends(String(remoteDBCreds.dbUsername));
-  const { listCombinedRows, listRows, listRowsLoading } = useLists();
+  const { listCombinedRows, listRows, listRowsLoaded } = useLists();
   const { docs: categoryDocs, loading: categoryLoading } = useFind({
     index: { fields: [ "type","name"] },
     selector: { type: "category", name: { $exists: true}},
@@ -66,23 +66,29 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
     console.log("in changeListUpdateState about to update listdoc");
     setPageState(prevState => ({...prevState,
         selectedListGroupID: listGroupID}))
-    props.history.push('/list/edit/'+listGroupID);    
+    props.history.push('/listgroup/edit/'+listGroupID);    
   }
 
   useEffect( () => {
     async function getUI(userIDList: UserIDList) {
-      let usersInfo: UsersInfo
+      console.log("in GetUI, list: ", cloneDeep(userIDList));
+      let usersInfo: UsersInfo = cloneDeep(initUsersInfo);
       if (userIDList.userIDs.length > 0) {
         setPageState(prevState => ({...prevState,usersInfo:[],usersLoaded:false}));
         usersInfo = await getUsersInfo(userIDList,String(remoteDBCreds.apiServerURL),String(remoteDBState.accessJWT))  
+        console.log("about to set users info to: ", cloneDeep(usersInfo));
       }
       setPageState(prevState => ({...prevState,usersInfo: usersInfo,usersLoaded: true}))
     }
     let newPageState: PageState =cloneDeep(pageState);
-    if (!listRowsLoading && (useFriendState === UseFriendState.rowsLoaded) && !categoryLoading && !listGroupLoading) {
+    if (listRowsLoaded && (useFriendState === UseFriendState.rowsLoaded) && !categoryLoading && !listGroupLoading) {
       if (mode === "new" && pageState.needInitListGroupDoc) {
         let initListGroupDoc = ListGroupDocInit;
         newPageState.listGroupDoc=initListGroupDoc;
+        newPageState.listGroupDoc.listGroupOwner=String(remoteDBCreds.dbUsername);
+        friendRows.forEach((fr: FriendRow) => {
+          newPageState.listGroupDoc.sharedWith.push(fr.targetUserName);
+        })
         newPageState.needInitListGroupDoc=false;
       }
       else if (mode !== "new") {
@@ -91,14 +97,16 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
       newPageState.changesMade=false;
       setPageState(newPageState);
       let userIDList: UserIDList = cloneDeep(initUserIDList);
+      console.log("newPageStatee: ",cloneDeep(newPageState));
       newPageState.listGroupDoc.sharedWith.forEach((user: any) => {
         userIDList.userIDs.push(user);
       });
+      console.log("userIDlist:",cloneDeep(userIDList));
       getUI(userIDList);
     }
-  },[listGroupLoading, listGroupDoc, listRowsLoading,useFriendState,friendRows, categoryLoading,categoryDocs,pageState.selectedListGroupID, remoteDBState.accessJWT]);
+  },[listGroupLoading, listGroupDoc, listRowsLoaded,useFriendState,friendRows, categoryLoading,categoryDocs,pageState.selectedListGroupID, remoteDBState.accessJWT]);
 
-  if (listRowsLoading || listGroupLoading ||(useFriendState !== UseFriendState.rowsLoaded) || categoryLoading || isEmpty(pageState.listGroupDoc) || !pageState.usersLoaded || pageState.deletingDoc)  {return(
+  if (!listRowsLoaded || listGroupLoading ||(useFriendState !== UseFriendState.rowsLoaded) || categoryLoading || isEmpty(pageState.listGroupDoc) || !pageState.usersLoaded || pageState.deletingDoc)  {return(
       <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
   )};
   
@@ -189,6 +197,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
       }
     }
   } else { // not the list owner
+    console.log("pagestate: ", cloneDeep(pageState));
     pageState.usersInfo.forEach(user => {
       console.log("getting data for userinfo user:",cloneDeep(user));
       if (user.name !== remoteDBCreds.dbUsername && user.name !== pageState.listGroupDoc.listGroupOwner) {

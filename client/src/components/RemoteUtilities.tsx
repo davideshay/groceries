@@ -2,12 +2,15 @@ import { DBCreds, RemoteDBState } from "./RemoteDBState";
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import jwt_decode from 'jwt-decode';
 import { ListRow } from "./DataTypes";
+import { cloneDeep } from "lodash";
 
 export async function navigateToFirstListID(db: any,phistory: any,remoteDBCreds: DBCreds, listRows: ListRow[]) {
     let firstListID = null;
+    console.log(cloneDeep({listRows}))
     if (listRows.length > 0) {
       firstListID = listRows[0].listDoc._id;
     }
+    console.log("firstListID:",firstListID);
     if (firstListID == null) {
         phistory.push("/lists");
     } else {

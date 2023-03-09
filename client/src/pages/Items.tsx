@@ -39,7 +39,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       "$or": [ {listGroupID: pageState.selectedListOrGroupID} , 
                {lists: { $elemMatch: { "listID": pageState.selectedListOrGroupID , "active" : true} }}] },
     sort: [ "type", "name"]})
-  const { listCombinedRows,listRows, listRowsLoading } = useLists();
+  const { listCombinedRows,listRows, listRowsLoaded } = useLists();
   const { docs: uomDocs, loading: uomLoading } = useFind({
     index: { fields: [ "type","name"]},
     selector: { type: "uom", name: { $exists: true}},
@@ -69,19 +69,19 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   },[routeListID,routeMode])
 
   useEffect( () => {
-    if (!listRowsLoading) {
+    if (listRowsLoaded) {
       setPageState(prevState => ({...prevState,groupIDforSelectedList: getGroupIDForList(pageState.selectedListOrGroupID)}))
     }
-  },[listRowsLoading,pageState.selectedListOrGroupID])
+  },[listRowsLoaded,pageState.selectedListOrGroupID])
 
   useEffect( () => {
-    if (!itemLoading && !listRowsLoading && !categoryLoading && !allItemsLoading &&!uomLoading) {
+    if (!itemLoading && listRowsLoaded && !categoryLoading && !allItemsLoading &&!uomLoading) {
       setPageState( (prevState) => ({ ...prevState,
         doingUpdate: false,
-        itemRows: getItemRows(itemDocs as ItemDocs, listCombinedRows, categoryDocs, uomDocs, pageState.selectedListType, pageState.selectedListOrGroupID),
+        itemRows: getItemRows(itemDocs as ItemDocs, listCombinedRows, categoryDocs, uomDocs, pageState.selectedListType, pageState.selectedListOrGroupID)
       }))
     }
-  },[itemLoading, allItemsLoading, listRowsLoading, categoryLoading, uomLoading, uomDocs, itemDocs, listCombinedRows, allItemDocs, categoryDocs, pageState.selectedListOrGroupID]);
+  },[itemLoading, allItemsLoading, listRowsLoaded, categoryLoading, uomLoading, uomDocs, itemDocs, listCombinedRows, allItemDocs, categoryDocs, pageState.selectedListOrGroupID]);
 
   useEffect( () => {
     setSearchRows(getAllSearchRows(allItemDocs,pageState.selectedListOrGroupID));
@@ -96,7 +96,9 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     }  
   },[searchState.searchCriteria,searchState.isFocused])
   
-  if (itemLoading || listRowsLoading || categoryLoading || allItemsLoading || uomLoading || pageState.doingUpdate )  {return(
+  console.log(cloneDeep({itemLoading, listRowsLoaded,categoryLoading,allItemsLoading,uomLoading,listRows}),cloneDeep(pageState.itemRows));
+
+  if (itemLoading || !listRowsLoaded || categoryLoading || allItemsLoading || uomLoading || pageState.doingUpdate )  {return(
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
   )};  
 
@@ -263,20 +265,17 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
                     handler: () => {setPageState(prevState => ({...prevState,ignoreCheckOffWarning: true})); dismissAlert()}}]
       })
     }
-    console.log("proceeding past alert...");
     // make the update in the database, let the refresh of the view change state
     let itemDoc: ItemDoc = cloneDeep(itemDocs.find(element => (element._id === id)))
-    console.log("In CIR, itemDoc to update = ",cloneDeep(itemDoc));
     setPageState(prevState=> ({...prevState,doingUpdate: true}));
     let listChanged=false;
     itemDoc.lists.forEach((list: ItemList) => {
-      console.log("checking list to update:", cloneDeep(list));
       let updateThisList=false;
-      if (pageState.selectedListOrGroupID == list.listID) {console.log("on exact list, true"); updateThisList = true;}
-      if (pageState.selectedListType == RowType.listGroup) {console.log("on list Group type, true"); updateThisList = true};
+      if (pageState.selectedListOrGroupID == list.listID) { updateThisList = true;}
+      if (pageState.selectedListType == RowType.listGroup) { updateThisList = true};
       if (pageState.selectedListType == RowType.list && 
           globalState.settings.removeFromAllLists &&
-          newStatus) { console.log("list mode, not current list, true"); updateThisList = true;}
+          newStatus) { updateThisList = true;}
       if (updateThisList) {
         list.completed = Boolean(newStatus);
         if (newStatus) {
@@ -285,7 +284,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         listChanged=true;
       }
     });
-    console.log("new version of itemDoc:", cloneDeep(itemDoc), " listChanged:", listChanged);
     if (listChanged) {
       let response = await updateItemInList(itemDoc);
       console.log("did update, response is:", cloneDeep(response));

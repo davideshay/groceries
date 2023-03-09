@@ -46,7 +46,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
   const addUOMDoc = useCreateGenericDocument();
   const delItem = useDeleteGenericDocument();
   const { doc: itemDoc, loading: itemLoading } = useGetOneDoc(routeItemID);
-  const { listDocs, listCombinedRows, listsLoading, listRows, listRowsLoading, listRowsLoaded} = useLists()
+  const { listDocs, listCombinedRows, listsLoading, listRows, listRowsLoaded} = useLists()
 
   const { docs: categoryDocs, loading: categoryLoading } = useFind({
       index: { fields: [ "type","name"] },
@@ -73,6 +73,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
     console.log("ALINE, itemDoc is: ", cloneDeep(newItemDoc));
 //    let baseList = listRows.find((listRow: ListRow) => listRow.listDoc._id === globalState.callingListID)
     for (let i = 0; i < listRows.length; i++) {
+      if (listRows[i].listGroupID !== stateItemDoc.listGroupID) {break}
       let foundIdx=newItemDoc.lists.findIndex((el: ItemList) => el.listID === listRows[i].listDoc._id && groupIDForList(el.listID) === itemDoc.listGroupID)
       if (foundIdx === -1) {
           newItemDoc.lists.push({
@@ -98,9 +99,9 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
       }
       if (newItemDoc != null) {setStateItemDoc(newItemDoc as any)};
     }
-  },[itemLoading,itemDoc,listsLoading,listDocs,listRowsLoading,listRowsLoaded, listRows,globalState.itemMode,globalState.newItemName, globalState.callingListID]);
+  },[itemLoading,itemDoc,listsLoading,listDocs,listRowsLoaded,listRowsLoaded, listRows,globalState.itemMode,globalState.newItemName, globalState.callingListID]);
 
-  if (itemLoading || listsLoading || listRowsLoading || categoryLoading || uomLoading || isEmpty(stateItemDoc))  {
+  if (itemLoading || listsLoading || !listRowsLoaded || categoryLoading || uomLoading || isEmpty(stateItemDoc))  {
     return(
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader></IonPage>
   )};

@@ -74,7 +74,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     const [remoteState,setRemoteState]=useState<RemoteState>(initRemoteState);
     const [presentAlert] = useIonAlert();
     const { remoteDBState, remoteDBCreds, setRemoteDBState, setRemoteDBCreds, errorCheckCreds, assignDB, setDBCredsValue} = useContext(RemoteDBStateContext);
-    const { listRowsLoading, listRows } = useLists();
+    const { listRowsLoaded, listRows } = useLists();
 
     // effect for dbuuidaction not none
     useEffect( () => {
@@ -102,7 +102,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     },[remoteDBState.dbUUIDAction])
 
     useEffect( () => {
-      if (!listRowsLoading) {
+      if (listRowsLoaded) {
         if (remoteDBState.connectionStatus === ConnectionStatus.cannotStart) {
           console.log("Detected cannot start, setting initRemoteState");
           setRemoteState(initRemoteState);
@@ -110,7 +110,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
           navigateToFirstListID(db,props.history,remoteDBCreds, listRows);
         }
       }
-    },[remoteDBState.connectionStatus, db, props.history, remoteDBCreds, listRowsLoading]);
+    },[remoteDBState.connectionStatus, db, props.history, remoteDBCreds, listRowsLoaded]);
 
     async function destroyAndExit() {
       await db.destroy();
