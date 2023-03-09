@@ -389,8 +389,14 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
   let modalEditorElem: any = [];
   modalEditorElem.push(
     <IonModal key="item-modal" id="item-list" isOpen={modalState.isOpen}>
-      <IonTitle>Editing {modalState.selectedListName} List values</IonTitle>
-      <IonList>
+{/*       <IonHeader>
+      <IonToolbar>
+      </IonToolbar>
+      </IonHeader>
+      <IonContent scrollY={false} className="danger2">
+ */}
+     <IonTitle>Editing {modalState.selectedListName} List values</IonTitle>
+     <IonList>
         <IonGrid>
           <IonRow>
             <IonCol size="4">Active</IonCol>
@@ -433,6 +439,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
           <IonButton key="modal-close" onClick={() => cancelModal()}>Cancel</IonButton>
         </IonItem>  
       </IonList>
+      {/* </IonContent> */}
     </IonModal>
   )
   
@@ -504,7 +511,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
           {mode !== "new" ? 
             (<IonButton onClick={() => deleteItem()}><IonIcon slot="start" icon={trashOutline}></IonIcon>Delete</IonButton>)
             : <></>}
-          <IonButton onClick={() => updateThisItem()}>{mode === "new" ? "Add": "Update"}</IonButton>
+          <IonButton onClick={() => updateThisItem()}>{mode === "new" ? "Add": "Update"}<IonIcon slot="start" icon={pencilOutline}></IonIcon></IonButton>
       </IonContent>
     </IonPage>
   );

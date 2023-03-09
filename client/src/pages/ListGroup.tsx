@@ -1,7 +1,7 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput,
    IonItem, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonSelectOption,
-   IonReorder, IonReorderGroup,ItemReorderEventDetail, IonButtons, IonMenuButton, 
-   useIonToast, IonFooter, useIonAlert } from '@ionic/react';
+  IonButtons, IonMenuButton, 
+   useIonToast, IonIcon, useIonAlert } from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext } from 'react';
@@ -14,6 +14,7 @@ import SyncIndicator from '../components/SyncIndicator';
 import { getUsersInfo } from '../components/Utilities';
 import './ListGroup.css';
 import { forEach } from 'lodash';
+import { closeCircleOutline, pencilOutline, trashBinOutline } from 'ionicons/icons';
 
 interface PageState {
   needInitListGroupDoc: boolean,
@@ -301,14 +302,14 @@ function deletePrompt() {
 
   let updateButton=[];
   if (mode === "new") {
-    updateButton.push(<IonButton key="add" onClick={() => updateThisItem()}>Add</IonButton>)
+    updateButton.push(<IonButton key="add" onClick={() => updateThisItem()}>Add<IonIcon slot="start" icon={pencilOutline}></IonIcon></IonButton>)
   } else {
-    updateButton.push(<IonButton key="update" onClick={() => updateThisItem()}>Update</IonButton>)
+    updateButton.push(<IonButton key="update" onClick={() => updateThisItem()}>Update<IonIcon slot="start" icon={pencilOutline}></IonIcon></IonButton>)
   }
 
   let deleteButton=[];
   if (iAmListOwner) {
-    deleteButton.push(<IonButton key="delete" onClick={() => deletePrompt()}>Delete</IonButton>)
+    deleteButton.push(<IonButton key="delete" onClick={() => deletePrompt()}>Delete<IonIcon slot="start" icon={trashBinOutline}></IonIcon></IonButton>)
   }
 
 
@@ -344,7 +345,7 @@ function deletePrompt() {
           </IonList>
           {updateButton}
           {deleteButton}
-          <IonButton key="back" onClick={() => props.history.goBack()}>Cancel</IonButton>  
+          <IonButton key="back" onClick={() => props.history.goBack()}>Cancel<IonIcon slot="start" icon={closeCircleOutline}></IonIcon></IonButton>  
          <IonItem key="formerror"><IonLabel>{pageState.formError}</IonLabel></IonItem> 
       </IonContent>
     </IonPage>

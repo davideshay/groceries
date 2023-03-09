@@ -27,7 +27,7 @@ const ListsAll: React.FC<ListsAllProps> = ({separatePage}) => {
       baseRow = (
       <IonItem key={rowKey} >
         <IonButton slot="start" className={"textButton "+extraClass} fill="clear" routerLink={(showLinkID)}>{rowName}</IonButton>
-        <IonButton fill="clear" routerLink={editLinkID} slot="end">
+        <IonButton fill="clear" className="textButton" routerLink={editLinkID} slot="end">
         <IonIcon slot="end" icon={pencilOutline}></IonIcon>
         </IonButton>
       </IonItem>)

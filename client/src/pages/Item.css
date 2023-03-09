@@ -1,18 +1,53 @@
-ion-modal#item-list {
-    --border-radius: 16px;
-    --border-width: 20px;
-    --border-color: blue;
-    --max-height: 85%;
+/* ion-modal#item-list {
+    --max-height: 95%;
+    --height: 425px;
     --max-width: 90%;
     --backdrop-opacity:50%;
-  }
+  } */
  
-  ion-modal#item-list .content {
-    margin: 20px 20px 20px 20px;
+  ion-modal#item-list {
+    --width: fit-content;
+    --min-width: 250px;
+    --height: fit-content;
+    --border-radius: 6px;
+    --box-shadow: 0 28px 48px rgba(0, 0, 0, 0.4);
+    padding: 10px;
+  }
+  
+/*   ion-modal.modal-wrapper {
+    height: 20%;
+    top: 80%;
+    background: purple;
+    position: static;
+    display: block;
+    content:initial;
+  }
+ *//*   ion-modal::part(content) {
+    color: pink;
+    padding-left: 15px;
+    padding-right: 15px;
   }
 
-  ion-modal::part(content) {
-    color: purple;
-    padding-left: 20px;
-    padding-right: 20px;
+  ion-title#modal-title {
+    height: 30px;
+    color: chartreuse; 
   }
+
+  .danger2 {
+    background: purple;
+    height: max-content;
+  }
+
+  ion-content.danger2 {
+    height: max-content;
+  }
+
+  ion-content::part(background) {
+    background: chartreuse;
+    height: max-content;
+  }
+
+  ion-content::part(scroll) {
+    background: gold;
+    height: max-content;
+  } */

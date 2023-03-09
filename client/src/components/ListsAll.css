@@ -1,4 +1,11 @@
 ion-button.indented {
-    color:chartreuse;
-    margin-left: 1.5rem;
+    margin-left: 1rem;
+    color: var(--color-primary);
+}
+
+ion-button.textButton {
+    color: var(--color-primary);
+    margin-right: 4px;
+    text-overflow: ellipsis;
+
 }
