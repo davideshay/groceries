@@ -146,7 +146,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
         freqObj[value]=1
       }
     });
-    if (maxCnt = 0 && stateItemDoc.lists.length > 0 ) {maxKey = (stateItemDoc.lists[0] as any)[key]}
+    if (maxCnt === 0 && stateItemDoc.lists.length > 0 ) {maxKey = (stateItemDoc.lists[0] as any)[key]}
     return maxKey;
   }
 
@@ -395,7 +395,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
       </IonHeader>
       <IonContent scrollY={false} className="danger2">
  */}
-     <IonTitle>Editing {modalState.selectedListName} List values</IonTitle>
+     <IonTitle class="modal-title">Editing {modalState.selectedListName} List Values</IonTitle>
      <IonList>
         <IonGrid>
           <IonRow>

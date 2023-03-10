@@ -1,7 +1,7 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonItemGroup,
   IonItemDivider, IonButton, IonButtons, IonFab, IonFabButton, IonIcon, IonCheckbox, IonLabel, IonSelect,
   IonSelectOption, IonSearchbar, IonPopover, IonAlert,IonMenuButton, useIonToast, IonGrid, IonRow, 
-  IonRouterLink, IonCol, useIonAlert} from '@ionic/react';
+  IonRouterLink, IonCol, IonText, useIonAlert} from '@ionic/react';
 import { add,checkmark } from 'ionicons/icons';
 import React, { useState, useEffect, useContext, useRef, KeyboardEvent } from 'react';
 import { useParams, Link } from 'react-router-dom';
@@ -96,8 +96,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     }  
   },[searchState.searchCriteria,searchState.isFocused])
   
-  console.log(cloneDeep({itemLoading, listRowsLoaded,categoryLoading,allItemsLoading,uomLoading,listRows}),cloneDeep(pageState.itemRows));
-
   if (itemLoading || !listRowsLoaded || categoryLoading || allItemsLoading || uomLoading || pageState.doingUpdate )  {return(
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
   )};  
@@ -367,7 +365,9 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
             checked={Boolean(pageState.itemRows[i].completed)}></IonCheckbox>
         </IonCol>
         <IonCol size="11">
-          <IonRouterLink color="dark" href={"/item/edit/"+item.itemID}>{item.itemName + (item.quantityUOMDesc == "" ? "" : " ("+ item.quantityUOMDesc+")")}</IonRouterLink>
+          <IonItem class="item-button" routerLink={"/item/edit/"+item.itemID} key={pageState.itemRows[i].itemID+"mynewbutton"}>{item.itemName + (item.quantityUOMDesc == "" ? "" : " ("+ item.quantityUOMDesc+")")}</IonItem>
+          {/* <a href={"/item/edit/"+item.itemID}>{item.itemName + (item.quantityUOMDesc == "" ? "" : " ("+ item.quantityUOMDesc+")")}</a> */}
+          {/* <IonButton expand="block" fill="clear" class="textButton item-button" routerLink={"/item/edit/"+item.itemID}>{item.itemName + (item.quantityUOMDesc == "" ? "" : " ("+ item.quantityUOMDesc+")")}</IonButton> */}
         </IonCol>
         </IonRow></IonGrid>
       </IonItem>);

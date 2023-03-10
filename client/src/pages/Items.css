@@ -5,3 +5,12 @@
 ion-item.select-interface-option.indented,ion-item.select-interface-option.indented:hover {
     margin-left: 1rem;
 }
+
+ion-item.item-button::part(native) {
+    background: none;
+    --background-hover: none;
+    border: none;
+    min-height: auto;
+    --padding-start: 0;
+    
+}
