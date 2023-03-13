@@ -12,7 +12,7 @@ import './List.css';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
 import { PouchResponse, HistoryProps, ListRow, ListDocInit, ListDoc, RowType } from '../components/DataTypes';
 import SyncIndicator from '../components/SyncIndicator';
-import { closeCircleOutline, pencilOutline, trashBinOutline } from 'ionicons/icons';
+import { closeCircleOutline, pencilOutline, saveOutline, trashBinOutline, trashOutline } from 'ionicons/icons';
 
 interface PageState {
   needInitListDoc: boolean,
@@ -284,13 +284,13 @@ function deletePrompt() {
 
   let updateButton=[];
   if (mode === "new") {
-    updateButton.push(<IonButton key="add" onClick={() => updateThisItem()}>Add<IonIcon slot="start" icon={pencilOutline}></IonIcon></IonButton>)
+    updateButton.push(<IonButton key="add" onClick={() => updateThisItem()}>Add<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
   } else {
-    updateButton.push(<IonButton key="update" onClick={() => updateThisItem()}>Update<IonIcon slot="start" icon={pencilOutline}></IonIcon></IonButton>)
+    updateButton.push(<IonButton key="save" onClick={() => updateThisItem()}>Save<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
   }
 
   let deleteButton=[];
-  deleteButton.push(<IonButton key="delete" onClick={() => deletePrompt()}>Delete<IonIcon slot="start" icon={trashBinOutline}></IonIcon></IonButton>)
+  deleteButton.push(<IonButton fill="outline" color="warning" key="delete" onClick={() => deletePrompt()}>Delete<IonIcon slot="start" icon={trashOutline}></IonIcon></IonButton>)
 
   return (
     <IonPage>
@@ -320,9 +320,9 @@ function deletePrompt() {
             {categoryElem}
             </IonItemGroup>
           </IonList>
-          {updateButton}
           {deleteButton}
-          <IonButton key="back" onClick={() => props.history.goBack()}>Cancel<IonIcon slot="start" icon={closeCircleOutline}></IonIcon></IonButton>  
+          <IonButton key="back" fill="outline"  onClick={() => props.history.goBack()}>Cancel<IonIcon slot="start" icon={closeCircleOutline}></IonIcon></IonButton>  
+          {updateButton}
       </IonContent>
       <IonFooter>
         <IonLabel>{pageState.formError}</IonLabel>

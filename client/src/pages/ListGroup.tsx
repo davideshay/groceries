@@ -13,8 +13,7 @@ import { initUserIDList, initUsersInfo, PouchResponse, ResolvedFriendStatus, Use
 import SyncIndicator from '../components/SyncIndicator';
 import { getUsersInfo } from '../components/Utilities';
 import './ListGroup.css';
-import { forEach } from 'lodash';
-import { closeCircleOutline, pencilOutline, trashBinOutline } from 'ionicons/icons';
+import { closeCircleOutline, saveOutline, trashOutline } from 'ionicons/icons';
 
 interface PageState {
   needInitListGroupDoc: boolean,
@@ -302,14 +301,14 @@ function deletePrompt() {
 
   let updateButton=[];
   if (mode === "new") {
-    updateButton.push(<IonButton key="add" onClick={() => updateThisItem()}>Add<IonIcon slot="start" icon={pencilOutline}></IonIcon></IonButton>)
+    updateButton.push(<IonButton key="add" onClick={() => updateThisItem()}>Add<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
   } else {
-    updateButton.push(<IonButton key="update" onClick={() => updateThisItem()}>Update<IonIcon slot="start" icon={pencilOutline}></IonIcon></IonButton>)
+    updateButton.push(<IonButton key="update" onClick={() => updateThisItem()}>Update<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
   }
 
   let deleteButton=[];
   if (iAmListOwner) {
-    deleteButton.push(<IonButton key="delete" onClick={() => deletePrompt()}>Delete<IonIcon slot="start" icon={trashBinOutline}></IonIcon></IonButton>)
+    deleteButton.push(<IonButton key="delete" fill="outline" color="warning"  onClick={() => deletePrompt()}>Delete<IonIcon slot="start" icon={trashOutline}></IonIcon></IonButton>)
   }
 
 
@@ -343,9 +342,9 @@ function deletePrompt() {
             {usersElem}
             </IonItemGroup>
           </IonList>
-          {updateButton}
           {deleteButton}
-          <IonButton key="back" onClick={() => props.history.goBack()}>Cancel<IonIcon slot="start" icon={closeCircleOutline}></IonIcon></IonButton>  
+          <IonButton key="back" fill="outline" onClick={() => props.history.goBack()}>Cancel<IonIcon slot="start" icon={closeCircleOutline}></IonIcon></IonButton>  
+          {updateButton}
          <IonItem key="formerror"><IonLabel>{pageState.formError}</IonLabel></IonItem> 
       </IonContent>
     </IonPage>

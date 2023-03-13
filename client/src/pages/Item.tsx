@@ -2,7 +2,7 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonLis
   IonButtons, IonMenuButton, IonLabel, IonSelect, IonCheckbox, IonIcon,
   IonSelectOption, useIonAlert,useIonToast, IonTextarea, IonGrid, IonRow, IonCol, IonText, IonCard,
   IonModal, IonCardSubtitle } from '@ionic/react';
-import { addOutline, closeCircleOutline, trashOutline, pencilOutline } from 'ionicons/icons';
+import { addOutline, closeCircleOutline, trashOutline, pencilOutline, saveOutline } from 'ionicons/icons';
 import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext } from 'react';
@@ -435,8 +435,8 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
         <IonItem><IonText>Item was purchased from here {modalState.itemList.boughtCount} times</IonText><IonButton slot="end" onClick={() => setModalState(prevState => ({...prevState, itemList: {...prevState.itemList, boughtCount: 0}}))}>Reset</IonButton></IonItem>
         <IonItem><IonTextarea label='Note' labelPlacement='stacked' value={modalState.itemList.note} onIonChange={(e) => setModalState(prevState => ({...prevState,itemList: {...prevState.itemList,note: String(e.detail.value)}}))}></IonTextarea></IonItem>
         <IonItem>
-          <IonButton key="modalok" onClick={() => saveModal()}>OK</IonButton>
-          <IonButton key="modal-close" onClick={() => cancelModal()}>Cancel</IonButton>
+        <IonButton key="modal-close" onClick={() => cancelModal()}>Cancel</IonButton>
+        <IonButton key="modalok" onClick={() => saveModal()}>OK</IonButton>
         </IonItem>  
       </IonList>
       {/* </IonContent> */}
@@ -507,11 +507,11 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
             {modalEditorElem}
             <IonItem key="formErrors">{formError}</IonItem>
           </IonList>
-          <IonButton onClick={() => props.history.goBack()}><IonIcon slot="start" icon={closeCircleOutline}></IonIcon>Cancel</IonButton>
           {mode !== "new" ? 
-            (<IonButton onClick={() => deleteItem()}><IonIcon slot="start" icon={trashOutline}></IonIcon>Delete</IonButton>)
+            (<IonButton fill="outline" color="warning" onClick={() => deleteItem()}><IonIcon slot="start" icon={trashOutline}></IonIcon>Delete</IonButton>)
             : <></>}
-          <IonButton onClick={() => updateThisItem()}>{mode === "new" ? "Add": "Update"}<IonIcon slot="start" icon={pencilOutline}></IonIcon></IonButton>
+          <IonButton fill="outline" onClick={() => props.history.goBack()}><IonIcon slot="start" icon={closeCircleOutline}></IonIcon>Cancel</IonButton>
+          <IonButton onClick={() => updateThisItem()}>{mode === "new" ? "Add": "Save"}<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>
       </IonContent>
     </IonPage>
   );
