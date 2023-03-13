@@ -12,25 +12,10 @@ import { GlobalStateContext } from '../components/GlobalState';
 import { cloneDeep, isEmpty } from 'lodash';
 import './Item.css';
 import SyncIndicator from '../components/SyncIndicator';
+import ItemLists from '../components/ItemLists';
+import { getCommonKey } from '../components/ItemUtilities';
 import { PouchResponse, HistoryProps, ItemDoc, ItemDocInit, ItemList, ListRow, ItemListInit } from '../components/DataTypes';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
-
-type ModalState = {
-  selectedListId: string,
-  selectedListIdx: number,
-  selectedListName: string,
-  isOpen: boolean,
-  itemList: ItemList
-}
-
-const ModalStateInit : ModalState = {
-  selectedListId: "",
-  selectedListIdx: 0,
-  selectedListName: "",
-  isOpen: false,
-  itemList: ItemListInit
-}
-
 
 const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode, itemid: routeItemID  } = useParams<{mode: string, itemid: string}>();
@@ -38,7 +23,6 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
   if ( mode === "new" ) { routeItemID = "<new>"};
   const [needInitItemDoc,setNeedInitItemDoc] = useState((mode === "new") ? true: false);
   const [stateItemDoc,setStateItemDoc] = useState<ItemDoc>(ItemDocInit);
-  const [modalState, setModalState] = useState<ModalState>(ModalStateInit)
   const [formError,setFormError] = useState("");
   const updateItem  = useUpdateGenericDocument();
   const addItem = useCreateGenericDocument();
@@ -70,8 +54,6 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   function addListsIfNotExist(itemDoc: ItemDoc) {
     let newItemDoc=cloneDeep(itemDoc);
-    console.log("ALINE, itemDoc is: ", cloneDeep(newItemDoc));
-//    let baseList = listRows.find((listRow: ListRow) => listRow.listDoc._id === globalState.callingListID)
     for (let i = 0; i < listRows.length; i++) {
       if (listRows[i].listGroupID !== stateItemDoc.listGroupID) {break}
       let foundIdx=newItemDoc.lists.findIndex((el: ItemList) => el.listID === listRows[i].listDoc._id && groupIDForList(el.listID) === itemDoc.listGroupID)
@@ -132,33 +114,6 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
       (list as any)[key] = val;
     })
     setStateItemDoc(newItemDoc);
-  }
-
-  function getCommonKey(key: string) {
-    let freqObj: any = {};
-    let maxKey = ""; let maxCnt=0;
-    stateItemDoc.lists.forEach( (list: ItemList) => {
-      let value=(list as any)[key]
-      if (freqObj.hasOwnProperty(value)) {
-        freqObj[value]=freqObj[value]+1;
-        if (freqObj[value] > maxCnt) {maxCnt = freqObj[value]; maxKey=value;} 
-      } else {
-        freqObj[value]=1
-      }
-    });
-    if (maxCnt === 0 && stateItemDoc.lists.length > 0 ) {maxKey = (stateItemDoc.lists[0] as any)[key]}
-    return maxKey;
-  }
-
-  function listIsDifferentThanCommon(listIdx: number) {
-    let anyDifferences=false;
-    for (const [key, value] of Object.entries(stateItemDoc.lists[listIdx])) {
-      if (key != "listID") { 
-        let commonVal = getCommonKey(key);
-        if (commonVal != value) { anyDifferences=true}
-      }  
-    }
-    return (anyDifferences ? "*" : "")
   }
 
   async function addNewCategory(category: string) {
@@ -271,177 +226,9 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
     })
   }
 
-  function selectList(listID: string, updateVal: boolean) {
-    let newItemDoc=cloneDeep(stateItemDoc);
-    let listFound=false
-    for (let i = 0; i < newItemDoc.lists.length; i++) {
-      if (newItemDoc.lists[i].listID === listID) {
-        newItemDoc.lists[i].active = updateVal;
-        listFound=true;
-        if(updateVal) {newItemDoc.lists[i].boughtCount++}
-      }    
-    }
-    if (!listFound) {
-      let listobj={
-        listID: listID,
-        boughtCount: 0,
-        active: updateVal,
-        checked: false
-      }
-      newItemDoc.lists.push(listobj);
-    }
-    setStateItemDoc(newItemDoc);
-  }
-
-  function changeStockedAt(listID: string, updateVal: boolean) {
-    let newItemDoc=cloneDeep(stateItemDoc);
-    let listFound=false
-    for (let i = 0; i < newItemDoc.lists.length; i++) {
-      if (newItemDoc.lists[i].listID === listID) {
-        newItemDoc.lists[i].stockedAt = updateVal;
-        listFound=true;
-      }    
-    }
-    if (!listFound) {
-      let listobj={
-        listID: listID,
-        boughtCount: 0,
-        active: updateVal,
-        stockedAt: true,
-        checked: false
-      }
-      newItemDoc.lists.push(listobj);
-    }
-    setStateItemDoc(newItemDoc);
-  }
-
-  function resetBoughtCount(listID: string) {
-    let newItemDoc=cloneDeep(stateItemDoc);
-    for (let i = 0; i < newItemDoc.lists.length; i++) {
-      if (newItemDoc.lists[i].listID === listID) {
-        newItemDoc.lists[i].boughtCount = 0;
-      }    
-    }
-    setStateItemDoc(newItemDoc);
-  }
-
-  function editListModal(listID: string) {
-    console.log("in ELM: list: ",listID);
-    let listIdx = 0;
-    for (let i = 0; i < stateItemDoc.lists.length; i++) {
-      if (stateItemDoc.lists[i].listID == listID) { listIdx=i; break;}
-    }
-    let listFoundIdx=listDocs.findIndex((element: any) => (element._id === listID));
-    let listName = (listFoundIdx == -1) ? "" : listDocs[listFoundIdx].name
-    console.log("edit list modal, listID: ",listID, listIdx);
-    setModalState(prevState => ({...prevState,isOpen: true, selectedListId: listID, 
-      selectedListName: listName, selectedListIdx: listIdx, itemList: cloneDeep(stateItemDoc.lists[listIdx])}));
-  }
-
-  function saveModal() {
-    let newItemLists: ItemList[] = cloneDeep(stateItemDoc.lists);
-    for (let i = 0; i < newItemLists.length; i++) {
-      if (newItemLists[i].listID == modalState.selectedListId) {
-        newItemLists[i]=cloneDeep(modalState.itemList); break;
-      }
-    }
-    setStateItemDoc(prevState => ({...prevState, lists : newItemLists}))
-    setModalState(cloneDeep(ModalStateInit));
-  }
-
-  function cancelModal() {
-    setModalState(cloneDeep(ModalStateInit));
-  }
 
 
-  let listsElem=[];
-  let listsInnerElem=[];
-//  listsElem.push(<IonGrid>);
-  listsInnerElem.push(<IonRow key="listlabelrow">
-      <IonCol size="5"><IonLabel key="listlabel" position='stacked'>Item is on these lists:</IonLabel></IonCol>
-      <IonCol size="2"><IonLabel key="stocklabel" position="stacked">Stocked</IonLabel></IonCol>
-      <IonCol size="2"><IonLabel key="countlabel" position="stacked">Quantity</IonLabel></IonCol>
-      <IonCol size="2"><IonLabel key="diff" position="stacked">Diff</IonLabel></IonCol>
-      <IonCol size="1"><IonLabel key="resetlabel" position="stacked">Edit</IonLabel></IonCol></IonRow>
-  )
-  for (let i = 0; i < (stateItemDoc as any).lists.length; i++) {
-    let listID = (stateItemDoc as any).lists[i].listID;
-    let itemFoundIdx=listDocs.findIndex((element: any) => (element._id === listID));
-    if (itemFoundIdx !== -1) {
-      let itemActive=(((stateItemDoc as any).lists[i].active));
-      let listName=(listDocs as any)[itemFoundIdx].name;
-      let stockedAt=((stateItemDoc as any).lists[i].stockedAt);
-      listsInnerElem.push(
-        <IonRow key={listID}>
-          <IonCol size="1"><IonCheckbox aria-label="" onIonChange={(e: any) => selectList(listID,Boolean(e.detail.checked))} checked={itemActive}></IonCheckbox></IonCol>
-          <IonCol size="4"><IonLabel>{listName}</IonLabel></IonCol>
-          <IonCol size="2"><IonCheckbox aria-label="" onIonChange={(e: any) => changeStockedAt(listID,Boolean(e.detail.checked))} checked={stockedAt}></IonCheckbox></IonCol>
-          <IonCol size="2">{stateItemDoc.lists[i].quantity}</IonCol>
-          <IonCol size="2">{listIsDifferentThanCommon(i)}</IonCol>
-          <IonCol size="1"><IonButton onClick={(e) => {console.log(e); editListModal(listID)}} ><IonIcon icon={pencilOutline}></IonIcon></IonButton></IonCol>
-        </IonRow>
-      )
-    }
-  }
-  listsElem.push(<IonItem key="listlist"><IonGrid>{listsInnerElem}</IonGrid></IonItem>)
-  listsElem.push(<IonItem key="diffNote"><IonText>A * in diff indicates that this list contains values different than the common ones show above.</IonText></IonItem>)
 
-  let modalEditorElem: any = [];
-  modalEditorElem.push(
-    <IonModal key="item-modal" id="item-list" isOpen={modalState.isOpen}>
-{/*       <IonHeader>
-      <IonToolbar>
-      </IonToolbar>
-      </IonHeader>
-      <IonContent scrollY={false} className="danger2">
- */}
-     <IonTitle class="modal-title">Editing {modalState.selectedListName} List Values</IonTitle>
-     <IonList>
-        <IonGrid>
-          <IonRow>
-            <IonCol size="4">Active</IonCol>
-            <IonCol size="4">Completed</IonCol>
-            <IonCol size="4">Stocked Here</IonCol>
-          </IonRow>
-          <IonRow>
-            <IonCol size="4"><IonCheckbox aria-label="" labelPlacement="end" checked={modalState.itemList.active} onIonChange={(e) => setModalState(prevState =>({...prevState,itemList: {...prevState.itemList, active: e.detail.checked}}) )}></IonCheckbox></IonCol>
-            <IonCol size="4"><IonCheckbox aria-label="" labelPlacement="end" checked={modalState.itemList.completed} onIonChange={(e) => setModalState(prevState =>({...prevState,itemList: {...prevState.itemList,completed: e.detail.checked}}) )}></IonCheckbox></IonCol>
-            <IonCol size="4"><IonCheckbox aria-label="" labelPlacement="end" checked={modalState.itemList.stockedAt} onIonChange={(e) => setModalState(prevState =>({...prevState,itemList: {...prevState.itemList,stockedAt: e.detail.checked}}) )}></IonCheckbox></IonCol>
-          </IonRow>
-        </IonGrid>
-        <IonItem>
-          <IonSelect label="Category" labelPlacement="stacked" interface="popover" onIonChange={(ev) => setModalState(prevState => ({...prevState, itemList: {...prevState.itemList, categoryID: String(ev.detail.value)}}))} value={modalState.itemList.categoryID}>
-                  <IonSelectOption key="cat-undefined" value={null}>Uncategorized</IonSelectOption>
-                  {categoryDocs.map((cat) => (
-                      <IonSelectOption key={cat._id} value={(cat as any)._id}>
-                        {(cat as any).name}
-                      </IonSelectOption>
-                  ))}
-          </IonSelect>
-          <IonButton slot="end" fill="default" onClick={(e: any) => {addCategoryPopup()}}>
-            <IonIcon slot="end" icon={addOutline} ></IonIcon>
-          </IonButton>  
-        </IonItem>
-        <IonItem>
-          <IonInput key="modal-qty" label="Quantity" labelPlacement="stacked" type="number" min="0" max="9999" value={modalState.itemList.quantity} onIonChange={(e) => setModalState(prevState => ({...prevState,itemList: {...prevState.itemList,quantity: Number(e.detail.value)}}))}></IonInput>
-          <IonSelect label="" interface="popover" onIonChange={(ev) => setModalState(prevState => ({...prevState, itemList: {...prevState.itemList, uomName: String(ev.detail.value)}}))} value={modalState.itemList.uomName}>
-                    <IonSelectOption key="uom-undefined" value={null}>No UOM</IonSelectOption>
-                    {uomDocs.map((uom: any) => (
-                      <IonSelectOption key={uom.name} value={uom.name}>{uom.description}</IonSelectOption>
-                    ))}
-          </IonSelect>
-          <IonButton fill="default" onClick={(e) => {addUOMPopup()}}><IonIcon icon={addOutline}></IonIcon></IonButton>
-        </IonItem>
-        <IonItem><IonText>Item was purchased from here {modalState.itemList.boughtCount} times</IonText><IonButton slot="end" onClick={() => setModalState(prevState => ({...prevState, itemList: {...prevState.itemList, boughtCount: 0}}))}>Reset</IonButton></IonItem>
-        <IonItem><IonTextarea label='Note' labelPlacement='stacked' value={modalState.itemList.note} onIonChange={(e) => setModalState(prevState => ({...prevState,itemList: {...prevState.itemList,note: String(e.detail.value)}}))}></IonTextarea></IonItem>
-        <IonItem>
-        <IonButton key="modal-close" onClick={() => cancelModal()}>Cancel</IonButton>
-        <IonButton key="modalok" onClick={() => saveModal()}>OK</IonButton>
-        </IonItem>  
-      </IonList>
-      {/* </IonContent> */}
-    </IonModal>
-  )
   
   let thisListGroup = listCombinedRows.find(el => el.listGroupID == stateItemDoc.listGroupID);
   
@@ -472,9 +259,9 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
                   <IonCol size="1"></IonCol>
                 </IonRow>
                 <IonRow>
-                  <IonCol size="3"><IonInput label="" type="number" min="0" max="9999" onIonChange={(e: any) => updateAllKey("quantity",e.detail.value)} value={getCommonKey("quantity")}></IonInput></IonCol>
+                  <IonCol size="3"><IonInput label="" type="number" min="0" max="9999" onIonChange={(e: any) => updateAllKey("quantity",e.detail.value)} value={getCommonKey(stateItemDoc,"quantity")}></IonInput></IonCol>
                   <IonCol size="8">
-                    <IonSelect label="" interface="popover" onIonChange={(ev) => updateAllKey("uomName", ev.detail.value)} value={getCommonKey("uomName")}>
+                    <IonSelect label="" interface="popover" onIonChange={(ev) => updateAllKey("uomName", ev.detail.value)} value={getCommonKey(stateItemDoc,"uomName")}>
                     <IonSelectOption key="uom-undefined" value={null}>No UOM</IonSelectOption>
                     {uomDocs.map((uom: any) => (
                       <IonSelectOption key={uom.name} value={uom.name}>{uom.description}</IonSelectOption>
@@ -486,7 +273,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
                 </IonGrid>
               </IonItem>
               <IonItem key="category">
-                <IonSelect label="Category" labelPlacement="stacked" interface="popover" onIonChange={(ev) => updateAllKey("categoryID",ev.detail.value)} value={getCommonKey("categoryID")}>
+                <IonSelect label="Category" labelPlacement="stacked" interface="popover" onIonChange={(ev) => updateAllKey("categoryID",ev.detail.value)} value={getCommonKey(stateItemDoc,"categoryID")}>
                   <IonSelectOption key="cat-undefined" value={null}>Uncategorized</IonSelectOption>
                   {categoryDocs.map((cat) => (
                       <IonSelectOption key={cat._id} value={(cat as any)._id}>
@@ -499,12 +286,13 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
                 </IonButton>  
               </IonItem>
               <IonItem key="note">
-                <IonTextarea label="Note" labelPlacement="stacked" placeholder="Item Note" inputMode='text' debounce={100} rows={4} onIonChange={(ev) => updateAllKey("note",String(ev.detail.value))} value={getCommonKey("note")}>   
+                <IonTextarea label="Note" labelPlacement="stacked" placeholder="Item Note" inputMode='text' debounce={100} rows={4} onIonChange={(ev) => updateAllKey("note",String(ev.detail.value))} value={getCommonKey(stateItemDoc,"note")}>   
                 </IonTextarea>
               </IonItem>
             </IonCard>
-            {listsElem}
-            {modalEditorElem}
+            <ItemLists history={props.history} stateItemDoc={stateItemDoc} setStateItemDoc={setStateItemDoc} 
+                      listDocs={listDocs} categoryDocs={categoryDocs} uomDocs={uomDocs}
+                      addCategoryPopup={addCategoryPopup} addUOMPopup={addUOMPopup} />
             <IonItem key="formErrors">{formError}</IonItem>
           </IonList>
           {mode !== "new" ? 

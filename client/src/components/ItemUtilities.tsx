@@ -163,3 +163,19 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
     ))
     return (itemRows)
 }
+
+export function getCommonKey(stateItemDoc: ItemDoc, key: string) {
+    let freqObj: any = {};
+    let maxKey = ""; let maxCnt=0;
+    stateItemDoc.lists.forEach( (list: ItemList) => {
+      let value=(list as any)[key]
+      if (freqObj.hasOwnProperty(value)) {
+        freqObj[value]=freqObj[value]+1;
+        if (freqObj[value] > maxCnt) {maxCnt = freqObj[value]; maxKey=value;} 
+      } else {
+        freqObj[value]=1
+      }
+    });
+    if (maxCnt === 0 && stateItemDoc.lists.length > 0 ) {maxKey = (stateItemDoc.lists[0] as any)[key]}
+    return maxKey;
+  }

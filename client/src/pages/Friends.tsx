@@ -62,7 +62,6 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
   const {useFriendState,friendRows} = useFriends(uname);
   const updateDoc = useUpdateGenericDocument();
   const createDoc = useCreateGenericDocument();
-//  const [friendsElem,setFriendsElem] = useState<any[]>([]);
   let friendsElem: any = [];
   const [pageState,setPageState] = useState<PageState>({
     newFriendEmail: "",
@@ -75,7 +74,6 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
     registrationAlertSubheader: ""
   });
   const [presentToast] = useIonToast();
-//  const [presentAlert,hideAlert] = useIonAlert();
 
   async function confirmFriend(friendRow: FriendRow) {
     let updatedDoc = cloneDeep(friendRow.friendDoc);
@@ -177,17 +175,13 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
     let friendExists=false;
     friendRows.forEach((friendRow: FriendRow) => {
-      console.log("evaluating friendrow: ", friendRow, " email: ", friendRow.targetEmail)
       if (friendRow.targetEmail === pageState.newFriendEmail) { friendExists = true}
     })
-    console.log("friendExists:",friendExists);
     if (friendExists) {
       setPageState(prevState => ({...prevState, formError: "Friend already exists with this email"}));
       return;
     }
-    console.log("... add friend here ...");
     const response = await checkUserByEmailExists(pageState.newFriendEmail,remoteDBCreds);
-    console.log("response to check user", response);
     if (response.userExists) {
       let friend1 = ""; let friend2 = ""; let pendfrom1: boolean = false;
       if (response.username > String(remoteDBCreds.dbUsername)) {

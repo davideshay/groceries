@@ -24,9 +24,6 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   const deleteCategory = useDeleteGenericDocument();
   const deleteCategoryFromItems = useDeleteCategoryFromItems();
   const deleteCategoryFromLists = useDeleteCategoryFromLists();
-//  const [categoryDoc, setCategoryDoc] = useState<any>(null);
-//  const [categoryLoading,setCategoryLoading] = useState(true);
-//  const categoryChanges = useRef<any>();
   const { doc: categoryDoc, loading: categoryLoading} = useGetOneDoc(routeID);
 
   const { docs: categoryDocs, loading: categoriesLoading, error: categoriesError } = useFind({

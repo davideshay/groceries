@@ -231,3 +231,19 @@ export const ListGroupDocInit:ListGroupDoc = {
   export const initUsersInfo: UserInfo[] = [];
 
   export type HistoryProps =  { history: any }
+
+  export type ModalState = {
+    selectedListId: string,
+    selectedListIdx: number,
+    selectedListName: string,
+    isOpen: boolean,
+    itemList: ItemList
+}
+
+export const ModalStateInit : ModalState = {
+    selectedListId: "",
+    selectedListIdx: 0,
+    selectedListName: "",
+    isOpen: false,
+    itemList: ItemListInit
+  }

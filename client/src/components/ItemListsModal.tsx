@@ -1,0 +1,91 @@
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
+    IonButtons, IonMenuButton, IonLabel, IonSelect, IonCheckbox, IonIcon,
+    IonSelectOption, useIonAlert,useIonToast, IonTextarea, IonGrid, IonRow, IonCol, IonText, IonCard,
+    IonModal, IonCardSubtitle } from '@ionic/react';
+import { addOutline } from 'ionicons/icons';    
+import { useState, SetStateAction } from 'react';    
+import { PouchResponse, HistoryProps, ItemDoc, ItemDocInit, ItemList, ListRow, ItemListInit, ModalState, ModalStateInit } from '../components/DataTypes';
+import { cloneDeep } from 'lodash';
+
+type ModalProps = {
+    history: any,
+    stateItemDoc: ItemDoc,
+    categoryDocs: any,
+    uomDocs: any,
+    setStateItemDoc: React.Dispatch<SetStateAction<ItemDoc>>,
+    modalState: ModalState,
+    setModalState: React.Dispatch<SetStateAction<ModalState>>,
+    addCategoryPopup: () => void,
+    addUOMPopup: () => void
+}
+  
+const ItemListsModal: React.FC<ModalProps> = (props: ModalProps) => {
+    
+      function saveModal() {
+        let newItemLists: ItemList[] = cloneDeep(props.stateItemDoc.lists);
+        for (let i = 0; i < newItemLists.length; i++) {
+          if (newItemLists[i].listID == props.modalState.selectedListId) {
+            newItemLists[i]=cloneDeep(props.modalState.itemList); break;
+          }
+        }
+        props.setStateItemDoc(prevState => ({...prevState, lists : newItemLists}))
+        props.setModalState(cloneDeep(ModalStateInit));
+      }
+    
+      function cancelModal() {
+        props.setModalState(cloneDeep(ModalStateInit));
+      }
+    
+     return ( 
+    <IonModal key="item-modal" id="item-list" isOpen={props.modalState.isOpen}>
+     <IonTitle class="modal-title">Editing {props.modalState.selectedListName} List Values</IonTitle>
+     <IonList>
+        <IonGrid>
+          <IonRow>
+            <IonCol size="4">Active</IonCol>
+            <IonCol size="4">Completed</IonCol>
+            <IonCol size="4">Stocked Here</IonCol>
+          </IonRow>
+          <IonRow>
+            <IonCol size="4"><IonCheckbox aria-label="" labelPlacement="end" checked={props.modalState.itemList.active} onIonChange={(e) => props.setModalState(prevState =>({...prevState,itemList: {...prevState.itemList, active: e.detail.checked}}) )}></IonCheckbox></IonCol>
+            <IonCol size="4"><IonCheckbox aria-label="" labelPlacement="end" checked={props.modalState.itemList.completed} onIonChange={(e) => props.setModalState(prevState =>({...prevState,itemList: {...prevState.itemList,completed: e.detail.checked}}) )}></IonCheckbox></IonCol>
+            <IonCol size="4"><IonCheckbox aria-label="" labelPlacement="end" checked={props.modalState.itemList.stockedAt} onIonChange={(e) => props.setModalState(prevState =>({...prevState,itemList: {...prevState.itemList,stockedAt: e.detail.checked}}) )}></IonCheckbox></IonCol>
+          </IonRow>
+        </IonGrid>
+        <IonItem>
+          <IonSelect label="Category" labelPlacement="stacked" interface="popover" onIonChange={(ev) => props.setModalState(prevState => ({...prevState, itemList: {...prevState.itemList, categoryID: String(ev.detail.value)}}))} value={props.modalState.itemList.categoryID}>
+                  <IonSelectOption key="cat-undefined" value={null}>Uncategorized</IonSelectOption>
+                  {props.categoryDocs.map((cat: any) => (
+                      <IonSelectOption key={cat._id} value={(cat as any)._id}>
+                        {(cat as any).name}
+                      </IonSelectOption>
+                  ))}
+          </IonSelect>
+          <IonButton slot="end" fill="default" onClick={(e: any) => {props.addCategoryPopup()}}>
+            <IonIcon slot="end" icon={addOutline} ></IonIcon>
+          </IonButton>  
+        </IonItem>
+        <IonItem>
+          <IonInput key="modal-qty" label="Quantity" labelPlacement="stacked" type="number" min="0" max="9999" value={props.modalState.itemList.quantity} onIonChange={(e) => props.setModalState(prevState => ({...prevState,itemList: {...prevState.itemList,quantity: Number(e.detail.value)}}))}></IonInput>
+          <IonSelect label="" interface="popover" onIonChange={(ev) => props.setModalState(prevState => ({...prevState, itemList: {...prevState.itemList, uomName: String(ev.detail.value)}}))} value={props.modalState.itemList.uomName}>
+                    <IonSelectOption key="uom-undefined" value={null}>No UOM</IonSelectOption>
+                    {props.uomDocs.map((uom: any) => (
+                      <IonSelectOption key={uom.name} value={uom.name}>{uom.description}</IonSelectOption>
+                    ))}
+          </IonSelect>
+          <IonButton fill="default" onClick={(e) => {props.addUOMPopup()}}><IonIcon icon={addOutline}></IonIcon></IonButton>
+        </IonItem>
+        <IonItem><IonText>Item was purchased from here {props.modalState.itemList.boughtCount} times</IonText><IonButton slot="end" onClick={() => props.setModalState(prevState => ({...prevState, itemList: {...prevState.itemList, boughtCount: 0}}))}>Reset</IonButton></IonItem>
+        <IonItem><IonTextarea label='Note' labelPlacement='stacked' value={props.modalState.itemList.note} onIonChange={(e) => props.setModalState(prevState => ({...prevState,itemList: {...prevState.itemList,note: String(e.detail.value)}}))}></IonTextarea></IonItem>
+        <IonItem>
+        <IonButton key="modal-close" onClick={() => cancelModal()}>Cancel</IonButton>
+        <IonButton key="modalok" onClick={() => saveModal()}>OK</IonButton>
+        </IonItem>  
+      </IonList>
+    </IonModal>
+    )
+}
+
+export default ItemListsModal;
+
+  
