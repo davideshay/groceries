@@ -17,9 +17,9 @@ const AppMenu: React.FC = () => {
   }
 
   const listItem = (listItem: string,link: string) => {
-    return (<IonList key={listItem}><IonMenuToggle key={listItem} autoHide={false}>
-              <IonItem key={"item-"+listItem} routerLink={link}><IonLabel>{listItem}</IonLabel></IonItem>
-          </IonMenuToggle></IonList>)
+    return (<IonMenuToggle key={listItem} autoHide={false}>
+              <IonItem class="appmenuitem" key={"item-"+listItem} routerLink={link}><IonLabel>{listItem}</IonLabel></IonItem>
+          </IonMenuToggle>)
   }
 
   const friendItem = () => {
@@ -29,20 +29,20 @@ const AppMenu: React.FC = () => {
         if (friend.resolvedStatus == ResolvedFriendStatus.PendingConfirmation) {pendingCount++}
       })
     }  
-    return (<IonList key="Friends"><IonMenuToggle key="Friends" autoHide={false}>
-              <IonItem key={"item-Friends"} routerLink="/friends">
+    return (<IonMenuToggle key="Friends" autoHide={false}>
+              <IonItem class="appmenuitem" key={"item-Friends"} routerLink="/friends">
               {(pendingCount > 0) ? <IonBadge slot="start">{pendingCount}</IonBadge> : <></>}
               Friends
-              </IonItem></IonMenuToggle></IonList>) 
+              </IonItem></IonMenuToggle>) 
   }
    const conflictItem = () => {
     let pendingCount=0;
     if (!conflictsLoading) { pendingCount=conflictDocs.length }
-    return (<IonList key="Conflict Log"><IonMenuToggle key="ConflictLog" autoHide={false}>
-              <IonItem key={"item-ConflictLog"} routerLink="/conflictlog">
+    return (<IonMenuToggle key="ConflictLog" autoHide={false}>
+              <IonItem class="appmenuitem" key={"item-ConflictLog"} routerLink="/conflictlog">
               {(pendingCount > 0) ? <IonBadge slot="start">{pendingCount}</IonBadge> : <></>}
               Conflict Log
-              </IonItem></IonMenuToggle></IonList>) 
+              </IonItem></IonMenuToggle>) 
   }
 
 /*   if (useFriendState !== UseFriendState.rowsLoaded|| conflictsLoading)  {return(
