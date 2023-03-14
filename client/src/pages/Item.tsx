@@ -125,7 +125,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
     if (!alreadyFound) {
       let result = await addCategoryDoc({"type": "category", "name": category})
       if (result.successful) {
-//        updateCategory(result.pouchData.id)
+          updateAllKey("categoryID",result.pouchData.id);
       } else {
         presentToast({message: "Error adding category. Please retry.",
               duration: 1500, position: "middle"})
@@ -173,13 +173,11 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
     let result = await addUOMDoc({"type": "uom", "name": uomData.name, "description": uomData.description, "pluralDescription": uomData.pluralDescription});
     if (result.successful) {
-//      updateUOM(result.pouchData.id)
+        updateAllKey("uomName",uomData.name);
     } else {
       presentToast({message: "Error adding unit of measure. Please retry.",
             duration: 1500, position: "middle"})
     }  
-
-    console.log(uomData);
   }
 
   function addCategoryPopup() {
@@ -225,10 +223,6 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
                   handler: () => deleteItemFromDB()}]
     })
   }
-
-
-
-
   
   let thisListGroup = listCombinedRows.find(el => el.listGroupID == stateItemDoc.listGroupID);
   

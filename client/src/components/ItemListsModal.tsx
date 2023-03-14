@@ -1,10 +1,8 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
-    IonButtons, IonMenuButton, IonLabel, IonSelect, IonCheckbox, IonIcon,
-    IonSelectOption, useIonAlert,useIonToast, IonTextarea, IonGrid, IonRow, IonCol, IonText, IonCard,
-    IonModal, IonCardSubtitle } from '@ionic/react';
-import { addOutline } from 'ionicons/icons';    
-import { useState, SetStateAction } from 'react';    
-import { PouchResponse, HistoryProps, ItemDoc, ItemDocInit, ItemList, ListRow, ItemListInit, ModalState, ModalStateInit } from '../components/DataTypes';
+import { IonTitle,  IonButton, IonList, IonInput, IonItem, IonSelect, IonCheckbox, IonIcon,
+    IonSelectOption, IonTextarea, IonGrid, IonRow, IonCol, IonText, IonModal } from '@ionic/react';
+import { addOutline, closeCircleOutline, saveOutline } from 'ionicons/icons';    
+import { SetStateAction } from 'react';    
+import {  ItemDoc, ItemList, ModalState, ModalStateInit } from '../components/DataTypes';
 import { cloneDeep } from 'lodash';
 
 type ModalProps = {
@@ -78,8 +76,8 @@ const ItemListsModal: React.FC<ModalProps> = (props: ModalProps) => {
         <IonItem><IonText>Item was purchased from here {props.modalState.itemList.boughtCount} times</IonText><IonButton slot="end" onClick={() => props.setModalState(prevState => ({...prevState, itemList: {...prevState.itemList, boughtCount: 0}}))}>Reset</IonButton></IonItem>
         <IonItem><IonTextarea label='Note' labelPlacement='stacked' value={props.modalState.itemList.note} onIonChange={(e) => props.setModalState(prevState => ({...prevState,itemList: {...prevState.itemList,note: String(e.detail.value)}}))}></IonTextarea></IonItem>
         <IonItem>
-        <IonButton key="modal-close" onClick={() => cancelModal()}>Cancel</IonButton>
-        <IonButton key="modalok" onClick={() => saveModal()}>OK</IonButton>
+        <IonButton fill="outline" key="modal-close" onClick={() => cancelModal()}><IonIcon icon={closeCircleOutline}></IonIcon>Cancel</IonButton>
+        <IonButton key="modalok" onClick={() => saveModal()}><IonIcon icon={saveOutline}></IonIcon>Save</IonButton>
         </IonItem>  
       </IonList>
     </IonModal>

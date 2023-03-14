@@ -11,8 +11,9 @@ const smtpSecure = Boolean(process.env.SMTP_SECURE);
 const smtpUser = process.env.SMTP_USER;
 const smtpPassword = process.env.SMTP_PASSWORD;
 const smtpFrom = process.env.SMTP_FROM;
-const enableScheduling = Boolean(process.env.ENABLE_SCHEDULING);
-const resolveConflictsFrequencyMinutes = (process.env.RESOLVE_CONFLICTS_FREQUENCY_MINUTES);
+const enableScheduling = (process.env.ENABLE_SCHEDULING == undefined) ? true : Boolean(process.env.ENABLE_SCHEDULING);
+const resolveConflictsFrequencyMinutes = (process.env.RESOLVE_CONFLICTS_FREQUENCY_MINUTES == undefined) ? 15 : process.env.RESOLVE_CONFLICTS_FREQUENCY_MINUTES;
+const expireJWTFrequencyMinutes = (process.env.EXPIRE_JWT_FREQUENCY_MINUTES == undefined) ? 10 : process.env.EXPIRE_JWT_FREQUENCY_MINUTES;
 const couchStandardRole = "crud";
 const couchAdminRole = "dbadmin";
 const couchUserPrefix = "org.couchdb.user";
@@ -38,7 +39,7 @@ let todosDBAsAdmin;
 let usersDBAsAdmin;
 const _ = require('lodash');
 const { v4: uuidv4 } = require('uuid');
-const { cloneDeep } = require('lodash');
+const { cloneDeep, isEmpty, isEqual } = require('lodash');
 const {  emailPatternValidation, usernamePatternValidation, fullnamePatternValidation, uomContent } = require('./utilities');
 let uomContentVersion = 0;
 const targetUomContentVersion = 2;
@@ -425,8 +426,16 @@ async function dbStartup() {
         if(isInteger(resolveConflictsFrequencyMinutes)) {
             setInterval(() => {resolveConflicts()},60000*resolveConflictsFrequencyMinutes);
             console.log("STATUS: Conflict resolution scheduled every ",resolveConflictsFrequencyMinutes, " minutes.")
+            resolveConflicts();
         } else {
-            console.log("ERROR: Invalid environment variable for scheduling  -- not started.");
+            console.log("ERROR: Invalid environment variable for scheduling conflict resolution -- not started.");
+        }
+        if (isInteger(expireJWTFrequencyMinutes)) {
+            setInterval(() => {expireJWTs()},60000*expireJWTFrequencyMinutes);
+            console.log("STATUS: JWT expiry scheduled every ",expireJWTFrequencyMinutes," minutes.");
+            expireJWTs();
+        } else {
+            console.log("ERROR: Invalid environment variable for scheduling JWT expiry -- not started")
         }
     }
 }
@@ -1096,6 +1105,29 @@ async function resolveConflicts() {
         try { logResult = await todosDBAsAdmin.insert(logObj)}
         catch(err) { console.log("ERROR: creating conflict log document failed: ",err)};
     }
+}
+
+async function expireJWTs() {
+    console.log("STATUS: Checking for expired JWTs");
+    let userDocs = await usersDBAsAdmin.list({include_docs: true});
+    for (let i = 0; i < userDocs.rows.length; i++) {
+        const userDoc = userDocs.rows[i].doc;
+        if (userDoc.hasOwnProperty("refreshJWTs")) {
+            let updateJWTs = {};
+            for (const [device,jwt] of Object.entries(userDoc.refreshJWTs)) {
+                if (isEmpty(jwt)) {continue;}
+                let jwtVerify = await isValidToken(jwt);
+                if (jwtVerify.isValid) {updateJWTs[device] = jwt}
+            }
+            if (!isEqual(updateJWTs,userDoc.refreshJWTs)) {
+                userDoc.refreshJWTs=updateJWTs;
+                try { let response=usersDBAsAdmin.insert(userDoc); }
+                catch(err) {console.log("ERROR updating JWTs for user ", userDoc._id, err)}
+                console.log("STATUS: Expired JWTs for user ",userDoc._id);
+            } 
+        }
+    }
+    console.log("STATUS: Finished checking for expired JWTs");
 }
 
 async function triggerResolveConflicts(req,res) {

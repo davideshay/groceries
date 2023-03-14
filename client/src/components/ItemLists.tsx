@@ -1,11 +1,9 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
-    IonButtons, IonMenuButton, IonLabel, IonSelect, IonCheckbox, IonIcon, 
-    IonSelectOption, useIonAlert,useIonToast, IonTextarea, IonGrid, IonRow, IonCol, IonText, IonCard,
-    IonModal, IonCardSubtitle } from '@ionic/react';
+import {  IonButton,  IonItem, IonLabel, IonCheckbox, IonIcon, 
+    IonGrid, IonRow, IonCol, IonText,  } from '@ionic/react';
 import { pencilOutline } from 'ionicons/icons';
 import { Fragment, useState } from 'react';
 import { getCommonKey } from './ItemUtilities';
-import { PouchResponse, HistoryProps, ItemDoc, ItemDocInit, ItemList, ListRow, ItemListInit } from '../components/DataTypes';
+import { ItemDoc  } from '../components/DataTypes';
 import ItemListsModal from '../components/ItemListsModal';
 import { cloneDeep } from 'lodash';
 import { ModalState, ModalStateInit } from '../components/DataTypes';
