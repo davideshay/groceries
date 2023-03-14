@@ -221,7 +221,7 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
      <Fragment key="addfriendform">
       <IonItem key="addfriendheader">Adding a new Friend</IonItem>
       <IonItem key="addfriendemail"><IonLabel key="labelfriendemail" position="stacked">E-Mail address for friend to add</IonLabel>
-        <IonInput key="inputfriendemail" type="email" autocomplete="email" value={pageState.newFriendEmail} onIonChange={(e) => {setPageState(prevstate => ({...prevstate, newFriendEmail: String(e.detail.value)}))}}>
+        <IonInput key="inputfriendemail" type="email" autocomplete="email" value={pageState.newFriendEmail} onIonInput={(e) => {setPageState(prevstate => ({...prevstate, newFriendEmail: String(e.detail.value)}))}}>
         </IonInput>
       </IonItem>
       <IonItem key="blankspace"></IonItem>

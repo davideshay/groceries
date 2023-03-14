@@ -139,6 +139,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
   async function submitForm() {
 //    await setPrefsDBCreds();
     let credsCheck = errorCheckCreds(remoteDBCreds,false,false,remoteState.password);
+    console.log("did credsCheck, got : ", JSON.stringify(credsCheck));
     if (credsCheck.credsError ) {
       setRemoteState(prevState => ({...prevState,formError: String(credsCheck.errorText)}))
       return;
@@ -250,42 +251,42 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
   if (remoteDBState.serverAvailable) {
     if (!remoteState.inCreateMode) {
       formElem = <><IonItem>
-      <IonInput label="API Server URL" labelPlacement="stacked" type="url" inputmode="url" value={remoteDBCreds.apiServerURL} onIonChange={(e) => {setDBCredsValue("apiServerURL",String(e.detail.value))}}>
+      <IonInput label="API Server URL" labelPlacement="stacked" type="url" inputmode="url" value={remoteDBCreds.apiServerURL} onIonInput={(e) => {setDBCredsValue("apiServerURL",String(e.detail.value))}}>
       </IonInput>
       </IonItem>
       <IonItem>
-      <IonInput label="Username" labelPlacement="stacked"  type="text" autocomplete="username" value={remoteDBCreds.dbUsername} onIonChange={(e) => {setDBCredsValue("dbUsername",String(e.detail.value))}}>
+      <IonInput label="Username" labelPlacement="stacked"  type="text" autocomplete="username" value={remoteDBCreds.dbUsername} onIonInput={(e) => {console.log("chg uname:",e.detail.value); setDBCredsValue("dbUsername",String(e.detail.value))}}>
       </IonInput>
       </IonItem>
       <IonItem>
-      <IonInput label="Password" labelPlacement="stacked" autocomplete="current-password" type={remoteState.showMainPassword ? "text" : "password"} value={remoteState.password} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
+      <IonInput label="Password" labelPlacement="stacked" autocomplete="current-password" type={remoteState.showMainPassword ? "text" : "password"} value={remoteState.password} onIonInput={(e) => {console.log("val:",e.detail.value); setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
       </IonInput><IonIcon slot="end"  icon={remoteState.showMainPassword ? eyeOff : eye} onClick={() => {setRemoteState((prevState) => ({...prevState,showMainPassword: !prevState.showMainPassword}))}}></IonIcon>
       </IonItem>
       </>
     } else {
       formElem = <>
       <IonItem>
-      <IonInput label="API Server URL" labelPlacement="stacked"   type="url" inputmode="url" value={remoteDBCreds.apiServerURL} onIonChange={(e) => {setDBCredsValue("apiServerURL:",String(e.detail.value))}}>
+      <IonInput label="API Server URL" labelPlacement="stacked"   type="url" inputmode="url" value={remoteDBCreds.apiServerURL} onIonInput={(e) => {setDBCredsValue("apiServerURL:",String(e.detail.value))}}>
       </IonInput>
       </IonItem>
       <IonItem>
-      <IonInput label="Username" labelPlacement="stacked" type="text" autocomplete="username" value={remoteDBCreds.dbUsername} onIonChange={(e) => {setDBCredsValue("dbUsername",String(e.detail.value))}}>
+      <IonInput label="Username" labelPlacement="stacked" type="text" autocomplete="username" value={remoteDBCreds.dbUsername} onIonInput={(e) => {setDBCredsValue("dbUsername",String(e.detail.value))}}>
       </IonInput>
       </IonItem>
       <IonItem>
-      <IonInput label="E-Mail address" labelPlacement="stacked" type="email" autocomplete="email" value={remoteDBCreds.email} onIonChange={(e) => {setDBCredsValue("email",String(e.detail.value))}}>
+      <IonInput label="E-Mail address" labelPlacement="stacked" type="email" autocomplete="email" value={remoteDBCreds.email} onIonInput={(e) => {setDBCredsValue("email",String(e.detail.value))}}>
       </IonInput>
       </IonItem>
       <IonItem>
-      <IonInput label="Full Name" labelPlacement="stacked"  type="text" value={remoteDBCreds.fullName} onIonChange={(e) => {setDBCredsValue("fullName",String(e.detail.value))}}>
+      <IonInput label="Full Name" labelPlacement="stacked"  type="text" value={remoteDBCreds.fullName} onIonInput={(e) => {setDBCredsValue("fullName",String(e.detail.value))}}>
       </IonInput>
       </IonItem>
       <IonItem>
-      <IonInput label="Password" labelPlacement="stacked" autocomplete="current-password" type={remoteState.showMainPassword ? "text" : "password"} value={remoteState.password} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
+      <IonInput label="Password" labelPlacement="stacked" autocomplete="current-password" type={remoteState.showMainPassword ? "text" : "password"} value={remoteState.password} onIonInput={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
       </IonInput><IonIcon slot="end"  icon={remoteState.showMainPassword ? eyeOff : eye} onClick={() => {setRemoteState((prevState) => ({...prevState,showMainPassword: !prevState.showMainPassword}))}}></IonIcon>
       </IonItem>
       <IonItem>
-      <IonInput label="Confirm Password" labelPlacement="stacked" autocomplete="current-password" type={remoteState.showVerifyPassword ? "text" : "password"} value={remoteState.verifyPassword} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, verifyPassword: String(e.detail.value)}))}}>
+      <IonInput label="Confirm Password" labelPlacement="stacked" autocomplete="current-password" type={remoteState.showVerifyPassword ? "text" : "password"} value={remoteState.verifyPassword} onIonInput={(e) => {setRemoteState(prevstate => ({...prevstate, verifyPassword: String(e.detail.value)}))}}>
       </IonInput><IonIcon slot="end"  icon={remoteState.showVerifyPassword ? eyeOff : eye} onClick={() => {setRemoteState((prevState) => ({...prevState,showVerifyPassword: !prevState.showVerifyPassword}))}}></IonIcon>
       </IonItem>
       </>

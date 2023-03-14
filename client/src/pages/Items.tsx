@@ -235,8 +235,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
           <IonSearchbar debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="search" enterkeyhint="enter"
               onKeyDown= {(e:any) => searchKeyPress(e)}
               onIonInput={(e) => updateSearchCriteria(e)}
-//              onIonChange={(e: any) => updateSearchCriteria(e)}
-              // onIonBlur={(e: any) => leaveSearchBox(e)}
               onClick={(e: any) => enterSearchBox(e)}>
           </IonSearchbar>
           <IonButton onClick={()=> clickedSearchCheck()}><IonIcon icon={checkmark} /></IonButton>

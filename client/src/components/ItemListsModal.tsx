@@ -64,7 +64,7 @@ const ItemListsModal: React.FC<ModalProps> = (props: ModalProps) => {
           </IonButton>  
         </IonItem>
         <IonItem>
-          <IonInput key="modal-qty" label="Quantity" labelPlacement="stacked" type="number" min="0" max="9999" value={props.modalState.itemList.quantity} onIonChange={(e) => props.setModalState(prevState => ({...prevState,itemList: {...prevState.itemList,quantity: Number(e.detail.value)}}))}></IonInput>
+          <IonInput key="modal-qty" label="Quantity" labelPlacement="stacked" type="number" min="0" max="9999" value={props.modalState.itemList.quantity} onIonInput={(e) => props.setModalState(prevState => ({...prevState,itemList: {...prevState.itemList,quantity: Number(e.detail.value)}}))}></IonInput>
           <IonSelect label="" interface="popover" onIonChange={(ev) => props.setModalState(prevState => ({...prevState, itemList: {...prevState.itemList, uomName: String(ev.detail.value)}}))} value={props.modalState.itemList.uomName}>
                     <IonSelectOption key="uom-undefined" value={null}>No UOM</IonSelectOption>
                     {props.uomDocs.map((uom: any) => (

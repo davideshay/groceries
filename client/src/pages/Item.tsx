@@ -236,7 +236,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
       <IonContent>
           <IonList>
             <IonItem key="name">
-              <IonInput label="Name" labelPlacement="stacked" type="text" onIonChange={(e: any) => setStateItemDoc({...stateItemDoc, name: e.detail.value})} value={stateItemDoc.name}></IonInput>
+              <IonInput label="Name" labelPlacement="stacked" type="text" onIonInput={(e: any) => setStateItemDoc({...stateItemDoc, name: e.detail.value})} value={stateItemDoc.name}></IonInput>
             </IonItem>
             <IonItem key="listgroup">
               <IonText >List Group: {thisListGroup?.listGroupName}</IonText>
@@ -251,7 +251,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
                   <IonCol size="1"></IonCol>
                 </IonRow>
                 <IonRow>
-                  <IonCol size="3"><IonInput label="" type="number" min="0" max="9999" onIonChange={(e: any) => updateAllKey("quantity",e.detail.value)} value={getCommonKey(stateItemDoc,"quantity")}></IonInput></IonCol>
+                  <IonCol size="3"><IonInput label="" type="number" min="0" max="9999" onIonInput={(e: any) => updateAllKey("quantity",e.detail.value)} value={getCommonKey(stateItemDoc,"quantity")}></IonInput></IonCol>
                   <IonCol size="8">
                     <IonSelect label="" interface="popover" onIonChange={(ev) => updateAllKey("uomName", ev.detail.value)} value={getCommonKey(stateItemDoc,"uomName")}>
                     <IonSelectOption key="uom-undefined" value={null}>No UOM</IonSelectOption>
@@ -278,7 +278,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
                 </IonButton>  
               </IonItem>
               <IonItem key="note">
-                <IonTextarea label="Note" labelPlacement="stacked" placeholder="Item Note" inputMode='text' debounce={100} rows={4} onIonChange={(ev) => updateAllKey("note",String(ev.detail.value))} value={getCommonKey(stateItemDoc,"note")}>   
+                <IonTextarea label="Note" labelPlacement="stacked" placeholder="Item Note" inputMode='text' debounce={100} rows={4} onIonInput={(ev) => updateAllKey("note",String(ev.detail.value))} value={getCommonKey(stateItemDoc,"note")}>   
                 </IonTextarea>
               </IonItem>
             </IonCard>

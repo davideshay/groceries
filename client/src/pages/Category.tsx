@@ -179,7 +179,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
       <IonContent>
           <IonList>
             <IonItem key="name">
-              <IonInput label="Name" labelPlacement="stacked" type="text" placeholder="<NEW>" onIonChange={(e: any) => setStateCategoryDoc({...stateCategoryDoc, name: e.detail.value})} value={(stateCategoryDoc as any).name}></IonInput>
+              <IonInput label="Name" labelPlacement="stacked" type="text" placeholder="<NEW>" onIonInput={(e: any) => setStateCategoryDoc({...stateCategoryDoc, name: e.detail.value})} value={(stateCategoryDoc as any).name}></IonInput>
             </IonItem>
             <IonItem key="color">
               <IonLabel position="stacked">Color</IonLabel>

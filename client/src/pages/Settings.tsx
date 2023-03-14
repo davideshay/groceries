@@ -88,7 +88,7 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
           </IonItem>
           <IonTextarea aria-label="NOTE" disabled={true}>NOTE: Adding and removing from all lists is only done with lists that have the same set of shared owners/participants.</IonTextarea>
           <IonItem key="dayslog">
-            <IonInput label="Days of conflict log to view:" labelPlacement="start" type="number" min="0" max="25" onIonChange={(e: any) => changeSetting("daysOfConflictLog", e.detail.value)} value={Number(localSettings?.daysOfConflictLog)}></IonInput>
+            <IonInput label="Days of conflict log to view:" labelPlacement="start" type="number" min="0" max="25" onIonInput={(e: any) => changeSetting("daysOfConflictLog", e.detail.value)} value={Number(localSettings?.daysOfConflictLog)}></IonInput>
           </IonItem>
         </IonList>
       </IonContent>
