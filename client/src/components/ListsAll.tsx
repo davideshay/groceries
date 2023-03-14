@@ -1,13 +1,10 @@
-import { IonList, IonItem, IonButton, IonMenuToggle, IonIcon, IonContent,
-  IonPage, IonHeader, IonToolbar, IonMenuButton, IonButtons, IonTitle } from '@ionic/react';
+import {  IonItem, IonButton, IonMenuToggle, IonIcon } from '@ionic/react';
 import { useContext } from 'react';
 import { pencilOutline } from 'ionicons/icons';
 import { RemoteDBStateContext } from './RemoteDBState';
 import { useLists } from './Usehooks';
 import './ListsAll.css';
-import { cloneDeep } from 'lodash';
 import { RowType } from './DataTypes';
-import SyncIndicator from './SyncIndicator';
 
 interface ListsAllProps {
   separatePage: boolean

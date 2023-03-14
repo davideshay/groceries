@@ -1,6 +1,5 @@
-import { GlobalSettings, AddListOptions, GlobalState } from "./GlobalState";
+import { AddListOptions, GlobalState } from "./GlobalState";
 import { ListRow, ItemList, ItemDoc, RowType } from "./DataTypes";
-import { isEqual, cloneDeep } from "lodash";
 
 export function createEmptyItemDoc(listRows:ListRow[], globalState: GlobalState) {
   let newItemLists: any =[];
@@ -33,12 +32,7 @@ export function createEmptyItemDoc(listRows:ListRow[], globalState: GlobalState)
       }
       newItemLists.push(newListDoc);
     }
-//      if (isEqual(baseParticipants,listRow.participants)) {
-//        newItemLists.push(newListDoc);    
-//      } else {
-//        newListDoc.active = false;
-//        newItemLists.push(newListDoc);
-//      } 
+
   });
   let newItemDoc: ItemDoc ={
     type: "item",

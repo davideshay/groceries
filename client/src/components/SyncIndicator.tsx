@@ -1,7 +1,7 @@
-import { IonIcon, IonButton , NavContext} from '@ionic/react';
+import { IonIcon, IonButton } from '@ionic/react';
 import { cloudDoneOutline, cloudDownloadOutline, cloudOfflineOutline, warningOutline } from 'ionicons/icons';
 import { useContext } from 'react';
-import { RemoteDBState, RemoteDBStateContext, RemoteDBStateContextType, SyncStatus } from '../components/RemoteDBState';
+import { RemoteDBStateContext, SyncStatus } from '../components/RemoteDBState';
 import { useConflicts } from './Usehooks';
 import { HistoryProps } from './DataTypes';
 

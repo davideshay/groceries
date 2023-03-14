@@ -1,6 +1,5 @@
 import {initItemRow, ItemRow, ItemSearch, ListCombinedRow, ListCombinedRows, RowType, ItemDoc, ItemDocs, ItemList} from '../components/DataTypes';
 import { cloneDeep } from 'lodash';
-import { list } from 'ionicons/icons';
 
 export function getAllSearchRows(allItemDocs: any, listID: string): ItemSearch[] {
     let searchRows: ItemSearch[] = [];

@@ -2,7 +2,6 @@ import { DBCreds, RemoteDBState } from "./RemoteDBState";
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import jwt_decode from 'jwt-decode';
 import { ListRow } from "./DataTypes";
-import { cloneDeep } from "lodash";
 
 export async function navigateToFirstListID(db: any,phistory: any,remoteDBCreds: DBCreds, listRows: ListRow[]) {
     let firstListID = null;

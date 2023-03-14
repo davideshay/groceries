@@ -1,8 +1,5 @@
 import { Redirect, Route} from 'react-router-dom';
-import {
-  IonApp, IonSplitPane,
-  setupIonicReact, IonRouterOutlet
-} from '@ionic/react';
+import { IonApp, IonSplitPane,setupIonicReact, IonRouterOutlet } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
@@ -15,7 +12,6 @@ import Categories from './pages/Categories';
 import Category from './pages/Category';
 import ListGroups from './pages/ListGroups';
 import ListGroup from './pages/ListGroup';
-import ListsAll from './components/ListsAll';
 import Settings from './pages/Settings';
 import Friends from './pages/Friends';
 import RemoteDBLogin from './pages/RemoteDBLogin';
@@ -45,14 +41,12 @@ import '@ionic/react/css/display.css';
 /* Theme variables */
 import './theme/variables.css';
 
-
 import { Provider } from 'use-pouchdb';
 import PouchDB from 'pouchdb';
 import find from 'pouchdb-find';
 import AllItems from './pages/AllItems';
 
 setupIonicReact();
-
 
 const App: React.FC = () => {
 
@@ -100,7 +94,6 @@ const App: React.FC = () => {
           <Route exact path="/initialload" component={InitialLoad}></Route>
           <Route exact path="/conflictlog" component={ConflictLog}></Route>
           <Route path="/conflictitem/:id" component={ConflictItem}></Route>
-
           {/* <Route component={InitialLoad}></Route>  */}
         </IonRouterOutlet>
       </IonSplitPane>

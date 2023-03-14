@@ -1,11 +1,10 @@
 import { useCallback, useState, useEffect, useContext, useRef } from 'react'
 import { usePouch, useFind } from 'use-pouchdb'
-import { cloneDeep, isEqual, union, pull } from 'lodash';
+import { cloneDeep, pull } from 'lodash';
 import { RemoteDBStateContext, SyncStatus } from './RemoteDBState';
 import { FriendStatus, FriendRow, ResolvedFriendStatus, ListRow, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType, ListGroupDoc, ListDoc, ListDocs, ListGroupDocs, ListDocInit } from './DataTypes';
 import { GlobalStateContext } from './GlobalState';
 import { getUsersInfo } from './Utilities';
-import ListGroup from '../pages/ListGroup';
 
 export function useGetOneDoc(docID: string) {
   const db = usePouch();

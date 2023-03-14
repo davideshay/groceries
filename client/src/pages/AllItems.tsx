@@ -2,8 +2,6 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
   IonMenuButton, IonButton, } from '@ionic/react';
 import { useFind } from 'use-pouchdb';
 import { useLists } from '../components/Usehooks';
-import { useContext } from 'react';
-import { RemoteDBStateContext } from '../components/RemoteDBState';
 import SyncIndicator from '../components/SyncIndicator';
 import { HistoryProps, ItemDoc, ListCombinedRow, ListRow, RowType } from '../components/DataTypes';
 import './AllItems.css';

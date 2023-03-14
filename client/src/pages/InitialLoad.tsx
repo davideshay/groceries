@@ -1,12 +1,10 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, useIonLoading } from '@ionic/react';
+import { IonHeader, IonPage, IonTitle, IonToolbar, useIonLoading } from '@ionic/react';
 import { useContext, useEffect, } from 'react';
 import { usePouch } from 'use-pouchdb';
 import { useLists } from '../components/Usehooks';
 import { ConnectionStatus, RemoteDBStateContext } from '../components/RemoteDBState';
 import { navigateToFirstListID } from '../components/RemoteUtilities';
 import { initialSetupActivities } from '../components/Utilities';
-import { cloneDeep } from 'lodash';
-import { GlobalStateContext } from '../components/GlobalState';
 
 type InitialLoadProps = {
   history : any

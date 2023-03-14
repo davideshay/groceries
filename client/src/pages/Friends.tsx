@@ -14,7 +14,6 @@ import { FriendRow, FriendStatus, ResolvedFriendStatus, HistoryProps } from '../
 import { checkUserByEmailExists, emailPatternValidation } from '../components/Utilities';
 import SyncIndicator from '../components/SyncIndicator';
 
-
 /* 
 
 Friend document structure

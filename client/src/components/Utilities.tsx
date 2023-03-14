@@ -1,5 +1,5 @@
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
-import { initUserInfo, initUsersInfo, ListGroupDoc, ListGroupDocInit, UserIDList, UsersInfo } from './DataTypes';
+import { initUsersInfo, ListGroupDoc, ListGroupDocInit, UserIDList, UsersInfo } from './DataTypes';
 import { cloneDeep } from 'lodash';
 import { DBCreds} from './RemoteDBState';
 import { PouchResponse, PouchResponseInit } from './DataTypes';

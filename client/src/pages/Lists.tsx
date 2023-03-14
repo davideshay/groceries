@@ -6,8 +6,6 @@ import ListsAll from "../components/ListsAll";
 
 const Lists: React.FC<HistoryProps> = (props: HistoryProps) => {
 
-
-
 return (
     <IonPage><IonHeader>
         <IonToolbar>
