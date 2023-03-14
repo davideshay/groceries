@@ -1,10 +1,10 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonItemGroup,
   IonItemDivider, IonButton, IonButtons, IonFab, IonFabButton, IonIcon, IonCheckbox, IonLabel, IonSelect,
   IonSelectOption, IonSearchbar, IonPopover, IonAlert,IonMenuButton, useIonToast, IonGrid, IonRow, 
-  IonRouterLink, IonCol, IonText, useIonAlert} from '@ionic/react';
+  IonCol, useIonAlert} from '@ionic/react';
 import { add,checkmark } from 'ionicons/icons';
 import React, { useState, useEffect, useContext, useRef, KeyboardEvent } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
 import { cloneDeep } from 'lodash';
 import './Items.css';
@@ -13,11 +13,8 @@ import { AddListOptions, GlobalStateContext } from '../components/GlobalState';
 import { ItemSearch, SearchState, PageState, ListRow, ListCombinedRow, HistoryProps, RowType, ItemDoc, ItemDocs, ItemListInit, ItemList, ItemRow} from '../components/DataTypes'
 import { getAllSearchRows, getItemRows, filterSearchRows } from '../components/ItemUtilities';
 import SyncIndicator from '../components/SyncIndicator';
-import { RemoteDBStateContext } from '../components/RemoteDBState';
-import { isEqual } from 'lodash';
 
 const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
-  const { remoteDBCreds} = useContext(RemoteDBStateContext);
   let { mode: routeMode, id: routeListID  } = useParams<{mode: string, id: string}>();
   const [searchRows,setSearchRows] = useState<ItemSearch[]>();
   const [searchState,setSearchState] = useState<SearchState>({searchCriteria:"",isOpen: false,isFocused: false,event: undefined, filteredSearchRows: [], dismissEvent: undefined});
@@ -54,6 +51,8 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       sort: [ "type","name"] });
 
   const { globalState,setStateInfo: setGlobalStateInfo} = useContext(GlobalStateContext);
+ 
+  console.log(cloneDeep({props,routeMode, routeListID}));
 
   function getGroupIDForList(listID: string): string {
     if (routeMode == "group") { return pageState.selectedListOrGroupID};

@@ -1,11 +1,10 @@
-import { IonMenu, IonContent, IonMenuToggle, IonList, IonPage, IonHeader, IonToolbar,
-    IonTitle, IonItem, IonItemDivider, IonListHeader, IonBadge, IonLabel } from '@ionic/react';
+import { IonMenu, IonContent, IonMenuToggle, IonList, 
+     IonItem, IonItemDivider, IonListHeader, IonBadge, IonLabel } from '@ionic/react';
 import { useContext } from 'react';    
 import { useConflicts, useFriends, UseFriendState } from './Usehooks';    
 import ListsAll from './ListsAll';
 import { RemoteDBStateContext } from './RemoteDBState';
 import { ResolvedFriendStatus } from './DataTypes';
-import { cloneDeep } from 'lodash';
 
 const AppMenu: React.FC = () => {
   const { remoteDBCreds } = useContext(RemoteDBStateContext);

@@ -12,7 +12,7 @@ import './List.css';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
 import { PouchResponse, HistoryProps, ListRow, ListDocInit, ListDoc, RowType } from '../components/DataTypes';
 import SyncIndicator from '../components/SyncIndicator';
-import { closeCircleOutline, pencilOutline, saveOutline, trashBinOutline, trashOutline } from 'ionicons/icons';
+import { closeCircleOutline, saveOutline, trashOutline } from 'ionicons/icons';
 
 interface PageState {
   needInitListDoc: boolean,
@@ -58,13 +58,6 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
     setPageState(prevState => ({...prevState,selectedListID: routeID}))
   },[routeID])
 
-  function changeListUpdateState(listID: string) {
-    setPageState(prevState => ({...prevState,
-        listDoc: listDocs.find((el: any) => el._id === listID),
-        selectedListID: listID}))
-    props.history.push('/list/edit/'+listID);    
-  }
-
   useEffect( () => {
     let newPageState=cloneDeep(pageState);
     if (!listsLoading && (useFriendState === UseFriendState.rowsLoaded) && !categoryLoading) {
@@ -91,12 +84,19 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
       newPageState.changesMade=false;
       setPageState(newPageState);
     }
-  },[listsLoading,listGroupLoading, listDocs, listGroupDoc, useFriendState,friendRows, categoryLoading,categoryDocs,pageState.selectedListID, remoteDBState.accessJWT]);
+  },[listsLoading,listGroupLoading, listDocs, listCombinedRows, mode, listGroupDoc, useFriendState,friendRows, categoryLoading,categoryDocs,pageState.selectedListID, remoteDBState.accessJWT]);
 
   if (listsLoading || !listRowsLoaded || (useFriendState !== UseFriendState.rowsLoaded) || categoryLoading || isEmpty(pageState.listDoc) || listGroupLoading || pageState.deletingDoc)  {return(
       <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
   )};
   
+  function changeListUpdateState(listID: string) {
+    setPageState(prevState => ({...prevState,
+        listDoc: listDocs.find((el: any) => el._id === listID),
+        selectedListID: listID}))
+    props.history.push('/list/edit/'+listID);    
+  }
+
   async function updateThisItem() {
     if (pageState.listDoc.name == "" || pageState.listDoc.name == undefined || pageState.listDoc.name == null) {
       setPageState(prevState => ({...prevState,formError: "Must enter name for list"}));

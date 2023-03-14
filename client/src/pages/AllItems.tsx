@@ -5,7 +5,7 @@ import { useLists } from '../components/Usehooks';
 import { useContext } from 'react';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
 import SyncIndicator from '../components/SyncIndicator';
-import { HistoryProps } from '../components/DataTypes';
+import { HistoryProps, ItemDoc, ListCombinedRow, ListRow, RowType } from '../components/DataTypes';
 import './AllItems.css';
 
 // The AllItems component is a master editor of all of the known items in the database.
@@ -14,14 +14,14 @@ import './AllItems.css';
 
 
 const AllItems: React.FC<HistoryProps> = (props: HistoryProps) => {
-  const { listDocs, listsLoading } = useLists()
+  const { listCombinedRows, listRowsLoaded } = useLists()
   const { docs, loading, error } = useFind({
   index: { fields: ["type","name"]},
   selector: { type: "item", name: { $exists: true }},
   sort: [ "type", "name" ]
   })
 
-  if (loading || listsLoading ) { return (
+  if (loading || !listRowsLoaded ) { return (
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
   )}
 
@@ -33,13 +33,12 @@ const AllItems: React.FC<HistoryProps> = (props: HistoryProps) => {
     return 0
   })
 
+  let gotARow = false;
   let itemsElem : any[] = [];
   docs.forEach((doc: any) => {
     let hasValidList=false;
-    doc.lists.forEach((list: any) => {
-      let listIdx = listDocs.findIndex((el: any) => el._id == list.listID);
-      if (listIdx !== -1) { hasValidList = true}
-    })
+    let listGroupIdx=listCombinedRows.findIndex((lr: ListCombinedRow) => (doc.listGroupID == lr.listGroupID && lr.rowType == RowType.listGroup))
+    if (listGroupIdx !== -1) { hasValidList = true; gotARow = true};
     if (hasValidList) {
       itemsElem.push(
         <IonItem key={(doc as any)._id} >
@@ -48,6 +47,9 @@ const AllItems: React.FC<HistoryProps> = (props: HistoryProps) => {
       )
     }
   });
+
+  if (!gotARow) return (<IonPage><IonHeader><IonTitle>All Items</IonTitle></IonHeader>
+    <IonContent><IonList><IonItem>No Items Available</IonItem></IonList></IonContent></IonPage>)
 
   return (
     <IonPage>

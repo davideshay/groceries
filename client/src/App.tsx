@@ -1,20 +1,21 @@
-import { Redirect, Route, } from 'react-router-dom';
+import { Redirect, Route} from 'react-router-dom';
 import {
   IonApp, IonSplitPane,
-  setupIonicReact, IonContent, IonRouterOutlet, 
+  setupIonicReact, IonRouterOutlet
 } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
-import { useState, useContext, useEffect } from 'react';
-import Lists from './pages/Lists';
+import { useState, useEffect } from 'react';
 import List from "./pages/List";
+import Lists from './pages/Lists';
 import Items from './pages/Items';
 import Item from './pages/Item';
 import Categories from './pages/Categories';
 import Category from './pages/Category';
 import ListGroups from './pages/ListGroups';
 import ListGroup from './pages/ListGroup';
+import ListsAll from './components/ListsAll';
 import Settings from './pages/Settings';
 import Friends from './pages/Friends';
 import RemoteDBLogin from './pages/RemoteDBLogin';
@@ -70,7 +71,7 @@ const App: React.FC = () => {
 
   useEffect( () => {
     db.setMaxListeners(20);
-  },[]);
+  },[db]);
 
   return (
   <IonApp>
@@ -99,6 +100,8 @@ const App: React.FC = () => {
           <Route exact path="/initialload" component={InitialLoad}></Route>
           <Route exact path="/conflictlog" component={ConflictLog}></Route>
           <Route path="/conflictitem/:id" component={ConflictItem}></Route>
+
+          {/* <Route component={InitialLoad}></Route>  */}
         </IonRouterOutlet>
       </IonSplitPane>
     </IonReactRouter>

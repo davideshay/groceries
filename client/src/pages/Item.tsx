@@ -1,9 +1,9 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
-  IonButtons, IonMenuButton, IonLabel, IonSelect, IonCheckbox, IonIcon,
+  IonButtons, IonMenuButton, IonLabel, IonSelect, IonIcon,
   IonSelectOption, useIonAlert,useIonToast, IonTextarea, IonGrid, IonRow, IonCol, IonText, IonCard,
-  IonModal, IonCardSubtitle } from '@ionic/react';
-import { addOutline, closeCircleOutline, trashOutline, pencilOutline, saveOutline } from 'ionicons/icons';
-import { useParams } from 'react-router-dom';
+  IonCardSubtitle } from '@ionic/react';
+import { addOutline, closeCircleOutline, trashOutline, saveOutline } from 'ionicons/icons';
+import { useParams, useRouteMatch } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext } from 'react';
 import { useCreateGenericDocument, useUpdateGenericDocument, useLists, useDeleteGenericDocument, useGetOneDoc } from '../components/Usehooks';
@@ -14,12 +14,10 @@ import './Item.css';
 import SyncIndicator from '../components/SyncIndicator';
 import ItemLists from '../components/ItemLists';
 import { getCommonKey } from '../components/ItemUtilities';
-import { PouchResponse, HistoryProps, ItemDoc, ItemDocInit, ItemList, ListRow, ItemListInit } from '../components/DataTypes';
-import { RemoteDBStateContext } from '../components/RemoteDBState';
+import { PouchResponse, HistoryProps, ItemDoc, ItemDocInit, ItemList, ListRow } from '../components/DataTypes';
 
 const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode, itemid: routeItemID  } = useParams<{mode: string, itemid: string}>();
-  const { remoteDBCreds } = useContext(RemoteDBStateContext);
   if ( mode === "new" ) { routeItemID = "<new>"};
   const [needInitItemDoc,setNeedInitItemDoc] = useState((mode === "new") ? true: false);
   const [stateItemDoc,setStateItemDoc] = useState<ItemDoc>(ItemDocInit);
@@ -81,7 +79,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
       }
       if (newItemDoc != null) {setStateItemDoc(newItemDoc as any)};
     }
-  },[itemLoading,itemDoc,listsLoading,listDocs,listRowsLoaded,listRowsLoaded, listRows,globalState.itemMode,globalState.newItemName, globalState.callingListID]);
+  },[itemLoading,itemDoc,listsLoading,listDocs,listRowsLoaded,listRowsLoaded, listRows,globalState.itemMode,globalState.newItemName, globalState.callingListID, needInitItemDoc]);
 
   if (itemLoading || listsLoading || !listRowsLoaded || categoryLoading || uomLoading || isEmpty(stateItemDoc))  {
     return(

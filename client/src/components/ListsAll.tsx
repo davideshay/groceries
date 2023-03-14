@@ -1,4 +1,5 @@
-import { IonList, IonItem, IonButton, IonMenuToggle, IonIcon, IonText } from '@ionic/react';
+import { IonList, IonItem, IonButton, IonMenuToggle, IonIcon, IonContent,
+  IonPage, IonHeader, IonToolbar, IonMenuButton, IonButtons, IonTitle } from '@ionic/react';
 import { useContext } from 'react';
 import { pencilOutline } from 'ionicons/icons';
 import { RemoteDBStateContext } from './RemoteDBState';
@@ -6,12 +7,13 @@ import { useLists } from './Usehooks';
 import './ListsAll.css';
 import { cloneDeep } from 'lodash';
 import { RowType } from './DataTypes';
+import SyncIndicator from './SyncIndicator';
 
 interface ListsAllProps {
   separatePage: boolean
 }
 
-const ListsAll: React.FC<ListsAllProps> = ({separatePage}) => {
+const ListsAll: React.FC<ListsAllProps> = (props: ListsAllProps) => {
   const { remoteDBCreds } = useContext(RemoteDBStateContext);
   const { listRowsLoaded, listCombinedRows} = useLists();
 
@@ -45,7 +47,7 @@ const ListsAll: React.FC<ListsAllProps> = ({separatePage}) => {
   listCombinedRows.forEach(combinedRow => {
     if (combinedRow.rowType == RowType.listGroup ) {
       listsElem.push(
-          addRow({separatePage: separatePage, showLinkID:"/items/group/"+combinedRow.listGroupID,
+          addRow({separatePage: props.separatePage, showLinkID:"/items/group/"+combinedRow.listGroupID,
               editLinkID: "/listgroup/edit/"+combinedRow.listGroupID,
               rowKey: combinedRow.rowKey,
               rowName: combinedRow.rowName,
@@ -53,7 +55,7 @@ const ListsAll: React.FC<ListsAllProps> = ({separatePage}) => {
             }) )
     } else {
       listsElem.push(
-        addRow({separatePage: separatePage, showLinkID:"/items/list/"+combinedRow.listDoc._id,
+        addRow({separatePage: props.separatePage, showLinkID:"/items/list/"+combinedRow.listDoc._id,
               editLinkID: "/list/edit/"+combinedRow.listDoc._id,
               rowKey: combinedRow.rowKey,
               rowName: combinedRow.rowName,
