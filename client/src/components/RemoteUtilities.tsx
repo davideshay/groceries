@@ -5,7 +5,6 @@ import { ListRow } from "./DataTypes";
 import { cloneDeep } from "lodash";
 
 export async function navigateToFirstListID(db: any,phistory: any,remoteDBCreds: DBCreds, listRows: ListRow[]) {
-    console.log("in navigate... data is:", cloneDeep({db, phistory, remoteDBCreds, listRows}));
     let firstListID = null;
     if (listRows.length > 0) {
       firstListID = listRows[0].listDoc._id;
