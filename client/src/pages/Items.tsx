@@ -52,8 +52,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   const { globalState,setStateInfo: setGlobalStateInfo} = useContext(GlobalStateContext);
  
-  console.log(cloneDeep({props,routeMode, routeListID}));
-
   function getGroupIDForList(listID: string): string {
     if (routeMode == "group") { return pageState.selectedListOrGroupID};
     let retGID = "";

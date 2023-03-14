@@ -14,14 +14,12 @@ type InitialLoadProps = {
 
 const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
     const { remoteDBState, remoteDBCreds, setConnectionStatus} = useContext(RemoteDBStateContext);
-    const { globalState, setStateInfo } = useContext(GlobalStateContext);
     const [ present,dismiss] = useIonLoading()
     const { listRowsLoaded, listRows } = useLists()
     const db=usePouch();
   
     useEffect(() => {
         async function initialStartup() {
-            console.log("In initial startup, ",cloneDeep({globalState, db, history: props.history, remoteDBCreds, listRows}));
             await initialSetupActivities(db as PouchDB.Database, String(remoteDBCreds.dbUsername));
             await navigateToFirstListID(db,props.history,remoteDBCreds,listRows);
             setConnectionStatus(ConnectionStatus.initialNavComplete);
