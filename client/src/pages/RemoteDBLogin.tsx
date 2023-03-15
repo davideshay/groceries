@@ -1,5 +1,5 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
-  IonButtons, IonMenuButton, IonText, useIonAlert, isPlatform, IonIcon } from '@ionic/react';
+  IonButtons, IonMenuButton, IonText, useIonAlert, isPlatform, IonIcon, useIonLoading } from '@ionic/react';
 import { useState, useEffect, useContext } from 'react';
 import { eye, eyeOff } from 'ionicons/icons';
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
@@ -75,6 +75,15 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     const [presentAlert] = useIonAlert();
     const { remoteDBState, remoteDBCreds, setRemoteDBState, setRemoteDBCreds, errorCheckCreds, assignDB, setDBCredsValue} = useContext(RemoteDBStateContext);
     const { listRowsLoaded, listRows } = useLists();
+    const [ present, dismiss ]= useIonLoading();
+
+    // useEffect for initial page launch
+    useEffect( () => {
+      console.log("initial use effect, ",cloneDeep(remoteDBState.credsError),cloneDeep(remoteState));
+      if (remoteDBState.credsError) {
+        setRemoteState(prevState => ({...prevState,formError: remoteDBState.credsErrorText}))
+      }
+    },[])
 
     // effect for dbuuidaction not none
     useEffect( () => {
@@ -136,12 +145,20 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       return newDBCreds;
     }
     
+  function showLoading() {
+    present( {
+      message: "Loading...."
+    })
+  }
+
+
   async function submitForm() {
-//    await setPrefsDBCreds();
+    showLoading();
+    setRemoteState(prevState => ({...prevState,formError: ""}));
     let credsCheck = errorCheckCreds(remoteDBCreds,false,false,remoteState.password);
-    console.log("did credsCheck, got : ", JSON.stringify(credsCheck));
     if (credsCheck.credsError ) {
       setRemoteState(prevState => ({...prevState,formError: String(credsCheck.errorText)}))
+      dismiss();
       return;
     }
     let response: HttpResponse;
@@ -158,9 +175,11 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     catch(err) {console.log("Error logging in...",err)
                 setRemoteState(prevState => ({...prevState, formError: "Cannot contact API server"}));
                 setRemoteDBState({...remoteDBState, serverAvailable: false});
+                dismiss();
                 return}
     if (!((response?.status === 200) && (response?.data?.loginSuccessful))) {
         setRemoteState(prevState => ({...prevState, formError: "Invalid Authentication"}))
+        dismiss();
         return
     }
     let newCreds=updateDBCredsFromResponse(response);
@@ -168,9 +187,11 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     setRemoteDBCreds(newCreds);
     setRemoteDBState({...remoteDBState, accessJWT: response.data.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate});
     await assignDB(response.data.accessJWT);
+    dismiss();
   }
   
   async function submitCreateForm() {
+    showLoading();
     let createResponse: any;
     let credsCheck = errorCheckCreds(remoteDBCreds,false,true,remoteState.password,remoteState.verifyPassword);
     if (!credsCheck.credsError) {
@@ -180,10 +201,12 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
         if (createResponse.data.invalidData) {credsCheck.errorText = "Invalid Data Entered";} 
         else if (createResponse.data.userAlreadyExists) {credsCheck.errorText = "User Already Exists";}
         setRemoteState(prevState => ({...prevState, formError: credsCheck.errorText}))
+        dismiss();
         return;
       }
     } else {
       setRemoteState(prevState => ({...prevState, formError: String(credsCheck.errorText)}));
+      dismiss();
       return;
     }
     let newCreds=updateDBCredsFromResponse(createResponse);
@@ -191,6 +214,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     let tokenInfo = getTokenInfo(createResponse.data.accessJWT);
     setRemoteDBState({...remoteDBState,accessJWT: createResponse.data.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate});
     await assignDB(createResponse.data.accessJWT);
+    dismiss();
   }
   
   async function callResetPasswordAPI() {
@@ -243,9 +267,9 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
  */
 
-  if (remoteDBState.syncStatus === SyncStatus.active || remoteDBState.syncStatus === SyncStatus.paused) {
-    return (<></>)
-  }
+//  if (remoteDBState.syncStatus === SyncStatus.active || remoteDBState.syncStatus === SyncStatus.paused) {
+//    return (<></>)
+//  }
   
   let formElem;
   if (remoteDBState.serverAvailable) {
@@ -255,11 +279,11 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       </IonInput>
       </IonItem>
       <IonItem>
-      <IonInput label="Username" labelPlacement="stacked"  type="text" autocomplete="username" value={remoteDBCreds.dbUsername} onIonInput={(e) => {console.log("chg uname:",e.detail.value); setDBCredsValue("dbUsername",String(e.detail.value))}}>
+      <IonInput label="Username" labelPlacement="stacked"  type="text" autocomplete="username" value={remoteDBCreds.dbUsername} onIonInput={(e) => {setDBCredsValue("dbUsername",String(e.detail.value))}}>
       </IonInput>
       </IonItem>
       <IonItem>
-      <IonInput label="Password" labelPlacement="stacked" autocomplete="current-password" type={remoteState.showMainPassword ? "text" : "password"} value={remoteState.password} onIonInput={(e) => {console.log("val:",e.detail.value); setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
+      <IonInput label="Password" labelPlacement="stacked" autocomplete="current-password" type={remoteState.showMainPassword ? "text" : "password"} value={remoteState.password} onIonInput={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
       </IonInput><IonIcon slot="end"  icon={remoteState.showMainPassword ? eyeOff : eye} onClick={() => {setRemoteState((prevState) => ({...prevState,showMainPassword: !prevState.showMainPassword}))}}></IonIcon>
       </IonItem>
       </>

@@ -1,10 +1,10 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput,
    IonItem, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonSelectOption,
-  IonButtons, IonMenuButton, 
+  IonButtons, IonMenuButton, IonLoading,
    useIonToast, IonIcon, useIonAlert } from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useFriends, 
   UseFriendState, useLists, useDeleteGenericDocument, useDeleteItemsInListGroup, useGetOneDoc } from '../components/Usehooks';
 import { cloneDeep, isEmpty, isEqual } from 'lodash';
@@ -55,8 +55,8 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
     sort: [ "type","name"]
   })
   const { loading: listGroupLoading, doc: listGroupDoc } = useGetOneDoc(pageState.selectedListGroupID);
-
   const [presentAlert,dismissAlert] = useIonAlert();
+  const screenLoading = useRef(true);
 
   useEffect( () => {
     setPageState(prevState => ({...prevState,selectedListGroupID: routeID}))
@@ -107,9 +107,14 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   },[listGroupLoading, listGroupDoc, listRowsLoaded,useFriendState,friendRows, categoryLoading,categoryDocs,pageState.selectedListGroupID, remoteDBState.accessJWT]);
 
   if (!listRowsLoaded || listGroupLoading ||(useFriendState !== UseFriendState.rowsLoaded) || categoryLoading || isEmpty(pageState.listGroupDoc) || !pageState.usersLoaded || pageState.deletingDoc)  {return(
-      <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
+      <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent>
+      </IonContent><IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false}}
+                    message="Loading Data...">
+      </IonLoading></IonPage>
   )};
   
+  screenLoading.current=false;
+
   async function updateThisItem() {
     if (pageState.listGroupDoc.name == "" || pageState.listGroupDoc.name == undefined || pageState.listGroupDoc.name == null) {
       setPageState(prevState => ({...prevState,formError: "Must enter name for list group"}));

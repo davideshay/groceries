@@ -7,6 +7,7 @@ import { ItemDoc  } from '../components/DataTypes';
 import ItemListsModal from '../components/ItemListsModal';
 import { cloneDeep } from 'lodash';
 import { ModalState, ModalStateInit } from '../components/DataTypes';
+import './ItemLists.css';
 
 export type ItemListsProps = { 
     history: any,
@@ -110,7 +111,7 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
         listsInnerElem.push(
           <IonRow key={listID}>
             <IonCol size="1"><IonCheckbox aria-label="" onIonChange={(e: any) => selectList(listID,Boolean(e.detail.checked))} checked={itemActive}></IonCheckbox></IonCol>
-            <IonCol size="4"><IonLabel>{listName}</IonLabel></IonCol>
+            <IonCol class="nocolpadding" size="4"><IonLabel>{listName}</IonLabel></IonCol>
             <IonCol size="2"><IonCheckbox aria-label="" onIonChange={(e: any) => changeStockedAt(listID,Boolean(e.detail.checked))} checked={stockedAt}></IonCheckbox></IonCol>
             <IonCol size="2">{props.stateItemDoc.lists[i].quantity}</IonCol>
             <IonCol size="2">{listIsDifferentThanCommon(i)}</IonCol>

@@ -1,5 +1,5 @@
-import { IonHeader, IonPage, IonTitle, IonToolbar, useIonLoading } from '@ionic/react';
-import { useContext, useEffect, } from 'react';
+import { IonHeader, IonPage, IonTitle, IonToolbar, IonLoading } from '@ionic/react';
+import { useContext, useEffect, useRef} from 'react';
 import { usePouch } from 'use-pouchdb';
 import { useLists } from '../components/Usehooks';
 import { ConnectionStatus, RemoteDBStateContext } from '../components/RemoteDBState';
@@ -12,29 +12,32 @@ type InitialLoadProps = {
 
 const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
     const { remoteDBState, remoteDBCreds, setConnectionStatus} = useContext(RemoteDBStateContext);
-    const [ present,dismiss] = useIonLoading()
     const { listRowsLoaded, listRows } = useLists()
     const db=usePouch();
+    const screenLoading = useRef(true);
   
     useEffect(() => {
         async function initialStartup() {
             await initialSetupActivities(db as PouchDB.Database, String(remoteDBCreds.dbUsername));
+            screenLoading.current=false;
             await navigateToFirstListID(db,props.history,remoteDBCreds,listRows);
             setConnectionStatus(ConnectionStatus.initialNavComplete);
         }
         if (listRowsLoaded) {
             if ((remoteDBState.connectionStatus === ConnectionStatus.loginComplete)) {
                 initialStartup();
-            } else {
-                present({message: "Please wait, logging into server...", duration: 500})
-            }
+            } 
         }      
     },[db, listRows, props.history, remoteDBCreds, remoteDBState.connectionStatus, listRowsLoaded])   
 
     useEffect(() => {
-        if (remoteDBState.connectionStatus === ConnectionStatus.navToLoginScreen) {
+        async function dismissToLogin() {
+            screenLoading.current = false;
             setConnectionStatus(ConnectionStatus.onLoginScreen);
             props.history.push("/login");
+        }
+        if (remoteDBState.connectionStatus === ConnectionStatus.navToLoginScreen) {
+            dismissToLogin();
         }
     },[remoteDBState.connectionStatus])
 
@@ -43,6 +46,8 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
         <IonHeader>
             <IonToolbar>
                 <IonTitle id="initialloadtitle">Loading...</IonTitle>
+                <IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false;}} 
+                            message="Logging In..." />
             </IonToolbar>
         </IonHeader>
     </IonPage>

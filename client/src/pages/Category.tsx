@@ -1,6 +1,6 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, 
   IonButtons, IonMenuButton, IonItem, IonLabel, IonFooter, NavContext, IonIcon,
-  useIonAlert } from '@ionic/react';
+  useIonAlert, IonLoading } from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useFind, usePouch } from 'use-pouchdb';
 import { useState, useEffect, useContext, useRef } from 'react';
@@ -25,15 +25,14 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   const deleteCategoryFromItems = useDeleteCategoryFromItems();
   const deleteCategoryFromLists = useDeleteCategoryFromLists();
   const { doc: categoryDoc, loading: categoryLoading} = useGetOneDoc(routeID);
-
   const { docs: categoryDocs, loading: categoriesLoading, error: categoriesError } = useFind({
     index: { fields: [ "type","name"] },
     selector: { type: "category", name: { $exists: true}},
     sort: [ "type","name"]
   })
-
   const {goBack} = useContext(NavContext);
   const db = usePouch();
+  const screenLoading = useRef(true);
 
   useEffect( () => {
     let newCategoryDoc = cloneDeep(stateCategoryDoc);
@@ -49,9 +48,14 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   },[categoryLoading,categoryDoc]);
 
   if ( categoryLoading || categoriesLoading || !stateCategoryDoc || deletingCategory)  {return(
-    <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
+    <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
+    <IonContent><IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false}}
+                 message="Loading Data..." >
+    </IonLoading></IonContent></IonPage>
   )};
   
+  screenLoading.current=false;
+
   async function updateThisCategory() {
     setFormError("");
     if (stateCategoryDoc.name == undefined || stateCategoryDoc.name == "" || stateCategoryDoc.name == null) {

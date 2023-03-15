@@ -2,7 +2,7 @@ import { useCallback, useState, useEffect, useContext, useRef } from 'react'
 import { usePouch, useFind } from 'use-pouchdb'
 import { cloneDeep, pull } from 'lodash';
 import { RemoteDBStateContext, SyncStatus } from './RemoteDBState';
-import { FriendStatus, FriendRow, ResolvedFriendStatus, ListRow, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType, ListGroupDoc, ListDoc, ListDocs, ListGroupDocs, ListDocInit } from './DataTypes';
+import { FriendStatus, FriendRow, ResolvedFriendStatus, ListRow, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType, ListGroupDoc, ListDoc, ListDocs, ListGroupDocs, ListDocInit, ItemDocs, ItemDoc } from './DataTypes';
 import { GlobalStateContext } from './GlobalState';
 import { getUsersInfo } from './Utilities';
 
@@ -361,6 +361,48 @@ export function useLists() : {listsLoading: boolean, listDocs: any, listRowsLoad
   },[listsLoading,listRowsLoading,listDocs, listGroupDocs, listGroupsLoading])
 
   return ({listsLoading, listDocs, listRowsLoading, listRowsLoaded, listRows, listCombinedRows});
+}
+
+export function useItems() : {itemsLoading: boolean, itemRowsLoading: boolean, itemRowsLoaded: boolean, itemRows: ItemDocs} {
+  const [itemRows,setItemRows] = useState<ItemDocs>([]);
+  const [itemRowsLoaded, setItemRowsLoaded] = useState(false);
+  const [itemRowsLoading, setItemRowsLoading] = useState(false);
+  const { listCombinedRows, listRowsLoaded, listRowsLoading } = useLists()
+  const { docs: itemDocs, loading: itemsLoading, error: itemError} = useFind({
+    index: { fields: ["type","name"] },
+    selector: { "$and": [ 
+      {  "type": "item",
+         "name": { "$exists": true } }
+    ] },
+    sort: [ "type","name"] });
+
+  function buildItemRows() {
+    let curItemDocs: ItemDocs = cloneDeep(itemDocs);
+    let newItemRows: ItemDocs = [];
+    curItemDocs.forEach((itemDoc: ItemDoc) => {
+      let listGroupIdx=listCombinedRows.findIndex((lr: ListCombinedRow) => (itemDoc.listGroupID == lr.listGroupID && lr.rowType == RowType.listGroup))
+      if (listGroupIdx !== -1) {
+        newItemRows.push(itemDoc);
+      }
+    })
+    newItemRows.sort(function (a: ItemDoc, b: ItemDoc) {
+      return a.name.toUpperCase().localeCompare(b.name.toUpperCase());
+    });
+    setItemRows(newItemRows);
+  }
+
+  useEffect( () => {
+    if (itemsLoading || !listRowsLoaded ) { setItemRowsLoaded(false); return };
+    if ( !itemsLoading && listRowsLoaded && !itemRowsLoaded)  {
+      setItemRowsLoading(true);
+      setItemRowsLoaded(false);
+      buildItemRows();
+      setItemRowsLoading(false)
+      setItemRowsLoaded(true);
+    }
+  },[itemsLoading,listRowsLoading,itemDocs, listCombinedRows])
+
+  return ({itemsLoading, itemRowsLoading, itemRowsLoaded, itemRows});
 }
 
 export enum UseFriendState {

@@ -386,6 +386,10 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             return;
         } 
         let refreshResponse = await refreshToken(credsObj as DBCreds,devID);
+        if (refreshResponse == undefined) {
+            setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: "Could not contact API server", connectionStatus: ConnectionStatus.navToLoginScreen}));
+            return;
+        }
         if (!refreshResponse.data.valid) {
             credsObj.refreshJWT = "";
             remoteDBCreds.current = credsObj;
@@ -403,7 +407,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: "Invalid JWT Token", connectionStatus: ConnectionStatus.navToLoginScreen}))
              return;
         }
-        setRemoteDBState(prevState => ({...prevState, accessJWT: refreshResponse.data.accessJWT, accessJWTExpirationTime: JWTCheck.JWTExpireDate}));
+        setRemoteDBState(prevState => ({...prevState, accessJWT: refreshResponse?.data.accessJWT, accessJWTExpirationTime: JWTCheck.JWTExpireDate}));
         await assignDB(refreshResponse.data.accessJWT);
     }
 
@@ -414,9 +418,13 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     async function refreshTokenAndUpdate() {
         if (remoteDBCreds.current.refreshJWT !== "") {
             let refreshResponse = await refreshToken(remoteDBCreds.current,String(remoteDBState.deviceUUID));
+            if (refreshResponse == undefined) {
+                setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: "Error contacting API server", connectionStatus: ConnectionStatus.navToLoginScreen}));
+                return;
+            }
             if (refreshResponse.data.valid) {
                 let tokenInfo = getTokenInfo(refreshResponse.data.accessJWT)
-                setRemoteDBState(prevState => ({...prevState, accessJWT: refreshResponse.data.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate, connectionStatus: ConnectionStatus.retry}));
+                setRemoteDBState(prevState => ({...prevState, accessJWT: refreshResponse?.data.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate, connectionStatus: ConnectionStatus.retry}));
                 remoteDBCreds.current.refreshJWT = refreshResponse.data.refreshJWT;
                 await assignDB(refreshResponse.data.accessJWT);
             }

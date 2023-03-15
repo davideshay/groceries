@@ -1,11 +1,11 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
-  IonButtons, IonMenuButton, IonLabel, IonSelect, IonIcon,
+  IonButtons, IonMenuButton, IonLabel, IonSelect, IonIcon, IonLoading,
   IonSelectOption, useIonAlert,useIonToast, IonTextarea, IonGrid, IonRow, IonCol, IonText, IonCard,
   IonCardSubtitle } from '@ionic/react';
 import { addOutline, closeCircleOutline, trashOutline, saveOutline } from 'ionicons/icons';
 import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useRef } from 'react';
 import { useCreateGenericDocument, useUpdateGenericDocument, useLists, useDeleteGenericDocument, useGetOneDoc } from '../components/Usehooks';
 import { createEmptyItemDoc } from '../components/DefaultDocs';
 import { GlobalStateContext } from '../components/GlobalState';
@@ -28,7 +28,8 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
   const addUOMDoc = useCreateGenericDocument();
   const delItem = useDeleteGenericDocument();
   const { doc: itemDoc, loading: itemLoading } = useGetOneDoc(routeItemID);
-  const { listDocs, listCombinedRows, listsLoading, listRows, listRowsLoaded} = useLists()
+  const { listDocs, listCombinedRows, listsLoading, listRows, listRowsLoaded} = useLists();
+  const screenLoading = useRef(true);
 
   const { docs: categoryDocs, loading: categoryLoading } = useFind({
       index: { fields: [ "type","name"] },
@@ -83,8 +84,13 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   if (itemLoading || listsLoading || !listRowsLoaded || categoryLoading || uomLoading || isEmpty(stateItemDoc))  {
     return(
-    <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader></IonPage>
+    <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
+    <IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false;}} 
+                message="Loading Data..." />
+    </IonPage>
   )};
+
+  screenLoading.current=false;
   
   async function updateThisItem() {
     setFormError(prevState => (""));

@@ -61,11 +61,13 @@ export async function refreshToken(remoteDBCreds: DBCreds, devID: string) {
         headers: { 'Content-Type' : 'application/json',
                     'Accept': 'application/json',
                     'Authorization': 'Bearer '+remoteDBCreds.refreshJWT},
+        connectTimeOut: 5,            
         data: {
             refreshJWT: remoteDBCreds.refreshJWT,
             deviceUUID: devID
         }            
     };
-    response = await CapacitorHttp.post(options);
+    try { response = await CapacitorHttp.post(options);}
+    catch(err) { console.log(err);}
     return response;
 }

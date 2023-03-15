@@ -1,7 +1,7 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonItemGroup,
   IonItemDivider, IonButton, IonButtons, IonFab, IonFabButton, IonIcon, IonCheckbox, IonLabel, IonSelect,
   IonSelectOption, IonSearchbar, IonPopover, IonAlert,IonMenuButton, useIonToast, IonGrid, IonRow, 
-  IonCol, useIonAlert} from '@ionic/react';
+  IonCol, useIonAlert, IonLoading} from '@ionic/react';
 import { add,checkmark } from 'ionicons/icons';
 import React, { useState, useEffect, useContext, useRef, KeyboardEvent } from 'react';
 import { useParams } from 'react-router-dom';
@@ -28,6 +28,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   const [presentToast] = useIonToast();
   const [presentAlert, dismissAlert] = useIonAlert();
   const updateItemInList = useUpdateGenericDocument();
+  const screenLoading = useRef(true);
 
   const { docs: itemDocs, loading: itemLoading } = useFind({
     index: { fields: ["type","name"]},
@@ -94,8 +95,15 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   },[searchState.searchCriteria,searchState.isFocused])
   
   if (itemLoading || !listRowsLoaded || categoryLoading || allItemsLoading || uomLoading || pageState.doingUpdate )  {return(
-    <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
+    <IonPage>
+        <IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
+        <IonContent><IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false;}} 
+                                message="Loading Data..." />
+        </IonContent>
+      </IonPage>
   )};  
+
+  screenLoading.current=false;
 
   function updateSearchCriteria(event: CustomEvent) {
     setSearchState(prevState => ({...prevState, event: event, searchCriteria: event.detail.value}));
@@ -223,7 +231,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     <IonHeader><IonToolbar><IonButtons slot="start"><IonMenuButton /></IonButtons>
     <IonTitle>
         <IonItem key="listselector">
-        <IonSelect label="Items On List:" aria-label="Items On List:" interface="popover" onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListOrGroupID}>
+        <IonSelect label="Items On" aria-label="Items On List:" interface="popover" onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListOrGroupID}>
             {listCombinedRows.map((listCombinedRow: ListCombinedRow) => (
                 <IonSelectOption disabled={listCombinedRow.rowKey=="G-null"} className={listCombinedRow.rowType == RowType.list ? "indented" : ""} key={listCombinedRow.listOrGroupID} value={listCombinedRow.listOrGroupID}>
                   {listCombinedRow.rowName}

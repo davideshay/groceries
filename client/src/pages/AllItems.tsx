@@ -1,7 +1,8 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonButtons, 
-  IonMenuButton, IonButton, } from '@ionic/react';
+  IonMenuButton, IonButton, IonLoading } from '@ionic/react';
 import { useFind } from 'use-pouchdb';
-import { useLists } from '../components/Usehooks';
+import { useRef } from 'react';
+import { useLists, useItems } from '../components/Usehooks';
 import SyncIndicator from '../components/SyncIndicator';
 import { HistoryProps, ItemDoc, ListCombinedRow, ListRow, RowType } from '../components/DataTypes';
 import './AllItems.css';
@@ -13,37 +14,27 @@ import './AllItems.css';
 
 const AllItems: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { listCombinedRows, listRowsLoaded } = useLists()
-  const { docs, loading, error } = useFind({
-  index: { fields: ["type","name"]},
-  selector: { type: "item", name: { $exists: true }},
-  sort: [ "type", "name" ]
-  })
+  const { itemRowsLoaded, itemRows} = useItems();
+  const screenLoading = useRef(true);
 
-  if (loading || !listRowsLoaded ) { return (
-    <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
+  if (!itemRowsLoaded || !listRowsLoaded ) { return (
+    <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
+    <IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current = false;}}
+                message="Loading Data..." />
+    <IonContent></IonContent></IonPage>
   )}
-
-  docs.sort(function(a: any,b: any) {
-    var keyA = a.name.toUpperCase();
-    var keyB = b.name.toUpperCase();
-    if (keyA < keyB) return -1;
-    if (keyA > keyB) return 1;
-    return 0
-  })
+  
+  screenLoading.current = false;
 
   let gotARow = false;
   let itemsElem : any[] = [];
-  docs.forEach((doc: any) => {
-    let hasValidList=false;
-    let listGroupIdx=listCombinedRows.findIndex((lr: ListCombinedRow) => (doc.listGroupID == lr.listGroupID && lr.rowType == RowType.listGroup))
-    if (listGroupIdx !== -1) { hasValidList = true; gotARow = true};
-    if (hasValidList) {
+  itemRows.forEach((doc: ItemDoc) => {
+      gotARow = true;
       itemsElem.push(
-        <IonItem key={(doc as any)._id} >
-          <IonButton slot="start" class="textButton" fill="clear" routerLink={("/item/edit/" + (doc as any)._id)}>{(doc as any).name}</IonButton>
+        <IonItem key={doc._id} >
+          <IonButton slot="start" class="textButton" fill="clear" routerLink={("/item/edit/" + doc._id)}>{doc.name}</IonButton>
         </IonItem>  
       )
-    }
   });
 
   if (!gotARow) return (<IonPage><IonHeader><IonTitle>All Items</IonTitle></IonHeader>

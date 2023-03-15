@@ -1,5 +1,6 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonButtons, 
-  IonMenuButton, IonButton, IonFab, IonFabButton, IonIcon} from '@ionic/react';
+  IonMenuButton, IonButton, IonFab, IonFabButton, IonIcon, IonLoading} from '@ionic/react';
+import { useRef } from 'react';
 import { add } from 'ionicons/icons';
 import SyncIndicator from '../components/SyncIndicator';
 import { HistoryProps, ListCombinedRow, RowType } from '../components/DataTypes';
@@ -8,11 +9,17 @@ import { useLists } from '../components/Usehooks';
 
 const ListGroups: React.FC<HistoryProps> = (props: HistoryProps) => {
 
-  const { listRowsLoaded, listCombinedRows} = useLists()
+  const { listRowsLoaded, listCombinedRows} = useLists();
+  const screenLoading = useRef(true);
 
   if (!listRowsLoaded) { return (
-    <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
+    <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent>
+    <IonLoading isOpen={screenLoading.current} onDidDismiss={()=>{screenLoading.current=false}}
+      message="Loading List Data..."></IonLoading>
+    </IonContent></IonPage>
   )}
+
+  screenLoading.current=false;
 
   return (
     <IonPage>

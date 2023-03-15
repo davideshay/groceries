@@ -1,7 +1,7 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonLabel,
-        IonMenuButton, IonButtons, IonButton, useIonToast,
+        IonMenuButton, IonButtons, IonButton, useIonToast, IonLoading,
         IonFab, IonFabButton, IonIcon, IonInput, IonAlert } from '@ionic/react';
-import { useState, useContext, Fragment } from 'react';
+import { useState, useContext, Fragment, useRef } from 'react';
 import { Clipboard } from '@capacitor/clipboard';
 import { CapacitorHttp } from '@capacitor/core';
 import { v4 as uuidv4 } from 'uuid';
@@ -73,6 +73,16 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
     registrationAlertSubheader: ""
   });
   const [presentToast] = useIonToast();
+  const screenLoading = useRef(true);
+
+  if (useFriendState !== UseFriendState.rowsLoaded) {
+    return(<IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
+    <IonContent><IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false;}}
+              message="Loading Friends Data..."></IonLoading>
+    </IonContent></IonPage>)
+  }
+
+  screenLoading.current=false;
 
   async function confirmFriend(friendRow: FriendRow) {
     let updatedDoc = cloneDeep(friendRow.friendDoc);
@@ -232,10 +242,6 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
       <IonItem key="formerrors">{pageState.formError}</IonItem>
       </Fragment>
       )
-  }
-
-  if (useFriendState !== UseFriendState.rowsLoaded) {
-    return(<IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>)
   }
 
   return (

@@ -1,5 +1,6 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonButtons, 
-  IonMenuButton, IonButton, IonFab, IonFabButton, IonIcon } from '@ionic/react';
+  IonMenuButton, IonButton, IonFab, IonFabButton, IonIcon, IonLoading } from '@ionic/react';
+import { useRef } from 'react';
 import { add } from 'ionicons/icons';
 import { useFind } from 'use-pouchdb';
 import SyncIndicator from '../components/SyncIndicator';
@@ -9,14 +10,20 @@ import './Categories.css';
 const Categories: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   const { docs, loading, error } = useFind({
-  index: { fields: ["type","name"]},
-  selector: { type: "category", name: { $exists: true }},
-  sort: [ "type", "name" ]
+    index: { fields: ["type","name"]},
+    selector: { type: "category", name: { $exists: true }},
+    sort: [ "type", "name" ]
   })
+  const screenLoading=useRef(true);
 
   if (loading) { return (
-    <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
+    <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
+    <IonContent><IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false;}}
+                            message="Loading Data..."></IonLoading>
+    </IonContent></IonPage>
   )}
+
+  screenLoading.current=false;
 
   docs.sort(function(a: any,b: any) {
     var keyA = a.name.toUpperCase();

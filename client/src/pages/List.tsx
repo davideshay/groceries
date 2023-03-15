@@ -1,10 +1,10 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput,
    IonItem, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonSelectOption,
    IonReorder, IonReorderGroup,ItemReorderEventDetail, IonButtons, IonMenuButton, 
-   useIonToast, IonFooter, IonIcon, useIonAlert } from '@ionic/react';
+   useIonToast, IonFooter, IonIcon, useIonAlert, IonLoading } from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useFriends, useGetOneDoc,
   UseFriendState, useLists, useDeleteGenericDocument, useDeleteListFromItems } from '../components/Usehooks';
 import { cloneDeep, isEmpty } from 'lodash';
@@ -51,8 +51,8 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
     sort: [ "type","name"]
   })
   const { loading: listGroupLoading, doc: listGroupDoc} = useGetOneDoc(pageState.listGroupID);
-
   const [presentAlert,dismissAlert] = useIonAlert();
+  const screenLoading = useRef(true);
 
   useEffect( () => {
     setPageState(prevState => ({...prevState,selectedListID: routeID}))
@@ -87,9 +87,14 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   },[listsLoading,listGroupLoading, listDocs, listCombinedRows, mode, listGroupDoc, useFriendState,friendRows, categoryLoading,categoryDocs,pageState.selectedListID, remoteDBState.accessJWT]);
 
   if (listsLoading || !listRowsLoaded || (useFriendState !== UseFriendState.rowsLoaded) || categoryLoading || isEmpty(pageState.listDoc) || listGroupLoading || pageState.deletingDoc)  {return(
-      <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
+      <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
+      <IonContent><IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false;}} 
+                   message="Loading Data..."></IonLoading>
+      </IonContent></IonPage>
   )};
   
+  screenLoading.current = false;
+
   function changeListUpdateState(listID: string) {
     setPageState(prevState => ({...prevState,
         listDoc: listDocs.find((el: any) => el._id === listID),
