@@ -241,7 +241,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
       <IonHeader>
         <IonToolbar>
         <IonButtons slot="start"><IonMenuButton /></IonButtons>
-          <IonTitle>Editing Item: {stateItemDoc.name}</IonTitle>
+          <IonTitle class="ion-no-padding">Editing Item: {stateItemDoc.name}</IonTitle>
           <SyncIndicator history={props.history}/>
         </IonToolbar>
       </IonHeader>
@@ -258,14 +258,9 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
               <IonItem key="quantity">
                 <IonGrid>
                 <IonRow>
-                  <IonCol size="3"><IonLabel >Quantity</IonLabel></IonCol>
-                  <IonCol size="8"><IonLabel >UoM</IonLabel></IonCol>
-                  <IonCol size="1"></IonCol>
-                </IonRow>
-                <IonRow>
-                  <IonCol size="3"><IonInput label="" type="number" min="0" max="9999" onIonInput={(e: any) => updateAllKey("quantity",e.detail.value)} value={getCommonKey(stateItemDoc,"quantity",listDocs)}></IonInput></IonCol>
+                  <IonCol size="3"><IonInput label="Quantity" labelPlacement="stacked" type="number" min="0" max="9999" onIonInput={(e: any) => updateAllKey("quantity",e.detail.value)} value={getCommonKey(stateItemDoc,"quantity",listDocs)}></IonInput></IonCol>
                   <IonCol size="8">
-                    <IonSelect label="" interface="popover" onIonChange={(ev) => updateAllKey("uomName", ev.detail.value)} value={getCommonKey(stateItemDoc,"uomName",listDocs)}>
+                    <IonSelect label="UoM" labelPlacement='stacked' interface="popover" onIonChange={(ev) => updateAllKey("uomName", ev.detail.value)} value={getCommonKey(stateItemDoc,"uomName",listDocs)}>
                     <IonSelectOption key="uom-undefined" value={null}>No UOM</IonSelectOption>
                     {uomDocs.map((uom: any) => (
                       <IonSelectOption key={uom.name} value={uom.name}>{uom.description}</IonSelectOption>

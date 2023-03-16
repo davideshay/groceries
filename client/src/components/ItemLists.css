@@ -1,3 +1,12 @@
 ion-col.nocolpadding {
     color:aquamarine;
 }
+
+ion-row.highlighted-row {
+    background: var(--ion-color-warning);
+    color: var(--ion-color-warning-contrast);
+}
+
+ion-text.small-note-text {
+    font-size: smaller;
+}

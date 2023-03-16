@@ -119,11 +119,8 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
     let listsInnerElem=[];
   //  listsElem.push(<IonGrid>);
     listsInnerElem.push(<IonRow key="listlabelrow">
-        <IonCol size="8"><IonLabel key="listlabel" position='stacked'>Item is on these lists:</IonLabel></IonCol>
-        <IonCol size="1"><IonLabel key="stocklabel" position="stacked">Stocked</IonLabel></IonCol>
-        <IonCol class="ion-text-center" size="1"><IonLabel key="countlabel" position="stacked">Quantity</IonLabel></IonCol>
-        <IonCol size="1"><IonLabel key="diff" position="stacked">Diff</IonLabel></IonCol>
-        <IonCol size="1"><IonLabel key="resetlabel" position="stacked">Edit</IonLabel></IonCol></IonRow>
+        <IonCol size="10"><IonLabel key="listlabel" position='stacked'>Item is on these lists:</IonLabel></IonCol>
+        <IonCol size="2"><IonLabel key="resetlabel" position="stacked">Edit</IonLabel></IonCol></IonRow>
     )
     let sortedLists = sortedItemLists(props.stateItemDoc.lists,props.listDocs);
     
@@ -135,19 +132,16 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
         let listName=(props.listDocs as any)[itemFoundIdx].name;
         let stockedAt=(sortedLists[i].stockedAt);
         listsInnerElem.push(
-          <IonRow key={listID} class="ion-no-padding">
+          <IonRow key={listID} class={listIsDifferentThanCommon(sortedLists,i) ? "highlighted-row ion-no-padding" : "ion-no-padding"}>
             <IonCol class="ion-no-padding" size="1"><IonCheckbox aria-label="" onIonChange={(e: any) => selectList(listID,Boolean(e.detail.checked))} checked={itemActive}></IonCheckbox></IonCol>
-            <IonCol class="ion-no-padding ion-align-self-center" size="7"><IonLabel>{listName}</IonLabel></IonCol>
-            <IonCol class="ion-no-padding" size="1"><IonCheckbox aria-label="" onIonChange={(e: any) => changeStockedAt(listID,Boolean(e.detail.checked))} checked={stockedAt}></IonCheckbox></IonCol>
-            <IonCol class="ion-no-padding ion-text-center ion-align-self-center" size="1">{sortedLists[i].quantity}</IonCol>
-            <IonCol class="ion-no-padding ion-align-self-center" size="1">{listIsDifferentThanCommon(sortedLists,i) ? "X" : "" }</IonCol>
-            <IonCol class="ion-no-padding" size="1"><IonButton onClick={(e) => {console.log(e); editListModal(listID)}} ><IonIcon icon={pencilOutline}></IonIcon></IonButton></IonCol>
+            <IonCol class="ion-no-padding ion-align-self-center" size="9"><IonLabel>{listName}</IonLabel></IonCol>
+            <IonCol class="ion-no-padding" size="2"><IonButton onClick={(e) => {console.log(e); editListModal(listID)}} ><IonIcon icon={pencilOutline}></IonIcon></IonButton></IonCol>
           </IonRow>
         )
       }
     }
     listsElem.push(<IonItem key="listlist"><IonGrid>{listsInnerElem}</IonGrid></IonItem>)
-    listsElem.push(<IonItem key="diffNote"><IonText>A * in diff indicates that this list contains values different than the common ones show above.</IonText></IonItem>)
+    listsElem.push(<IonItem key="diffNote"><IonText class="small-note-text">Highlighted lists have different values at the item-list level</IonText></IonItem>)
   
 
     return (

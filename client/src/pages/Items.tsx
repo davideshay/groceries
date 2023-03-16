@@ -229,7 +229,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   
   let headerElem=(
     <IonHeader><IonToolbar><IonButtons slot="start"><IonMenuButton /></IonButtons>
-    <IonTitle>
+    <IonTitle class="ion-no-padding">
         <IonItem key="listselector">
         <IonSelect label="Items On" aria-label="Items On List:" interface="popover" onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListOrGroupID}>
             {listCombinedRows.map((listCombinedRow: ListCombinedRow) => (
@@ -238,9 +238,10 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
                 </IonSelectOption>
             ))}
           </IonSelect>
+        <SyncIndicator history={props.history}/>  
         </IonItem>
         <IonItem key="searchbar">
-          <IonSearchbar debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="search" enterkeyhint="enter"
+          <IonSearchbar class="ion-no-padding" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="search" enterkeyhint="enter"
               onKeyDown= {(e:any) => searchKeyPress(e)}
               onIonInput={(e) => updateSearchCriteria(e)}
               onClick={(e: any) => enterSearchBox(e)}>
@@ -249,7 +250,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         </IonItem>
         {popOverElem}
         {alertElem}
-    </IonTitle><SyncIndicator history={props.history}/></IonToolbar></IonHeader>)
+    </IonTitle></IonToolbar></IonHeader>)
 
   if (pageState.itemRows.length <=0 )  {return(
     <IonPage>{headerElem}<IonContent><IonItem key="nonefound"><IonLabel key="nothinghere">No Items On List</IonLabel></IonItem></IonContent></IonPage>
