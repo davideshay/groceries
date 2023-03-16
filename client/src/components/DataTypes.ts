@@ -175,7 +175,7 @@ export const ListGroupDocInit:ListGroupDoc = {
     listGroupID: string | null,
     listGroupName: string,
     listGroupDefault: boolean,
-    listDoc: any,
+    listDoc: ListDoc,
   }
 
   export enum RowType {

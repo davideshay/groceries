@@ -26,11 +26,7 @@ const Categories: React.FC<HistoryProps> = (props: HistoryProps) => {
   screenLoading.current=false;
 
   docs.sort(function(a: any,b: any) {
-    var keyA = a.name.toUpperCase();
-    var keyB = b.name.toUpperCase();
-    if (keyA < keyB) return -1;
-    if (keyA > keyB) return 1;
-    return 0
+    return a.name.toUpperCase().localeCompare(b.name.toUpperCase())
   })
 
   return (

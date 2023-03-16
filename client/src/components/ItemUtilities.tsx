@@ -23,14 +23,14 @@ export function filterSearchRows(searchRows: ItemSearch[] | undefined, searchCri
     let filteredSearchRows: ItemSearch[] = [];
     if (searchRows !== undefined) {
         searchRows.forEach(searchRow => {
-            if (searchRow.itemName.toLowerCase().includes(searchCriteria.toLowerCase())) {
+            if (searchRow.itemName.toUpperCase().includes(searchCriteria.toUpperCase())) {
                 filteredSearchRows.push(searchRow);
             }    
         });
         filteredSearchRows.sort((a,b) => (
-            (Number(b.itemName.toLowerCase().startsWith(searchCriteria.toLowerCase())) - Number(a.itemName.toLowerCase().startsWith(searchCriteria.toLowerCase()))) 
+            (Number(b.itemName.toUpperCase().startsWith(searchCriteria.toUpperCase())) - Number(a.itemName.toUpperCase().startsWith(searchCriteria.toUpperCase()))) 
             || (b.boughtCount - a.boughtCount) ||
-            (a.itemName.localeCompare(b.itemName))
+            (a.itemName.toUpperCase().localeCompare(b.itemName.toUpperCase()))
             ))        
     }
     return filteredSearchRows;
@@ -87,11 +87,7 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
     let sortedItemDocs = cloneDeep(itemDocs);
     if (sortedItemDocs.length > 0) {
         sortedItemDocs.sort(function(a: any,b: any) {
-            var keyA = a.name.toUpperCase();
-            var keyB = b.name.toUpperCase();
-            if (keyA < keyB) return -1;
-            if (keyA > keyB) return 1;
-            return 0
+            return a.name.toUpperCase().localeCompare(b.name.toUpperCase())
       })
     }  
     sortedItemDocs.forEach((itemDoc: ItemDoc) => {
@@ -156,10 +152,10 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
         }    
         itemRows.push(itemRow);
     })
-    //TODO FIX SORTING ON CAPS
     itemRows.sort((a,b) => (
-    (Number(a.completed) - Number(b.completed)) || (Number(a.categorySeq) - Number(b.categorySeq)) || (a.categoryName.localeCompare(b.categoryName)) ||
-    (a.itemName.localeCompare(b.itemName))
+    (Number(a.completed) - Number(b.completed)) || (Number(a.categorySeq) - Number(b.categorySeq)) || 
+    (a.categoryName.toUpperCase().localeCompare(b.categoryName.toUpperCase())) ||
+    (a.itemName.toUpperCase().localeCompare(b.itemName.toUpperCase()))
     ))
     return (itemRows)
 }
@@ -178,7 +174,7 @@ export function sortedItemLists(itemList: ItemList[], listDocs: ListDocs) {
 
 export function getCommonKey(stateItemDoc: ItemDoc, key: string, listDocs: ListDocs) {
     let freqObj: any = {};
-    let maxKey = ""; let maxCnt=0;
+    let maxKey = null; let maxCnt=0;
     let sortedLists = sortedItemLists(stateItemDoc.lists,listDocs);
     sortedLists.forEach( (list: ItemList) => {
       let value=(list as any)[key]

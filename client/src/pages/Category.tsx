@@ -4,10 +4,11 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonLis
 import { useParams } from 'react-router-dom';
 import { useFind, usePouch } from 'use-pouchdb';
 import { useState, useEffect, useContext, useRef } from 'react';
-import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteCategoryFromItems, useDeleteGenericDocument, useDeleteCategoryFromLists, useGetOneDoc } from '../components/Usehooks';
+import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteCategoryFromItems, useDeleteGenericDocument,
+   useDeleteCategoryFromLists, useGetOneDoc, useLists, useItems } from '../components/Usehooks';
 import { cloneDeep } from 'lodash';
 import './Category.css';
-import { PouchResponse, HistoryProps } from '../components/DataTypes';
+import { PouchResponse, HistoryProps, ItemDoc, ItemList, ListRow } from '../components/DataTypes';
 import SyncIndicator from '../components/SyncIndicator';
 import { addOutline, closeOutline, navigate, saveOutline, trashOutline } from 'ionicons/icons';
 
@@ -25,6 +26,8 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   const deleteCategoryFromItems = useDeleteCategoryFromItems();
   const deleteCategoryFromLists = useDeleteCategoryFromLists();
   const { doc: categoryDoc, loading: categoryLoading} = useGetOneDoc(routeID);
+  const { listRowsLoaded, listRows } = useLists();
+  const { itemRowsLoaded, itemRows } = useItems();
   const { docs: categoryDocs, loading: categoriesLoading, error: categoriesError } = useFind({
     index: { fields: [ "type","name"] },
     selector: { type: "category", name: { $exists: true}},
@@ -47,7 +50,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   },[categoryLoading,categoryDoc]);
 
-  if ( categoryLoading || categoriesLoading || !stateCategoryDoc || deletingCategory)  {return(
+  if ( categoryLoading || categoriesLoading || !stateCategoryDoc || deletingCategory || !listRowsLoaded || !itemRowsLoaded)  {return(
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
     <IonContent><IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false}}
                  message="Loading Data..." >
@@ -88,40 +91,24 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   async function getNumberOfItemsUsingCategory() {
     let numResults = 0;
     if (stateCategoryDoc == null) return numResults;
-    let itemResults: any;
-    try {
-      itemResults = await db.find({
-        selector: {
-          type: "item",
-          name: { $exists: true },
-          categoryID: stateCategoryDoc._id
+    itemRows.forEach( (ir: ItemDoc) => {
+      ir.lists.forEach( (list: ItemList) => {
+        if (list.categoryID === stateCategoryDoc._id) {
+          numResults++;
         }
       })
-    }
-    catch(err) {console.log("err: ",err); return numResults}
-    if (itemResults != undefined && itemResults.hasOwnProperty('docs')) {
-      numResults = itemResults.docs.length
-    }
+    })
     return numResults;
   }
 
   async function getNumberOfListsUsingCategory() {
     let numResults = 0;
     if (stateCategoryDoc == null) return numResults;
-    let listResults: any;
-    try {
-      listResults = await db.find({
-        selector: {
-          type: "list",
-          name: { $exists: true },
-          categories: { $elemMatch : { $eq: stateCategoryDoc._id}
-        }
-      }})
-    }
-    catch(err) {return numResults}
-    if (listResults != undefined && listResults.hasOwnProperty('docs')) {
-      numResults = listResults.docs.length
-    }
+    listRows.forEach( (lr: ListRow) => {
+      if (lr.listDoc.categories.includes(stateCategoryDoc._id)) {
+        numResults++;
+      }
+    })
     return numResults;
   }
 
