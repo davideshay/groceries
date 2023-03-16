@@ -1,6 +1,6 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
         IonMenuButton, IonButtons, IonButton, useIonAlert, IonInput,
-        IonRadioGroup,IonLabel, IonRadio, IonCheckbox, IonTextarea, isPlatform } from '@ionic/react';
+        IonRadioGroup,IonLabel, IonRadio, IonCheckbox, IonTextarea, isPlatform, IonItemDivider } from '@ionic/react';
 import { useContext, useEffect, useState } from 'react';        
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
@@ -61,32 +61,31 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
       <IonHeader>
         <IonToolbar>
         <IonButtons slot="start"><IonMenuButton /></IonButtons>
-          <IonTitle>Settings</IonTitle>
+          <IonTitle class="ion-no-padding">Settings</IonTitle>
           <SyncIndicator history={props.history}/>
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>
         <IonList lines="full">
           <IonItem key="logout">
-            <IonButton onClick={() => stopSyncPopup()} key="stopitall">Stop Sync, Logout, and Remove Credentials</IonButton>
+            <IonButton onClick={() => stopSyncPopup()} key="stopitall">Stop Sync & Logout</IonButton>
           </IonItem>
+          <IonItemDivider>Add To Other List Options</IonItemDivider> 
           <IonRadioGroup value={localSettings?.addListOption} onIonChange={(e) => changeSetting("addListOption",e.detail.value)}>
-          <IonLabel position="stacked">Add To List Options</IonLabel>
-          <IonItem key="addallauto">
-            <IonRadio value={AddListOptions.addToAllListsAutomatically} slot="start">Add Items To All Lists in Same List Group Automatically</IonRadio>
+          <IonItem class="myindented" key="addallauto">
+            <IonRadio class="myindented" justify="space-between" labelPlacement="start" value={AddListOptions.addToAllListsAutomatically}>Add in Same Group Automatically</IonRadio>
           </IonItem>
           <IonItem key="addcategoryauto">
-            <IonRadio value={AddListOptions.addToListsWithCategoryAutomatically} slot="start">Add Items to Lists with matching categories automatically</IonRadio>
+            <IonRadio justify="space-between" labelPlacement="start" value={AddListOptions.addToListsWithCategoryAutomatically}>Add with same categories automatically</IonRadio>
           </IonItem>
           <IonItem key="dontaddauto">
-            <IonRadio value={AddListOptions.dontAddAutomatically} slot="start">Don't Add items to other lists automatically</IonRadio>
+            <IonRadio justify="space-between" labelPlacement="start" value={AddListOptions.dontAddAutomatically}>Don't Add automatically</IonRadio>
           </IonItem>
           </IonRadioGroup>
-          <IonLabel position="stacked">Other Settings</IonLabel>
+          <IonItemDivider>Other Settings</IonItemDivider>
           <IonItem key="removesettings">
-            <IonCheckbox slot="start" checked={localSettings.removeFromAllLists} onIonChange={(e) => changeSetting("removeFromAllLists",e.detail.checked)}>Remove items from all lists when completed</IonCheckbox>
+            <IonCheckbox justify="space-between" labelPlacement="start" checked={localSettings.removeFromAllLists} onIonChange={(e) => changeSetting("removeFromAllLists",e.detail.checked)}>Remove items from all lists when completed</IonCheckbox>
           </IonItem>
-          <IonTextarea aria-label="NOTE" disabled={true}>NOTE: Adding and removing from all lists is only done with lists that have the same set of shared owners/participants.</IonTextarea>
           <IonItem key="dayslog">
             <IonInput label="Days of conflict log to view:" labelPlacement="start" type="number" min="0" max="25" onIonInput={(e: any) => changeSetting("daysOfConflictLog", e.detail.value)} value={Number(localSettings?.daysOfConflictLog)}></IonInput>
           </IonItem>

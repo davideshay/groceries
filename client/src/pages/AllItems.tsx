@@ -45,7 +45,7 @@ const AllItems: React.FC<HistoryProps> = (props: HistoryProps) => {
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start"><IonMenuButton /></IonButtons>
-          <IonTitle>All Items</IonTitle>
+          <IonTitle class="ion-no-padding">All Items</IonTitle>
           <SyncIndicator history={props.history}/>
         </IonToolbar>
       </IonHeader>

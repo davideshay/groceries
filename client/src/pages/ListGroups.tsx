@@ -26,7 +26,7 @@ const ListGroups: React.FC<HistoryProps> = (props: HistoryProps) => {
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start"><IonMenuButton /></IonButtons>
-          <IonTitle>List Groups</IonTitle>
+          <IonTitle class="ion-no-padding">List Groups</IonTitle>
           <SyncIndicator history={props.history}/>
         </IonToolbar>
       </IonHeader>

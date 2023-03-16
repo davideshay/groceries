@@ -285,7 +285,7 @@ function deletePrompt() {
   } else {
     let iopts={};
     selectElem.push(
-      <IonSelect label="Editing List Group:" aria-label="Editing List Group:" key="list-notchanged" interface="popover" interfaceOptions={iopts} onIonChange={(ev) => changeListUpdateState(ev.detail.value)} value={pageState.selectedListGroupID}>
+      <IonSelect label="Editing:" aria-label="Editing:" key="list-notchanged" interface="popover" interfaceOptions={iopts} onIonChange={(ev) => changeListUpdateState(ev.detail.value)} value={pageState.selectedListGroupID}>
         {selectOptionListElem}
       </IonSelect>
     ) 
@@ -293,10 +293,10 @@ function deletePrompt() {
   
   let selectDropDown: any=[];
     if (mode === "new") {
-      selectDropDown.push(<IonTitle key="createnew">Creating new list group</IonTitle>)
+      selectDropDown.push(<IonTitle class="ion-no-padding" key="createnew">Creating new list group</IonTitle>)
     } else {  
       selectDropDown.push(
-        <IonTitle key="editexisting">
+        <IonTitle class="ion-no-padding" key="editexisting">
         <IonItem key="editexistingitem">
         {selectElem}
         </IonItem>

@@ -276,10 +276,10 @@ function deletePrompt() {
   
   let selectDropDown: any=[];
     if (mode === "new") {
-      selectDropDown.push(<IonTitle key="createnew">Creating new list</IonTitle>)
+      selectDropDown.push(<IonTitle class="ion-no-padding" key="createnew">Creating new list</IonTitle>)
     } else {  
       selectDropDown.push(
-        <IonTitle key="editexisting">
+        <IonTitle class="ion-no-padding" key="editexisting">
         <IonItem key="editexistingitem">
         {selectElem}
         </IonItem>

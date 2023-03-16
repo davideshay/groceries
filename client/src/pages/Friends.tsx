@@ -249,7 +249,7 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
       <IonHeader>
         <IonToolbar>
         <IonButtons key="buttonsinmenu" slot="start"><IonMenuButton key="menuhamburger" /></IonButtons>
-          <IonTitle>Friends</IonTitle>
+          <IonTitle class="ion-no-padding">Friends</IonTitle>
           <SyncIndicator history={props.history}/>
         </IonToolbar>
       </IonHeader>
