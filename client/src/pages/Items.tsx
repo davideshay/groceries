@@ -245,7 +245,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
               onIonInput={(e) => updateSearchCriteria(e)}
               onClick={(e: any) => enterSearchBox(e)}>
           </IonSearchbar>
-          <IonButton onClick={()=> clickedSearchCheck()}><IonIcon icon={checkmark} /></IonButton>
+          {/* <IonButton onClick={()=> clickedSearchCheck()}><IonIcon icon={checkmark} /></IonButton> */}
         </IonItem>
         {popOverElem}
         {alertElem}

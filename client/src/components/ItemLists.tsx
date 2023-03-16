@@ -67,15 +67,38 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
         props.setStateItemDoc(newItemDoc);
     }
     
-    function listIsDifferentThanCommon(listIdx: number) {
-        let anyDifferences=false;
-        for (const [key, value] of Object.entries(props.stateItemDoc.lists[listIdx])) {
-          if (key != "listID") { 
-            let commonVal = getCommonKey(props.stateItemDoc,key);
-            if (commonVal != value) { anyDifferences=true}
-          }  
+    function listIsDifferentThanCommon(listIdx: number): boolean {
+        let combinedKeys: any ={};
+        let maxKey="";
+        let maxCnt=1;
+        let thisKey="";
+        for (let i = 0; i < props.stateItemDoc.lists.length; i++) {
+          const thisList=props.stateItemDoc.lists[i];
+          let listKey="";
+          for (const [key, value] of Object.entries(thisList)) {
+            if (!["listID","boughtCount"].includes(key)) {
+              listKey=listKey+key+value;
+            }
+          }
+          if (combinedKeys.hasOwnProperty(listKey)) {
+            combinedKeys[listKey] = combinedKeys[listKey] + 1;
+            if (combinedKeys[listKey] > maxCnt) {
+              maxCnt=combinedKeys[listKey];
+              maxKey=listKey;
+            }
+          } else {
+            combinedKeys[listKey] = 1;
+          }
+          if (i === listIdx) {
+            thisKey=listKey;
+          }
         }
-        return (anyDifferences ? "*" : "")
+        // check if max count occurs > 1 in the list, if so all rows should be different
+        let maxCheckCount=0;
+        for (const [key, value] of Object.entries(combinedKeys)) {
+          if (value == maxCnt) { maxCheckCount++;}
+        }
+        return ((combinedKeys[thisKey] < maxCnt) || (maxCheckCount > 1)) ;
       }
     
     function editListModal(listID: string) {
@@ -95,10 +118,10 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
     let listsInnerElem=[];
   //  listsElem.push(<IonGrid>);
     listsInnerElem.push(<IonRow key="listlabelrow">
-        <IonCol size="5"><IonLabel key="listlabel" position='stacked'>Item is on these lists:</IonLabel></IonCol>
-        <IonCol size="2"><IonLabel key="stocklabel" position="stacked">Stocked</IonLabel></IonCol>
-        <IonCol size="2"><IonLabel key="countlabel" position="stacked">Quantity</IonLabel></IonCol>
-        <IonCol size="2"><IonLabel key="diff" position="stacked">Diff</IonLabel></IonCol>
+        <IonCol size="8"><IonLabel key="listlabel" position='stacked'>Item is on these lists:</IonLabel></IonCol>
+        <IonCol size="1"><IonLabel key="stocklabel" position="stacked">Stocked</IonLabel></IonCol>
+        <IonCol class="ion-text-center" size="1"><IonLabel key="countlabel" position="stacked">Quantity</IonLabel></IonCol>
+        <IonCol size="1"><IonLabel key="diff" position="stacked">Diff</IonLabel></IonCol>
         <IonCol size="1"><IonLabel key="resetlabel" position="stacked">Edit</IonLabel></IonCol></IonRow>
     )
     for (let i = 0; i < (props.stateItemDoc as any).lists.length; i++) {
@@ -109,13 +132,13 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
         let listName=(props.listDocs as any)[itemFoundIdx].name;
         let stockedAt=((props.stateItemDoc as any).lists[i].stockedAt);
         listsInnerElem.push(
-          <IonRow key={listID}>
-            <IonCol size="1"><IonCheckbox aria-label="" onIonChange={(e: any) => selectList(listID,Boolean(e.detail.checked))} checked={itemActive}></IonCheckbox></IonCol>
-            <IonCol class="nocolpadding" size="4"><IonLabel>{listName}</IonLabel></IonCol>
-            <IonCol size="2"><IonCheckbox aria-label="" onIonChange={(e: any) => changeStockedAt(listID,Boolean(e.detail.checked))} checked={stockedAt}></IonCheckbox></IonCol>
-            <IonCol size="2">{props.stateItemDoc.lists[i].quantity}</IonCol>
-            <IonCol size="2">{listIsDifferentThanCommon(i)}</IonCol>
-            <IonCol size="1"><IonButton onClick={(e) => {console.log(e); editListModal(listID)}} ><IonIcon icon={pencilOutline}></IonIcon></IonButton></IonCol>
+          <IonRow key={listID} class="ion-no-padding">
+            <IonCol class="ion-no-padding" size="1"><IonCheckbox aria-label="" onIonChange={(e: any) => selectList(listID,Boolean(e.detail.checked))} checked={itemActive}></IonCheckbox></IonCol>
+            <IonCol class="ion-no-padding ion-align-self-center" size="7"><IonLabel>{listName}</IonLabel></IonCol>
+            <IonCol class="ion-no-padding" size="1"><IonCheckbox aria-label="" onIonChange={(e: any) => changeStockedAt(listID,Boolean(e.detail.checked))} checked={stockedAt}></IonCheckbox></IonCol>
+            <IonCol class="ion-no-padding ion-text-center ion-align-self-center" size="1">{props.stateItemDoc.lists[i].quantity}</IonCol>
+            <IonCol class="ion-no-padding ion-align-self-center" size="1">{listIsDifferentThanCommon(i) ? "X" : "" }</IonCol>
+            <IonCol class="ion-no-padding" size="1"><IonButton onClick={(e) => {console.log(e); editListModal(listID)}} ><IonIcon icon={pencilOutline}></IonIcon></IonButton></IonCol>
           </IonRow>
         )
       }

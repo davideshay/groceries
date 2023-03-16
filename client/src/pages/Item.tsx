@@ -51,18 +51,20 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
     return retGID;
   }
 
-  function addListsIfNotExist(itemDoc: ItemDoc) {
+  function addDeleteLists(itemDoc: ItemDoc) {
+    console.log("ALINE," , cloneDeep(itemDoc), " ", listRowsLoaded);
     let newItemDoc=cloneDeep(itemDoc);
     for (let i = 0; i < listRows.length; i++) {
       if (listRows[i].listGroupID !== stateItemDoc.listGroupID) {break}
       let foundIdx=newItemDoc.lists.findIndex((el: ItemList) => el.listID === listRows[i].listDoc._id && groupIDForList(el.listID) === itemDoc.listGroupID)
       if (foundIdx === -1) {
+          console.log("Adding new list to item: ",listRows[i].listDoc.name);
           newItemDoc.lists.push({
-          listID: listRows[i].listDoc._id,
-          completed: false,
-          active: false,
-          boughtCount: 0
-        })
+            listID: listRows[i].listDoc._id,
+            completed: false,
+            active: false,
+            boughtCount: 0
+          })
       }  
     }
     return(newItemDoc);
@@ -76,7 +78,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
         setStateInfo("newItemMode","none");
         setNeedInitItemDoc(false);
       } else {
-      if (newItemDoc != null) {newItemDoc=addListsIfNotExist(itemDoc)};
+      if (newItemDoc != null) {newItemDoc=addDeleteLists(itemDoc)};
       }
       if (newItemDoc != null) {setStateItemDoc(newItemDoc as any)};
     }
@@ -294,7 +296,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
             <IonItem key="formErrors">{formError}</IonItem>
           </IonList>
           {mode !== "new" ? 
-            (<IonButton fill="outline" color="warning" onClick={() => deleteItem()}><IonIcon slot="start" icon={trashOutline}></IonIcon>Delete</IonButton>)
+            (<IonButton fill="outline" color="danger" onClick={() => deleteItem()}><IonIcon slot="start" icon={trashOutline}></IonIcon>Delete</IonButton>)
             : <></>}
           <IonButton fill="outline" onClick={() => props.history.goBack()}><IonIcon slot="start" icon={closeCircleOutline}></IonIcon>Cancel</IonButton>
           <IonButton onClick={() => updateThisItem()}>{mode === "new" ? "Add": "Save"}<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>
