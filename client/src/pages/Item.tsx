@@ -300,10 +300,10 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
             <IonItem key="formErrors">{formError}</IonItem>
           </IonList>
           {mode !== "new" ? 
-            (<IonButton fill="outline" color="danger" onClick={() => deleteItem()}><IonIcon slot="start" icon={trashOutline}></IonIcon>Delete</IonButton>)
+            (<IonButton class="ion-float-left" fill="outline" color="danger" onClick={() => deleteItem()}><IonIcon slot="start" icon={trashOutline}></IonIcon>Delete</IonButton>)
             : <></>}
-          <IonButton fill="outline" onClick={() => props.history.goBack()}><IonIcon slot="start" icon={closeCircleOutline}></IonIcon>Cancel</IonButton>
-          <IonButton onClick={() => updateThisItem()}>{mode === "new" ? "Add": "Save"}<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>
+          <IonButton class="ion-float-right" onClick={() => updateThisItem()}>{mode === "new" ? "Add": "Save"}<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>
+          <IonButton class="ion-float-right" fill="outline" onClick={() => props.history.goBack()}><IonIcon slot="start" icon={closeCircleOutline}></IonIcon>Cancel</IonButton>
       </IonContent>
     </IonPage>
   );

@@ -289,13 +289,13 @@ function deletePrompt() {
 
   let updateButton=[];
   if (mode === "new") {
-    updateButton.push(<IonButton key="add" onClick={() => updateThisItem()}>Add<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
+    updateButton.push(<IonButton class="ion-float-right" key="add" onClick={() => updateThisItem()}>Add<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
   } else {
-    updateButton.push(<IonButton key="save" onClick={() => updateThisItem()}>Save<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
+    updateButton.push(<IonButton class="ion-float-right" key="save" onClick={() => updateThisItem()}>Save<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
   }
 
   let deleteButton=[];
-  deleteButton.push(<IonButton fill="outline" color="warning" key="delete" onClick={() => deletePrompt()}>Delete<IonIcon slot="start" icon={trashOutline}></IonIcon></IonButton>)
+  deleteButton.push(<IonButton class="ion-float-left" fill="outline" color="danger" key="delete" onClick={() => deletePrompt()}>Delete<IonIcon slot="start" icon={trashOutline}></IonIcon></IonButton>)
 
   return (
     <IonPage>
@@ -326,8 +326,8 @@ function deletePrompt() {
             </IonItemGroup>
           </IonList>
           {deleteButton}
-          <IonButton key="back" fill="outline"  onClick={() => props.history.goBack()}>Cancel<IonIcon slot="start" icon={closeCircleOutline}></IonIcon></IonButton>  
           {updateButton}
+          <IonButton class="ion-float-right" key="back" fill="outline"  onClick={() => props.history.goBack()}>Cancel<IonIcon slot="start" icon={closeCircleOutline}></IonIcon></IonButton>  
       </IonContent>
       <IonFooter>
         <IonLabel>{pageState.formError}</IonLabel>

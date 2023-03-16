@@ -177,12 +177,12 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
               <input type="color" value={stateCategoryDoc.color} onChange={(e: any) => {setStateCategoryDoc((prevState: any) => ({...prevState,color: e.target.value}))}}></input>
             </IonItem>
           </IonList>
-          <IonButton fill="outline" color="warning" onClick={() => deletePrompt()}><IonIcon slot="start" icon={trashOutline}></IonIcon>Delete</IonButton>
-          <IonButton fill="outline" color="secondary" onClick={() => goBack("/categories")}><IonIcon slot="start" icon={closeOutline}></IonIcon>Cancel</IonButton>
-          <IonButton onClick={() => updateThisCategory()}>
+          <IonButton class="ion-float-left" fill="outline" color="danger" onClick={() => deletePrompt()}><IonIcon slot="start" icon={trashOutline}></IonIcon>Delete</IonButton>
+          <IonButton class="ion-float-right" onClick={() => updateThisCategory()}>
             <IonIcon slot="start" icon={(mode === "new" ? addOutline : saveOutline)}></IonIcon>
             {(mode === "new") ? "Add" : "Save"}
           </IonButton>
+          <IonButton class="ion-float-right" fill="outline" color="secondary" onClick={() => goBack("/categories")}><IonIcon slot="start" icon={closeOutline}></IonIcon>Cancel</IonButton>
       </IonContent>
       <IonFooter>
         <IonLabel>{formError}</IonLabel>
