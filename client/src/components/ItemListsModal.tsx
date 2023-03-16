@@ -51,7 +51,7 @@ const ItemListsModal: React.FC<ModalProps> = (props: ModalProps) => {
           </IonRow>
         </IonGrid>
         <IonItem>
-          <IonSelect label="Category" labelPlacement="stacked" interface="popover" onIonChange={(ev) => props.setModalState(prevState => ({...prevState, itemList: {...prevState.itemList, categoryID: String(ev.detail.value)}}))} value={props.modalState.itemList.categoryID}>
+          <IonSelect label="Category" labelPlacement="stacked" interface="popover" onIonChange={(ev) => props.setModalState(prevState => ({...prevState, itemList: {...prevState.itemList, categoryID: ev.detail.value}}))} value={props.modalState.itemList.categoryID}>
                   <IonSelectOption key="cat-undefined" value={null}>Uncategorized</IonSelectOption>
                   {props.categoryDocs.map((cat: any) => (
                       <IonSelectOption key={cat._id} value={(cat as any)._id}>
@@ -65,7 +65,7 @@ const ItemListsModal: React.FC<ModalProps> = (props: ModalProps) => {
         </IonItem>
         <IonItem>
           <IonInput key="modal-qty" label="Quantity" labelPlacement="stacked" type="number" min="0" max="9999" value={props.modalState.itemList.quantity} onIonInput={(e) => props.setModalState(prevState => ({...prevState,itemList: {...prevState.itemList,quantity: Number(e.detail.value)}}))}></IonInput>
-          <IonSelect label="" interface="popover" onIonChange={(ev) => props.setModalState(prevState => ({...prevState, itemList: {...prevState.itemList, uomName: String(ev.detail.value)}}))} value={props.modalState.itemList.uomName}>
+          <IonSelect label="" interface="popover" onIonChange={(ev) => props.setModalState(prevState => ({...prevState, itemList: {...prevState.itemList, uomName: ev.detail.value}}))} value={props.modalState.itemList.uomName}>
                     <IonSelectOption key="uom-undefined" value={null}>No UOM</IonSelectOption>
                     {props.uomDocs.map((uom: any) => (
                       <IonSelectOption key={uom.name} value={uom.name}>{uom.description}</IonSelectOption>

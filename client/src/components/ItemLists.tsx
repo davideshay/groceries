@@ -2,8 +2,8 @@ import {  IonButton,  IonItem, IonLabel, IonCheckbox, IonIcon,
     IonGrid, IonRow, IonCol, IonText,  } from '@ionic/react';
 import { pencilOutline } from 'ionicons/icons';
 import { Fragment, useState } from 'react';
-import { getCommonKey } from './ItemUtilities';
-import { ItemDoc  } from '../components/DataTypes';
+import { getCommonKey, sortedItemLists } from './ItemUtilities';
+import { ItemDoc, ItemList, ListDoc  } from '../components/DataTypes';
 import ItemListsModal from '../components/ItemListsModal';
 import { cloneDeep } from 'lodash';
 import { ModalState, ModalStateInit } from '../components/DataTypes';
@@ -67,15 +67,15 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
         props.setStateItemDoc(newItemDoc);
     }
     
-    function listIsDifferentThanCommon(listIdx: number): boolean {
+    function listIsDifferentThanCommon(sortedLists: ItemList[], listIdx: number): boolean {
         let combinedKeys: any ={};
         let maxKey="";
         let maxCnt=1;
         let thisKey="";
-        for (let i = 0; i < props.stateItemDoc.lists.length; i++) {
-          const thisList=props.stateItemDoc.lists[i];
+        for (let i = 0; i < sortedLists.length; i++) {
+          const thisList=sortedLists[i];
           let listKey="";
-          for (const [key, value] of Object.entries(thisList)) {
+          for (const [key, value] of Object.entries(thisList).sort((a,b) => a[0].toUpperCase().localeCompare(b[0].toUpperCase()))) {
             if (!["listID","boughtCount"].includes(key)) {
               listKey=listKey+key+value;
             }
@@ -98,6 +98,7 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
         for (const [key, value] of Object.entries(combinedKeys)) {
           if (value == maxCnt) { maxCheckCount++;}
         }
+        console.log(cloneDeep({combinedKeys,thisKey,maxCnt,maxCheckCount}));
         return ((combinedKeys[thisKey] < maxCnt) || (maxCheckCount > 1)) ;
       }
     
@@ -124,20 +125,22 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
         <IonCol size="1"><IonLabel key="diff" position="stacked">Diff</IonLabel></IonCol>
         <IonCol size="1"><IonLabel key="resetlabel" position="stacked">Edit</IonLabel></IonCol></IonRow>
     )
-    for (let i = 0; i < (props.stateItemDoc as any).lists.length; i++) {
-      let listID = (props.stateItemDoc as any).lists[i].listID;
+    let sortedLists = sortedItemLists(props.stateItemDoc.lists,props.listDocs);
+    
+    for (let i = 0; i < sortedLists.length; i++) {
+      let listID = sortedLists[i].listID;
       let itemFoundIdx=props.listDocs.findIndex((element: any) => (element._id === listID));
       if (itemFoundIdx !== -1) {
-        let itemActive=(((props.stateItemDoc as any).lists[i].active));
+        let itemActive=(sortedLists[i].active);
         let listName=(props.listDocs as any)[itemFoundIdx].name;
-        let stockedAt=((props.stateItemDoc as any).lists[i].stockedAt);
+        let stockedAt=(sortedLists[i].stockedAt);
         listsInnerElem.push(
           <IonRow key={listID} class="ion-no-padding">
             <IonCol class="ion-no-padding" size="1"><IonCheckbox aria-label="" onIonChange={(e: any) => selectList(listID,Boolean(e.detail.checked))} checked={itemActive}></IonCheckbox></IonCol>
             <IonCol class="ion-no-padding ion-align-self-center" size="7"><IonLabel>{listName}</IonLabel></IonCol>
             <IonCol class="ion-no-padding" size="1"><IonCheckbox aria-label="" onIonChange={(e: any) => changeStockedAt(listID,Boolean(e.detail.checked))} checked={stockedAt}></IonCheckbox></IonCol>
-            <IonCol class="ion-no-padding ion-text-center ion-align-self-center" size="1">{props.stateItemDoc.lists[i].quantity}</IonCol>
-            <IonCol class="ion-no-padding ion-align-self-center" size="1">{listIsDifferentThanCommon(i) ? "X" : "" }</IonCol>
+            <IonCol class="ion-no-padding ion-text-center ion-align-self-center" size="1">{sortedLists[i].quantity}</IonCol>
+            <IonCol class="ion-no-padding ion-align-self-center" size="1">{listIsDifferentThanCommon(sortedLists,i) ? "X" : "" }</IonCol>
             <IonCol class="ion-no-padding" size="1"><IonButton onClick={(e) => {console.log(e); editListModal(listID)}} ><IonIcon icon={pencilOutline}></IonIcon></IonButton></IonCol>
           </IonRow>
         )

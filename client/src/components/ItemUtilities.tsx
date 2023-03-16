@@ -1,4 +1,4 @@
-import {initItemRow, ItemRow, ItemSearch, ListCombinedRow, ListCombinedRows, RowType, ItemDoc, ItemDocs, ItemList} from '../components/DataTypes';
+import {initItemRow, ItemRow, ItemSearch, ListCombinedRow, ListCombinedRows, RowType, ItemDoc, ItemDocs, ItemList, ListDocs, ListDoc} from '../components/DataTypes';
 import { cloneDeep } from 'lodash';
 
 export function getAllSearchRows(allItemDocs: any, listID: string): ItemSearch[] {
@@ -156,6 +156,7 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
         }    
         itemRows.push(itemRow);
     })
+    //TODO FIX SORTING ON CAPS
     itemRows.sort((a,b) => (
     (Number(a.completed) - Number(b.completed)) || (Number(a.categorySeq) - Number(b.categorySeq)) || (a.categoryName.localeCompare(b.categoryName)) ||
     (a.itemName.localeCompare(b.itemName))
@@ -163,10 +164,23 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
     return (itemRows)
 }
 
-export function getCommonKey(stateItemDoc: ItemDoc, key: string) {
+export function sortedItemLists(itemList: ItemList[], listDocs: ListDocs) {
+    let sortedLists = cloneDeep(itemList);
+    sortedLists.sort(function (a: ItemList, b: ItemList) {
+        let aList: ListDoc | undefined = listDocs.find((listDoc: ListDoc) => (listDoc._id == a.listID));
+        let bList: ListDoc | undefined = listDocs.find((listDoc: ListDoc) => (listDoc._id == b.listID));
+        if (aList == undefined || bList == undefined) {return 0 }
+        else { return aList.name.toUpperCase().localeCompare(bList.name.toUpperCase());
+        }
+    })
+    return sortedLists;
+}
+
+export function getCommonKey(stateItemDoc: ItemDoc, key: string, listDocs: ListDocs) {
     let freqObj: any = {};
     let maxKey = ""; let maxCnt=0;
-    stateItemDoc.lists.forEach( (list: ItemList) => {
+    let sortedLists = sortedItemLists(stateItemDoc.lists,listDocs);
+    sortedLists.forEach( (list: ItemList) => {
       let value=(list as any)[key]
       if (freqObj.hasOwnProperty(value)) {
         freqObj[value]=freqObj[value]+1;
@@ -175,6 +189,6 @@ export function getCommonKey(stateItemDoc: ItemDoc, key: string) {
         freqObj[value]=1
       }
     });
-    if (maxCnt === 0 && stateItemDoc.lists.length > 0 ) {maxKey = (stateItemDoc.lists[0] as any)[key]}
+    if (maxCnt === 0 && sortedLists.length > 0 ) {maxKey = (sortedLists[0] as any)[key]}
     return maxKey;
   }

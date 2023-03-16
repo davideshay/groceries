@@ -9,12 +9,12 @@ import { useState, useEffect, useContext, useRef } from 'react';
 import { useCreateGenericDocument, useUpdateGenericDocument, useLists, useDeleteGenericDocument, useGetOneDoc } from '../components/Usehooks';
 import { createEmptyItemDoc } from '../components/DefaultDocs';
 import { GlobalStateContext } from '../components/GlobalState';
-import { cloneDeep, isEmpty } from 'lodash';
+import { cloneDeep, isEmpty, remove } from 'lodash';
 import './Item.css';
 import SyncIndicator from '../components/SyncIndicator';
 import ItemLists from '../components/ItemLists';
 import { getCommonKey } from '../components/ItemUtilities';
-import { PouchResponse, HistoryProps, ItemDoc, ItemDocInit, ItemList, ListRow } from '../components/DataTypes';
+import { PouchResponse, HistoryProps, ItemDoc, ItemDocInit, ItemList, ListRow, ItemListInit } from '../components/DataTypes';
 
 const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode, itemid: routeItemID  } = useParams<{mode: string, itemid: string}>();
@@ -53,20 +53,24 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   function addDeleteLists(itemDoc: ItemDoc) {
     console.log("ALINE," , cloneDeep(itemDoc), " ", listRowsLoaded);
-    let newItemDoc=cloneDeep(itemDoc);
+    let newItemDoc: ItemDoc =cloneDeep(itemDoc);
+    // loop through all the lists with the same listgroup. if the list is in the
+    // listgroup, but not on the item add it.
     for (let i = 0; i < listRows.length; i++) {
-      if (listRows[i].listGroupID !== stateItemDoc.listGroupID) {break}
-      let foundIdx=newItemDoc.lists.findIndex((el: ItemList) => el.listID === listRows[i].listDoc._id && groupIDForList(el.listID) === itemDoc.listGroupID)
+      if (listRows[i].listGroupID !== newItemDoc.listGroupID) {break}
+      let foundIdx=newItemDoc.lists.findIndex((el: ItemList) => el.listID === listRows[i].listDoc._id)
       if (foundIdx === -1) {
           console.log("Adding new list to item: ",listRows[i].listDoc.name);
-          newItemDoc.lists.push({
-            listID: listRows[i].listDoc._id,
-            completed: false,
-            active: false,
-            boughtCount: 0
-          })
+          let newItemList = cloneDeep(ItemListInit);
+          newItemList.listID = listRows[i].listDoc._id;
+          newItemDoc.lists.push(newItemList);
       }  
     }
+    // now loop through all the lists on the item, and see if they are in the right listgroup.
+    // if not, delete the list from the item
+    let currentLists=cloneDeep(newItemDoc.lists);
+    remove(currentLists, (list: ItemList) => { return groupIDForList(list.listID) !== newItemDoc.listGroupID})
+    newItemDoc.lists=currentLists;
     return(newItemDoc);
   }
 
@@ -78,7 +82,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
         setStateInfo("newItemMode","none");
         setNeedInitItemDoc(false);
       } else {
-      if (newItemDoc != null) {newItemDoc=addDeleteLists(itemDoc)};
+        if (newItemDoc != null) {newItemDoc=addDeleteLists(itemDoc)};
       }
       if (newItemDoc != null) {setStateItemDoc(newItemDoc as any)};
     }
@@ -259,9 +263,9 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
                   <IonCol size="1"></IonCol>
                 </IonRow>
                 <IonRow>
-                  <IonCol size="3"><IonInput label="" type="number" min="0" max="9999" onIonInput={(e: any) => updateAllKey("quantity",e.detail.value)} value={getCommonKey(stateItemDoc,"quantity")}></IonInput></IonCol>
+                  <IonCol size="3"><IonInput label="" type="number" min="0" max="9999" onIonInput={(e: any) => updateAllKey("quantity",e.detail.value)} value={getCommonKey(stateItemDoc,"quantity",listDocs)}></IonInput></IonCol>
                   <IonCol size="8">
-                    <IonSelect label="" interface="popover" onIonChange={(ev) => updateAllKey("uomName", ev.detail.value)} value={getCommonKey(stateItemDoc,"uomName")}>
+                    <IonSelect label="" interface="popover" onIonChange={(ev) => updateAllKey("uomName", ev.detail.value)} value={getCommonKey(stateItemDoc,"uomName",listDocs)}>
                     <IonSelectOption key="uom-undefined" value={null}>No UOM</IonSelectOption>
                     {uomDocs.map((uom: any) => (
                       <IonSelectOption key={uom.name} value={uom.name}>{uom.description}</IonSelectOption>
@@ -273,7 +277,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
                 </IonGrid>
               </IonItem>
               <IonItem key="category">
-                <IonSelect label="Category" labelPlacement="stacked" interface="popover" onIonChange={(ev) => updateAllKey("categoryID",ev.detail.value)} value={getCommonKey(stateItemDoc,"categoryID")}>
+                <IonSelect label="Category" labelPlacement="stacked" interface="popover" onIonChange={(ev) => updateAllKey("categoryID",ev.detail.value)} value={getCommonKey(stateItemDoc,"categoryID",listDocs)}>
                   <IonSelectOption key="cat-undefined" value={null}>Uncategorized</IonSelectOption>
                   {categoryDocs.map((cat) => (
                       <IonSelectOption key={cat._id} value={(cat as any)._id}>
@@ -286,7 +290,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
                 </IonButton>  
               </IonItem>
               <IonItem key="note">
-                <IonTextarea label="Note" labelPlacement="stacked" placeholder="Item Note" inputMode='text' debounce={100} rows={4} onIonInput={(ev) => updateAllKey("note",String(ev.detail.value))} value={getCommonKey(stateItemDoc,"note")}>   
+                <IonTextarea label="Note" labelPlacement="stacked" placeholder="Item Note" inputMode='text' debounce={100} rows={4} onIonInput={(ev) => updateAllKey("note",String(ev.detail.value))} value={getCommonKey(stateItemDoc,"note",listDocs)}>   
                 </IonTextarea>
               </IonItem>
             </IonCard>
