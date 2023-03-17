@@ -5,6 +5,7 @@ import { useConflicts, useFriends, UseFriendState } from './Usehooks';
 import ListsAll from './ListsAll';
 import { RemoteDBStateContext } from './RemoteDBState';
 import { ResolvedFriendStatus } from './DataTypes';
+import './AppMenu.css';
 
 const AppMenu: React.FC = () => {
   const { remoteDBCreds } = useContext(RemoteDBStateContext);
@@ -17,7 +18,7 @@ const AppMenu: React.FC = () => {
 
   const listItem = (listItem: string,link: string) => {
     return (<IonMenuToggle key={listItem} autoHide={false}>
-              <IonItem class="appmenuitem" key={"item-"+listItem} routerLink={link}><IonLabel>{listItem}</IonLabel></IonItem>
+              <IonItem class="app-menu-item" key={"item-"+listItem} routerLink={link}>{listItem}</IonItem>
           </IonMenuToggle>)
   }
 
@@ -29,7 +30,7 @@ const AppMenu: React.FC = () => {
       })
     }  
     return (<IonMenuToggle key="Friends" autoHide={false}>
-              <IonItem class="appmenuitem" key={"item-Friends"} routerLink="/friends">
+              <IonItem class="app-menu-item" key={"item-Friends"} routerLink="/friends">
               {(pendingCount > 0) ? <IonBadge slot="start">{pendingCount}</IonBadge> : <></>}
               Friends
               </IonItem></IonMenuToggle>) 
@@ -38,7 +39,7 @@ const AppMenu: React.FC = () => {
     let pendingCount=0;
     if (!conflictsLoading) { pendingCount=conflictDocs.length }
     return (<IonMenuToggle key="ConflictLog" autoHide={false}>
-              <IonItem class="appmenuitem" key={"item-ConflictLog"} routerLink="/conflictlog">
+              <IonItem class="app-menu-item" key={"item-ConflictLog"} routerLink="/conflictlog">
               {(pendingCount > 0) ? <IonBadge slot="start">{pendingCount}</IonBadge> : <></>}
               Conflict Log
               </IonItem></IonMenuToggle>) 

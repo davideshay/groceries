@@ -1,6 +1,5 @@
 ion-button.indented {
     margin-left: 1rem;
-    color: var(--color-primary);
 }
 
 ion-button.textButton {
@@ -8,4 +7,10 @@ ion-button.textButton {
     margin-right: 4px;
     text-overflow: ellipsis;
 
+}
+
+ion-button.standard-text-button {
+    text-transform: none;
+    font-size: 14px;
+    color: var(--color-primary);
 }
