@@ -175,6 +175,7 @@ export const ListGroupDocInit:ListGroupDoc = {
     listGroupID: string | null,
     listGroupName: string,
     listGroupDefault: boolean,
+    listGroupOwner: string | null,
     listDoc: ListDoc,
   }
 
@@ -191,6 +192,7 @@ export const ListGroupDocInit:ListGroupDoc = {
     listGroupID: string | null,
     listGroupName: string,
     listGroupDefault: boolean,
+    listGroupOwner: string | null,
     listDoc: ListDoc 
   }
 

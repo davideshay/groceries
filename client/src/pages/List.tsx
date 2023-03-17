@@ -18,7 +18,8 @@ interface PageState {
   needInitListDoc: boolean,
   listDoc: ListDoc,
   selectedListID: string,
-  listGroupID: string,
+  listGroupID: string | null,
+  listGroupOwner: string | null,
   changesMade: boolean,
   formError: string,
   deletingDoc: boolean
@@ -33,6 +34,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
     listDoc: cloneDeep(ListDocInit),
     selectedListID: routeID,
     listGroupID: "",
+    listGroupOwner: null,
     changesMade: false,
     formError: "",
     deletingDoc: false
@@ -50,7 +52,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
     selector: { type: "category", name: { $exists: true}},
     sort: [ "type","name"]
   })
-  const { loading: listGroupLoading, doc: listGroupDoc} = useGetOneDoc(pageState.listGroupID);
+  const { loading: listGroupLoading, doc: listGroupDoc} = useGetOneDoc(String(pageState.listGroupID));
   const [presentAlert,dismissAlert] = useIonAlert();
   const screenLoading = useRef(true);
 
@@ -59,8 +61,8 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   },[routeID])
 
   useEffect( () => {
-    let newPageState=cloneDeep(pageState);
-    if (!listsLoading && (useFriendState === UseFriendState.rowsLoaded) && !categoryLoading) {
+    let newPageState: PageState=cloneDeep(pageState);
+    if (!listsLoading && listRowsLoaded && (useFriendState === UseFriendState.rowsLoaded) && !categoryLoading) {
       if (mode === "new" && pageState.needInitListDoc) {
         let initCategories=categoryDocs.map(cat => cat._id);
         let initListDoc : ListDoc = cloneDeep(ListDocInit);
@@ -69,22 +71,22 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
         } else {
           initListDoc.listGroupID=""
         }
-        console.log("new list group ID:",initListDoc.listGroupID)
         initListDoc.categories = initCategories;
         newPageState.listDoc=initListDoc;
         newPageState.listGroupID="";
         newPageState.needInitListDoc=false;
       }
       else if (mode !== "new") {
-        let newListDoc = listDocs.find((el: any) => el._id === pageState.selectedListID);
-        if (newListDoc == undefined) {return}
-        newPageState.listDoc = newListDoc;
-        newPageState.listGroupID = newListDoc.listGroupID;
+        let newListRow = listRows.find((lr: ListRow) => lr.listDoc._id === pageState.selectedListID);
+        if (newListRow == undefined) {return}
+        newPageState.listDoc = newListRow.listDoc;
+        newPageState.listGroupID = newListRow.listGroupID;
+        newPageState.listGroupOwner = newListRow.listGroupOwner;
       }
       newPageState.changesMade=false;
       setPageState(newPageState);
     }
-  },[listsLoading,listGroupLoading, listDocs, listCombinedRows, mode, listGroupDoc, useFriendState,friendRows, categoryLoading,categoryDocs,pageState.selectedListID, remoteDBState.accessJWT]);
+  },[listsLoading, listRowsLoaded, listGroupLoading, listDocs, listCombinedRows, mode, listGroupDoc, useFriendState,friendRows, categoryLoading,categoryDocs,pageState.selectedListID, remoteDBState.accessJWT]);
 
   if (listsLoading || !listRowsLoaded || (useFriendState !== UseFriendState.rowsLoaded) || categoryLoading || isEmpty(pageState.listDoc) || listGroupLoading || pageState.deletingDoc)  {return(
       <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
@@ -244,7 +246,9 @@ function deletePrompt() {
       categoryLines.push(catItem(categoryDocs[i]._id,false))
     }
   }
-  categoryElem.push(catItemDivider(false,categoryLines));
+  if (categoryLines.length > 0) {
+    categoryElem.push(catItemDivider(false,categoryLines));
+  } 
 
   let selectOptionListElem=(
     listRows.map((list: ListRow) => (
@@ -295,7 +299,9 @@ function deletePrompt() {
   }
 
   let deleteButton=[];
-  deleteButton.push(<IonButton class="ion-float-left" fill="outline" color="danger" key="delete" onClick={() => deletePrompt()}>Delete<IonIcon slot="start" icon={trashOutline}></IonIcon></IonButton>)
+  if (pageState.listGroupOwner===remoteDBCreds.dbUsername) {
+    deleteButton.push(<IonButton class="ion-float-left" fill="outline" color="danger" key="delete" onClick={() => deletePrompt()}>Delete<IonIcon slot="start" icon={trashOutline}></IonIcon></IonButton>)
+  }
 
   return (
     <IonPage>

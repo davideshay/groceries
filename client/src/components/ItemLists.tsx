@@ -98,19 +98,16 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
         for (const [key, value] of Object.entries(combinedKeys)) {
           if (value == maxCnt) { maxCheckCount++;}
         }
-        console.log(cloneDeep({combinedKeys,thisKey,maxCnt,maxCheckCount}));
         return ((combinedKeys[thisKey] < maxCnt) || (maxCheckCount > 1)) ;
       }
     
     function editListModal(listID: string) {
-        console.log("in ELM: list: ",listID);
         let listIdx = 0;
         for (let i = 0; i < props.stateItemDoc.lists.length; i++) {
           if (props.stateItemDoc.lists[i].listID == listID) { listIdx=i; break;}
         }
         let listFoundIdx=props.listDocs.findIndex((element: any) => (element._id === listID));
         let listName = (listFoundIdx == -1) ? "" : props.listDocs[listFoundIdx].name
-        console.log("edit list modal, listID: ",listID, listIdx);
         setModalState(prevState => ({...prevState,isOpen: true, selectedListId: listID, 
           selectedListName: listName, selectedListIdx: listIdx, itemList: cloneDeep(props.stateItemDoc.lists[listIdx])}));
     }

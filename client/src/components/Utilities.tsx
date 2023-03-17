@@ -83,7 +83,7 @@ export async function initialSetupActivities(db: PouchDB.Database, username: str
          limit: totalDocs});
     if (listGroupDocs.docs.length == 0) {
         console.log("STATUS: No default group found for ",username, "... creating now ...");
-        const defaultListGroupDoc : ListGroupDoc = ListGroupDocInit;
+        const defaultListGroupDoc : ListGroupDoc = cloneDeep(ListGroupDocInit);
         defaultListGroupDoc.default = true;
         defaultListGroupDoc.name = username+" (default)";
         defaultListGroupDoc.listGroupOwner = username;

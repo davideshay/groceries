@@ -13,7 +13,7 @@ import { initUserIDList, initUsersInfo, PouchResponse, ResolvedFriendStatus, Use
 import SyncIndicator from '../components/SyncIndicator';
 import { getUsersInfo } from '../components/Utilities';
 import './ListGroup.css';
-import { closeCircleOutline, saveOutline, trashOutline } from 'ionicons/icons';
+import { closeCircleOutline, list, saveOutline, trashOutline } from 'ionicons/icons';
 
 interface PageState {
   needInitListGroupDoc: boolean,
@@ -71,12 +71,10 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   useEffect( () => {
     async function getUI(userIDList: UserIDList) {
-      console.log("in GetUI, list: ", cloneDeep(userIDList));
       let usersInfo: UsersInfo = cloneDeep(initUsersInfo);
       if (userIDList.userIDs.length > 0) {
         setPageState(prevState => ({...prevState,usersInfo:[],usersLoaded:false}));
         usersInfo = await getUsersInfo(userIDList,String(remoteDBCreds.apiServerURL),String(remoteDBState.accessJWT))  
-        console.log("about to set users info to: ", cloneDeep(usersInfo));
       }
       setPageState(prevState => ({...prevState,usersInfo: usersInfo,usersLoaded: true}))
     }
@@ -97,11 +95,9 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
       newPageState.changesMade=false;
       setPageState(newPageState);
       let userIDList: UserIDList = cloneDeep(initUserIDList);
-      console.log("newPageStatee: ",cloneDeep(newPageState));
       newPageState.listGroupDoc.sharedWith.forEach((user: any) => {
         userIDList.userIDs.push(user);
       });
-      console.log("userIDlist:",cloneDeep(userIDList));
       getUI(userIDList);
     }
   },[listGroupLoading, listGroupDoc, listRowsLoaded,useFriendState,friendRows, categoryLoading,categoryDocs,pageState.selectedListGroupID, remoteDBState.accessJWT]);
@@ -220,13 +216,11 @@ async function deleteListGroupFromDB() {
   // first, delete all lists in listgroup
   // second, delete all items in listgroup
   // third, delete listgroup itself
-  console.log("deleting list group from DB");
-  console.log("current listgroup:", cloneDeep(pageState));
-  if (pageState.listGroupDoc.default) {
-    dismissAlert();
-    setPageState(prevState => ({...prevState,formError: "Cannot delete default list group", deletingDoc: false}));
-    return false;
-  }
+  // if (ownListGroupsCount <= 1) {
+  //   dismissAlert();
+  //   setPageState(prevState => ({...prevState,formError: "Cannot delete last list group", deletingDoc: false}));
+  //   return false;
+  // }
   let delSuccess = true;
   for (let i = 0; i < listRows.length; i++) {
     let response = await deleteList(listRows[i].listDoc);
@@ -252,14 +246,31 @@ async function deleteListGroupFromDB() {
 
 function deletePrompt() {
   setPageState(prevState => ({...prevState,deletingDoc: true, formError: ""}));
-  presentAlert({
-    header: "Delete this list group?",
-    subHeader: "Do you really want to delete this list group?  All information on this list group will be lost (lists and items).",
-    buttons: [ { text: "Cancel", role: "Cancel" ,
-                handler: () => setPageState(prevState => ({...prevState,deletingDoc: false}))},
-               { text: "Delete", role: "confirm",
-                handler: () => deleteListGroupFromDB()}]
-  })
+  let ownListGroupsCount=0;
+  for (let i = 0; i < listCombinedRows.length; i++) {
+    if (listCombinedRows[i].rowType === RowType.listGroup && 
+       listCombinedRows[i].listGroupOwner == remoteDBCreds.dbUsername ) {
+        ownListGroupsCount++;
+       }
+  }
+  if (ownListGroupsCount <= 1) {
+    presentAlert({
+      header: "Cannot Delete List Group",
+      subHeader: "You cannot delete the last remaining list group where you are owner.",
+      buttons: [ { text: "OK", role: "confirm", 
+        handler: () => setPageState(prevState => ({...prevState,deletingDoc: false}))
+        }]
+    })
+  } else {
+    presentAlert({
+      header: "Delete this list group?",
+      subHeader: "Do you really want to delete this list group?  All information on this list group will be lost (lists and items).",
+      buttons: [ { text: "Cancel", role: "Cancel" ,
+                  handler: () => setPageState(prevState => ({...prevState,deletingDoc: false}))},
+                { text: "Delete", role: "confirm",
+                  handler: () => deleteListGroupFromDB()}]
+    })
+  }              
 }
 
   let selectOptionListElem = (
@@ -347,10 +358,10 @@ function deletePrompt() {
             {usersElem}
             </IonItemGroup>
           </IonList>
-          {deleteButton}
-          {updateButton}
-          <IonButton class="ion-float-right" key="back" fill="outline" onClick={() => props.history.goBack()}>Cancel<IonIcon slot="start" icon={closeCircleOutline}></IonIcon></IonButton>  
-         <IonItem key="formerror"><IonLabel>{pageState.formError}</IonLabel></IonItem> 
+          <IonItem key="formerror"><IonLabel>{pageState.formError}</IonLabel></IonItem> 
+            {deleteButton}
+            {updateButton}
+            <IonButton class="ion-float-right" key="back" fill="outline" onClick={() => props.history.goBack()}>Cancel<IonIcon slot="start" icon={closeCircleOutline}></IonIcon></IonButton>  
       </IonContent>
     </IonPage>
   );

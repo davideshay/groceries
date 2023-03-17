@@ -13,7 +13,7 @@ import { HistoryProps } from '../components/DataTypes';
 const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
   const [presentAlert] = useIonAlert();
   const {globalState, updateSettingKey} = useContext(GlobalStateContext);
-  const { setRemoteDBState } = useContext(RemoteDBStateContext);
+  const { remoteDBCreds, setRemoteDBState } = useContext(RemoteDBStateContext);
   const [localSettings, setLocalSettings] = useState<GlobalSettings>(initSettings)
   const [localSettingsInitialized,setLocalSettingsInitialized] = useState(false);
 
@@ -40,14 +40,16 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
       header: 'Warning',
       subHeader: '',
       message: 'Do you want to remove your saved credentials? This will cause the application to restart and allow you to sign in again if desired.',
-      buttons: [{
+      buttons: [
+        {
+          text:'Cancel',
+          role: 'cancel',
+          handler: () => {}},
+        {
         text: 'Remove',
         role: 'confirm',
         handler: () => {stopSync()}}
-        ,{
-        text:'Cancel',
-        role: 'cancel',
-        handler: () => {}}]
+        ]
     })
   }
 
@@ -67,6 +69,10 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
       </IonHeader>
       <IonContent fullscreen>
         <IonList lines="full">
+          <IonItemDivider>User Info</IonItemDivider>
+          <IonItem>Name: {remoteDBCreds.fullName}</IonItem>
+          <IonItem>UserID: {remoteDBCreds.dbUsername}</IonItem>
+          <IonItem>E-mail: {remoteDBCreds.email}</IonItem>
           <IonItem key="logout">
             <IonButton onClick={() => stopSyncPopup()} key="stopitall">Stop Sync & Logout</IonButton>
           </IonItem>
