@@ -13,9 +13,15 @@ import './AllItems.css';
 
 
 const AllItems: React.FC<HistoryProps> = (props: HistoryProps) => {
-  const { listCombinedRows, listRowsLoaded } = useLists()
-  const { itemRowsLoaded, itemRows} = useItems();
+  const { dbError: listError, listRowsLoaded } = useLists()
+  const { dbError: itemError,  itemRowsLoaded, itemRows} = useItems();
   const screenLoading = useRef(true);
+
+
+  if (listError || itemError) { return (
+    <IonPage><IonHeader><IonToolbar><IonTitle>Error...</IonTitle></IonToolbar></IonHeader>
+    <IonContent><IonItem>Error loading list or item data from database... Restart...</IonItem></IonContent></IonPage>
+  )}
 
   if (!itemRowsLoaded || !listRowsLoaded ) { return (
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>

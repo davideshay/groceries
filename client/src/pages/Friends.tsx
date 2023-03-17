@@ -75,6 +75,11 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
   const [presentToast] = useIonToast();
   const screenLoading = useRef(true);
 
+  if (useFriendState === UseFriendState.error) { return (
+    <IonPage><IonHeader><IonToolbar><IonTitle>Error...</IonTitle></IonToolbar></IonHeader>
+    <IonContent><IonItem>Error loading Friend Data ... Restart.</IonItem></IonContent></IonPage>
+  )};
+
   if (useFriendState !== UseFriendState.rowsLoaded) {
     return(<IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
     <IonContent><IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false;}}

@@ -16,6 +16,12 @@ const Categories: React.FC<HistoryProps> = (props: HistoryProps) => {
   })
   const screenLoading=useRef(true);
 
+  if (error !== null) { return (
+    <IonPage><IonHeader><IonToolbar><IonTitle>Error...</IonTitle></IonToolbar></IonHeader>
+    <IonContent><IonItem>Error loading category data from database...</IonItem>
+    </IonContent></IonPage>
+  )}
+
   if (loading) { return (
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
     <IonContent><IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false;}}

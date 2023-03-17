@@ -26,8 +26,8 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   const deleteCategoryFromItems = useDeleteCategoryFromItems();
   const deleteCategoryFromLists = useDeleteCategoryFromLists();
   const { doc: categoryDoc, loading: categoryLoading} = useGetOneDoc(routeID);
-  const { listRowsLoaded, listRows } = useLists();
-  const { itemRowsLoaded, itemRows } = useItems();
+  const { dbError: listError, listRowsLoaded, listRows } = useLists();
+  const { dbError: itemError, itemRowsLoaded, itemRows } = useItems();
   const { docs: categoryDocs, loading: categoriesLoading, error: categoriesError } = useFind({
     index: { fields: [ "type","name"] },
     selector: { type: "category", name: { $exists: true}},
@@ -49,6 +49,11 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
       setStateCategoryDoc(newCategoryDoc);
     }
   },[categoryLoading,categoryDoc]);
+
+  if ( listError || itemError || categoriesError !== null) { return (
+    <IonPage><IonHeader><IonToolbar><IonTitle>Error...</IonTitle></IonToolbar></IonHeader>
+    <IonContent><IonItem>Error Loading Category data from database... Restart.</IonItem></IonContent></IonPage>
+  )};
 
   if ( categoryLoading || categoriesLoading || !stateCategoryDoc || deletingCategory || !listRowsLoaded || !itemRowsLoaded)  {return(
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>

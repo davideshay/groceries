@@ -10,16 +10,17 @@ export function useGetOneDoc(docID: string) {
   const db = usePouch();
   const changesRef = useRef<any>();
   const [doc,setDoc] = useState<any>(null);
+  const [dbError, setDBError] = useState(false);
   const loadingRef = useRef(true);
 
   async function getDoc(id: string) {
       loadingRef.current = true;
       changesRef.current = db.changes({since: 'now', live: true, include_docs: true, doc_ids: [id]})
       .on('change', function(change) { setDoc(change.doc); })
-      let success=true; 
+      let success=true; setDBError(false);
       let docRet = null;
       try  {docRet = await db.get(id);}
-      catch(err) {success=false;}
+      catch(err) {success=false; setDBError(true);}
       loadingRef.current = false;
       if (success) {setDoc(docRet)};
     }
@@ -29,7 +30,7 @@ export function useGetOneDoc(docID: string) {
       return ( () => { if (changesRef.current) {changesRef.current.cancel()};})  
   },[docID])  
 
-  return {loading: loadingRef.current, doc};
+  return {dbError, loading: loadingRef.current, doc};
 }
 
 export function useUpdateGenericDocument() {
@@ -71,52 +72,6 @@ export function useDeleteGenericDocument() {
       return response
     },[db])
 }
-
-/* export function useUpdateCompleted() {
-  const db = usePouch();
-
-  return useCallback(
-    async (updateInfo: any) => {
-      let response: PouchResponse = cloneDeep(PouchResponseInit);
-      const newItemDoc = cloneDeep(updateInfo.itemDoc);
-      let baseList=updateInfo.listRows.find((el: ListRow) => (updateInfo.listID === el.listDoc._id));
-      for (let i = 0; i < newItemDoc.lists.length; i++) {
-        let listIdx=updateInfo.listRows.findIndex((el: ListRow) => (el.listDoc._id === newItemDoc.lists[i].listID));
-        if (listIdx !== -1) {
-          let changeThisItem=false;
-          // for checking the item complete, use this logic
-          if (updateInfo.newStatus) {
-            if (((newItemDoc.lists[i].listID === updateInfo.listID) || updateInfo.removeAll) && 
-            (isEqual(baseParticipants,updateInfo.listRows[listIdx].participants))) {
-              changeThisItem=true;
-            }
-          } else {
-          // for unchecking the item complete, use this logic
-          if (((newItemDoc.lists[i].listID === updateInfo.listID) || 
-              (updateInfo.removeAll && newItemDoc.lists[i].active && newItemDoc.lists[i].completed)) && 
-              (isEqual(baseParticipants,updateInfo.listRows[listIdx].participants))) {
-                changeThisItem=true;
-              }
-          }
-          if (changeThisItem) {
-            newItemDoc.lists[i].completed = updateInfo.newStatus;
-            if (newItemDoc.lists[i].listID === updateInfo.listID) {
-              newItemDoc.lists[i].boughtCount++
-            }
-          }
-        }  
-      }
-      let curDateStr=(new Date()).toISOString()
-      newItemDoc.updatedAt = curDateStr;
-      try { response.pouchData = await db.put(newItemDoc)}
-      catch(err) { response.successful = false; response.fullError = err;}
-      if (!response.pouchData.ok) { response.successful = false};
-      return response;
-    },
-    [db])
-}
- */
-
 
 export function useDeleteItemsInListGroup() {
   const db=usePouch()
@@ -226,13 +181,14 @@ export function useDeleteCategoryFromLists() {
     },[db]) 
 }
 
-export function useLists() : {listsLoading: boolean, listDocs: any, listRowsLoading: boolean, listRowsLoaded: boolean, listRows: ListRow[], listCombinedRows: ListCombinedRow[]} {
+export function useLists() : {dbError: boolean, listsLoading: boolean, listDocs: any, listRowsLoading: boolean, listRowsLoaded: boolean, listRows: ListRow[], listCombinedRows: ListCombinedRow[]} {
   const { remoteDBCreds } = useContext(RemoteDBStateContext);
   const [listRows,setListRows] = useState<ListRow[]>([]);
   const [listCombinedRows,setListCombinedRows] = useState<ListCombinedRow[]>([]);
   const [listRowsLoaded, setListRowsLoaded] = useState(false);
   const [listRowsLoading, setListRowsLoading] = useState(false);
-  const { docs: listGroupDocs, loading: listGroupsLoading } = useFind({
+  const [dbError, setDBError] = useState(false);
+  const { docs: listGroupDocs, loading: listGroupsLoading, error: listGroupError } = useFind({
     index: { fields: ["type","name"]},
     selector: { "$and": [
       { "type": "listgroup", "name": { "$exists": true}},
@@ -344,6 +300,8 @@ export function useLists() : {listsLoading: boolean, listDocs: any, listRowsLoad
 
   useEffect( () => {
     if (listsLoading || listGroupsLoading) { setListRowsLoaded(false); return };
+    if (listError !== null || listGroupError !== null) { setDBError(true); return};
+    setDBError(false);
     if ( !listsLoading && !listGroupsLoading && !listRowsLoaded)  {
       setListRowsLoading(true);
       setListRowsLoaded(false);
@@ -351,16 +309,17 @@ export function useLists() : {listsLoading: boolean, listDocs: any, listRowsLoad
       setListRowsLoading(false)
       setListRowsLoaded(true);
     }
-  },[listsLoading,listRowsLoading,listDocs, listGroupDocs, listGroupsLoading])
+  },[listError, listGroupError, listsLoading,listRowsLoading,listDocs, listGroupDocs, listGroupsLoading])
 
-  return ({listsLoading, listDocs, listRowsLoading, listRowsLoaded, listRows, listCombinedRows});
+  return ({dbError, listsLoading, listDocs, listRowsLoading, listRowsLoaded, listRows, listCombinedRows});
 }
 
-export function useItems() : {itemsLoading: boolean, itemRowsLoading: boolean, itemRowsLoaded: boolean, itemRows: ItemDocs} {
+export function useItems() : {dbError: boolean, itemsLoading: boolean, itemRowsLoading: boolean, itemRowsLoaded: boolean, itemRows: ItemDocs} {
   const [itemRows,setItemRows] = useState<ItemDocs>([]);
   const [itemRowsLoaded, setItemRowsLoaded] = useState(false);
   const [itemRowsLoading, setItemRowsLoading] = useState(false);
-  const { listCombinedRows, listRowsLoaded, listRowsLoading } = useLists()
+  const [dbError, setDBError] = useState(false);
+  const { dbError: listDBError, listCombinedRows, listRowsLoaded, listRowsLoading } = useLists()
   const { docs: itemDocs, loading: itemsLoading, error: itemError} = useFind({
     index: { fields: ["type","name"] },
     selector: { "$and": [ 
@@ -386,6 +345,8 @@ export function useItems() : {itemsLoading: boolean, itemRowsLoading: boolean, i
 
   useEffect( () => {
     if (itemsLoading || !listRowsLoaded ) { setItemRowsLoaded(false); return };
+    if (itemError !== null || listDBError) { setDBError(true); return;}
+    setDBError(false);
     if ( !itemsLoading && listRowsLoaded && !itemRowsLoaded)  {
       setItemRowsLoading(true);
       setItemRowsLoaded(false);
@@ -393,9 +354,9 @@ export function useItems() : {itemsLoading: boolean, itemRowsLoading: boolean, i
       setItemRowsLoading(false)
       setItemRowsLoaded(true);
     }
-  },[itemsLoading,listRowsLoading,itemDocs, listCombinedRows])
+  },[itemError, listDBError, itemsLoading,listRowsLoading,itemDocs, listCombinedRows])
 
-  return ({itemsLoading, itemRowsLoading, itemRowsLoaded, itemRows});
+  return ({dbError, itemsLoading, itemRowsLoading, itemRowsLoaded, itemRows});
 }
 
 export enum UseFriendState {
@@ -412,7 +373,7 @@ export function useFriends(username: string) : { useFriendState: UseFriendState,
   const [friendRows,setFriendRows] = useState<FriendRow[]>([]);
   const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
   const [useFriendState,setUseFriendState] = useState(UseFriendState.init);
-  const { docs: friendDocs, error: friendsError, state: friendState } = useFind({
+  const { docs: friendDocs, state: friendState } = useFind({
     index: { fields: ["type","friendID1","friendID2"]},
     selector: { "$and": [ {
         "type": "friend",
@@ -441,7 +402,6 @@ export function useFriends(username: string) : { useFriendState: UseFriendState,
         setUseFriendState((prevState) => UseFriendState.baseFriendsLoaded);
       } 
     },[friendState] )
-
 
     async function loadFriendRows() {
       let userIDList : { userIDs: string[]} = { userIDs: []};
@@ -494,12 +454,12 @@ export function useFriends(username: string) : { useFriendState: UseFriendState,
     return({useFriendState: useFriendState, friendRows});
 }
 
-export function useConflicts() : { conflictDocs: any[], conflictsLoading: boolean} {
+export function useConflicts() : { conflictsError: boolean, conflictDocs: any[], conflictsLoading: boolean} {
   const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
   const { globalState } = useContext(GlobalStateContext);
   const [mostRecentDate,setMostRecentDate] = useState<Date>(new Date());
 
-  const { docs: conflictDocs, loading: conflictsLoading, error } = useFind({
+  const { docs: conflictDocs, loading: conflictsLoading, error: dbError } = useFind({
     index: { fields: ["type","docType","updatedAt"]},
     selector: { type: "conflictlog", docType: { $exists: true }, updatedAt: { $gt: mostRecentDate.toISOString()} },
     sort: [ "type", "docType","updatedAt" ]
@@ -512,5 +472,5 @@ export function useConflicts() : { conflictDocs: any[], conflictsLoading: boolea
     setMostRecentDate((lastConflictsViewed > oneDayOldDate) ? lastConflictsViewed : oneDayOldDate);  
   },[remoteDBCreds.lastConflictsViewed])
 
-  return({conflictDocs, conflictsLoading});
+  return({conflictsError: dbError !== null, conflictDocs, conflictsLoading});
 }

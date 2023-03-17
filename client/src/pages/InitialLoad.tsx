@@ -1,4 +1,4 @@
-import { IonHeader, IonPage, IonTitle, IonToolbar, IonLoading } from '@ionic/react';
+import { IonHeader, IonPage, IonTitle, IonToolbar, IonLoading, IonContent,IonItem } from '@ionic/react';
 import { useContext, useEffect, useRef} from 'react';
 import { usePouch } from 'use-pouchdb';
 import { useLists } from '../components/Usehooks';
@@ -12,7 +12,7 @@ type InitialLoadProps = {
 
 const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
     const { remoteDBState, remoteDBCreds, setConnectionStatus} = useContext(RemoteDBStateContext);
-    const { listRowsLoaded, listRows } = useLists()
+    const { dbError ,listRowsLoaded, listRows } = useLists()
     const db=usePouch();
     const screenLoading = useRef(true);
   
@@ -40,6 +40,12 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
             dismissToLogin();
         }
     },[remoteDBState.connectionStatus])
+
+    if (dbError) {return (
+        <IonPage><IonHeader><IonToolbar><IonTitle>Error...</IonTitle></IonToolbar></IonHeader>
+        <IonContent><IonItem>Error Loading List Information... Restart.</IonItem></IonContent>
+        </IonPage>
+    )}
 
     return (
     <IonPage>

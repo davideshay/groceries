@@ -1,8 +1,8 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, 
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonLoading,
   IonButtons, IonMenuButton, IonItem, IonLabel, IonFooter, IonTextarea, NavContext } from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useGetOneDoc} from '../components/Usehooks';
-import { useContext } from 'react';
+import { useContext, useRef } from 'react';
 import { isEqual, pull } from 'lodash';
 import { HistoryProps } from '../components/DataTypes';
 import './Category.css';
@@ -11,14 +11,24 @@ import SyncIndicator from '../components/SyncIndicator';
 const ConflictItem: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { id: routeID } = useParams<{ id: string}>();
 
-  const { doc: conflictDoc, loading: conflictLoading } = useGetOneDoc(routeID);
+  const { doc: conflictDoc, loading: conflictLoading, dbError: conflictError } = useGetOneDoc(routeID);
 
   const {goBack} = useContext(NavContext);
+  const screenLoading = useRef(true);
+
+  if (conflictError) { return (
+    <IonPage><IonHeader><IonToolbar><IonTitle>Error...</IonTitle></IonToolbar></IonHeader>
+    <IonContent><IonItem>Error loading Conflict Data ... Restart.</IonItem></IonContent></IonPage>
+  )}
 
   if ( conflictLoading  )  {return(
-    <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
+    <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
+    <IonContent><IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false}}
+                 message="Loading Data..." >
+    </IonLoading></IonContent></IonPage>
   )};
   
+  screenLoading.current=false;
   const localDate = (new Date(conflictDoc.updatedAt)).toLocaleString();
   const winnerText = JSON.stringify(conflictDoc.winner,null,4);
   const losersText = JSON.stringify(conflictDoc.losers,null,4);

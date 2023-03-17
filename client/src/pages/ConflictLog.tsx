@@ -1,6 +1,6 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonButtons, 
-  IonMenuButton, IonButton } from '@ionic/react';
-import { useContext } from 'react';
+  IonMenuButton, IonButton, IonLoading } from '@ionic/react';
+import { useContext, useRef } from 'react';
 import SyncIndicator from '../components/SyncIndicator';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
 import { HistoryProps } from '../components/DataTypes';
@@ -9,11 +9,22 @@ import { useConflicts } from '../components/Usehooks';
 
 const ConflictLog: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { setDBCredsValue } = useContext(RemoteDBStateContext);
-  const { conflictDocs, conflictsLoading } = useConflicts();
-  
-  if (conflictsLoading) { return (
-    <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
+  const { conflictsError, conflictDocs, conflictsLoading } = useConflicts();
+  const screenLoading = useRef(true);
+
+  if (conflictsError) { return (
+    <IonPage><IonHeader><IonToolbar><IonTitle>Error...</IonTitle></IonToolbar></IonHeader>
+    <IonContent><IonItem>Error loading Conflict Data ... Restart.</IonItem></IonContent></IonPage>
   )}
+
+  if (conflictsLoading) { return (
+    <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
+    <IonContent><IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false}}
+                 message="Loading Data..." >
+    </IonLoading></IonContent></IonPage>
+    )}
+  
+    screenLoading.current=false;
 
   function setConflictsAsViewed() {
     const curDateStr = (new Date()).toISOString();
