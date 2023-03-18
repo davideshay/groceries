@@ -33,7 +33,7 @@ const AllItems: React.FC<HistoryProps> = (props: HistoryProps) => {
   screenLoading.current = false;
 
   let gotARow = false;
-  let itemsElem : any[] = [];
+  let itemsElem;
   itemRows.forEach((doc: ItemDoc) => {
       gotARow = true;
       itemsElem.push(

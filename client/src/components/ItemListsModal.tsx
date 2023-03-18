@@ -2,14 +2,15 @@ import { IonTitle,  IonButton, IonList, IonInput, IonItem, IonSelect, IonCheckbo
     IonSelectOption, IonTextarea, IonGrid, IonRow, IonCol, IonText, IonModal } from '@ionic/react';
 import { addOutline, closeCircleOutline, saveOutline } from 'ionicons/icons';    
 import { SetStateAction } from 'react';    
-import {  ItemDoc, ItemList, ModalState, ModalStateInit } from '../components/DataTypes';
+import {  CategoryDoc, ItemDoc, ItemList, ModalState, ModalStateInit, UomDoc } from '../components/DataTypes';
 import { cloneDeep } from 'lodash';
+import { History } from 'history';
 
 type ModalProps = {
-    history: any,
+    history: History,
     stateItemDoc: ItemDoc,
-    categoryDocs: any,
-    uomDocs: any,
+    categoryDocs: CategoryDoc[],
+    uomDocs: UomDoc[],
     setStateItemDoc: React.Dispatch<SetStateAction<ItemDoc>>,
     modalState: ModalState,
     setModalState: React.Dispatch<SetStateAction<ModalState>>,
@@ -53,13 +54,13 @@ const ItemListsModal: React.FC<ModalProps> = (props: ModalProps) => {
         <IonItem>
           <IonSelect label="Category" labelPlacement="stacked" interface="popover" onIonChange={(ev) => props.setModalState(prevState => ({...prevState, itemList: {...prevState.itemList, categoryID: ev.detail.value}}))} value={props.modalState.itemList.categoryID}>
                   <IonSelectOption key="cat-undefined" value={null}>Uncategorized</IonSelectOption>
-                  {props.categoryDocs.map((cat: any) => (
-                      <IonSelectOption key={cat._id} value={(cat as any)._id}>
-                        {(cat as any).name}
+                  {props.categoryDocs.map((cat) => (
+                      <IonSelectOption key={cat._id} value={cat._id}>
+                        {cat.name}
                       </IonSelectOption>
                   ))}
           </IonSelect>
-          <IonButton slot="end" fill="default" onClick={(e: any) => {props.addCategoryPopup()}}>
+          <IonButton slot="end" fill="default" onClick={() => {props.addCategoryPopup()}}>
             <IonIcon slot="end" icon={addOutline} ></IonIcon>
           </IonButton>  
         </IonItem>
@@ -67,7 +68,7 @@ const ItemListsModal: React.FC<ModalProps> = (props: ModalProps) => {
           <IonInput key="modal-qty" label="Quantity" labelPlacement="stacked" type="number" min="0" max="9999" value={props.modalState.itemList.quantity} onIonInput={(e) => props.setModalState(prevState => ({...prevState,itemList: {...prevState.itemList,quantity: Number(e.detail.value)}}))}></IonInput>
           <IonSelect label="UoM" labelPlacement="stacked" interface="popover" onIonChange={(ev) => props.setModalState(prevState => ({...prevState, itemList: {...prevState.itemList, uomName: ev.detail.value}}))} value={props.modalState.itemList.uomName}>
                     <IonSelectOption key="uom-undefined" value={null}>No UOM</IonSelectOption>
-                    {props.uomDocs.map((uom: any) => (
+                    {props.uomDocs.map((uom) => (
                       <IonSelectOption key={uom.name} value={uom.name}>{uom.description}</IonSelectOption>
                     ))}
           </IonSelect>

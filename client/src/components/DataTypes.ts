@@ -1,7 +1,25 @@
-export interface IToDoList {
-    type: string;
-    name: string;
-    sharedWith: Array<string>;
+import { History } from "history";
+
+export interface CategoryDoc {
+  _id: string,
+  _rev: string,
+  type: string,
+  name: string,
+  color: string,
+  updatedAt: string
+}
+
+export const InitCategoryDoc: CategoryDoc = {
+  _id: "", _rev: "", type: "category", name: "", color: "", updatedAt: ""
+}
+
+export interface UomDoc {
+  _id: string,
+  _rev: string,
+  type: string,
+  name: string,
+  description: string,
+  pluralDescription: string,
 }
 
 export interface ItemRow {
@@ -162,13 +180,38 @@ export const ListGroupDocInit:ListGroupDoc = {
     Deleted = "DELETED"
   }
 
+  export type FriendDoc = {
+    _id: string,
+    _rev: string,
+    type: string,
+    friendID1: string,
+    friendID2: string,
+    inviteEmail: string,
+    inviteUUID: string,
+    friendStatus: string,
+    updatedAt: string
+  }
+
+  export type FriendDocs = FriendDoc[];
+
+  export const InitFriendDoc : FriendDoc = {
+    _id: "", _rev: "", type: "friend", friendID1: "", friendID2: "",
+    inviteEmail: "", inviteUUID: "", friendStatus: FriendStatus.Deleted, updatedAt: ""
+  }
+
   export type FriendRow = {
-    friendDoc: any,
+    friendDoc: FriendDoc,
     targetUserName: string,
     targetEmail: string,
     targetFullName: string,
     resolvedStatus: ResolvedFriendStatus
     friendStatusText: string,
+  }
+
+  export const InitFriendRow: FriendRow = {
+    friendDoc: InitFriendDoc,
+    targetUserName: "", targetEmail: "", targetFullName: "", 
+    resolvedStatus: ResolvedFriendStatus.Deleted, friendStatusText: ""
   }
 
   export type ListRow = {
@@ -232,7 +275,7 @@ export const ListGroupDocInit:ListGroupDoc = {
 
   export const initUsersInfo: UserInfo[] = [];
 
-  export type HistoryProps =  { history: any }
+  export type HistoryProps =  { history: History }
 
   export type ModalState = {
     selectedListId: string,

@@ -98,7 +98,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
       newPageState.changesMade=false;
       setPageState(newPageState);
       let userIDList: UserIDList = cloneDeep(initUserIDList);
-      newPageState.listGroupDoc.sharedWith.forEach((user: any) => {
+      newPageState.listGroupDoc.sharedWith.forEach((user: string) => {
         userIDList.userIDs.push(user);
       });
       getUI(userIDList);
@@ -140,7 +140,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function selectUser(userID: string, updateVal: boolean) {
-    const currUsers: any=[];
+    const currUsers: string[]=[];
     let foundIt=false;
     for (let i = 0; i < pageState.listGroupDoc.sharedWith.length; i++) {
       if (pageState.listGroupDoc.sharedWith[i] === userID) {
@@ -168,7 +168,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
     }  
   }
 
-  let assignedListsElem: any=[];
+  let assignedListsElem=[];
   assignedListsElem.push(<IonItemDivider key="assigneddivider">Lists assigned to this group:</IonItemDivider>)
   listCombinedRows.forEach((lcr: ListCombinedRow)  => {
     if (lcr.rowType == RowType.list && lcr.listGroupID == pageState.selectedListGroupID) {
@@ -200,7 +200,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
         if (iAmListOwner) {
           usersElem.push(
             <IonItem key={pageState.selectedListGroupID+"-"+userID}>
-              <IonCheckbox labelPlacement="end" justify="start" key={pageState.selectedListGroupID+"-"+userID} onIonChange={(e: any) => selectUser(userID,Boolean(e.detail.checked))} checked={Boolean(userFound)}>{userName}</IonCheckbox>
+              <IonCheckbox labelPlacement="end" justify="start" key={pageState.selectedListGroupID+"-"+userID} onIonChange={(e) => selectUser(userID,Boolean(e.detail.checked))} checked={Boolean(userFound)}>{userName}</IonCheckbox>
               <IonLabel slot="end">{userEmail}</IonLabel>
             </IonItem>)
         } 
@@ -239,11 +239,11 @@ async function deleteListGroupFromDB() {
   }
   let response = await deleteItemsInListGroup(String(pageState.selectedListGroupID));
   if (response.successful) {
-    let delResponse = await deleteListGroup((pageState.listGroupDoc as any));
+    let delResponse = await deleteListGroup(pageState.listGroupDoc);
     if (delResponse.successful) {
       setPageState(prevState => ({...prevState,deletingDoc: false}));
       dismissAlert();
-      props.history.push(); // back to "list"
+      props.history.goBack(); // back to "list"
     } else {
       dismissAlert()
       setPageState(prevState => ({...prevState,formError: "Could not delete list group", deletingDoc: false}));
@@ -313,7 +313,7 @@ function deletePrompt() {
     ) 
   }
   
-  let selectDropDown: any=[];
+  let selectDropDown=[];
     if (mode === "new") {
       selectDropDown.push(<IonTitle class="ion-no-padding" key="createnew">Creating new list group</IonTitle>)
     } else {  
@@ -352,8 +352,8 @@ function deletePrompt() {
           <IonList>
             <IonItem key="name">
               <IonInput label="Name" labelPlacement='stacked'  type="text" placeholder="<New>"
-                  onIonInput={(e: any) => updateName(e.detail.value)}
-                  value={(pageState.listGroupDoc as any).name}
+                  onIonInput={(e) => updateName(String(e.detail.value))}
+                  value={pageState.listGroupDoc.name}
                   readonly={iAmListOwner ? false: true}></IonInput>
             </IonItem>
             <IonItem key="defaultlistgroup">

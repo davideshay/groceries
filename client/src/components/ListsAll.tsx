@@ -40,7 +40,7 @@ const ListsAll: React.FC<ListsAllProps> = (props: ListsAllProps) => {
     }
   }
 
-  let listsElem : any = [];
+  let listsElem: JSX.Element[] = [];
   
   listCombinedRows.forEach(combinedRow => {
     if (combinedRow.rowType == RowType.listGroup ) {

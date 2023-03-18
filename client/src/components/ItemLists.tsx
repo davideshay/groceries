@@ -2,20 +2,21 @@ import {  IonButton,  IonItem, IonLabel, IonCheckbox, IonIcon,
     IonGrid, IonRow, IonCol, IonText,  } from '@ionic/react';
 import { pencilOutline } from 'ionicons/icons';
 import { Fragment, useState } from 'react';
-import { getCommonKey, sortedItemLists } from './ItemUtilities';
-import { ItemDoc, ItemList, ListDoc  } from '../components/DataTypes';
+import { sortedItemLists } from './ItemUtilities';
+import { CategoryDoc, UomDoc, ItemDoc, ItemList, ListDoc, ListDocs  } from '../components/DataTypes';
 import ItemListsModal from '../components/ItemListsModal';
 import { cloneDeep } from 'lodash';
 import { ModalState, ModalStateInit } from '../components/DataTypes';
 import './ItemLists.css';
+import { History } from 'history';
 
 export type ItemListsProps = { 
-    history: any,
+    history: History,
     stateItemDoc: ItemDoc,
     setStateItemDoc: any,
-    listDocs: any,
-    categoryDocs: any,
-    uomDocs: any,
+    listDocs: ListDocs,
+    categoryDocs: CategoryDoc[],
+    uomDocs: UomDoc[],
     addCategoryPopup: () => void,
     addUOMPopup: () => void
 }
@@ -106,7 +107,7 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
         for (let i = 0; i < props.stateItemDoc.lists.length; i++) {
           if (props.stateItemDoc.lists[i].listID == listID) { listIdx=i; break;}
         }
-        let listFoundIdx=props.listDocs.findIndex((element: any) => (element._id === listID));
+        let listFoundIdx=props.listDocs.findIndex((element: ListDoc) => (element._id === listID));
         let listName = (listFoundIdx == -1) ? "" : props.listDocs[listFoundIdx].name
         setModalState(prevState => ({...prevState,isOpen: true, selectedListId: listID, 
           selectedListName: listName, selectedListIdx: listIdx, itemList: cloneDeep(props.stateItemDoc.lists[listIdx])}));
@@ -123,10 +124,10 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
     
     for (let i = 0; i < sortedLists.length; i++) {
       let listID = sortedLists[i].listID;
-      let itemFoundIdx=props.listDocs.findIndex((element: any) => (element._id === listID));
+      let itemFoundIdx=props.listDocs.findIndex((element: ListDoc) => (element._id === listID));
       if (itemFoundIdx !== -1) {
         let itemActive=(sortedLists[i].active);
-        let listName=(props.listDocs as any)[itemFoundIdx].name;
+        let listName=props.listDocs[itemFoundIdx].name;
         let stockedAt=(sortedLists[i].stockedAt);
         listsInnerElem.push(
           <IonRow key={listID} class={listIsDifferentThanCommon(sortedLists,i) ? "highlighted-row ion-no-padding" : "ion-no-padding"}>

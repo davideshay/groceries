@@ -4,7 +4,7 @@ import { useRef } from 'react';
 import { add } from 'ionicons/icons';
 import { useFind } from 'use-pouchdb';
 import SyncIndicator from '../components/SyncIndicator';
-import { HistoryProps } from '../components/DataTypes';
+import { CategoryDoc, HistoryProps } from '../components/DataTypes';
 import './Categories.css';
 import Error from './Error';
 
@@ -31,7 +31,7 @@ const Categories: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   screenLoading.current=false;
 
-  docs.sort(function(a: any,b: any) {
+  (docs as CategoryDoc[]).sort(function(a,b) {
     return a.name.toUpperCase().localeCompare(b.name.toUpperCase())
   })
 
@@ -46,9 +46,9 @@ const Categories: React.FC<HistoryProps> = (props: HistoryProps) => {
       </IonHeader>
       <IonContent>
         <IonList lines="full">
-               {docs.map((doc) => (
-                  <IonItem key={(doc as any)._id} >
-                    <IonButton slot="start" class="textButton" fill="clear" routerLink={("/category/edit/" + (doc as any)._id)}>{(doc as any).name}</IonButton>
+               {(docs as CategoryDoc[]).map((doc) => (
+                  <IonItem key={doc._id} >
+                    <IonButton slot="start" class="textButton" fill="clear" routerLink={("/category/edit/" + doc._id)}>{doc.name}</IonButton>
                   </IonItem>  
             ))}
         </IonList>

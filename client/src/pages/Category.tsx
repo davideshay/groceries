@@ -8,7 +8,7 @@ import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteCategoryFr
    useDeleteCategoryFromLists, useGetOneDoc, useLists, useItems } from '../components/Usehooks';
 import { cloneDeep } from 'lodash';
 import './Category.css';
-import { PouchResponse, HistoryProps, ItemDoc, ItemList, ListRow } from '../components/DataTypes';
+import { PouchResponse, HistoryProps, ItemDoc, ItemList, ListRow, CategoryDoc, InitCategoryDoc } from '../components/DataTypes';
 import SyncIndicator from '../components/SyncIndicator';
 import { addOutline, closeOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import Error from './Error';
@@ -17,7 +17,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
   if ( mode === "new" ) { routeID = "<new>"};
   const [needInitCategoryDoc,setNeedInitCategoryDoc] = useState((mode === "new") ? true: false);
-  const [stateCategoryDoc,setStateCategoryDoc] = useState<any>({});
+  const [stateCategoryDoc,setStateCategoryDoc] = useState<CategoryDoc>(InitCategoryDoc);
   const [formError,setFormError] = useState<string>("");
   const [deletingCategory,setDeletingCategory] = useState(false)
   const [presentAlert,dismissAlert] = useIonAlert();
@@ -71,7 +71,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
       return false;
     }
     let categoryDup=false;
-    categoryDocs.forEach((doc: any) => {
+    (categoryDocs as CategoryDoc[]).forEach((doc) => {
       if ((doc._id !== stateCategoryDoc._id) && (doc.name.toUpperCase() == stateCategoryDoc.name.toUpperCase())) {
         categoryDup = true;
       }
@@ -161,25 +161,25 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
     
     }
 
-  if (stateCategoryDoc.color == undefined) {setStateCategoryDoc((prevState: any) => ({...prevState,color:"#888888"}))};
+  if (stateCategoryDoc.color == undefined) {setStateCategoryDoc((prevState) => ({...prevState,color:"#888888"}))};
 
   return (
     <IonPage>
       <IonHeader>
         <IonToolbar>
         <IonButtons slot="start"><IonMenuButton /></IonButtons>
-          <IonTitle>Editing Category: {(stateCategoryDoc as any).name}</IonTitle>
+          <IonTitle>Editing Category: {stateCategoryDoc.name}</IonTitle>
           <SyncIndicator history={props.history}/>
         </IonToolbar>
       </IonHeader>
       <IonContent>
           <IonList>
             <IonItem key="name">
-              <IonInput label="Name" labelPlacement="stacked" type="text" placeholder="<NEW>" onIonInput={(e: any) => setStateCategoryDoc({...stateCategoryDoc, name: e.detail.value})} value={(stateCategoryDoc as any).name}></IonInput>
+              <IonInput label="Name" labelPlacement="stacked" type="text" placeholder="<NEW>" onIonInput={(e) => setStateCategoryDoc({...stateCategoryDoc, name: String(e.detail.value)})} value={stateCategoryDoc.name}></IonInput>
             </IonItem>
             <IonItem key="color">
               <IonLabel position="stacked">Color</IonLabel>
-              <input type="color" value={stateCategoryDoc.color} onChange={(e: any) => {setStateCategoryDoc((prevState: any) => ({...prevState,color: e.target.value}))}}></input>
+              <input type="color" value={stateCategoryDoc.color} onChange={(e) => {setStateCategoryDoc((prevState) => ({...prevState,color: e.target.value}))}}></input>
             </IonItem>
           </IonList>
           <IonButton class="ion-float-left" fill="outline" color="danger" onClick={() => deletePrompt()}><IonIcon slot="start" icon={trashOutline}></IonIcon>Delete</IonButton>

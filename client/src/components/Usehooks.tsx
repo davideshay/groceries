@@ -2,7 +2,7 @@ import { useCallback, useState, useEffect, useContext, useRef } from 'react'
 import { usePouch, useFind } from 'use-pouchdb'
 import { cloneDeep, pull } from 'lodash';
 import { RemoteDBStateContext, SyncStatus } from './RemoteDBState';
-import { FriendStatus, FriendRow, ResolvedFriendStatus, ListRow, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType, ListGroupDoc, ListDoc, ListDocs, ListGroupDocs, ListDocInit, ItemDocs, ItemDoc, ItemList, ItemListInit } from './DataTypes';
+import { FriendDocs, FriendDoc, FriendStatus, FriendRow,InitFriendRow, ResolvedFriendStatus, ListRow, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType, ListGroupDoc, ListDoc, ListDocs, ListGroupDocs, ListDocInit, ItemDocs, ItemDoc, ItemList, ItemListInit, UsersInfo } from './DataTypes';
 import { GlobalStateContext } from './GlobalState';
 import { getUsersInfo } from './Utilities';
 import { getCommonKey } from './ItemUtilities';
@@ -110,7 +110,7 @@ export function useDeleteListFromItems() {
         }
       })
       for (let i = 0; i < itemResults.docs.length; i++) {
-        const itemDoc: any = itemResults.docs[i];
+        const itemDoc: ItemDoc = itemResults.docs[i] as ItemDoc;
         const newLists = []
         for (let j = 0; j < itemDoc.lists.length; j++) {
           if (itemDoc.lists[j].listID !== listID) {
@@ -142,8 +142,10 @@ export function useDeleteCategoryFromItems() {
       } catch(err) {response.successful=false; response.fullError="Could not find items"; return response}
       if (itemResults != undefined && itemResults.hasOwnProperty('docs')) {
         for (let i = 0; i < itemResults.docs.length; i++) {
-          const itemDoc: any = cloneDeep(itemResults.docs[i]);
-          itemDoc.categoryID = null;
+          const itemDoc: ItemDoc = cloneDeep(itemResults.docs[i]);
+          itemDoc.lists.forEach(list => {
+            list.categoryID = null;
+          });
           let updResults ;
           try {updResults = db.put(itemDoc)}
           catch(err) {response.successful = false; response.fullError = err; }
@@ -170,7 +172,7 @@ export function useDeleteCategoryFromLists() {
       } catch(err) {response.successful=false; response.fullError="Could not find items"; return response}
       if (listResults != undefined && listResults.hasOwnProperty('docs')) {
         for (let i = 0; i < listResults.docs.length; i++) {
-          const listDoc: any = cloneDeep(listResults.docs[i]);
+          const listDoc: ListDoc = cloneDeep(listResults.docs[i]);
           let newCats = cloneDeep(listDoc.categories);
           pull(newCats,catID);
           listDoc.categories = newCats;
@@ -197,7 +199,7 @@ export function useLists() : {dbError: boolean, listsLoading: boolean, listDocs:
       { "$or": [{"listGroupOwner": remoteDBCreds.dbUsername},
                 {"sharedWith": { $elemMatch: {$eq: remoteDBCreds.dbUsername}}}]}  ]},
     sort: [ "type", "name"]  });
-  const { docs: listDocs, loading: listsLoading, error: listError} = useFind({
+  const { docs: listDocs, loading: listsLoading, error: listError} = useFind<{docs: ListDocs, loading: boolean}>({
     index: { fields: ["type","name"] },
     selector: { "$and": [ 
       {  "type": "list",
@@ -208,7 +210,7 @@ export function useLists() : {dbError: boolean, listsLoading: boolean, listDocs:
   function buildListRows() {
     let curListDocs: ListDocs = cloneDeep(listDocs);
     let newListRows: ListRow[] = [];
-    curListDocs.forEach((listDoc: ListDoc) => {
+    curListDocs.forEach((listDoc) => {
       let listGroupID=null;
       let listGroupName="";
       let listGroupDefault=false;
@@ -407,29 +409,29 @@ export function useFriends(username: string) : { useFriendState: UseFriendState,
 
     async function loadFriendRows() {
       let userIDList : { userIDs: string[]} = { userIDs: []};
-      friendDocs.forEach((element: any) => {
+      (friendDocs as FriendDocs).forEach((element) => {
         if (element.friendStatus !== FriendStatus.Deleted) {
           if(username == element.friendID1) {userIDList.userIDs.push(element.friendID2)}
           else {userIDList.userIDs.push(element.friendID1)}
         }
       });
-      const usersInfo = await getUsersInfo(userIDList,String(remoteDBCreds.apiServerURL), String(remoteDBState.accessJWT));
+      const usersInfo: UsersInfo = await getUsersInfo(userIDList,String(remoteDBCreds.apiServerURL), String(remoteDBState.accessJWT));
       setFriendRows(prevState => ([]));
       if (usersInfo.length > 0) {
-        friendDocs.forEach((friendDoc: any) => {
-          let friendRow : any = {};
+        (friendDocs as FriendDocs).forEach((friendDoc) => {
+          let friendRow : FriendRow = cloneDeep(InitFriendRow);
           friendRow.friendDoc=cloneDeep(friendDoc);
           if (friendRow.friendDoc.friendID1 == remoteDBCreds.dbUsername)
             { friendRow.targetUserName = friendRow.friendDoc.friendID2}
           else { friendRow.targetUserName = friendRow.friendDoc.friendID1}
-          let user=usersInfo.find((el: any) => el?.name == friendRow.targetUserName)
+          let user=usersInfo.find((el) => el?.name == friendRow.targetUserName)
           if (user == undefined) {user = cloneDeep(initUserInfo)};
           if (friendDoc.friendStatus == FriendStatus.WaitingToRegister) {
             friendRow.targetEmail = friendDoc.inviteEmail
           } else {
-            friendRow.targetEmail = user?.email;
+            friendRow.targetEmail = String(user?.email);
           }
-          friendRow.targetFullName = user?.fullname;
+          friendRow.targetFullName = String(user?.fullname);
           if (friendDoc.friendStatus == FriendStatus.PendingFrom1 || friendDoc.friendStatus == FriendStatus.PendingFrom2) {
             if ((remoteDBCreds.dbUsername == friendDoc.friendID1 && friendDoc.friendStatus == FriendStatus.PendingFrom2) || 
                 (remoteDBCreds.dbUsername == friendDoc.friendID2 && friendDoc.friendStatus == FriendStatus.PendingFrom1))

@@ -93,7 +93,7 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
             <IonCheckbox justify="space-between" labelPlacement="start" checked={localSettings.removeFromAllLists} onIonChange={(e) => changeSetting("removeFromAllLists",e.detail.checked)}>Remove items from all lists when completed</IonCheckbox>
           </IonItem>
           <IonItem key="dayslog">
-            <IonInput label="Days of conflict log to view:" labelPlacement="start" type="number" min="0" max="25" onIonInput={(e: any) => changeSetting("daysOfConflictLog", e.detail.value)} value={Number(localSettings?.daysOfConflictLog)}></IonInput>
+            <IonInput label="Days of conflict log to view:" labelPlacement="start" type="number" min="0" max="25" onIonInput={(e) => changeSetting("daysOfConflictLog", e.detail.value)} value={Number(localSettings?.daysOfConflictLog)}></IonInput>
           </IonItem>
         </IonList>
       </IonContent>

@@ -6,10 +6,11 @@ import { ConnectionStatus, RemoteDBStateContext } from '../components/RemoteDBSt
 import { navigateToFirstListID } from '../components/RemoteUtilities';
 import { initialSetupActivities } from '../components/Utilities';
 import Error from './Error';
+import { History } from 'history';
 
 
 type InitialLoadProps = {
-  history : any
+  history : History
 }
 
 const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
@@ -22,7 +23,7 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
         async function initialStartup() {
             await initialSetupActivities(db as PouchDB.Database, String(remoteDBCreds.dbUsername));
             screenLoading.current=false;
-            await navigateToFirstListID(db,props.history,remoteDBCreds,listRows);
+            await navigateToFirstListID(props.history,remoteDBCreds,listRows);
             setConnectionStatus(ConnectionStatus.initialNavComplete);
         }
         if (listRowsLoaded) {

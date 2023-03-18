@@ -3,13 +3,13 @@ import { IonMenu, IonContent, IonMenuToggle, IonList,
 import { useContext } from 'react';    
 import { useConflicts, useFriends, UseFriendState } from './Usehooks';    
 import ListsAll from './ListsAll';
-import { RemoteDBStateContext } from './RemoteDBState';
+import { DBCreds, RemoteDBStateContext } from './RemoteDBState';
 import { ResolvedFriendStatus } from './DataTypes';
 import './AppMenu.css';
 
 const AppMenu: React.FC = () => {
   const { remoteDBCreds } = useContext(RemoteDBStateContext);
-  const {useFriendState,friendRows} = useFriends((remoteDBCreds as any).dbUsername);
+  const {useFriendState,friendRows} = useFriends(String(remoteDBCreds.dbUsername));
   const { conflictDocs, conflictsLoading } = useConflicts();
  
   const listHeader = (headerName: string) => {

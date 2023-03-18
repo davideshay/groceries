@@ -2,8 +2,9 @@ import { DBCreds, RemoteDBState } from "./RemoteDBState";
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import jwt_decode from 'jwt-decode';
 import { ListRow } from "./DataTypes";
+import { History } from "history";
 
-export async function navigateToFirstListID(db: any,phistory: any,remoteDBCreds: DBCreds, listRows: ListRow[]) {
+export async function navigateToFirstListID(phistory: History,remoteDBCreds: DBCreds, listRows: ListRow[]) {
     let firstListID = null;
     if (listRows.length > 0) {
       firstListID = listRows[0].listDoc._id;
@@ -15,7 +16,7 @@ export async function navigateToFirstListID(db: any,phistory: any,remoteDBCreds:
     }  
   }
 
-export async function createNewUser(remoteDBState: RemoteDBState,remoteDBCreds: DBCreds, password: string) {
+export async function createNewUser(remoteDBState: RemoteDBState,remoteDBCreds: DBCreds, password: string): Promise<(HttpResponse | undefined)> {
     let response: HttpResponse | undefined;
     const options = {
         url: String(remoteDBCreds.apiServerURL+"/registernewuser"),
@@ -40,13 +41,13 @@ export function getTokenInfo(JWT: string) {
         valid : false,
         expireDate: 0
     }
-    let JWTDecode: any;
+    let JWTDecode;
     let JWTDecodeValid = true;
     try { JWTDecode = jwt_decode(JWT);}
     catch(err) {console.log("INVALID access token:",err); JWTDecodeValid= false}
     if (JWTDecodeValid) {
         tokenResponse.valid = true;
-        tokenResponse.expireDate = JWTDecode.exp
+        tokenResponse.expireDate = (JWTDecode as any).exp
     }
     return(tokenResponse);
 }

@@ -1,5 +1,5 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
-  IonButtons, IonMenuButton, IonLabel, IonSelect, IonIcon, IonLoading,
+  IonButtons, IonMenuButton, IonSelect, IonIcon, IonLoading,
   IonSelectOption, useIonAlert,useIonToast, IonTextarea, IonGrid, IonRow, IonCol, IonText, IonCard,
   IonCardSubtitle } from '@ionic/react';
 import { addOutline, closeCircleOutline, trashOutline, saveOutline } from 'ionicons/icons';
@@ -14,7 +14,7 @@ import './Item.css';
 import SyncIndicator from '../components/SyncIndicator';
 import ItemLists from '../components/ItemLists';
 import { getCommonKey } from '../components/ItemUtilities';
-import { PouchResponse, HistoryProps, ItemDoc, ItemDocInit, ItemList, ListRow, ItemListInit } from '../components/DataTypes';
+import { UomDoc, PouchResponse, HistoryProps, ItemDoc, ItemDocInit, ItemList, ListRow, ItemListInit, CategoryDoc } from '../components/DataTypes';
 import Error from './Error';
 
 const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
@@ -81,7 +81,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   useEffect( () => {
-    let newItemDoc = cloneDeep(itemDoc);
+    let newItemDoc : ItemDoc = cloneDeep(itemDoc);
     if ((!itemLoading || mode === "new") && !listsLoading && listRowsLoaded) {
       if (globalState.itemMode === "new" && needInitItemDoc) {
         newItemDoc = createEmptyItemDoc(listRows,globalState)
@@ -90,7 +90,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
       } else {
         if (newItemDoc != null) {newItemDoc=addDeleteLists(itemDoc)};
       }
-      if (newItemDoc != null) {setStateItemDoc(newItemDoc as any)};
+      if (newItemDoc != null) {setStateItemDoc(newItemDoc)};
     }
   },[itemLoading,itemDoc,listsLoading,listDocs,listRowsLoaded,listRowsLoaded, listRows,globalState.itemMode,globalState.newItemName, globalState.callingListID, needInitItemDoc]);
 
@@ -112,7 +112,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
   async function updateThisItem() {
     setFormError(prevState => (""));
     let result: PouchResponse;
-    if ((stateItemDoc as any).name == undefined || (stateItemDoc as any).name=="" || (stateItemDoc as any).name == null) {
+    if (stateItemDoc.name == undefined || stateItemDoc.name=="" || stateItemDoc.name == null) {
       setFormError(prevState => ("Name is required"));
       return false;
     }
@@ -139,7 +139,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   async function addNewCategory(category: string) {
     let alreadyFound=false;
-    categoryDocs.forEach((cat: any) => 
+    (categoryDocs as CategoryDoc[]).forEach((cat) => 
       {
         if (category.toUpperCase() === cat.name.toUpperCase()) {alreadyFound=true}
       });
@@ -154,9 +154,9 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
     }  
   }
 
-  async function addNewUOM(uomData: any) {
+  async function addNewUOM(uomData: UomDoc) {
     let alreadyFound = false;
-    uomDocs.forEach((uom: any) => {
+    (uomDocs as UomDoc[]).forEach((uom) => {
       if (uom.name.toUpperCase() === uomData.name.toUpperCase()) {alreadyFound=true;}
     });
     if (alreadyFound) {
@@ -173,7 +173,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
       return false;
     }
     alreadyFound = false;
-    uomDocs.forEach((uom: any) => {
+    (uomDocs as UomDoc[]).forEach((uom) => {
       if (uom.description.toUpperCase() === uomData.description.toUpperCase()) {alreadyFound=true;}
     });
     if (alreadyFound) {
@@ -185,7 +185,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
       return false;
     }
     alreadyFound = false;
-    uomDocs.forEach((uom: any) => {
+    (uomDocs as UomDoc[]).forEach((uom) => {
       if (uom.pluralDescription.toUpperCase() === uomData.pluralDescription.toUpperCase()) {alreadyFound=true;}
     });
     if (alreadyFound) {
@@ -259,7 +259,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
       <IonContent>
           <IonList>
             <IonItem key="name">
-              <IonInput label="Name" labelPlacement="stacked" type="text" onIonInput={(e: any) => setStateItemDoc({...stateItemDoc, name: e.detail.value})} value={stateItemDoc.name}></IonInput>
+              <IonInput label="Name" labelPlacement="stacked" type="text" onIonInput={(e) => setStateItemDoc({...stateItemDoc, name: String(e.detail.value)})} value={stateItemDoc.name}></IonInput>
             </IonItem>
             <IonItem key="listgroup">
               <IonText >List Group: {thisListGroup?.listGroupName}</IonText>
@@ -269,11 +269,11 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
               <IonItem key="quantity">
                 <IonGrid>
                 <IonRow>
-                  <IonCol size="3"><IonInput label="Quantity" labelPlacement="stacked" type="number" min="0" max="9999" onIonInput={(e: any) => updateAllKey("quantity",e.detail.value)} value={getCommonKey(stateItemDoc,"quantity",listDocs)}></IonInput></IonCol>
+                  <IonCol size="3"><IonInput label="Quantity" labelPlacement="stacked" type="number" min="0" max="9999" onIonInput={(e) => updateAllKey("quantity",e.detail.value)} value={getCommonKey(stateItemDoc,"quantity",listDocs)}></IonInput></IonCol>
                   <IonCol size="8">
                     <IonSelect label="UoM" labelPlacement='stacked' interface="popover" onIonChange={(ev) => updateAllKey("uomName", ev.detail.value)} value={getCommonKey(stateItemDoc,"uomName",listDocs)}>
                     <IonSelectOption key="uom-undefined" value={null}>No UOM</IonSelectOption>
-                    {uomDocs.map((uom: any) => (
+                    {(uomDocs as UomDoc[]).map((uom) => (
                       <IonSelectOption key={uom.name} value={uom.name}>{uom.description}</IonSelectOption>
                     ))}
                     </IonSelect>
@@ -285,13 +285,13 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
               <IonItem key="category">
                 <IonSelect label="Category" labelPlacement="stacked" interface="popover" onIonChange={(ev) => updateAllKey("categoryID",ev.detail.value)} value={getCommonKey(stateItemDoc,"categoryID",listDocs)}>
                   <IonSelectOption key="cat-undefined" value={null}>Uncategorized</IonSelectOption>
-                  {categoryDocs.map((cat) => (
-                      <IonSelectOption key={cat._id} value={(cat as any)._id}>
-                        {(cat as any).name}
+                  {(categoryDocs as CategoryDoc[]).map((cat) => (
+                      <IonSelectOption key={cat._id} value={cat._id}>
+                        {cat.name}
                       </IonSelectOption>
                   ))}
                 </IonSelect>
-                <IonButton slot="end" fill="default" onClick={(e: any) => {addCategoryPopup()}}>
+                <IonButton slot="end" fill="default" onClick={() => {addCategoryPopup()}}>
                   <IonIcon slot="end" icon={addOutline} ></IonIcon>
                 </IonButton>  
               </IonItem>
@@ -301,7 +301,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
               </IonItem>
             </IonCard>
             <ItemLists history={props.history} stateItemDoc={stateItemDoc} setStateItemDoc={setStateItemDoc} 
-                      listDocs={listDocs} categoryDocs={categoryDocs} uomDocs={uomDocs}
+                      listDocs={listDocs} categoryDocs={categoryDocs as CategoryDoc[]} uomDocs={uomDocs as UomDoc[]}
                       addCategoryPopup={addCategoryPopup} addUOMPopup={addUOMPopup} />
             <IonItem key="formErrors">{formError}</IonItem>
           </IonList>

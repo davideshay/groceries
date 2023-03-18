@@ -58,11 +58,11 @@ interface PageState {
               
 const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { remoteDBCreds, remoteDB } = useContext(RemoteDBStateContext);
-  const uname = (remoteDBCreds as any).dbUsername;
-  const {useFriendState,friendRows} = useFriends(uname);
+  const uname = remoteDBCreds.dbUsername;
+  const {useFriendState,friendRows} = useFriends(String(uname));
   const updateDoc = useUpdateGenericDocument();
   const createDoc = useCreateGenericDocument();
-  let friendsElem: any = [];
+
   const [pageState,setPageState] = useState<PageState>({
     newFriendEmail: "",
     newFriendName: "",
@@ -126,12 +126,14 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   }
 
+  let friendsElem;
+
   function updateFriendsElem() {
     friendsElem=[];
     if (friendRows.length > 0) {
       friendRows.forEach((friendRow: FriendRow) => {
         const itemKey = (friendRow.targetUserName == "" || friendRow.targetUserName == null) ? friendRow.targetEmail : friendRow.targetUserName;
-        let elem: any =<IonItem key={itemKey}>{URLButtonElem(friendRow)}{statusItem(friendRow)}<IonLabel>{friendRow.targetEmail}</IonLabel><IonLabel>{friendRow.targetFullName}</IonLabel></IonItem>
+        let elem=<IonItem key={itemKey}>{URLButtonElem(friendRow)}{statusItem(friendRow)}<IonLabel>{friendRow.targetEmail}</IonLabel><IonLabel>{friendRow.targetFullName}</IonLabel></IonItem>
         friendsElem.push(elem);
       });
     }
@@ -155,7 +157,7 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
     let createFriendSuccessful=true;
     let createResults;
-    try { createResults = await (remoteDB as any).post(newFriendDoc) } 
+    try { createResults = await (remoteDB as PouchDB.Database).post(newFriendDoc) } 
     catch(e) {createFriendSuccessful=false; console.log(e)}
     if (!createFriendSuccessful) { console.log("ERROR: Creating friend"); return false;}
 
@@ -230,7 +232,7 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   updateFriendsElem();
 
-  let formElem: any[] = [];
+  let formElem = [];
   if (pageState.inAddMode) {
     formElem.push(
      <Fragment key="addfriendform">

@@ -116,7 +116,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
           console.log("Detected cannot start, setting initRemoteState");
           setRemoteState(initRemoteState);
         } else if (remoteDBState.connectionStatus === ConnectionStatus.loginComplete) {
-          navigateToFirstListID(db,props.history,remoteDBCreds, listRows);
+          navigateToFirstListID(props.history,remoteDBCreds, listRows);
         }
       }
     },[remoteDBState.connectionStatus, db, listRows, props.history, remoteDBCreds, listRowsLoaded]);
@@ -192,10 +192,15 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
   
   async function submitCreateForm() {
     showLoading();
-    let createResponse: any;
+    let createResponse: HttpResponse | undefined;
     let credsCheck = errorCheckCreds(remoteDBCreds,false,true,remoteState.password,remoteState.verifyPassword);
     if (!credsCheck.credsError) {
       createResponse = await createNewUser(remoteDBState,remoteDBCreds,String(remoteState.password));
+      if (createResponse == undefined) { 
+        setRemoteState(prevState => ({...prevState, formError: "Error creating user"}));
+        dismiss();
+        return;
+      }
       if (!createResponse.data.createdSuccessfully) {
         credsCheck.errorText="";
         if (createResponse.data.invalidData) {credsCheck.errorText = "Invalid Data Entered";} 
@@ -253,7 +258,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
   function setWorkingOffline() {
     setRemoteDBState({...remoteDBState,workingOffline: true,connectionStatus: ConnectionStatus.loginComplete, 
         syncStatus: SyncStatus.offline})
-    navigateToFirstListID(db,props.history,remoteDBCreds, listRows);    
+    navigateToFirstListID(props.history,remoteDBCreds, listRows);    
   }
 
 /*   function workOffline() {

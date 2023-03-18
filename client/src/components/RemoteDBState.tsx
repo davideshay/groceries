@@ -10,11 +10,11 @@ import { getTokenInfo, refreshToken } from "./RemoteUtilities";
 
 const secondsBeforeAccessRefresh = 180;
 
-let globalSync: any = null;
+let globalSync: PouchDB.Replication.Sync<{}>;
 let globalRemoteDB: PouchDB.Database | undefined = undefined;
 
 export type RemoteDBState = {
-    sync: any,
+    sync: PouchDB.Replication.Sync<{}> | null,
     deviceUUID: string | null,
     accessJWT: string,
     accessJWTExpirationTime: Number,
@@ -30,11 +30,11 @@ export type RemoteDBState = {
 export interface RemoteDBStateContextType {
     remoteDBState: RemoteDBState,
     remoteDBCreds: DBCreds,
-    remoteDB: PouchDB.Database | undefined,
+    remoteDB: PouchDB.Database,
     setRemoteDBState: React.SetStateAction<RemoteDBState>,
     setRemoteDBCreds: any,
-    startSync: any,
-    errorCheckCreds: any,
+    startSync: () => void,
+    errorCheckCreds: () => CredsCheck,
     checkDBUUID: DBUUIDCheck,
     assignDB: boolean,
     setDBCredsValue: any,
@@ -119,7 +119,7 @@ export const initialRemoteDBState: RemoteDBState = {
 const initialContext = {
     remoteDBState: initialRemoteDBState,
     remoteDBCreds: DBCredsInit,
-    remoteDB: undefined,
+    remoteDB: {},
     setRemoteDBState: (state: RemoteDBState ) => {},
     setRemoteDBCreds: (dbCreds: DBCreds) => {},
     startSync: () => {},
@@ -160,7 +160,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     }
 
     function startSync() {
-        globalSync = db.sync((globalRemoteDB as any), {
+        globalSync = db.sync((globalRemoteDB as PouchDB.Database), {
             back_off_function: function(delay) {
                 console.log("going offline");
                 setSyncStatus(SyncStatus.offline);
@@ -353,9 +353,9 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             globalRemoteDB = undefined;
         }
         globalRemoteDB = new PouchDB(remoteDBCreds.current.couchBaseURL+"/"+remoteDBCreds.current.database, 
-            { fetch: (url, opts: any) => ( 
+            { fetch: (url, opts) => ( 
                 fetch(url, { ...opts, credentials: 'include', headers:
-                { ...opts.headers, 'Authorization': 'Bearer '+accessJWT, 'Content-type': 'application/json' }})
+                { ...opts?.headers, 'Authorization': 'Bearer '+accessJWT, 'Content-type': 'application/json' }})
             )})
         globalRemoteDB.setMaxListeners(40);    
         setRemoteDBState(prevState => ({...prevState,connectionStatus: ConnectionStatus.dbAssigned, 

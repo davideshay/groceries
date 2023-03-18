@@ -10,7 +10,7 @@ import { useUpdateGenericDocument, useCreateGenericDocument, useFriends, useGetO
 import { cloneDeep, isEmpty } from 'lodash';
 import './List.css';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
-import { PouchResponse, HistoryProps, ListRow, ListDocInit, ListDoc, RowType } from '../components/DataTypes';
+import { PouchResponse, HistoryProps, ListRow, ListDocInit, ListDoc, RowType, CategoryDoc } from '../components/DataTypes';
 import SyncIndicator from '../components/SyncIndicator';
 import { closeCircleOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import Error from './Error';
@@ -108,7 +108,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   function changeListUpdateState(listID: string) {
     setPageState(prevState => ({...prevState,
-        listDoc: listDocs.find((el: any) => el._id === listID),
+        listDoc: listDocs.find((el: ListDoc) => el._id === listID),
         selectedListID: listID}))
     props.history.push('/list/edit/'+listID);    
   }
@@ -155,7 +155,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function updateCat(categoryID: string, updateVal: boolean) {
-    const currCategories: any=[];
+    const currCategories: string[] =[];
     let foundIt=false;
     for (let i = 0; i < pageState.listDoc.categories.length; i++) {
       if (pageState.listDoc.categories[i] === categoryID) {
@@ -192,10 +192,10 @@ async function deleteListFromDB() {
   // first, find 
   let response = await deleteListFromItems(String(pageState.selectedListID));
   if (response.successful) {
-    let delResponse = await deleteList((pageState.listDoc as any));
+    let delResponse = await deleteList((pageState.listDoc));
     if (delResponse.successful) {
       setPageState(prevState => ({...prevState,deletingDoc: false}));
-      props.history.push(); // back to "list"
+      props.history.goBack(); // back to "list"
     } else {
       setPageState(prevState => ({...prevState,formError: "Could not delete list"}));
     }
@@ -222,12 +222,12 @@ function deletePrompt() {
 
   function catItem(id: string, active: boolean) {
     const actname=active ? "active" : "inactive"
-    const catDoc = (categoryDocs.find(element => (element._id === id)) as any)
+    const catDoc : CategoryDoc | undefined = (categoryDocs as CategoryDoc[]).find(element => (element._id === id))
     if (catDoc != undefined) {
       let name = catDoc.name;
       return (
         <IonItem key={pageState.selectedListID+"-"+actname+"-"+id}>
-            <IonCheckbox labelPlacement="end" justify="start" key={pageState.selectedListID+"-"+actname+"-"+id} onIonChange={(e: any) => updateCat(id,Boolean(e.detail.checked))} checked={active}>{name}</IonCheckbox>
+            <IonCheckbox labelPlacement="end" justify="start" key={pageState.selectedListID+"-"+actname+"-"+id} onIonChange={(e) => updateCat(id,Boolean(e.detail.checked))} checked={active}>{name}</IonCheckbox>
             <IonReorder slot="end"></IonReorder>
         </IonItem>)    
     } else {
@@ -252,13 +252,13 @@ function deletePrompt() {
     )   
   }
   
-  for (let i = 0; i < (pageState.listDoc as any).categories.length; i++) {
-    categoryLines.push(catItem((pageState.listDoc as any).categories[i],true));
+  for (let i = 0; i < pageState.listDoc.categories.length; i++) {
+    categoryLines.push(catItem(pageState.listDoc.categories[i],true));
   }
   categoryElem.push(catItemDivider(true,categoryLines));
   categoryLines=[];
   for (let i = 0; i < categoryDocs.length; i++) {
-    const inList = (pageState.listDoc as any).categories.includes(categoryDocs[i]._id);
+    const inList = pageState.listDoc.categories.includes(categoryDocs[i]._id);
     if (!inList) {
       categoryLines.push(catItem(categoryDocs[i]._id,false))
     }
@@ -295,7 +295,7 @@ function deletePrompt() {
     ) 
   }
   
-  let selectDropDown: any=[];
+  let selectDropDown = [];
     if (mode === "new") {
       selectDropDown.push(<IonTitle class="ion-no-padding" key="createnew">Creating new list</IonTitle>)
     } else {  
@@ -333,12 +333,12 @@ function deletePrompt() {
           <IonList>
             <IonItem key="name">
               <IonInput label="Name" labelPlacement="stacked" type="text" placeholder="<New>"
-                  onIonInput={(e: any) => updateName(e.detail.value)}
-                  value={(pageState.listDoc as any).name}>
+                  onIonInput={(e) => updateName(String(e.detail.value))}
+                  value={pageState.listDoc.name}>
               </IonInput>
             </IonItem>
             <IonItem key="listgroup">
-              <IonSelect disabled={mode!=="new"} key="listgroupsel" label="List Group" labelPlacement='stacked' interface="popover" onIonChange={(e: any) => updateListGroup(e.detail.value)} value={pageState.listDoc.listGroupID}>
+              <IonSelect disabled={mode!=="new"} key="listgroupsel" label="List Group" labelPlacement='stacked' interface="popover" onIonChange={(e) => updateListGroup(e.detail.value)} value={pageState.listDoc.listGroupID}>
                 {listCombinedRows.map((lr) => {
                   if (lr.rowType === RowType.listGroup) return ( <IonSelectOption key={lr.rowKey} value={lr.listGroupID}>{lr.listGroupName}</IonSelectOption> )
                 })}

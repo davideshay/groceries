@@ -28,7 +28,7 @@ export type GlobalState = {
 export interface GlobalStateContextType {
     globalState: GlobalState,
     setGlobalState: React.SetStateAction<GlobalState>,
-    setStateInfo: any
+    setStateInfo: void,
     updateSettingKey: boolean
 }
 
