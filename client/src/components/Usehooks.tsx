@@ -15,7 +15,7 @@ export function useGetOneDoc(docID: string | null) {
   const loadingRef = useRef(true);
 
   async function getDoc(id: string | null) {
-      if (id == null) { return};
+      if (id == null) { loadingRef.current = false; return};
       loadingRef.current = true;
       changesRef.current = db.changes({since: 'now', live: true, include_docs: true, doc_ids: [id]})
       .on('change', function(change) { setDoc(change.doc); })
