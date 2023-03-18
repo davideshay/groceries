@@ -6,13 +6,14 @@ import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useFriends, useGetOneDoc,
-  UseFriendState, useLists, useDeleteGenericDocument, useDeleteListFromItems } from '../components/Usehooks';
+  UseFriendState, useLists, useDeleteGenericDocument, useDeleteListFromItems, useAddListToAllItems } from '../components/Usehooks';
 import { cloneDeep, isEmpty } from 'lodash';
 import './List.css';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
 import { PouchResponse, HistoryProps, ListRow, ListDocInit, ListDoc, RowType } from '../components/DataTypes';
 import SyncIndicator from '../components/SyncIndicator';
 import { closeCircleOutline, saveOutline, trashOutline } from 'ionicons/icons';
+import Error from './Error';
 
 interface PageState {
   needInitListDoc: boolean,
@@ -33,7 +34,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
     needInitListDoc: (mode === "new") ? true : false,
     listDoc: cloneDeep(ListDocInit),
     selectedListID: routeID,
-    listGroupID: "",
+    listGroupID: null,
     listGroupOwner: null,
     changesMade: false,
     formError: "",
@@ -42,17 +43,18 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   const updateListWhole  = useUpdateGenericDocument();
   const createList = useCreateGenericDocument();
   const deleteList = useDeleteGenericDocument();
-  const deleteListFromItems = useDeleteListFromItems()
+  const deleteListFromItems = useDeleteListFromItems();
+  const addListToAllItems = useAddListToAllItems();
   const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
   const [ presentToast ] = useIonToast();
   const {useFriendState, friendRows} = useFriends(String(remoteDBCreds.dbUsername));
-  const { listDocs, listsLoading, listRowsLoaded, listRows, listCombinedRows } = useLists();
-  const { docs: categoryDocs, loading: categoryLoading } = useFind({
+  const { dbError: listError, listDocs, listsLoading, listRowsLoaded, listRows, listCombinedRows } = useLists();
+  const { docs: categoryDocs, loading: categoryLoading, error: categoryError } = useFind({
     index: { fields: [ "type","name"] },
     selector: { type: "category", name: { $exists: true}},
     sort: [ "type","name"]
   })
-  const { loading: listGroupLoading, doc: listGroupDoc} = useGetOneDoc(String(pageState.listGroupID));
+  const { loading: listGroupLoading, doc: listGroupDoc, dbError: listGroupError} = useGetOneDoc(pageState.listGroupID);
   const [presentAlert,dismissAlert] = useIonAlert();
   const screenLoading = useRef(true);
 
@@ -68,12 +70,13 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
         let initListDoc : ListDoc = cloneDeep(ListDocInit);
         if (listCombinedRows.length > 0) {
           initListDoc.listGroupID=String(listCombinedRows[0].listGroupID)
+          newPageState.listGroupOwner=listCombinedRows[0].listGroupOwner;
         } else {
-          initListDoc.listGroupID=""
+          initListDoc.listGroupID=null
         }
         initListDoc.categories = initCategories;
         newPageState.listDoc=initListDoc;
-        newPageState.listGroupID="";
+        newPageState.listGroupID=initListDoc.listGroupID;
         newPageState.needInitListDoc=false;
       }
       else if (mode !== "new") {
@@ -88,7 +91,13 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   },[listsLoading, listRowsLoaded, listGroupLoading, listDocs, listCombinedRows, mode, listGroupDoc, useFriendState,friendRows, categoryLoading,categoryDocs,pageState.selectedListID, remoteDBState.accessJWT]);
 
-  if (listsLoading || !listRowsLoaded || (useFriendState !== UseFriendState.rowsLoaded) || categoryLoading || isEmpty(pageState.listDoc) || listGroupLoading || pageState.deletingDoc)  {return(
+  if (useFriendState == UseFriendState.error || listError || listGroupError || categoryError) {
+    screenLoading.current=false;
+    return (
+    <Error errorText="Error Loading List Information... Restart."></Error>
+  )}
+
+  if (listsLoading || !listRowsLoaded || (useFriendState !== UseFriendState.rowsLoaded) || categoryLoading || isEmpty(pageState.listDoc) || (listGroupLoading && pageState.listGroupID !== null) || pageState.deletingDoc)  {return(
       <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
       <IonContent><IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false;}} 
                    message="Loading Data..."></IonLoading>
@@ -109,9 +118,17 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
       setPageState(prevState => ({...prevState,formError: "Must enter name for list"}));
       return false;
     }
+    if (pageState.listGroupID == null) {
+      setPageState(prevState => ({...prevState,formError: "Must select a valid group ID"}));
+      return false;
+    }
     let response: PouchResponse;
     if (mode === "new") {
       response = await createList(pageState.listDoc);
+      if (response.successful) {
+        let addedToItems = addListToAllItems({listGroupID: String(pageState.listGroupID) ,listID: response.pouchData.id, listDocs: listDocs})
+        if (!addedToItems) {response.successful = false;}
+      }
     }
     else {
       response = await updateListWhole(pageState.listDoc);
@@ -167,7 +184,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   function updateListGroup(updGroup: string) {
     if (pageState.listGroupID !== updGroup) {
-      setPageState(prevState => ({...prevState, changesMade: true, listDoc: {...prevState.listDoc, listGroupID: updGroup}}))
+      setPageState(prevState => ({...prevState, changesMade: true, listDoc: {...prevState.listDoc, listGroupID: updGroup}, listGroupID: updGroup}))
     }
   }
 

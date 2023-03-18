@@ -2,7 +2,7 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
   IonItemDivider, IonButton, IonButtons, IonFab, IonFabButton, IonIcon, IonCheckbox, IonLabel, IonSelect,
   IonSelectOption, IonSearchbar, IonPopover, IonAlert,IonMenuButton, useIonToast, IonGrid, IonRow, 
   IonCol, useIonAlert, IonLoading} from '@ionic/react';
-import { add,checkmark } from 'ionicons/icons';
+import { add } from 'ionicons/icons';
 import React, { useState, useEffect, useContext, useRef, KeyboardEvent } from 'react';
 import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
@@ -13,6 +13,7 @@ import { AddListOptions, GlobalStateContext } from '../components/GlobalState';
 import { ItemSearch, SearchState, PageState, ListRow, ListCombinedRow, HistoryProps, RowType, ItemDoc, ItemDocs, ItemListInit, ItemList, ItemRow} from '../components/DataTypes'
 import { getAllSearchRows, getItemRows, filterSearchRows } from '../components/ItemUtilities';
 import SyncIndicator from '../components/SyncIndicator';
+import Error from './Error';
 
 const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode: routeMode, id: routeListID  } = useParams<{mode: string, id: string}>();
@@ -30,23 +31,23 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   const updateItemInList = useUpdateGenericDocument();
   const screenLoading = useRef(true);
 
-  const { docs: itemDocs, loading: itemLoading } = useFind({
+  const { docs: itemDocs, loading: itemLoading, error: itemError } = useFind({
     index: { fields: ["type","name"]},
     selector: {
       type: "item", name: { $exists: true },
       "$or": [ {listGroupID: pageState.selectedListOrGroupID} , 
                {lists: { $elemMatch: { "listID": pageState.selectedListOrGroupID , "active" : true} }}] },
     sort: [ "type", "name"]})
-  const { listCombinedRows,listRows, listRowsLoaded } = useLists();
-  const { docs: uomDocs, loading: uomLoading } = useFind({
+  const { dbError: listError , listCombinedRows,listRows, listRowsLoaded } = useLists();
+  const { docs: uomDocs, loading: uomLoading, error: uomError } = useFind({
     index: { fields: [ "type","name"]},
     selector: { type: "uom", name: { $exists: true}},
     sort: [ "type","name"] })
-  const { docs: categoryDocs, loading: categoryLoading } = useFind({
+  const { docs: categoryDocs, loading: categoryLoading, error: categoryError } = useFind({
       index: { fields: [ "type","name"] },
       selector: { type: "category", name: { $exists: true}},
       sort: [ "type","name"] });
-  const { docs: allItemDocs, loading: allItemsLoading } = useFind({
+  const { docs: allItemDocs, loading: allItemsLoading, error: allItemsError } = useFind({
       index: { fields: [ "type","name"] },
       selector: { type: "item", name: { $exists: true}, listGroupID: pageState.groupIDforSelectedList},
       sort: [ "type","name"] });
@@ -94,6 +95,10 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     }  
   },[searchState.searchCriteria,searchState.isFocused])
   
+  if (itemError || listError || categoryError || allItemsError || uomError) {return (
+    <Error errorText="Error Loading Items Information... Restart."></Error>
+  )}
+
   if (itemLoading || !listRowsLoaded || categoryLoading || allItemsLoading || uomLoading || pageState.doingUpdate )  {return(
     <IonPage>
         <IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
@@ -116,7 +121,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function addNewItemToList(itemName: string) {
-    console.log("ANITL, pageState:", cloneDeep(pageState));
     if (isItemAlreadyInList(itemName)) {
       setPageState(prevState => ({...prevState, showAlert: true, alertHeader: "Error adding to list", alertMessage: "Item already exists in the current list"}))
     } else {
@@ -297,10 +301,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   function selectList(listOrGroupID: string) {
     if (listOrGroupID == "null" ) { console.log("ungrouped selected");  return }
-    console.log("in select list: id:",listOrGroupID);
-    console.log("current list combined rows:",cloneDeep(listCombinedRows));
     let combinedRow: ListCombinedRow | undefined = listCombinedRows.find(lcr => lcr.listOrGroupID == listOrGroupID);
-    console.log("found combined row: ", cloneDeep(combinedRow));
     let newListType: RowType = combinedRow!.rowType;
     setPageState({...pageState, selectedListOrGroupID: listOrGroupID, selectedListType: newListType, itemRows: getItemRows(itemDocs as ItemDocs, listCombinedRows, categoryDocs, uomDocs, newListType, listOrGroupID)});
     if (combinedRow == undefined) {return};

@@ -13,6 +13,7 @@ import { RemoteDBStateContext } from '../components/RemoteDBState';
 import { FriendRow, FriendStatus, ResolvedFriendStatus, HistoryProps } from '../components/DataTypes';
 import { checkUserByEmailExists, emailPatternValidation } from '../components/Utilities';
 import SyncIndicator from '../components/SyncIndicator';
+import Error from './Error';
 
 /* 
 
@@ -76,9 +77,8 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
   const screenLoading = useRef(true);
 
   if (useFriendState === UseFriendState.error) { return (
-    <IonPage><IonHeader><IonToolbar><IonTitle>Error...</IonTitle></IonToolbar></IonHeader>
-    <IonContent><IonItem>Error loading Friend Data ... Restart.</IonItem></IonContent></IonPage>
-  )};
+    <Error errorText="Error Loading Friend Information... Restart."></Error>
+    )};
 
   if (useFriendState !== UseFriendState.rowsLoaded) {
     return(<IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>

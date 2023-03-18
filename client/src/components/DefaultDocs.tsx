@@ -1,5 +1,6 @@
 import { AddListOptions, GlobalState } from "./GlobalState";
 import { ListRow, ItemList, ItemDoc, RowType } from "./DataTypes";
+import { cloneDeep } from "lodash";
 
 export function createEmptyItemDoc(listRows:ListRow[], globalState: GlobalState) {
   let newItemLists: any =[];

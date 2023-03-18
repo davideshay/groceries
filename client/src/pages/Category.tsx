@@ -10,7 +10,8 @@ import { cloneDeep } from 'lodash';
 import './Category.css';
 import { PouchResponse, HistoryProps, ItemDoc, ItemList, ListRow } from '../components/DataTypes';
 import SyncIndicator from '../components/SyncIndicator';
-import { addOutline, closeOutline, navigate, saveOutline, trashOutline } from 'ionicons/icons';
+import { addOutline, closeOutline, saveOutline, trashOutline } from 'ionicons/icons';
+import Error from './Error';
 
 const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
@@ -51,9 +52,8 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   },[categoryLoading,categoryDoc]);
 
   if ( listError || itemError || categoriesError !== null) { return (
-    <IonPage><IonHeader><IonToolbar><IonTitle>Error...</IonTitle></IonToolbar></IonHeader>
-    <IonContent><IonItem>Error Loading Category data from database... Restart.</IonItem></IonContent></IonPage>
-  )};
+    <Error errorText="Error Loading Category Information... Restart."></Error>
+    )};
 
   if ( categoryLoading || categoriesLoading || !stateCategoryDoc || deletingCategory || !listRowsLoaded || !itemRowsLoaded)  {return(
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>

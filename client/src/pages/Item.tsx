@@ -15,10 +15,11 @@ import SyncIndicator from '../components/SyncIndicator';
 import ItemLists from '../components/ItemLists';
 import { getCommonKey } from '../components/ItemUtilities';
 import { PouchResponse, HistoryProps, ItemDoc, ItemDocInit, ItemList, ListRow, ItemListInit } from '../components/DataTypes';
+import Error from './Error';
 
 const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
-  let { mode, itemid: routeItemID  } = useParams<{mode: string, itemid: string}>();
-  if ( mode === "new" ) { routeItemID = "<new>"};
+  let { mode, itemid } = useParams<{mode: string, itemid: string}>();
+  const routeItemID = (mode === "new" ? null : itemid)
   const [needInitItemDoc,setNeedInitItemDoc] = useState((mode === "new") ? true: false);
   const [stateItemDoc,setStateItemDoc] = useState<ItemDoc>(ItemDocInit);
   const [formError,setFormError] = useState("");
@@ -27,15 +28,15 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
   const addCategoryDoc = useCreateGenericDocument();
   const addUOMDoc = useCreateGenericDocument();
   const delItem = useDeleteGenericDocument();
-  const { doc: itemDoc, loading: itemLoading } = useGetOneDoc(routeItemID);
-  const { listDocs, listCombinedRows, listsLoading, listRows, listRowsLoaded} = useLists();
+  const { doc: itemDoc, loading: itemLoading, dbError: itemError } = useGetOneDoc(routeItemID);
+  const { dbError: listError, listDocs, listCombinedRows, listsLoading, listRows, listRowsLoaded} = useLists();
   const screenLoading = useRef(true);
 
-  const { docs: categoryDocs, loading: categoryLoading } = useFind({
+  const { docs: categoryDocs, loading: categoryLoading, error: categoryError } = useFind({
       index: { fields: [ "type","name"] },
       selector: { type: "category", name: { $exists: true}},
       sort: [ "type","name"] });
-  const { docs: uomDocs, loading: uomLoading } = useFind({
+  const { docs: uomDocs, loading: uomLoading, error: uomError } = useFind({
       index: { fields: [ "type","description"]},
       selector: { type: "uom", description: { $exists: true}},
       sort: [ "type","description"] });
@@ -52,7 +53,6 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function addDeleteLists(itemDoc: ItemDoc) {
-    console.log("ALINE," , cloneDeep(itemDoc), " ", listRowsLoaded);
     let newItemDoc: ItemDoc =cloneDeep(itemDoc);
     // loop through all the lists with the same listgroup. if the list is in the
     // listgroup, but not on the item add it.
@@ -60,9 +60,15 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
       if (listRows[i].listGroupID !== newItemDoc.listGroupID) {break}
       let foundIdx=newItemDoc.lists.findIndex((el: ItemList) => el.listID === listRows[i].listDoc._id)
       if (foundIdx === -1) {
-          console.log("Adding new list to item: ",listRows[i].listDoc.name);
-          let newItemList = cloneDeep(ItemListInit);
+          let newItemList: ItemList = cloneDeep(ItemListInit);
           newItemList.listID = listRows[i].listDoc._id;
+          newItemList.active = getCommonKey(itemDoc,"active",listDocs);
+          newItemList.categoryID = getCommonKey(itemDoc,"categoryID",listDocs);
+          newItemList.completed = getCommonKey(itemDoc,"completed",listDocs);
+          newItemList.note = getCommonKey(itemDoc,"note",listDocs);
+          newItemList.quantity = getCommonKey(itemDoc,"quantity",listDocs);
+          newItemList.stockedAt = getCommonKey(itemDoc,"stockedAt",listDocs);
+          newItemList.uomName = getCommonKey(itemDoc,"uomName",listDocs);
           newItemDoc.lists.push(newItemList);
       }  
     }
@@ -76,7 +82,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   useEffect( () => {
     let newItemDoc = cloneDeep(itemDoc);
-    if (!itemLoading && !listsLoading && listRowsLoaded) {
+    if ((!itemLoading || mode === "new") && !listsLoading && listRowsLoaded) {
       if (globalState.itemMode === "new" && needInitItemDoc) {
         newItemDoc = createEmptyItemDoc(listRows,globalState)
         setStateInfo("newItemMode","none");
@@ -88,7 +94,12 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   },[itemLoading,itemDoc,listsLoading,listDocs,listRowsLoaded,listRowsLoaded, listRows,globalState.itemMode,globalState.newItemName, globalState.callingListID, needInitItemDoc]);
 
-  if (itemLoading || listsLoading || !listRowsLoaded || categoryLoading || uomLoading || isEmpty(stateItemDoc))  {
+  if (itemError || listError || categoryError || uomError) {return (
+    <Error errorText="Error Loading Item Information... Restart."></Error>
+  )}
+
+
+  if ((itemLoading && routeItemID !== null) || listsLoading || !listRowsLoaded || categoryLoading || uomLoading || isEmpty(stateItemDoc))  {
     return(
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
     <IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false;}} 

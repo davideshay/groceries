@@ -5,6 +5,8 @@ import { useLists } from '../components/Usehooks';
 import { ConnectionStatus, RemoteDBStateContext } from '../components/RemoteDBState';
 import { navigateToFirstListID } from '../components/RemoteUtilities';
 import { initialSetupActivities } from '../components/Utilities';
+import Error from './Error';
+
 
 type InitialLoadProps = {
   history : any
@@ -42,9 +44,7 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
     },[remoteDBState.connectionStatus])
 
     if (dbError) {return (
-        <IonPage><IonHeader><IonToolbar><IonTitle>Error...</IonTitle></IonToolbar></IonHeader>
-        <IonContent><IonItem>Error Loading List Information... Restart.</IonItem></IonContent>
-        </IonPage>
+        <Error errorText="Error Loading List Information... Restart."></Error>
     )}
 
     return (

@@ -13,12 +13,13 @@ import { initUserIDList, initUsersInfo, PouchResponse, ResolvedFriendStatus, Use
 import SyncIndicator from '../components/SyncIndicator';
 import { getUsersInfo } from '../components/Utilities';
 import './ListGroup.css';
-import { closeCircleOutline, list, saveOutline, trashOutline } from 'ionicons/icons';
+import { closeCircleOutline, saveOutline, trashOutline } from 'ionicons/icons';
+import Error from './Error';
 
 interface PageState {
   needInitListGroupDoc: boolean,
   listGroupDoc: ListGroupDoc,
-  selectedListGroupID: string,
+  selectedListGroupID: string | null,
   changesMade: Boolean,
   formError: string,
   usersLoaded: boolean,
@@ -33,7 +34,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   const [pageState,setPageState] = useState<PageState>({
     needInitListGroupDoc: (mode === "new") ? true : false,
     listGroupDoc: ListGroupDocInit,
-    selectedListGroupID: routeID,
+    selectedListGroupID: (routeID === "<new>" ? null : routeID),
     changesMade: false,
     formError: "",
     usersLoaded: false,
@@ -48,18 +49,19 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
   const [ presentToast ] = useIonToast();
   const {useFriendState, friendRows} = useFriends(String(remoteDBCreds.dbUsername));
-  const { listCombinedRows, listRows, listRowsLoaded } = useLists();
-  const { docs: categoryDocs, loading: categoryLoading } = useFind({
+  const { listCombinedRows, listRows, listRowsLoaded, dbError: listError } = useLists();
+  const { docs: categoryDocs, loading: categoryLoading, error: categoryError } = useFind({
     index: { fields: [ "type","name"] },
     selector: { type: "category", name: { $exists: true}},
     sort: [ "type","name"]
   })
-  const { loading: listGroupLoading, doc: listGroupDoc } = useGetOneDoc(pageState.selectedListGroupID);
+  const { loading: listGroupLoading, doc: listGroupDoc, dbError: listGroupError } = useGetOneDoc(pageState.selectedListGroupID);
   const [presentAlert,dismissAlert] = useIonAlert();
   const screenLoading = useRef(true);
 
   useEffect( () => {
-    setPageState(prevState => ({...prevState,selectedListGroupID: routeID}))
+    setPageState(prevState => ({...prevState,
+      selectedListGroupID: (routeID === "<new>" ? null : routeID)}))
   },[routeID])
 
   function changeListUpdateState(listGroupID: string) {
@@ -76,10 +78,11 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
         setPageState(prevState => ({...prevState,usersInfo:[],usersLoaded:false}));
         usersInfo = await getUsersInfo(userIDList,String(remoteDBCreds.apiServerURL),String(remoteDBState.accessJWT))  
       }
+      console.log("in GetUI, setting usersLoaded to true!!!");
       setPageState(prevState => ({...prevState,usersInfo: usersInfo,usersLoaded: true}))
     }
     let newPageState: PageState =cloneDeep(pageState);
-    if (listRowsLoaded && (useFriendState === UseFriendState.rowsLoaded) && !categoryLoading && !listGroupLoading) {
+    if (listRowsLoaded && (useFriendState === UseFriendState.rowsLoaded) && !categoryLoading && (!listGroupLoading || mode==="new")) {
       if (mode === "new" && pageState.needInitListGroupDoc) {
         let initListGroupDoc = ListGroupDocInit;
         newPageState.listGroupDoc=initListGroupDoc;
@@ -102,7 +105,13 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   },[listGroupLoading, listGroupDoc, listRowsLoaded,useFriendState,friendRows, categoryLoading,categoryDocs,pageState.selectedListGroupID, remoteDBState.accessJWT]);
 
-  if (!listRowsLoaded || listGroupLoading ||(useFriendState !== UseFriendState.rowsLoaded) || categoryLoading || isEmpty(pageState.listGroupDoc) || !pageState.usersLoaded || pageState.deletingDoc)  {return(
+  if (listError || listGroupError  || useFriendState === UseFriendState.error || categoryError) {
+    <Error errorText="Error Loading List Group Information... Restart."></Error>
+  }
+
+  console.log(cloneDeep({listRowsLoadedCheck: !listRowsLoaded,listGroupLoadingCheck: (listGroupLoading && pageState.selectedListGroupID !== null), useFriendCheck: (useFriendState !== UseFriendState.rowsLoaded), categoryLoading, emptyListGroupCheck: isEmpty(pageState.listGroupDoc), pusersLoadedCheck: !pageState.usersLoaded,pDeleteingDoc: pageState.deletingDoc }))
+
+  if (!listRowsLoaded || (listGroupLoading && pageState.selectedListGroupID !== null) ||(useFriendState !== UseFriendState.rowsLoaded) || categoryLoading || isEmpty(pageState.listGroupDoc) || !pageState.usersLoaded || pageState.deletingDoc)  {return(
       <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent>
       </IonContent><IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false}}
                     message="Loading Data...">
@@ -223,8 +232,10 @@ async function deleteListGroupFromDB() {
   // }
   let delSuccess = true;
   for (let i = 0; i < listRows.length; i++) {
-    let response = await deleteList(listRows[i].listDoc);
-    if (!response.successful) {delSuccess = false;}
+    if (listRows[i].listGroupID === pageState.selectedListGroupID) {
+      let response = await deleteList(listRows[i].listDoc);
+      if (!response.successful) {delSuccess = false;}
+    }  
   }
   let response = await deleteItemsInListGroup(String(pageState.selectedListGroupID));
   if (response.successful) {

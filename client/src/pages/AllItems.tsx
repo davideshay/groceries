@@ -6,6 +6,7 @@ import { useLists, useItems } from '../components/Usehooks';
 import SyncIndicator from '../components/SyncIndicator';
 import { HistoryProps, ItemDoc, ListCombinedRow, ListRow, RowType } from '../components/DataTypes';
 import './AllItems.css';
+import Error from './Error';
 
 // The AllItems component is a master editor of all of the known items in the database.
 // Each item has a name, along with data about each list the item is on (list ID, quantity, count of number of times bought,
@@ -19,9 +20,8 @@ const AllItems: React.FC<HistoryProps> = (props: HistoryProps) => {
 
 
   if (listError || itemError) { return (
-    <IonPage><IonHeader><IonToolbar><IonTitle>Error...</IonTitle></IonToolbar></IonHeader>
-    <IonContent><IonItem>Error loading list or item data from database... Restart...</IonItem></IonContent></IonPage>
-  )}
+    <Error errorText="Error Loading Item Information... Restart."></Error>
+    )}
 
   if (!itemRowsLoaded || !listRowsLoaded ) { return (
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>

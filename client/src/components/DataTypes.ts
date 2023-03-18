@@ -74,7 +74,7 @@ export interface ListDoc {
   _rev: string,
   type: string,
   name: string,
-  listGroupID: string,
+  listGroupID: string | null,
   listOwner: string,
   categories: string[],
   updatedAt: string

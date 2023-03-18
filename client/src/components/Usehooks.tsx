@@ -2,18 +2,20 @@ import { useCallback, useState, useEffect, useContext, useRef } from 'react'
 import { usePouch, useFind } from 'use-pouchdb'
 import { cloneDeep, pull } from 'lodash';
 import { RemoteDBStateContext, SyncStatus } from './RemoteDBState';
-import { FriendStatus, FriendRow, ResolvedFriendStatus, ListRow, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType, ListGroupDoc, ListDoc, ListDocs, ListGroupDocs, ListDocInit, ItemDocs, ItemDoc } from './DataTypes';
+import { FriendStatus, FriendRow, ResolvedFriendStatus, ListRow, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType, ListGroupDoc, ListDoc, ListDocs, ListGroupDocs, ListDocInit, ItemDocs, ItemDoc, ItemList, ItemListInit } from './DataTypes';
 import { GlobalStateContext } from './GlobalState';
 import { getUsersInfo } from './Utilities';
+import { getCommonKey } from './ItemUtilities';
 
-export function useGetOneDoc(docID: string) {
+export function useGetOneDoc(docID: string | null) {
   const db = usePouch();
   const changesRef = useRef<any>();
   const [doc,setDoc] = useState<any>(null);
   const [dbError, setDBError] = useState(false);
   const loadingRef = useRef(true);
 
-  async function getDoc(id: string) {
+  async function getDoc(id: string | null) {
+      if (id == null) { return};
       loadingRef.current = true;
       changesRef.current = db.changes({since: 'now', live: true, include_docs: true, doc_ids: [id]})
       .on('change', function(change) { setDoc(change.doc); })
@@ -473,4 +475,43 @@ export function useConflicts() : { conflictsError: boolean, conflictDocs: any[],
   },[remoteDBCreds.lastConflictsViewed])
 
   return({conflictsError: dbError !== null, conflictDocs, conflictsLoading});
+}
+
+export function useAddListToAllItems() {
+  const db = usePouch();
+  return useCallback(
+    async ({listGroupID, listID, listDocs} : {listGroupID: string, listID: string, listDocs: ListDocs}) => {
+          let updateSuccess=true;
+          let itemRecords = await db.find({
+            selector: { type: "item", 
+                        name: { $exists: true},
+                        listGroupID: listGroupID},
+            sort: [ "type","name"]
+          })
+          for (let i = 0; i < itemRecords.docs.length; i++) {
+            const item : ItemDoc = itemRecords.docs[i] as ItemDoc;
+            let itemUpdated=false;
+            let listIdx = item.lists.findIndex((l: ItemList) => l.listID = listID)
+            if (listIdx === -1) {
+              let newList = cloneDeep(ItemListInit);
+              newList.listID = listID;
+              newList.active = getCommonKey(item,"active",listDocs);
+              newList.categoryID = getCommonKey(item,"categoryID",listDocs);
+              newList.completed = getCommonKey(item,"completed",listDocs);
+              newList.note = getCommonKey(item,"note",listDocs);
+              newList.quantity = getCommonKey(item,"quantity",listDocs);
+              newList.stockedAt = getCommonKey(item,"stockedAt",listDocs);
+              newList.uomName = getCommonKey(item,"uomName",listDocs);
+              item.lists.push(newList);
+              itemUpdated=true;
+            }
+            if (itemUpdated) {
+              let curDateStr=(new Date()).toISOString()
+              item.updatedAt = curDateStr;
+              let updateResponse = await db.put(item);
+              if (!updateResponse.ok) {updateSuccess = false;}
+            }
+          }
+      return updateSuccess;
+    },[db])
 }

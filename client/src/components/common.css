@@ -1,11 +1,7 @@
-.textButton {
-    text-transform: none;
-}
-
-.app-menu-item {
+ion-button.standard-text-button {
     text-transform: none;
     font-size: 14px;
+    color: var(--color-primary);
     letter-spacing: normal;
     font-weight: 500;
-    
 }

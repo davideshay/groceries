@@ -6,6 +6,7 @@ import { RemoteDBStateContext } from '../components/RemoteDBState';
 import { HistoryProps } from '../components/DataTypes';
 import './Categories.css';
 import { useConflicts } from '../components/Usehooks';
+import Error from './Error';
 
 const ConflictLog: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { setDBCredsValue } = useContext(RemoteDBStateContext);
@@ -13,9 +14,8 @@ const ConflictLog: React.FC<HistoryProps> = (props: HistoryProps) => {
   const screenLoading = useRef(true);
 
   if (conflictsError) { return (
-    <IonPage><IonHeader><IonToolbar><IonTitle>Error...</IonTitle></IonToolbar></IonHeader>
-    <IonContent><IonItem>Error loading Conflict Data ... Restart.</IonItem></IonContent></IonPage>
-  )}
+    <Error errorText="Error Loading Conflict Log... Restart."></Error>
+    )}
 
   if (conflictsLoading) { return (
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>

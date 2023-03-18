@@ -4,6 +4,7 @@ import { pencilOutline } from 'ionicons/icons';
 import { RemoteDBStateContext } from './RemoteDBState';
 import { useLists } from './Usehooks';
 import './ListsAll.css';
+import './common.css';
 import { RowType } from './DataTypes';
 
 interface ListsAllProps {

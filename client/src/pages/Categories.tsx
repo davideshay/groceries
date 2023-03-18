@@ -6,6 +6,7 @@ import { useFind } from 'use-pouchdb';
 import SyncIndicator from '../components/SyncIndicator';
 import { HistoryProps } from '../components/DataTypes';
 import './Categories.css';
+import Error from './Error';
 
 const Categories: React.FC<HistoryProps> = (props: HistoryProps) => {
 
@@ -17,9 +18,8 @@ const Categories: React.FC<HistoryProps> = (props: HistoryProps) => {
   const screenLoading=useRef(true);
 
   if (error !== null) { return (
-    <IonPage><IonHeader><IonToolbar><IonTitle>Error...</IonTitle></IonToolbar></IonHeader>
-    <IonContent><IonItem>Error loading category data from database...</IonItem>
-    </IonContent></IonPage>
+    <Error errorText="Error Loading Category Information... Restart."></Error>
+
   )}
 
   if (loading) { return (

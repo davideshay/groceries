@@ -9,8 +9,3 @@ ion-button.textButton {
 
 }
 
-ion-button.standard-text-button {
-    text-transform: none;
-    font-size: 14px;
-    color: var(--color-primary);
-}
