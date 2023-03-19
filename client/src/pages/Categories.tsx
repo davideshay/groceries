@@ -6,7 +6,7 @@ import { useFind } from 'use-pouchdb';
 import SyncIndicator from '../components/SyncIndicator';
 import { CategoryDoc, HistoryProps } from '../components/DataTypes';
 import './Categories.css';
-import Error from './Error';
+import ErrorPage from './ErrorPage';
 
 const Categories: React.FC<HistoryProps> = (props: HistoryProps) => {
 
@@ -18,7 +18,7 @@ const Categories: React.FC<HistoryProps> = (props: HistoryProps) => {
   const screenLoading=useRef(true);
 
   if (error !== null) { return (
-    <Error errorText="Error Loading Category Information... Restart."></Error>
+    <ErrorPage errorText="Error Loading Category Information... Restart."></ErrorPage>
 
   )}
 

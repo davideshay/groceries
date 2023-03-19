@@ -14,7 +14,7 @@ import SyncIndicator from '../components/SyncIndicator';
 import { getUsersInfo } from '../components/Utilities';
 import './ListGroup.css';
 import { closeCircleOutline, saveOutline, trashOutline } from 'ionicons/icons';
-import Error from './Error';
+import ErrorPage from './ErrorPage';
 
 interface PageState {
   needInitListGroupDoc: boolean,
@@ -106,7 +106,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   },[listGroupLoading, listGroupDoc, listRowsLoaded,useFriendState,friendRows, categoryLoading,categoryDocs,pageState.selectedListGroupID, remoteDBState.accessJWT]);
 
   if (listError || listGroupError  || useFriendState === UseFriendState.error || categoryError) {
-    <Error errorText="Error Loading List Group Information... Restart."></Error>
+    <ErrorPage errorText="Error Loading List Group Information... Restart."></ErrorPage>
   }
 
   console.log(cloneDeep({listRowsLoadedCheck: !listRowsLoaded,listGroupLoadingCheck: (listGroupLoading && pageState.selectedListGroupID !== null), useFriendCheck: (useFriendState !== UseFriendState.rowsLoaded), categoryLoading, emptyListGroupCheck: isEmpty(pageState.listGroupDoc), pusersLoadedCheck: !pageState.usersLoaded,pDeleteingDoc: pageState.deletingDoc }))

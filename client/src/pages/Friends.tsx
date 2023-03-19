@@ -13,7 +13,7 @@ import { RemoteDBStateContext } from '../components/RemoteDBState';
 import { FriendRow, FriendStatus, ResolvedFriendStatus, HistoryProps } from '../components/DataTypes';
 import { checkUserByEmailExists, emailPatternValidation } from '../components/Utilities';
 import SyncIndicator from '../components/SyncIndicator';
-import Error from './Error';
+import ErrorPage from './ErrorPage';
 
 /* 
 
@@ -77,7 +77,7 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
   const screenLoading = useRef(true);
 
   if (useFriendState === UseFriendState.error) { return (
-    <Error errorText="Error Loading Friend Information... Restart."></Error>
+    <ErrorPage errorText="Error Loading Friend Information... Restart."></ErrorPage>
     )};
 
   if (useFriendState !== UseFriendState.rowsLoaded) {

@@ -13,7 +13,7 @@ import { AddListOptions, GlobalStateContext } from '../components/GlobalState';
 import { ItemSearch, SearchState, PageState, ListRow, ListCombinedRow, HistoryProps, RowType, ItemDoc, ItemDocs, ItemListInit, ItemList, ItemRow, CategoryDoc, UomDoc} from '../components/DataTypes'
 import { getAllSearchRows, getItemRows, filterSearchRows } from '../components/ItemUtilities';
 import SyncIndicator from '../components/SyncIndicator';
-import Error from './Error';
+import ErrorPage from './ErrorPage';
 
 const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode: routeMode, id: routeListID  } = useParams<{mode: string, id: string}>();
@@ -96,7 +96,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   },[searchState.searchCriteria,searchState.isFocused])
   
   if (itemError || listError || categoryError || allItemsError || uomError) {return (
-    <Error errorText="Error Loading Items Information... Restart."></Error>
+    <ErrorPage errorText="Error Loading Items Information... Restart."></ErrorPage>
   )}
 
   if (itemLoading || !listRowsLoaded || categoryLoading || allItemsLoading || uomLoading || pageState.doingUpdate )  {return(

@@ -45,6 +45,7 @@ import { Provider } from 'use-pouchdb';
 import PouchDB from 'pouchdb';
 import find from 'pouchdb-find';
 import AllItems from './pages/AllItems';
+import ErrorBoundary from './components/ErrorBoundary';
 
 setupIonicReact();
 
@@ -69,6 +70,7 @@ const App: React.FC = () => {
 
   return (
   <IonApp>
+    <ErrorBoundary>
     <GlobalStateProvider>
     <Provider pouchdb={db}>
     <RemoteDBStateProvider>
@@ -101,6 +103,7 @@ const App: React.FC = () => {
     </RemoteDBStateProvider>
     </Provider>    
     </GlobalStateProvider>
+    </ErrorBoundary>
   </IonApp>
   )
 };

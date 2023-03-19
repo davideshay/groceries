@@ -15,7 +15,7 @@ import SyncIndicator from '../components/SyncIndicator';
 import ItemLists from '../components/ItemLists';
 import { getCommonKey } from '../components/ItemUtilities';
 import { UomDoc, PouchResponse, HistoryProps, ItemDoc, ItemDocInit, ItemList, ListRow, ItemListInit, CategoryDoc } from '../components/DataTypes';
-import Error from './Error';
+import ErrorPage from './ErrorPage';
 
 const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode, itemid } = useParams<{mode: string, itemid: string}>();
@@ -95,7 +95,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
   },[itemLoading,itemDoc,listsLoading,listDocs,listRowsLoaded,listRowsLoaded, listRows,globalState.itemMode,globalState.newItemName, globalState.callingListID, needInitItemDoc]);
 
   if (itemError || listError || categoryError || uomError) {return (
-    <Error errorText="Error Loading Item Information... Restart."></Error>
+    <ErrorPage errorText="Error Loading Item Information... Restart."></ErrorPage>
   )}
 
 

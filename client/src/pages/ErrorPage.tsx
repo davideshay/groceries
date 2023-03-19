@@ -16,7 +16,7 @@ const defaultProps: ErrorOptionalProps = {
     errorText: "Error in Application. Restart."
 }
 
-const Error = (props: ErrorProps) => {
+const ErrorPage = (props: ErrorProps) => {
     const { errorTitle, errorText } = props;
 
     return(
@@ -27,6 +27,6 @@ const Error = (props: ErrorProps) => {
     )
 }
 
-Error.defaultProps=defaultProps;
+ErrorPage.defaultProps=defaultProps;
 
-export default Error;
+export default ErrorPage;

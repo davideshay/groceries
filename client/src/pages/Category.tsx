@@ -11,7 +11,7 @@ import './Category.css';
 import { PouchResponse, HistoryProps, ItemDoc, ItemList, ListRow, CategoryDoc, InitCategoryDoc } from '../components/DataTypes';
 import SyncIndicator from '../components/SyncIndicator';
 import { addOutline, closeOutline, saveOutline, trashOutline } from 'ionicons/icons';
-import Error from './Error';
+import ErrorPage from './ErrorPage';
 
 const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
@@ -52,7 +52,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   },[categoryLoading,categoryDoc]);
 
   if ( listError || itemError || categoriesError !== null) { return (
-    <Error errorText="Error Loading Category Information... Restart."></Error>
+    <ErrorPage errorText="Error Loading Category Information... Restart."></ErrorPage>
     )};
 
   if ( categoryLoading || categoriesLoading || !stateCategoryDoc || deletingCategory || !listRowsLoaded || !itemRowsLoaded)  {return(

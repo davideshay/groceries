@@ -13,7 +13,7 @@ import { RemoteDBStateContext } from '../components/RemoteDBState';
 import { PouchResponse, HistoryProps, ListRow, ListDocInit, ListDoc, RowType, CategoryDoc } from '../components/DataTypes';
 import SyncIndicator from '../components/SyncIndicator';
 import { closeCircleOutline, saveOutline, trashOutline } from 'ionicons/icons';
-import Error from './Error';
+import ErrorPage from './ErrorPage';
 
 interface PageState {
   needInitListDoc: boolean,
@@ -94,7 +94,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   if (useFriendState == UseFriendState.error || listError || listGroupError || categoryError) {
     screenLoading.current=false;
     return (
-    <Error errorText="Error Loading List Information... Restart."></Error>
+    <ErrorPage errorText="Error Loading List Information... Restart."></ErrorPage>
   )}
 
   if (listsLoading || !listRowsLoaded || (useFriendState !== UseFriendState.rowsLoaded) || categoryLoading || isEmpty(pageState.listDoc) || (listGroupLoading && pageState.listGroupID !== null) || pageState.deletingDoc)  {return(

@@ -7,7 +7,7 @@ import { isEqual, pull } from 'lodash';
 import { HistoryProps } from '../components/DataTypes';
 import './Category.css';
 import SyncIndicator from '../components/SyncIndicator';
-import Error from './Error';
+import ErrorPage from './ErrorPage';
 
 const ConflictItem: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { id: routeID } = useParams<{ id: string}>();
@@ -18,7 +18,7 @@ const ConflictItem: React.FC<HistoryProps> = (props: HistoryProps) => {
   const screenLoading = useRef(true);
 
   if (conflictError) { return (
-    <Error errorText="Error Loading Conflict Information... Restart."></Error>
+    <ErrorPage errorText="Error Loading Conflict Information... Restart."></ErrorPage>
     )}
 
   if ( conflictLoading  )  {return(

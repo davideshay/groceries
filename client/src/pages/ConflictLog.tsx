@@ -6,7 +6,7 @@ import { RemoteDBStateContext } from '../components/RemoteDBState';
 import { HistoryProps } from '../components/DataTypes';
 import './Categories.css';
 import { useConflicts } from '../components/Usehooks';
-import Error from './Error';
+import ErrorPage from './ErrorPage';
 
 const ConflictLog: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { setDBCredsValue } = useContext(RemoteDBStateContext);
@@ -14,7 +14,7 @@ const ConflictLog: React.FC<HistoryProps> = (props: HistoryProps) => {
   const screenLoading = useRef(true);
 
   if (conflictsError) { return (
-    <Error errorText="Error Loading Conflict Log... Restart."></Error>
+    <ErrorPage errorText="Error Loading Conflict Log... Restart."></ErrorPage>
     )}
 
   if (conflictsLoading) { return (

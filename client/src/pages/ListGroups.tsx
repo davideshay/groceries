@@ -6,7 +6,7 @@ import SyncIndicator from '../components/SyncIndicator';
 import { HistoryProps, ListCombinedRow, RowType } from '../components/DataTypes';
 import './ListGroups.css';
 import { useLists } from '../components/Usehooks';
-import Error from './Error';
+import ErrorPage from './ErrorPage';
 
 const ListGroups: React.FC<HistoryProps> = (props: HistoryProps) => {
 
@@ -14,7 +14,7 @@ const ListGroups: React.FC<HistoryProps> = (props: HistoryProps) => {
   const screenLoading = useRef(true);
 
   if (listError) { return(
-    <Error errorText="Error Loading List Groups Information... Restart."></Error>
+    <ErrorPage errorText="Error Loading List Groups Information... Restart."></ErrorPage>
   )}
 
   if (!listRowsLoaded) { return (
