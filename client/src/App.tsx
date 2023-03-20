@@ -8,6 +8,8 @@ import List from "./pages/List";
 import Lists from './pages/Lists';
 import Items from './pages/Items';
 import Item from './pages/Item';
+import GlobalItems from './pages/GlobalItems';
+import GlobalItem from './pages/GlobalItem';
 import Categories from './pages/Categories';
 import Category from './pages/Category';
 import ListGroups from './pages/ListGroups';
@@ -19,6 +21,8 @@ import InitialLoad from './pages/InitialLoad';
 import AppMenu from './components/AppMenu';
 import ConflictLog from './pages/ConflictLog';
 import ConflictItem from './pages/ConflictItem';
+import AllItems from './pages/AllItems';
+import ErrorBoundary from './components/ErrorBoundary';
 import { GlobalStateProvider } from './components/GlobalState';
 import { RemoteDBStateProvider } from './components/RemoteDBState';
 
@@ -44,8 +48,6 @@ import './theme/variables.css';
 import { Provider } from 'use-pouchdb';
 import PouchDB from 'pouchdb';
 import find from 'pouchdb-find';
-import AllItems from './pages/AllItems';
-import ErrorBoundary from './components/ErrorBoundary';
 
 setupIonicReact();
 
@@ -82,6 +84,8 @@ const App: React.FC = () => {
           <Route path="/items/:mode/:id" component={Items} />
           <Route path="/item/:mode/:itemid?" component={Item} />
           <Route exact path="/allitems" component={AllItems} />
+          <Route exact path="/globalitems" component={GlobalItems} />
+          <Route path="/globalitem/:mode/:id" component={GlobalItem} />
           <Route exact path="/categories" component={Categories} />
           <Route path="/category/:mode/:id?" component={Category} />
           <Route exact path="/listgroups" component={ListGroups} />

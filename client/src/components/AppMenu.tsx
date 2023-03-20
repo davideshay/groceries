@@ -63,6 +63,7 @@ const AppMenu: React.FC = () => {
         {listHeader("Other Actions")}
         {listItem("Manage Categories","/categories")}
         {listItem("Manage All Items","/allitems")}
+        {listItem("View Global Items","/globalitems")}
         {friendItem()}
         {conflictItem()}
         {listItem("Settings","/settings")}

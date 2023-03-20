@@ -7,8 +7,10 @@ export function getAllSearchRows(allItemDocs: ItemDocs, listID: string, listDocs
       let searchRow: ItemSearch = {
         itemID: String(itemDoc._id),
         itemName: itemDoc.name,
-        itemType: (itemDoc.globalItemID !== null && itemDoc.globalItemID !== undefined) ? ItemSearchType.Global : ItemSearchType.Local,
+        itemType: ItemSearchType.Local,
         globalItemID: itemDoc.globalItemID,
+        globalItemCategoryID: null,
+        globalItemUOM: null,
         quantity: getMaxKey(itemDoc,"quantity",listDocs),
         boughtCount: getMaxKey(itemDoc,"quantity",listDocs)
       }
@@ -35,6 +37,8 @@ export function getAllSearchRows(allItemDocs: ItemDocs, listID: string, listDocs
             itemName: globalItem.name,
             itemType: ItemSearchType.Global,
             globalItemID: globalItem._id,
+            globalItemCategoryID: globalItem.defaultCategoryID,
+            globalItemUOM: globalItem.defaultUOM,
             quantity: 0,
             boughtCount: 0
         }

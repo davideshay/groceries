@@ -6,7 +6,7 @@ import { addOutline, closeCircleOutline, trashOutline, saveOutline } from 'ionic
 import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext, useRef } from 'react';
-import { useCreateGenericDocument, useUpdateGenericDocument, useLists, useDeleteGenericDocument, useGetOneDoc } from '../components/Usehooks';
+import { useCreateGenericDocument, useUpdateGenericDocument, useLists, useDeleteGenericDocument, useGetOneDoc, useItems } from '../components/Usehooks';
 import { createEmptyItemDoc } from '../components/DefaultDocs';
 import { GlobalStateContext } from '../components/GlobalState';
 import { cloneDeep, isEmpty, remove } from 'lodash';
@@ -14,7 +14,7 @@ import './Item.css';
 import SyncIndicator from '../components/SyncIndicator';
 import ItemLists from '../components/ItemLists';
 import { getCommonKey } from '../components/ItemUtilities';
-import { UomDoc, PouchResponse, HistoryProps, ItemDoc, ItemDocInit, ItemList, ListRow, ItemListInit, CategoryDoc } from '../components/DataTypes';
+import { UomDoc, PouchResponse, HistoryProps, ItemDoc, ItemDocInit, ItemList, ListRow, ItemListInit, CategoryDoc, GlobalItemDocs } from '../components/DataTypes';
 import ErrorPage from './ErrorPage';
 
 const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
@@ -40,7 +40,10 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
       index: { fields: [ "type","description"]},
       selector: { type: "uom", description: { $exists: true}},
       sort: [ "type","description"] });
-
+  const { docs: globalItemDocs, loading: globalItemsLoading, error: globalItemsError} = useFind({
+      index: { fields: [ "type","name"]},
+      selector: { type: "globalitem","name": { $exists: true}}  })
+  const { dbError: itemsError, itemRowsLoaded, itemRows } = useItems();
   const { globalState, setStateInfo} = useContext(GlobalStateContext);
   const [presentAlert, dismissAlert] = useIonAlert();
   const [presentToast] = useIonToast();
@@ -82,7 +85,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   useEffect( () => {
     let newItemDoc : ItemDoc = cloneDeep(itemDoc);
-    if ((!itemLoading || mode === "new") && !listsLoading && listRowsLoaded) {
+    if ((!itemLoading || mode === "new") && !listsLoading && listRowsLoaded && itemRowsLoaded && !globalItemsLoading) {
       if (globalState.itemMode === "new" && needInitItemDoc) {
         newItemDoc = createEmptyItemDoc(listRows,globalState)
         setStateInfo("newItemMode","none");
@@ -92,14 +95,14 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
       }
       if (newItemDoc != null) {setStateItemDoc(newItemDoc)};
     }
-  },[itemLoading,itemDoc,listsLoading,listDocs,listRowsLoaded,listRowsLoaded, listRows,globalState.itemMode,globalState.newItemName, globalState.callingListID, needInitItemDoc]);
+  },[itemLoading,itemDoc,itemRowsLoaded,itemRows,globalItemsLoading,globalItemDocs,listsLoading,listDocs,listRowsLoaded,listRowsLoaded, listRows,globalState.itemMode,globalState.newItemName, globalState.callingListID, needInitItemDoc]);
 
-  if (itemError || listError || categoryError || uomError) {return (
+  if (itemError || listError || categoryError || uomError || globalItemsError || itemsError) {return (
     <ErrorPage errorText="Error Loading Item Information... Restart."></ErrorPage>
   )}
 
 
-  if ((itemLoading && routeItemID !== null) || listsLoading || !listRowsLoaded || categoryLoading || uomLoading || isEmpty(stateItemDoc))  {
+  if ((itemLoading && routeItemID !== null) || listsLoading || !listRowsLoaded || categoryLoading || uomLoading || globalItemsLoading || !itemRowsLoaded || isEmpty(stateItemDoc))  {
     return(
     <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
     <IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false;}} 
@@ -114,6 +117,25 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
     let result: PouchResponse;
     if (stateItemDoc.name == undefined || stateItemDoc.name=="" || stateItemDoc.name == null) {
       setFormError(prevState => ("Name is required"));
+      return false;
+    }
+    let alreadyExists = false;
+    itemRows.forEach((ir) => {
+      if (ir.listGroupID == stateItemDoc.listGroupID && ir.name.toUpperCase() == stateItemDoc.name.toUpperCase()) {
+        alreadyExists = true;
+      }
+    })
+    if (alreadyExists) {
+      setFormError(prevState => ("Cannot use name of existing item in list group"));
+      return false;
+    }
+    (globalItemDocs as GlobalItemDocs).forEach((gi) => {
+      if (gi.name.toUpperCase() == stateItemDoc.name.toUpperCase()) {
+        alreadyExists = true;
+      }
+    })
+    if (alreadyExists) {
+      setFormError(prevState => ("Cannot use name of existing item in global item list"));
       return false;
     }
     if (mode === "new") {
@@ -259,7 +281,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
       <IonContent>
           <IonList>
             <IonItem key="name">
-              <IonInput label="Name" labelPlacement="stacked" type="text" onIonInput={(e) => setStateItemDoc({...stateItemDoc, name: String(e.detail.value)})} value={stateItemDoc.name}></IonInput>
+              <IonInput disabled={stateItemDoc.globalItemID != null} label="Name" labelPlacement="stacked" type="text" onIonInput={(e) => setStateItemDoc({...stateItemDoc, name: String(e.detail.value)})} value={stateItemDoc.name}></IonInput>
             </IonItem>
             <IonItem key="listgroup">
               <IonText >List Group: {thisListGroup?.listGroupName}</IonText>

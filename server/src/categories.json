@@ -8,6 +8,7 @@
     { "_id" : "system:pretzels", "name": "Snacks-Pretzels" },
     { "_id" : "system:cookies", "name": "Snacks-Cookies" },
     { "_id" : "system:crackers", "name": "Snacks-Crackers" },
+    { "_id" : "system:nuts", "name": "Snacks-Nuts" },
     { "_id" : "system:cannedvegetables", "name": "Canned Vegetables" },
     { "_id" : "system:cannedsoup", "name": "Canned Soup" },
     { "_id" : "system:paperproducts", "name": "Paper Products" },
@@ -34,6 +35,10 @@
     { "_id" : "system:petfood", "name": "Pet Food" },
     { "_id" : "system:cleaning", "name": "Cleaning Products" },
     { "_id" : "system:hair", "name": "Hair Products - Shampoo/Conditioner" },
-    { "_id" : "system:auto", "name": "Automotive" }
+    { "_id" : "system:auto", "name": "Automotive" },
+    { "_id" : "system:office", "name": "Office Supplies" },
+    { "_id" : "system:beauty", "name": "Beauty Supplies" }
+
+
 
 ]

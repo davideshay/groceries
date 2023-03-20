@@ -99,6 +99,15 @@ export interface GlobalItemDoc {
 
 export type GlobalItemDocs = GlobalItemDoc[];
 
+export const InitGlobalItem:GlobalItemDoc = {
+  _id: "",
+  _rev: "",
+  type: "globalitem",
+  name: "",
+  defaultCategoryID: null,
+  defaultUOM: null
+}
+
 export interface ListDoc {
   _id: string,
   _rev: string,
@@ -157,6 +166,8 @@ export enum ItemSearchType {
     itemName: string,
     itemType: ItemSearchType,
     globalItemID: string | null,
+    globalItemCategoryID: string | null,
+    globalItemUOM: string | null,
     quantity: number,
     boughtCount: number
   }

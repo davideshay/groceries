@@ -8,9 +8,9 @@ import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
 import { cloneDeep } from 'lodash';
 import './Items.css';
-import { useUpdateGenericDocument, useLists } from '../components/Usehooks';
+import { useUpdateGenericDocument, useLists, useCreateGenericDocument } from '../components/Usehooks';
 import { AddListOptions, GlobalStateContext } from '../components/GlobalState';
-import { ItemSearch, SearchState, PageState, ListRow, ListCombinedRow, HistoryProps, RowType, ItemDoc, ItemDocs, ItemListInit, ItemList, ItemRow, CategoryDoc, UomDoc, GlobalItemDocs} from '../components/DataTypes'
+import { ItemSearch, SearchState, PageState, ListRow, ListCombinedRow, HistoryProps, RowType, ItemDoc, ItemDocs, ItemListInit, ItemList, ItemRow, CategoryDoc, UomDoc, GlobalItemDocs, ItemSearchType, ItemDocInit} from '../components/DataTypes'
 import { getAllSearchRows, getItemRows, filterSearchRows } from '../components/ItemUtilities';
 import SyncIndicator from '../components/SyncIndicator';
 import ErrorPage from './ErrorPage';
@@ -29,6 +29,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   const [presentToast] = useIonToast();
   const [presentAlert, dismissAlert] = useIonAlert();
   const updateItemInList = useUpdateGenericDocument();
+  const addNewItem = useCreateGenericDocument();
   const screenLoading = useRef(true);
 
   const { docs: itemDocs, loading: itemLoading, error: itemError } = useFind({
@@ -169,6 +170,27 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   async function addExistingItemToList(item: ItemSearch) {
     console.log("AEITL" , cloneDeep(item));
+    if (item.itemType == ItemSearchType.Global) {
+      let newItem: ItemDoc = cloneDeep(ItemDocInit);
+      newItem.globalItemID = item.globalItemID;
+      newItem.listGroupID = pageState.groupIDforSelectedList;
+      newItem.name = item.itemName;
+      listRows.forEach((lr) => {
+        if (lr.listGroupID == pageState.groupIDforSelectedList) {
+          let newItemList: ItemList = cloneDeep(ItemListInit);
+          newItemList.listID = lr.listDoc._id;
+          newItemList.categoryID = item.globalItemCategoryID;
+          newItemList.uomName = item.globalItemUOM;
+          newItemList.quantity = 1;
+          newItem.lists.push(newItemList);
+        }  
+      })
+      let itemAdded = await addNewItem(newItem);
+      if (!itemAdded.successful) {
+        presentToast({message: "Error adding item, please retry.",duration: 1500, position: "middle"});
+      }
+      return;
+    }
     let existingItem: ItemDoc = cloneDeep((allItemDocs as ItemDocs).find((el) => el._id === item.itemID));    
     listRows.forEach((listRow: ListRow) => {
       let idxInLists=existingItem.lists.findIndex((el) => el.listID === listRow.listDoc._id);
