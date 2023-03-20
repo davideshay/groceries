@@ -14,7 +14,8 @@ import './Item.css';
 import SyncIndicator from '../components/SyncIndicator';
 import ItemLists from '../components/ItemLists';
 import { getCommonKey } from '../components/ItemUtilities';
-import { UomDoc, PouchResponse, HistoryProps, ItemDoc, ItemDocInit, ItemList, ListRow, ItemListInit, CategoryDoc, GlobalItemDocs } from '../components/DataTypes';
+import { PouchResponse, HistoryProps, ListRow } from '../components/DataTypes';
+import { UomDoc, ItemDoc, ItemDocInit, ItemList, ItemListInit, CategoryDoc, GlobalItemDocs } from '../components/DBSchema';
 import ErrorPage from './ErrorPage';
 
 const Item: React.FC<HistoryProps> = (props: HistoryProps) => {

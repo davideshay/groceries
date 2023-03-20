@@ -1,6 +1,6 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
         IonMenuButton, IonButtons, IonButton, useIonAlert, IonInput,
-        IonRadioGroup,IonLabel, IonRadio, IonCheckbox, IonTextarea, isPlatform, IonItemDivider } from '@ionic/react';
+        IonRadioGroup, IonRadio, IonCheckbox, isPlatform, IonItemDivider } from '@ionic/react';
 import { useContext, useEffect, useState } from 'react';        
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';

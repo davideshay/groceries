@@ -2,9 +2,10 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
   IonMenuButton, IonButton, IonLoading } from '@ionic/react';
 import { useFind } from 'use-pouchdb';
 import { useRef } from 'react';
-import { useLists, useItems } from '../components/Usehooks';
 import SyncIndicator from '../components/SyncIndicator';
-import { GlobalItemDocs, HistoryProps, ItemDoc, ListCombinedRow, ListRow, RowType } from '../components/DataTypes';
+import { HistoryProps} from '../components/DataTypes';
+import { GlobalItemDocs } from '../components/DBSchema';
+
 import './AllItems.css';
 import ErrorPage from './ErrorPage';
 

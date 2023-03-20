@@ -9,7 +9,8 @@ import { useUpdateGenericDocument, useCreateGenericDocument, useFriends,
   UseFriendState, useLists, useDeleteGenericDocument, useDeleteItemsInListGroup, useGetOneDoc } from '../components/Usehooks';
 import { cloneDeep, isEmpty, isEqual } from 'lodash';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
-import { initUserIDList, initUsersInfo, PouchResponse, ResolvedFriendStatus, UserIDList, UsersInfo, HistoryProps, ListGroupDoc, ListGroupDocInit, ListCombinedRow, RowType, FriendRow } from '../components/DataTypes';
+import { initUserIDList, initUsersInfo, PouchResponse, ResolvedFriendStatus, UserIDList, UsersInfo, HistoryProps, ListCombinedRow, RowType, FriendRow } from '../components/DataTypes'
+import { ListGroupDoc, ListGroupDocInit } from '../components/DBSchema';
 import SyncIndicator from '../components/SyncIndicator';
 import { getUsersInfo } from '../components/Utilities';
 import './ListGroup.css';

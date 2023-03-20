@@ -8,7 +8,8 @@ import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteCategoryFr
    useDeleteCategoryFromLists, useGetOneDoc, useLists, useItems } from '../components/Usehooks';
 import { cloneDeep } from 'lodash';
 import './Category.css';
-import { PouchResponse, HistoryProps, ItemDoc, ItemList, ListRow, CategoryDoc, InitCategoryDoc } from '../components/DataTypes';
+import { PouchResponse, HistoryProps, ListRow} from '../components/DataTypes';
+import { ItemDoc, ItemList, CategoryDoc, InitCategoryDoc } from '../components/DBSchema';
 import SyncIndicator from '../components/SyncIndicator';
 import { addOutline, closeOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';

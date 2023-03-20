@@ -10,7 +10,8 @@ import { cloneDeep } from 'lodash';
 import './Items.css';
 import { useUpdateGenericDocument, useLists, useCreateGenericDocument } from '../components/Usehooks';
 import { AddListOptions, GlobalStateContext } from '../components/GlobalState';
-import { ItemSearch, SearchState, PageState, ListRow, ListCombinedRow, HistoryProps, RowType, ItemDoc, ItemDocs, ItemListInit, ItemList, ItemRow, CategoryDoc, UomDoc, GlobalItemDocs, ItemSearchType, ItemDocInit} from '../components/DataTypes'
+import { ItemSearch, SearchState, PageState, ListRow, ListCombinedRow, HistoryProps, RowType, ItemSearchType} from '../components/DataTypes'
+import { ItemDoc, ItemDocs, ItemListInit, ItemList, ItemDocInit, CategoryDoc, UomDoc, GlobalItemDocs } from '../components/DBSchema';
 import { getAllSearchRows, getItemRows, filterSearchRows } from '../components/ItemUtilities';
 import SyncIndicator from '../components/SyncIndicator';
 import ErrorPage from './ErrorPage';

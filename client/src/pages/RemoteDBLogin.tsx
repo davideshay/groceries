@@ -1,6 +1,6 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
   IonButtons, IonMenuButton, IonText, useIonAlert, isPlatform, IonIcon, useIonLoading } from '@ionic/react';
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useRef } from 'react';
 import { eye, eyeOff } from 'ionicons/icons';
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import { usePouch} from 'use-pouchdb';
@@ -76,10 +76,10 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     const { remoteDBState, remoteDBCreds, setRemoteDBState, setRemoteDBCreds, errorCheckCreds, assignDB, setDBCredsValue} = useContext(RemoteDBStateContext);
     const { listRowsLoaded, listRows } = useLists();
     const [ present, dismiss ]= useIonLoading();
+    const screenLoading = useRef(true);
 
     // useEffect for initial page launch
     useEffect( () => {
-      console.log("initial use effect, ",cloneDeep(remoteDBState.credsError),cloneDeep(remoteState));
       if (remoteDBState.credsError) {
         setRemoteState(prevState => ({...prevState,formError: remoteDBState.credsErrorText}))
       }
@@ -145,20 +145,21 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       return newDBCreds;
     }
     
-  function showLoading() {
-    present( {
+  async function showLoading() {
+    await present( {
       message: "Loading...."
     })
   }
 
 
+
   async function submitForm() {
-    showLoading();
+    await showLoading();
     setRemoteState(prevState => ({...prevState,formError: ""}));
     let credsCheck = errorCheckCreds(remoteDBCreds,false,false,remoteState.password);
     if (credsCheck.credsError ) {
       setRemoteState(prevState => ({...prevState,formError: String(credsCheck.errorText)}))
-      dismiss();
+      await dismiss();
       return;
     }
     let response: HttpResponse;
@@ -167,19 +168,21 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
         method: "POST",
         headers: { 'Content-Type': 'application/json; charset=UTF-8',
                    'Accept': 'application/json'},
+        connectTimeout: 5,              
         data: { username: remoteDBCreds.dbUsername,
                 password: remoteState.password,
-                deviceUUID: remoteDBState.deviceUUID},           
+                deviceUUID: remoteDBState.deviceUUID},  
+      
     };
     try {response = await CapacitorHttp.post(options)}
     catch(err) {console.log("Error logging in...",err)
                 setRemoteState(prevState => ({...prevState, formError: "Cannot contact API server"}));
                 setRemoteDBState({...remoteDBState, serverAvailable: false});
-                dismiss();
+                await dismiss();
                 return}
     if (!((response?.status === 200) && (response?.data?.loginSuccessful))) {
         setRemoteState(prevState => ({...prevState, formError: "Invalid Authentication"}))
-        dismiss();
+        await dismiss();
         return
     }
     let newCreds=updateDBCredsFromResponse(response);
@@ -187,18 +190,18 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     setRemoteDBCreds(newCreds);
     setRemoteDBState({...remoteDBState, accessJWT: response.data.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate});
     await assignDB(response.data.accessJWT);
-    dismiss();
+    await dismiss();
   }
   
   async function submitCreateForm() {
-    showLoading();
+    await showLoading();
     let createResponse: HttpResponse | undefined;
     let credsCheck = errorCheckCreds(remoteDBCreds,false,true,remoteState.password,remoteState.verifyPassword);
     if (!credsCheck.credsError) {
       createResponse = await createNewUser(remoteDBState,remoteDBCreds,String(remoteState.password));
       if (createResponse == undefined) { 
         setRemoteState(prevState => ({...prevState, formError: "Error creating user"}));
-        dismiss();
+        await dismiss();
         return;
       }
       if (!createResponse.data.createdSuccessfully) {
@@ -206,12 +209,12 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
         if (createResponse.data.invalidData) {credsCheck.errorText = "Invalid Data Entered";} 
         else if (createResponse.data.userAlreadyExists) {credsCheck.errorText = "User Already Exists";}
         setRemoteState(prevState => ({...prevState, formError: credsCheck.errorText}))
-        dismiss();
+        await dismiss();
         return;
       }
     } else {
       setRemoteState(prevState => ({...prevState, formError: String(credsCheck.errorText)}));
-      dismiss();
+      await dismiss();
       return;
     }
     let newCreds=updateDBCredsFromResponse(createResponse);
@@ -219,7 +222,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     let tokenInfo = getTokenInfo(createResponse.data.accessJWT);
     setRemoteDBState({...remoteDBState,accessJWT: createResponse.data.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate});
     await assignDB(createResponse.data.accessJWT);
-    dismiss();
+    await dismiss();
   }
   
   async function callResetPasswordAPI() {

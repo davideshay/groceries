@@ -1,4 +1,4 @@
-import { Redirect, Route} from 'react-router-dom';
+import { Redirect, Route, Switch} from 'react-router-dom';
 import { IonApp, IonSplitPane,setupIonicReact, IonRouterOutlet } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { Capacitor } from '@capacitor/core';
@@ -80,6 +80,7 @@ const App: React.FC = () => {
       <IonSplitPane contentId="main">
       <AppMenu />
         <IonRouterOutlet id="main">
+          <Switch>
           <Route exact path="/lists" component={Lists} />
           <Route path="/items/:mode/:id" component={Items} />
           <Route path="/item/:mode/:itemid?" component={Item} />
@@ -100,6 +101,8 @@ const App: React.FC = () => {
           <Route exact path="/initialload" component={InitialLoad}></Route>
           <Route exact path="/conflictlog" component={ConflictLog}></Route>
           <Route path="/conflictitem/:id" component={ConflictItem}></Route>
+          <Route component={InitialLoad}></Route>
+          </Switch>
           {/* <Route component={InitialLoad}></Route>  */}
         </IonRouterOutlet>
       </IonSplitPane>

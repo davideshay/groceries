@@ -1,4 +1,5 @@
-import {initItemRow, ItemRow, ItemSearch, ListCombinedRow, ListCombinedRows, RowType, UomDoc, ItemDoc, ItemDocs, ItemList, ListDocs, ListDoc, CategoryDoc, ItemSearchType, GlobalItemDocs} from '../components/DataTypes';
+import {initItemRow, ItemRow, ItemSearch, ListCombinedRow, ListCombinedRows, RowType, ItemSearchType} from '../components/DataTypes';
+import { UomDoc, ItemDoc, ItemDocs, ItemList, ListDocs, ListDoc, CategoryDoc, GlobalItemDocs } from './DBSchema';
 import { cloneDeep } from 'lodash';
 
 export function getAllSearchRows(allItemDocs: ItemDocs, listID: string, listDocs: ListDocs, globalItemDocs: GlobalItemDocs): ItemSearch[] {

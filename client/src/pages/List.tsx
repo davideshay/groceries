@@ -10,7 +10,8 @@ import { useUpdateGenericDocument, useCreateGenericDocument, useFriends, useGetO
 import { cloneDeep, isEmpty } from 'lodash';
 import './List.css';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
-import { PouchResponse, HistoryProps, ListRow, ListDocInit, ListDoc, RowType, CategoryDoc } from '../components/DataTypes';
+import { PouchResponse, HistoryProps, ListRow, RowType } from '../components/DataTypes';
+import { ListDocInit, ListDoc, CategoryDoc } from '../components/DBSchema'
 import SyncIndicator from '../components/SyncIndicator';
 import { closeCircleOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';

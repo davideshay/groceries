@@ -2,7 +2,9 @@ import { IonTitle,  IonButton, IonList, IonInput, IonItem, IonSelect, IonCheckbo
     IonSelectOption, IonTextarea, IonGrid, IonRow, IonCol, IonText, IonModal } from '@ionic/react';
 import { addOutline, closeCircleOutline, saveOutline } from 'ionicons/icons';    
 import { SetStateAction } from 'react';    
-import {  CategoryDoc, ItemDoc, ItemList, ModalState, ModalStateInit, UomDoc } from '../components/DataTypes';
+import {  ModalState, ModalStateInit } from '../components/DataTypes';
+import {  CategoryDoc, ItemDoc, ItemList,  UomDoc } from '../components/DBSchema';
+
 import { cloneDeep } from 'lodash';
 import { History } from 'history';
 

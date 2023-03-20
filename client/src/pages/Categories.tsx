@@ -4,7 +4,8 @@ import { useRef } from 'react';
 import { add } from 'ionicons/icons';
 import { useFind } from 'use-pouchdb';
 import SyncIndicator from '../components/SyncIndicator';
-import { CategoryDoc, HistoryProps } from '../components/DataTypes';
+import { HistoryProps } from '../components/DataTypes';
+import { CategoryDoc } from '../components/DBSchema';
 import './Categories.css';
 import ErrorPage from './ErrorPage';
 

@@ -3,7 +3,7 @@ import {  IonButton,  IonItem, IonLabel, IonCheckbox, IonIcon,
 import { pencilOutline } from 'ionicons/icons';
 import { Fragment, useState } from 'react';
 import { sortedItemLists } from './ItemUtilities';
-import { CategoryDoc, UomDoc, ItemDoc, ItemList, ListDoc, ListDocs  } from '../components/DataTypes';
+import { CategoryDoc, UomDoc, ItemDoc, ItemList, ListDoc, ListDocs } from './DBSchema';
 import ItemListsModal from '../components/ItemListsModal';
 import { cloneDeep } from 'lodash';
 import { ModalState, ModalStateInit } from '../components/DataTypes';
