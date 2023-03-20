@@ -10,7 +10,7 @@ import { cloneDeep } from 'lodash';
 import './Items.css';
 import { useUpdateGenericDocument, useLists } from '../components/Usehooks';
 import { AddListOptions, GlobalStateContext } from '../components/GlobalState';
-import { ItemSearch, SearchState, PageState, ListRow, ListCombinedRow, HistoryProps, RowType, ItemDoc, ItemDocs, ItemListInit, ItemList, ItemRow, CategoryDoc, UomDoc} from '../components/DataTypes'
+import { ItemSearch, SearchState, PageState, ListRow, ListCombinedRow, HistoryProps, RowType, ItemDoc, ItemDocs, ItemListInit, ItemList, ItemRow, CategoryDoc, UomDoc, GlobalItemDocs} from '../components/DataTypes'
 import { getAllSearchRows, getItemRows, filterSearchRows } from '../components/ItemUtilities';
 import SyncIndicator from '../components/SyncIndicator';
 import ErrorPage from './ErrorPage';
@@ -51,6 +51,10 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       index: { fields: [ "type","name"] },
       selector: { type: "item", name: { $exists: true}, listGroupID: pageState.groupIDforSelectedList},
       sort: [ "type","name"] });
+  const { docs: globalItemDocs, loading: globalItemsLoading, error: globalItemsError } = useFind({
+      index: { fields: [ "type","name"] },
+      selector: { type: "globalitem", name: { $exists: true}}
+  })
 
   const { globalState,setStateInfo: setGlobalStateInfo} = useContext(GlobalStateContext);
  
@@ -74,17 +78,19 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   },[listRowsLoaded,pageState.selectedListOrGroupID])
 
   useEffect( () => {
-    if (!itemLoading && listRowsLoaded && !categoryLoading && !allItemsLoading &&!uomLoading) {
+    if (!itemLoading && listRowsLoaded && !categoryLoading && !allItemsLoading &&!uomLoading && !globalItemsLoading) {
       setPageState( (prevState) => ({ ...prevState,
         doingUpdate: false,
         itemRows: getItemRows(itemDocs as ItemDocs, listCombinedRows, categoryDocs as CategoryDoc[], uomDocs as UomDoc[], pageState.selectedListType, pageState.selectedListOrGroupID)
       }))
     }
-  },[itemLoading, allItemsLoading, listRowsLoaded, categoryLoading, uomLoading, uomDocs, itemDocs, listCombinedRows, allItemDocs, categoryDocs, pageState.selectedListOrGroupID]);
+  },[itemLoading, allItemsLoading, listRowsLoaded, categoryLoading, uomLoading, globalItemsLoading, uomDocs, itemDocs, listCombinedRows, allItemDocs, categoryDocs, pageState.selectedListOrGroupID]);
 
   useEffect( () => {
-    setSearchRows(getAllSearchRows(allItemDocs as ItemDocs,pageState.selectedListOrGroupID, listDocs));
-  },[allItemsLoading, allItemDocs, pageState.selectedListOrGroupID])
+    if (!allItemsLoading && !globalItemsLoading) {
+      setSearchRows(getAllSearchRows(allItemDocs as ItemDocs,pageState.selectedListOrGroupID, listDocs, globalItemDocs as GlobalItemDocs));
+    }  
+  },[allItemsLoading, globalItemsLoading, globalItemDocs, allItemDocs, pageState.selectedListOrGroupID])
 
   useEffect( () => {
     let filterRows=filterSearchRows(searchRows, searchState.searchCriteria)
@@ -95,11 +101,11 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     }  
   },[searchState.searchCriteria,searchState.isFocused])
   
-  if (itemError || listError || categoryError || allItemsError || uomError) {return (
+  if (itemError || listError || categoryError || allItemsError || uomError || globalItemsError) {return (
     <ErrorPage errorText="Error Loading Items Information... Restart."></ErrorPage>
   )}
 
-  if (itemLoading || !listRowsLoaded || categoryLoading || allItemsLoading || uomLoading || pageState.doingUpdate )  {return(
+  if (itemLoading || !listRowsLoaded || categoryLoading || allItemsLoading || globalItemsLoading || uomLoading || pageState.doingUpdate )  {return(
     <IonPage>
         <IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
         <IonContent><IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false;}} 
@@ -161,9 +167,9 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     return catexists;
   }
 
-  async function addExistingItemToList(itemID: string) {
-    console.log("AEITL" , itemID);
-    let existingItem: ItemDoc = cloneDeep((allItemDocs as ItemDocs).find((el) => el._id === itemID));    
+  async function addExistingItemToList(item: ItemSearch) {
+    console.log("AEITL" , cloneDeep(item));
+    let existingItem: ItemDoc = cloneDeep((allItemDocs as ItemDocs).find((el) => el._id === item.itemID));    
     listRows.forEach((listRow: ListRow) => {
       let idxInLists=existingItem.lists.findIndex((el) => el.listID === listRow.listDoc._id);
       let skipThisList=false;
@@ -206,8 +212,8 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   }
 
-  function chooseSearchItem(itemID: string) {
-    addExistingItemToList(itemID);
+  function chooseSearchItem(item: ItemSearch) {
+    addExistingItemToList(item);
     setSearchState(prevState => ({...prevState, searchCriteria: "", filteredRows: [],isOpen: false, isFocused: false}))
   }
 
@@ -215,7 +221,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     <IonPopover side="bottom" event={searchState.event} isOpen={searchState.isOpen} keyboardClose={false} onDidDismiss={() => {leaveSearchBox()}}>
     <IonContent><IonList key="popoverItemList">
       {(searchState.filteredSearchRows as ItemSearch[]).map((item: ItemSearch) => (
-        <IonItem key={pageState.selectedListOrGroupID+"-poilist-"+item.itemID} onClick={() => chooseSearchItem(item.itemID)}>{item.itemName}</IonItem>
+        <IonItem key={pageState.selectedListOrGroupID+"-poilist-"+item.itemID} onClick={() => chooseSearchItem(item)}>{item.itemName}</IonItem>
       ))}
     </IonList></IonContent>
     </IonPopover>

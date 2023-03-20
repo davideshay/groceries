@@ -1,20 +1,45 @@
-import {initItemRow, ItemRow, ItemSearch, ListCombinedRow, ListCombinedRows, RowType, UomDoc, ItemDoc, ItemDocs, ItemList, ListDocs, ListDoc, CategoryDoc} from '../components/DataTypes';
+import {initItemRow, ItemRow, ItemSearch, ListCombinedRow, ListCombinedRows, RowType, UomDoc, ItemDoc, ItemDocs, ItemList, ListDocs, ListDoc, CategoryDoc, ItemSearchType, GlobalItemDocs} from '../components/DataTypes';
 import { cloneDeep } from 'lodash';
 
-export function getAllSearchRows(allItemDocs: ItemDocs, listID: string, listDocs: ListDocs): ItemSearch[] {
+export function getAllSearchRows(allItemDocs: ItemDocs, listID: string, listDocs: ListDocs, globalItemDocs: GlobalItemDocs): ItemSearch[] {
     let searchRows: ItemSearch[] = [];
     allItemDocs.forEach((itemDoc) => {
       let searchRow: ItemSearch = {
         itemID: String(itemDoc._id),
         itemName: itemDoc.name,
-        quantity: getCommonKey(itemDoc,"quantity",listDocs),
-        boughtCount: 0
+        itemType: (itemDoc.globalItemID !== null && itemDoc.globalItemID !== undefined) ? ItemSearchType.Global : ItemSearchType.Local,
+        globalItemID: itemDoc.globalItemID,
+        quantity: getMaxKey(itemDoc,"quantity",listDocs),
+        boughtCount: getMaxKey(itemDoc,"quantity",listDocs)
       }
       let list=itemDoc.lists.find((el) => el.listID === listID)
       if (list) {searchRow.boughtCount=list.boughtCount}
       if (!list || !list?.active) {
         searchRows.push(searchRow);
       }  
+    })
+    globalItemDocs.forEach((globalItem) => {
+      let itemExistsInSearchIdx = searchRows.findIndex((sr) => (sr.globalItemID == globalItem._id || sr.itemName == globalItem.name));
+      let itemNameMatch = allItemDocs.find((item) => (item.name == globalItem.name));
+      let itemExistsInItem = false;
+      if (itemNameMatch !== undefined) {
+        itemNameMatch.lists.forEach((list) => {
+            if (list.active && list.listID==listID) {
+                itemExistsInItem=true;
+            }
+        })
+      }
+      if (itemExistsInSearchIdx === -1 && !itemExistsInItem) {
+        let searchRow: ItemSearch = {
+            itemID: String(globalItem._id),
+            itemName: globalItem.name,
+            itemType: ItemSearchType.Global,
+            globalItemID: globalItem._id,
+            quantity: 0,
+            boughtCount: 0
+        }
+        searchRows.push(searchRow);
+      }   
     })
     return searchRows;
   }
@@ -186,5 +211,15 @@ export function getCommonKey(stateItemDoc: ItemDoc, key: string, listDocs: ListD
       }
     });
     if (maxCnt === 0 && sortedLists.length > 0 ) {maxKey = (sortedLists[0] as any)[key]}
+    return maxKey;
+  }
+
+  export function getMaxKey(stateItemDoc: ItemDoc, key: string, listDocs: ListDocs) {
+    let maxKey=0;
+    let sortedLists = sortedItemLists(stateItemDoc.lists,listDocs);
+    sortedLists.forEach( (list: ItemList) => {
+      let value=(list as any)[key];
+      if (value > maxKey) {maxKey = value};
+    });
     return maxKey;
   }

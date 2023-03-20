@@ -40,9 +40,14 @@ let usersDBAsAdmin;
 const _ = require('lodash');
 const { v4: uuidv4 } = require('uuid');
 const { cloneDeep, isEmpty, isEqual, isSafeInteger } = require('lodash');
-const {  emailPatternValidation, usernamePatternValidation, fullnamePatternValidation, uomContent } = require('./utilities');
+const {  emailPatternValidation, usernamePatternValidation, fullnamePatternValidation,
+     uomContent, globalItems, categories } = require('./utilities');
 let uomContentVersion = 0;
 const targetUomContentVersion = 2;
+let categoriesVersion = 0;
+const targetCategoriesVersion = 1;
+let globalItemVersion = 0;
+const targetGlobalItemVersion = 1;
 let schemaVersion = 0;
 const targetSchemaVersion = 3;
 const refreshTokenExpires = (process.env.REFRESH_TOKEN_EXPIRES == undefined) ? "30d" : process.env.REFRESH_TOKEN_EXPIRES;
@@ -184,6 +189,8 @@ async function addDBIdentifier() {
             name: "Database UUID",
             "uuid": uuidv4(),
             "uomContentVersion": 0,
+            "categoriesVersion": 0,
+            "globalItemVersion": 0,
             "schemaVersion": 0,
             updatedAt: (new Date()).toISOString()
         }
@@ -203,6 +210,22 @@ async function addDBIdentifier() {
             catch(err) { console.log("ERROR: updating UUID record with uomContentVersion"); console.log(JSON.stringify(err));};
         } else {
             uomContentVersion = foundIDDoc.uomContentVersion;
+        }
+        if (!foundIDDoc.hasOwnProperty("categoriesVersion")) {
+            foundIDDoc.categoriesVersion = 0;
+            let dbResp = null;
+            try { dbResp = await todosDBAsAdmin.insert(foundIDDoc); console.log("STATUS: Updated Target Category Content Version, was missing.") }
+            catch(err) { console.log("ERROR: updating UUID record with categoriesVersion"); console.log(JSON.stringify(err));};
+        } else {
+            categoriesVersion = foundIDDoc.categoriesVersion;
+        }
+        if (!foundIDDoc.hasOwnProperty("globalItemVersion")) {
+            foundIDDoc.globalItemVersion = 0;
+            let dbResp = null;
+            try { dbResp = await todosDBAsAdmin.insert(foundIDDoc); console.log("STATUS: Updated Target Global Item Content Version, was missing.") }
+            catch(err) { console.log("ERROR: updating UUID record with globalItemVersion"); console.log(JSON.stringify(err));};
+        } else {
+            globalItemVersion = foundIDDoc.globalItemVersion;
         }
         if (!foundIDDoc.hasOwnProperty("schemaVersion")) {
             foundIDDoc.schemaVersion = 0;
@@ -251,14 +274,103 @@ async function createUOMContent() {
     }
 }
 
+async function createCategoriesContent() {
+    const dbcatq = {
+        selector: { type: { "$eq": "category" }},
+        limit: await totalDocCount(todosDBAsAdmin)
+    }
+    let foundCategoryDocs =  await todosDBAsAdmin.find(dbcatq);
+    for (let i = 0; i < categories.length; i++) {
+        let category = categories[i];
+        category.type = "category";
+        category.color = "#ffffff";
+        const docIdx=foundCategoryDocs.docs.findIndex((el) => (el.name === category.name || el._id === category._id));
+        if (docIdx == -1) {
+            console.log("STATUS: Adding category ",category.name);
+            let dbResp = null;
+            try { dbResp = await todosDBAsAdmin.insert(category);}
+            catch(err) { console.log("ERROR: adding category ",category.name, " error: ",err);}
+        } else {
+            console.log("STATUS: Category ",category.name," already exists...skipping");
+        }
+    };
+    console.log("STATUS: Finished adding categories, updating to category Version:",targetCategoriesVersion);
+    const dbidq = {
+        selector: { type: { "$eq": "dbuuid" }}
+    }
+    let foundIDDocs =  await todosDBAsAdmin.find(dbidq);
+    let foundIDDoc = undefined;
+    if (foundIDDocs.docs.length > 0) {foundIDDoc = foundIDDocs.docs[0]}
+    if (foundIDDoc == undefined) {
+        console.log("ERROR: Couldn't update database content version record.");
+    } else {
+        foundIDDoc.categoriesVersion = targetCategoriesVersion;
+        let dbResp = null;
+        try { dbResp = await todosDBAsAdmin.insert(foundIDDoc)}
+        catch(err) { console.log("ERROR: Couldn't update Categories target version.")};
+        console.log("STATUS: Updated Categories Target Version successfully.");
+    }
+}
+
+async function createGlobalItemContent() {
+    const dbglobalq = {
+        selector: { type: { "$eq": "globalitem" }},
+        limit: await totalDocCount(todosDBAsAdmin)
+    }
+    let foundGlobalItemDocs =  await todosDBAsAdmin.find(dbglobalq);
+    for (let i = 0; i < globalItems.length; i++) {
+        let globalItem = globalItems[i];
+        globalItem.type = "globalitem";
+        const docIdx=foundGlobalItemDocs.docs.findIndex((el) => el.name === globalItem.name );
+        if (docIdx == -1) {
+            console.log("STATUS: Adding global item ",globalItem.name);
+            let dbResp = null;
+            try { dbResp = await todosDBAsAdmin.insert(globalItem);}
+            catch(err) { console.log("ERROR: adding global item ",globalItem.name, " error: ",err);}
+        } else {
+            console.log("STATUS: Global Item ",globalItem.name," already exists...skipping");
+        }
+    };
+    console.log("STATUS: Finished adding global Items, updating to Global Item Version:",targetGlobalItemVersion);
+    const dbidq = {
+        selector: { type: { "$eq": "dbuuid" }}
+    }
+    let foundIDDocs =  await todosDBAsAdmin.find(dbidq);
+    let foundIDDoc = undefined;
+    if (foundIDDocs.docs.length > 0) {foundIDDoc = foundIDDocs.docs[0]}
+    if (foundIDDoc == undefined) {
+        console.log("ERROR: Couldn't update database content version record.");
+    } else {
+        foundIDDoc.globalItemVersion = targetGlobalItemVersion;
+        let dbResp = null;
+        try { dbResp = await todosDBAsAdmin.insert(foundIDDoc)}
+        catch(err) { console.log("ERROR: Couldn't update Global Item target version.")};
+        console.log("STATUS: Updated Global Item Target Version successfully.");
+    }
+}
+
 async function checkAndCreateContent() {
     console.log("STATUS: Current UOM Content Version:",uomContentVersion," Target Version:",targetUomContentVersion);
     if (uomContentVersion === targetUomContentVersion) {
         console.log("STATUS: At current version, skipping UOM Content creation");
-        return true;
+    } else {
+        console.log("STATUS: Creating UOM Content...");
+        await createUOMContent();
     }
-    console.log("STATUS: Creating UOM Content...");
-    await createUOMContent();
+    console.log("STATUS: Current Category Content Version:",categoriesVersion," Target Version:", targetCategoriesVersion);
+    if (categoriesVersion === targetCategoriesVersion) {
+        console.log("STATUS: At current category version, skipping category creation");
+    } else {
+        console.log("STATUS: Creating category Content...");
+        await createCategoriesContent();
+    }
+    console.log("STATUS: Current Global Item Content Version:",globalItemVersion," Target Version:", targetGlobalItemVersion);
+    if (globalItemVersion === targetGlobalItemVersion) {
+        console.log("STATUS: At current Global item version, skipping global item creation");
+    } else {
+        console.log("STATUS: Creating Global Item Content...");
+        await createGlobalItemContent();
+    }
 }
 
 async function addStockedAtIndicatorToSchema() {

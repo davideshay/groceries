@@ -60,6 +60,7 @@ export interface ItemDoc {
   type: string,
   listGroupID: string,
   name: string,
+  globalItemID: string | null,
   lists: ItemList[],
   updatedAt?: string
 }
@@ -70,6 +71,7 @@ export const ItemDocInit:ItemDoc = {
   type: "item",
   listGroupID: "",
   name: "",
+  globalItemID: null,
   lists: [],
   updatedAt: ""
 }
@@ -86,6 +88,16 @@ export const ItemListInit:ItemList = {
   uomName: null
 }
 
+export interface GlobalItemDoc {
+  _id: string,
+  _rev: string,
+  type: string,
+  name: string,
+  defaultUOM: string | null,
+  defaultCategoryID: string | null
+}
+
+export type GlobalItemDocs = GlobalItemDoc[];
 
 export interface ListDoc {
   _id: string,
@@ -135,9 +147,16 @@ export const ListGroupDocInit:ListGroupDoc = {
   updatedAt: ""
 }
 
+export enum ItemSearchType {
+  Local= "L",
+  Global="G"
+}
+
   export interface ItemSearch {
     itemID: string,
     itemName: string,
+    itemType: ItemSearchType,
+    globalItemID: string | null,
     quantity: number,
     boughtCount: number
   }

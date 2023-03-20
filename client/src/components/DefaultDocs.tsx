@@ -38,6 +38,7 @@ export function createEmptyItemDoc(listRows:ListRow[], globalState: GlobalState)
   let newItemDoc: ItemDoc ={
     type: "item",
     name: String(globalState.newItemName),
+    globalItemID: globalState.newItemGlobalItemID,
     listGroupID: String(listGroupID),
     lists: newItemLists
   }

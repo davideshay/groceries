@@ -57,7 +57,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
     // loop through all the lists with the same listgroup. if the list is in the
     // listgroup, but not on the item add it.
     for (let i = 0; i < listRows.length; i++) {
-      if (listRows[i].listGroupID !== newItemDoc.listGroupID) {break}
+      if (listRows[i].listGroupID !== newItemDoc.listGroupID) {continue}
       let foundIdx=newItemDoc.lists.findIndex((el: ItemList) => el.listID === listRows[i].listDoc._id)
       if (foundIdx === -1) {
           let newItemList: ItemList = cloneDeep(ItemListInit);
@@ -144,7 +144,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
         if (category.toUpperCase() === cat.name.toUpperCase()) {alreadyFound=true}
       });
     if (!alreadyFound) {
-      let result = await addCategoryDoc({"type": "category", "name": category})
+      let result = await addCategoryDoc({"type": "category", "name": category, "color": "#ffffff"})
       if (result.successful) {
           updateAllKey("categoryID",result.pouchData.id);
       } else {

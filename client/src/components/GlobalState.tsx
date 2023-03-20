@@ -19,6 +19,7 @@ export type GlobalSettings = {
 export type GlobalState = {
     itemMode?: string,
     newItemName?: string,
+    newItemGlobalItemID : string | null,
     callingListID?: string,
     callingListType: RowType,
     settings: GlobalSettings,
@@ -41,6 +42,7 @@ export const initSettings: GlobalSettings = {
 const initialState: GlobalState = {
     itemMode: "none",
     newItemName: undefined,
+    newItemGlobalItemID: null,
     callingListID: undefined,
     callingListType: RowType.list,
     settings: initSettings,
