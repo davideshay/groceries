@@ -1,5 +1,5 @@
 import { IonMenu, IonContent, IonMenuToggle, IonList, 
-     IonItem, IonItemDivider, IonListHeader, IonBadge, IonLabel } from '@ionic/react';
+     IonItem, IonItemDivider, IonListHeader, IonBadge } from '@ionic/react';
 import { useContext } from 'react';    
 import { useConflicts, useFriends, UseFriendState } from './Usehooks';    
 import ListsAll from './ListsAll';
@@ -24,9 +24,9 @@ const AppMenu: React.FC = () => {
 
   const friendItem = () => {
     let pendingCount=0;
-    if (useFriendState == UseFriendState.rowsLoaded) {
+    if (useFriendState === UseFriendState.rowsLoaded) {
       friendRows.forEach(friend => {
-        if (friend.resolvedStatus == ResolvedFriendStatus.PendingConfirmation) {pendingCount++}
+        if (friend.resolvedStatus === ResolvedFriendStatus.PendingConfirmation) {pendingCount++}
       })
     }  
     return (<IonMenuToggle key="Friends" autoHide={false}>

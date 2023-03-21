@@ -108,7 +108,6 @@ export interface ListDoc {
   type: string,
   name: string,
   listGroupID: string | null,
-  listOwner: string,
   categories: string[],
   updatedAt: string
 }
@@ -121,7 +120,6 @@ export const ListDocInit:ListDoc = {
   type: "list",
   name: "",
   listGroupID: "",
-  listOwner: "",
   categories: [],
   updatedAt: ""  
 }

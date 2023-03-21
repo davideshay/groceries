@@ -43,7 +43,7 @@ const { cloneDeep, isEmpty, isEqual, isSafeInteger } = require('lodash');
 const {  emailPatternValidation, usernamePatternValidation, fullnamePatternValidation,
      uomContent, globalItems, categories } = require('./utilities');
 let uomContentVersion = 0;
-const targetUomContentVersion = 2;
+const targetUomContentVersion = 3;
 let categoriesVersion = 0;
 const targetCategoriesVersion = 1;
 let globalItemVersion = 0;
@@ -176,13 +176,30 @@ async function setDBSecurity() {
     return (!errorSettingSecurity);
 }
 
-async function addDBIdentifier() {
+async function getLatestDBUUIDDoc() {
     const dbidq = {
         selector: { type: { "$eq": "dbuuid" }}
     }
-    let foundIDDocs =  await todosDBAsAdmin.find(dbidq);
+    let foundIDDocs = null;
+    try {foundIDDocs =  await todosDBAsAdmin.find(dbidq);}
+    catch(err) {console.log("ERROR: could not read dbUUID record"); return undefined;}
     let foundIDDoc = undefined;
-    if (foundIDDocs.docs.length > 0) {foundIDDoc = foundIDDocs.docs[0]}
+    if (foundIDDocs && foundIDDocs.hasOwnProperty('docs')) {
+        if (foundIDDocs.docs.length > 0) {foundIDDoc = foundIDDocs.docs[0]}
+    }   
+    return foundIDDoc;
+}
+
+async function updateDBUUIDDoc(dbuuidDoc) {
+    dbuuidDoc.updatedAt = (new Date()).toISOString();
+    let dbResp = null;
+    try {dbResp = await todosDBAsAdmin.insert(dbuuidDoc);}
+    catch(err) {console.log("ERROR: could not update dbUUID record"); return false;}
+    return dbResp;
+}
+
+async function addDBIdentifier() {
+    let foundIDDoc = await getLatestDBUUIDDoc();
     if (foundIDDoc == undefined) {
         const newDoc = {
             type: "dbuuid",
@@ -194,9 +211,7 @@ async function addDBIdentifier() {
             "schemaVersion": 0,
             updatedAt: (new Date()).toISOString()
         }
-        let dbResp = null;
-        try { dbResp = await todosDBAsAdmin.insert(newDoc) }
-        catch(err) { console.log("ERROR: problem creating UUID:",err)};
+        let dbResp=await updateDBUUIDDoc(newDoc);
         if (dbResp != null) {console.log("STATUS: UUID created in DB: ", newDoc.uuid)}  
     } else {
         if (!foundIDDoc.hasOwnProperty("uuid")) {
@@ -205,33 +220,36 @@ async function addDBIdentifier() {
         }
         if (!foundIDDoc.hasOwnProperty("uomContentVersion")) {
             foundIDDoc.uomContentVersion = 0;
-            let dbResp = null;
-            try { dbResp = await todosDBAsAdmin.insert(foundIDDoc); console.log("STATUS: Updated UOM Content Version, was missing.") }
-            catch(err) { console.log("ERROR: updating UUID record with uomContentVersion"); console.log(JSON.stringify(err));};
+            let dbResp = await updateDBUUIDDoc(foundIDDoc);
+            if (dbResp == null) { console.log("STATUS: Updated UOM Content Version, was missing.") } 
+            else { console.log("ERROR: updating UUID record with uomContentVersion") }
         } else {
             uomContentVersion = foundIDDoc.uomContentVersion;
         }
+        foundIDDoc = await getLatestDBUUIDDoc();
         if (!foundIDDoc.hasOwnProperty("categoriesVersion")) {
             foundIDDoc.categoriesVersion = 0;
-            let dbResp = null;
-            try { dbResp = await todosDBAsAdmin.insert(foundIDDoc); console.log("STATUS: Updated Target Category Content Version, was missing.") }
-            catch(err) { console.log("ERROR: updating UUID record with categoriesVersion"); console.log(JSON.stringify(err));};
+            let dbResp = await updateDBUUIDDoc(foundIDDoc);
+            if (dbResp == null) { console.log("STATUS: Updated Categories Content Version, was missing.") } 
+            else { console.log("ERROR: updating UUID record with categoriesVersion") }
         } else {
             categoriesVersion = foundIDDoc.categoriesVersion;
         }
+        foundIDDoc = await getLatestDBUUIDDoc();        
         if (!foundIDDoc.hasOwnProperty("globalItemVersion")) {
             foundIDDoc.globalItemVersion = 0;
-            let dbResp = null;
-            try { dbResp = await todosDBAsAdmin.insert(foundIDDoc); console.log("STATUS: Updated Target Global Item Content Version, was missing.") }
-            catch(err) { console.log("ERROR: updating UUID record with globalItemVersion"); console.log(JSON.stringify(err));};
+            let dbResp = await updateDBUUIDDoc(foundIDDoc);
+            if (dbResp == null) { console.log("STATUS: Updated global Item Content Version, was missing.") } 
+            else { console.log("ERROR: updating UUID record with globalItemVersion") }
         } else {
             globalItemVersion = foundIDDoc.globalItemVersion;
         }
+        foundIDDoc = await getLatestDBUUIDDoc();
         if (!foundIDDoc.hasOwnProperty("schemaVersion")) {
             foundIDDoc.schemaVersion = 0;
-            let dbResp = null;
-            try { dbResp = await todosDBAsAdmin.insert(foundIDDoc); console.log("STATUS: Updated Schema Version, was missing.") }
-            catch(err) { console.log("ERROR: updating UUID record with schemaVersion"); console.log(JSON.stringify(err));};
+            let dbResp = await updateDBUUIDDoc(foundIDDoc);
+            if (dbResp == null) { console.log("STATUS: Updated Categories Content Version, was missing.") } 
+            else { console.log("ERROR: updating UUID record with schemaVersion") }
         } else {
             schemaVersion = foundIDDoc.schemaVersion;
         }
@@ -246,8 +264,20 @@ async function createUOMContent() {
     let foundUOMDocs =  await todosDBAsAdmin.find(dbuomq);
     for (let i = 0; i < uomContent.length; i++) {
         uom = uomContent[i];
-        const docIdx=foundUOMDocs.docs.findIndex((el) => el.name === uom.name );
-        if (docIdx == -1) {
+        const docIdx=foundUOMDocs.docs.findIndex((el) => (el.name.toUpperCase() === uom.name.toUpperCase() || el._id === uom._id));
+        let needsAdded=true;
+        if (docIdx !== -1) {
+            let thisDoc = foundUOMDocs.docs[docIdx];
+            if (thisDoc._id === uom._id) {
+                console.log("STATUS: UOM ",uom.name," already exists...skipping...");
+                needsAdded=false;
+            } else {
+                let dbResp = null;
+                try { dbResp = await todosDBAsAdmin.destroy(thisDoc._id,thisDoc._rev)}
+                catch(err) {console.log("ERROR deleting / replacing existing UOM: ", err);}
+            }
+        }
+        if (needsAdded) {
             console.log("STATUS: Adding uom ",uom.name, " ", uom.description);
             let dbResp = null;
             try { dbResp = await todosDBAsAdmin.insert(uom);}
@@ -257,20 +287,14 @@ async function createUOMContent() {
         }
     };
     console.log("STATUS: Finished adding units of measure, updating to UOM Content Version:",targetUomContentVersion);
-    const dbidq = {
-        selector: { type: { "$eq": "dbuuid" }}
-    }
-    let foundIDDocs =  await todosDBAsAdmin.find(dbidq);
-    let foundIDDoc = undefined;
-    if (foundIDDocs.docs.length > 0) {foundIDDoc = foundIDDocs.docs[0]}
+    let foundIDDoc = await getLatestDBUUIDDoc();
     if (foundIDDoc == undefined) {
         console.log("ERROR: Couldn't update database content version record.");
     } else {
         foundIDDoc.uomContentVersion = targetUomContentVersion;
-        let dbResp = null;
-        try { dbResp = await todosDBAsAdmin.insert(foundIDDoc)}
-        catch(err) { console.log("ERROR: Couldn't update UOM target version.")};
-        console.log("STATUS: Updated UOM Target Version successfully.");
+        let dbResp = await updateDBUUIDDoc(foundIDDoc);
+        if (dbResp == null) { console.log("ERROR Couldn't update UOM target version.")}
+        else { console.log("STATUS: Updated UOM Target Version successfully."); }
     }
 }
 
@@ -284,23 +308,28 @@ async function createCategoriesContent() {
         let category = categories[i];
         category.type = "category";
         category.color = "#ffffff";
-        const docIdx=foundCategoryDocs.docs.findIndex((el) => (el.name === category.name || el._id === category._id));
-        if (docIdx == -1) {
+        const docIdx=foundCategoryDocs.docs.findIndex((el) => (el.name.toUpperCase() === category.name.toUpperCase() || el._id === category._id));
+        let needsAdded = true;
+        if (docIdx !== -1) {
+            let thisDoc = foundCategoryDocs.docs[docIdx]
+            if (thisDoc._id === category._id) {
+                console.log("STATUS: Category ",category.name," already exists...skipping");
+                needsAdded=false;
+            } else {
+                let dbResp = null;
+                try { dbResp = await todosDBAsAdmin.destroy(thisDoc._id,thisDoc._rev)}
+                catch(err) { console.log("ERROR: deleting category for replacement:", err);}
+            }
+        }
+        if (needsAdded) {
             console.log("STATUS: Adding category ",category.name);
             let dbResp = null;
             try { dbResp = await todosDBAsAdmin.insert(category);}
             catch(err) { console.log("ERROR: adding category ",category.name, " error: ",err);}
-        } else {
-            console.log("STATUS: Category ",category.name," already exists...skipping");
-        }
+        } 
     };
     console.log("STATUS: Finished adding categories, updating to category Version:",targetCategoriesVersion);
-    const dbidq = {
-        selector: { type: { "$eq": "dbuuid" }}
-    }
-    let foundIDDocs =  await todosDBAsAdmin.find(dbidq);
-    let foundIDDoc = undefined;
-    if (foundIDDocs.docs.length > 0) {foundIDDoc = foundIDDocs.docs[0]}
+    let foundIDDoc = await getLatestDBUUIDDoc();
     if (foundIDDoc == undefined) {
         console.log("ERROR: Couldn't update database content version record.");
     } else {
@@ -332,20 +361,14 @@ async function createGlobalItemContent() {
         }
     };
     console.log("STATUS: Finished adding global Items, updating to Global Item Version:",targetGlobalItemVersion);
-    const dbidq = {
-        selector: { type: { "$eq": "dbuuid" }}
-    }
-    let foundIDDocs =  await todosDBAsAdmin.find(dbidq);
-    let foundIDDoc = undefined;
-    if (foundIDDocs.docs.length > 0) {foundIDDoc = foundIDDocs.docs[0]}
+    let foundIDDoc = await getLatestDBUUIDDoc();
     if (foundIDDoc == undefined) {
         console.log("ERROR: Couldn't update database content version record.");
     } else {
         foundIDDoc.globalItemVersion = targetGlobalItemVersion;
-        let dbResp = null;
-        try { dbResp = await todosDBAsAdmin.insert(foundIDDoc)}
-        catch(err) { console.log("ERROR: Couldn't update Global Item target version.")};
-        console.log("STATUS: Updated Global Item Target Version successfully.");
+        let dbResp = await updateDBUUIDDoc(foundIDDoc);
+        if (dbResp == null) { console.log("ERROR: Couldn't update Global Item target version.") }
+        else {console.log("STATUS: Updated Global Item Target Version successfully.");}
     }
 }
 
@@ -408,39 +431,20 @@ async function addStockedAtIndicatorToSchema() {
 
 async function restructureListGroupSchema() {
     let updateSuccess = true;
-    console.log("STATUS: Upgrading schema to support listGroups.");
-    console.log("STATUS: Upgrading lists");
-    const listq = { selector: { type: { "$eq": "list"}},
-                    limit: await totalDocCount(todosDBAsAdmin)};
-    let foundListDocs;
-    try {foundListDocs = await todosDBAsAdmin.find(listq);}
-    catch (err) {console.log("ERROR: Could not find lists to update:",err); return false;}
-    console.log("STATUS: Found lists to update: ", foundListDocs.docs.length);
-    for (let i = 0; i < foundListDocs.docs.length; i++) {
-        const foundListDoc = foundListDocs.docs[i];
-        console.log("Processing list: ", foundListDoc.name);
-        delete foundListDoc.sharedWith;
-        delete foundListDoc.listOwner;
-        let dbResp = null;
-        try { dbResp = await todosDBAsAdmin.insert(foundListDoc)}
-        catch(err) { console.log("ERROR: Couldn't update list to remove shared With.");
-                     updateSuccess = false;}
+    console.log("STATUS: Upgrading schema to support listGroups. Most data will be lost in this upgrade.");
+    // Delete both lists and items because of structure changes and because categories in list are most likely
+    // completely replaced with new Category content/system IDs at same time
+    const delq = { selector: { type : { "$in": ["list","item"]}}, limit: await totalDocCount(todosDBAsAdmin)};
+    let foundDelDocs;
+    try { foundDelDocs = await todosDBAsAdmin.find(delq)}
+    catch(err) { console.log("ERROR: Could not find items/lists to delete:",err); return false;}
+    console.log("Found items/lists to delete:",foundDelDocs.docs.length);
+    for (let i = 0; i < foundDelDocs.docs.length; i++) {
+        let dbResp=null;
+        try { dbResp=await todosDBAsAdmin.destroy(foundDelDocs.docs[i]._id,foundDelDocs.docs[i]._rev)}
+        catch(err) {console.log("ERROR deleting list/item:",err);}        
     }
-    const itemq = { selector: { type: { "$eq": "item"}},
-                    limit: await totalDocCount(todosDBAsAdmin)};
-    let foundItemDocs;                
-    try {foundItemDocs = await todosDBAsAdmin.find(itemq);}
-    catch(err) {console.log("ERROR: Could not find lists to update during schema update:",err); return false;}
-    console.log("STATUS: Found items to update :", foundItemDocs.docs.length)
-    for (let i = 0; i < foundItemDocs.docs.length; i++) {
-        const foundItemDoc = foundItemDocs.docs[i];
-        console.log("Deleting item: ", foundItemDoc.name);
-        let dbResp = null;
-        try { dbResp = await todosDBAsAdmin.destroy(foundItemDoc._id,foundItemDoc._rev)}
-        catch(err) { console.log("ERROR: Couldn't delete item:",foundItemDoc.name);
-                     updateSuccess = false;}
- 
-    }
+    console.log("STATUS: Finished deleting lists and items.");
     console.log("STATUS: Creating default listgroups for all users");
     const userq = { selector: { type: "user", name: {$exists: true}}, limit: await totalDocCount(usersDBAsAdmin)};
     let foundUserDocs;
@@ -449,9 +453,9 @@ async function restructureListGroupSchema() {
     console.log("STATUS: Found users to create listgroups: ", foundUserDocs.docs.length);
     for (let i = 0; i < foundUserDocs.docs.length; i++) {
         const foundUserDoc = foundUserDocs.docs[i];
-        const listgroupq = { selector: { type: "listgroup", listGroupOwner: foundUserDoc.name, default: true}};
+        const listgroupq = { selector: { type: "listgroup", listGroupOwner: foundUserDoc.name, default: true},
+                             limit: await totalDocCount(todosDBAsAdmin)};
         let foundListGroupDocs = await todosDBAsAdmin.find(listgroupq);
-        console.log("foundListGroupDocs:", JSON.stringify(foundListGroupDocs));
         if (foundListGroupDocs.docs.length == 0) {
             console.log("STATUS: No default listgroup found for :",foundUserDoc.name," ... creating...");
             let newCurDateStr = (new Date()).toISOString()
@@ -472,22 +476,14 @@ async function restructureListGroupSchema() {
 
 async function setSchemaVersion(updSchemaVersion) {
     console.log("STATUS: Finished schema updates, updating database to :",updSchemaVersion);
-    const dbidq = {
-        selector: { type: { "$eq": "dbuuid" }}
-    }
-    let foundIDDocs;
-    try {foundIDDocs =  await todosDBAsAdmin.find(dbidq);}
-    catch (err) {console.log("ERROR: Couldn't find DBUUID record"); return false;}
-    let foundIDDoc = undefined;
-    if (foundIDDocs.docs.length > 0) {foundIDDoc = foundIDDocs.docs[0]}
+    let foundIDDoc = await getLatestDBUUIDDoc();
     if (foundIDDoc == undefined) {
         console.log("ERROR: Couldn't update database schema version record.");
     } else {
         foundIDDoc.schemaVersion = updSchemaVersion;
-        let dbResp = null;
-        try { dbResp = await todosDBAsAdmin.insert(foundIDDoc)}
-        catch(err) { console.log("ERROR: Couldn't update schema target version.")};
-        console.log("STATUS: Updated schema target version successfully.");
+        let dbResp = updateDBUUIDDoc(foundIDDoc);
+        if (dbResp == null) {console.log("ERROR: Couldn't update schema target version.")}
+        else {console.log("STATUS: Updated schema target version successfully.")}
     }
 }
 
@@ -543,8 +539,8 @@ async function dbStartup() {
     try {usersDBAsAdmin = usersNanoAsAdmin.use("_users");}
     catch(err) {console.log("ERROR: Could not open users database:", err); return false;}
     await addDBIdentifier();
-    await checkAndCreateContent();
     await checkAndUpdateSchema();
+    await checkAndCreateContent();
     await createConflictsView();
     if (enableScheduling) {
         if(isInteger(resolveConflictsFrequencyMinutes)) {
@@ -618,7 +614,7 @@ async function getUserByEmailDoc(email) {
         fullname: null,
         email: email,
     }
-    const query={selector: {"email": {"$eq": email}}};
+    const query={selector: {"email": {"$eq": email}}, limit: totalDocCount(usersDBAsAdmin)};
     let res = null;
     try { res = await usersDBAsAdmin.find(query);}
     catch(err) { console.log("ERROR getting user by email:",err); userResponse.error= true }
@@ -667,8 +663,10 @@ async function issueToken(req, res) {
         couchdbDatabase: process.env.COUCHDB_DATABASE
     }
     let loginResponse = await couchLogin(username,password);
-    if (!loginResponse.loginSuccessful) return (response);
-
+    if (!loginResponse.loginSuccessful) {
+         console.log("STATUS: Authentication failed for device: ",deviceUUID, " user: ",username);
+         return (response);
+        }     
     let userDoc = await getUserDoc(username);
     if (loginResponse.loginSuccessful && !(userDoc.error)) {
          response.loginSuccessful = loginResponse.loginSuccessful;
@@ -1054,7 +1052,8 @@ async function createAccountUIPost(req,res) {
     }
 
     const emailq = {
-        selector: { type: { "$eq": "friend" }, inviteEmail: { "$eq": req.body.email}}
+        selector: { type: { "$eq": "friend" }, inviteEmail: { "$eq": req.body.email},
+                    limit: totalDocCount(todosDBAsAdmin)}
     }
     let foundFriendDocs;
     try {foundFriendDocs =  await todosDBAsAdmin.find(emailq);}

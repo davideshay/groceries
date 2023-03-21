@@ -1,10 +1,10 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
   IonButtons, IonMenuButton, IonText, useIonAlert, isPlatform, IonIcon, useIonLoading, AlertOptions } from '@ionic/react';
-import { useState, useEffect, useContext, useRef } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { eye, eyeOff } from 'ionicons/icons';
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import { usePouch} from 'use-pouchdb';
-import { ConnectionStatus, DBCreds, DBUUIDAction, RemoteDBState } from '../components/RemoteDBState';
+import { ConnectionStatus, DBCreds, DBUUIDAction } from '../components/RemoteDBState';
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
 import { createNewUser, getTokenInfo, navigateToFirstListID,  } from '../components/RemoteUtilities';
@@ -76,7 +76,6 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     const { remoteDBState, remoteDBCreds, setRemoteDBState, setRemoteDBCreds, errorCheckCreds, assignDB, setDBCredsValue} = useContext(RemoteDBStateContext);
     const { listRowsLoaded, listRows } = useLists();
     const [ present, dismiss ]= useIonLoading();
-    const screenLoading = useRef(true);
 
     // useEffect for initial page launch
     useEffect( () => {
@@ -177,6 +176,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       await dismiss();
       return;
     }
+    console.log("creds check ok... trying to issue token...");
     let response: HttpResponse;
     const options = {
         url: String(remoteDBCreds.apiServerURL+"/issuetoken"),
@@ -195,6 +195,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
                 setRemoteDBState({...remoteDBState, serverAvailable: false});
                 await dismiss();
                 return}
+    console.log("did API /issuetoken : result: ", cloneDeep(response));            
     if (!((response?.status === 200) && (response?.data?.loginSuccessful))) {
         setRemoteState(prevState => ({...prevState, formError: "Invalid Authentication"}))
         await dismiss();

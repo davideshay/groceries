@@ -1,8 +1,8 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonItemGroup,
   IonItemDivider, IonButton, IonButtons, IonFab, IonFabButton, IonIcon, IonCheckbox, IonLabel, IonSelect,
-  IonSelectOption, IonSearchbar, IonPopover, IonAlert,IonMenuButton, useIonToast, IonGrid, IonRow, 
-  IonCol, useIonAlert, IonLoading} from '@ionic/react';
-import { add } from 'ionicons/icons';
+  IonSelectOption, IonSearchbar, IonInput, IonPopover, IonAlert,IonMenuButton, useIonToast, IonGrid, IonRow, 
+  IonCol, useIonAlert, IonLoading, useIonPopover} from '@ionic/react';
+import { add, hourglassOutline, searchOutline } from 'ionicons/icons';
 import React, { useState, useEffect, useContext, useRef, KeyboardEvent } from 'react';
 import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
@@ -25,7 +25,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
           ignoreCheckOffWarning: false,
           groupIDforSelectedList: "",
           doingUpdate: false, itemRows: [], showAlert: false, alertHeader: "", alertMessage: ""});
-  const searchRef=useRef<HTMLIonSearchbarElement>(null);
+  const searchRef=useRef<HTMLIonInputElement>(null);
   const origSearchCriteria = useRef("");
   const [presentToast] = useIonToast();
   const [presentAlert, dismissAlert] = useIonAlert();
@@ -96,9 +96,15 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   useEffect( () => {
     let filterRows=filterSearchRows(searchRows, searchState.searchCriteria)
+    console.log("new filtered rows: ", cloneDeep(filterRows));
+    
+    console.log("search changed: ",cloneDeep(searchState.searchCriteria),"is focused: ",cloneDeep(searchState.isFocused),"is open:",cloneDeep(searchState.isOpen));
+//    if (filterRows.length > 0 ) {
     if (filterRows.length > 0 && searchState.isFocused ) {
+      console.log("setting isOpen true");
       setSearchState(prevState => ({...prevState, filteredSearchRows: filterRows, isOpen: true }));
     } else {
+      console.log("setting isOpen False");
       setSearchState(prevState => ({...prevState, filteredSearchRows: [], isOpen: false}));
     }  
   },[searchState.searchCriteria,searchState.isFocused])
@@ -119,6 +125,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   screenLoading.current=false;
 
   function updateSearchCriteria(event: CustomEvent) {
+    console.log("updating search criteria:",event.detail.value);
     setSearchState(prevState => ({...prevState, event: event, searchCriteria: event.detail.value}));
     origSearchCriteria.current=event.detail.value;
   }  
@@ -136,12 +143,14 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       setGlobalStateInfo("callingListID",pageState.selectedListOrGroupID);
       setGlobalStateInfo("callingListType",pageState.selectedListType);
       setGlobalStateInfo("newItemName",itemName);
+      console.log("ANITL: setting is focused/isopen to false");
       setSearchState(prevState => ({...prevState, isOpen: false,searchCriteria:"",isFocused: false}))
       props.history.push("/item/new/");
     }
   }
   
   function searchKeyPress(event: KeyboardEvent<HTMLElement>) {
+    console.log("key pressed", event.key);
     if (event.key === "Enter") {
       addNewItemToList(searchState.searchCriteria)
     }
@@ -152,11 +161,13 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function leaveSearchBox() {
+    console.log("leaving search box... setting is open false");
     origSearchCriteria.current=searchState.searchCriteria;
-    setSearchState(prevState => ({...prevState, isOpen: false, isFocused: false}));
+    setSearchState(prevState => ({...prevState, isOpen: false}));
   }
 
   function enterSearchBox(event: Event) {
+    console.log("entering Search Box..., setting is focused to true");
     let toOpen=true;
     if (searchState.filteredSearchRows.length === 0) { toOpen = false}
     setSearchState(prevState => ({...prevState, event: event, isFocused: true,isOpen: toOpen}));
@@ -236,58 +247,10 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function chooseSearchItem(item: ItemSearch) {
+    console.log("AEITL setting is open and is focused to false" );
     addExistingItemToList(item);
     setSearchState(prevState => ({...prevState, searchCriteria: "", filteredRows: [],isOpen: false, isFocused: false}))
   }
-
-  let popOverElem = (
-    <IonPopover side="bottom" event={searchState.event} isOpen={searchState.isOpen} keyboardClose={false} onDidDismiss={() => {leaveSearchBox()}}>
-    <IonContent><IonList key="popoverItemList">
-      {(searchState.filteredSearchRows as ItemSearch[]).map((item: ItemSearch) => (
-        <IonItem key={pageState.selectedListOrGroupID+"-poilist-"+item.itemID} onClick={() => chooseSearchItem(item)}>{item.itemName}</IonItem>
-      ))}
-    </IonList></IonContent>
-    </IonPopover>
-  )
-
-  let alertElem = (
-    <IonAlert
-      isOpen={pageState.showAlert}
-      onDidDismiss={() => setPageState(prevState => ({...prevState,showAlert: false, alertHeader:"",alertMessage:""}))}
-      header={pageState.alertHeader}
-      message={pageState.alertMessage}
-      buttons={["OK"]}
-    />
-  )
-  
-  let headerElem=(
-    <IonHeader><IonToolbar><IonButtons slot="start"><IonMenuButton /></IonButtons>
-    <IonTitle class="ion-no-padding">
-        <IonItem key="listselector">
-        <IonSelect label="Items On" aria-label="Items On List:" interface="popover" onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListOrGroupID}>
-            {listCombinedRows.map((listCombinedRow: ListCombinedRow) => (
-                <IonSelectOption disabled={listCombinedRow.rowKey=="G-null"} className={listCombinedRow.rowType == RowType.list ? "indented" : ""} key={listCombinedRow.listOrGroupID} value={listCombinedRow.listOrGroupID}>
-                  {listCombinedRow.rowName}
-                </IonSelectOption>
-            ))}
-          </IonSelect>
-        <SyncIndicator history={props.history}/>  
-        </IonItem>
-        <IonItem key="searchbar">
-          <IonSearchbar class="ion-no-padding" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="search" enterkeyhint="enter"
-              onKeyDown= {(e) => searchKeyPress(e)}
-              onIonInput={(e) => updateSearchCriteria(e)}
-              onClick={(e: any) => enterSearchBox(e)}>
-          </IonSearchbar>
-          {/* <IonButton onClick={()=> clickedSearchCheck()}><IonIcon icon={checkmark} /></IonButton> */}
-        </IonItem>
-        {popOverElem}
-        {alertElem}
-    </IonTitle></IonToolbar></IonHeader>)
-
-  if (pageState.itemRows.length <=0 )  {return(
-    <IonPage>{headerElem}<IonContent><IonItem key="nonefound"><IonLabel key="nothinghere">No Items On List</IonLabel></IonItem></IonContent></IonPage>
-  )};  
 
   async function completeItemRow(id: String, newStatus: boolean | null) {
     if (pageState.selectedListType == RowType.listGroup && !pageState.ignoreCheckOffWarning) {
@@ -341,17 +304,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   }
 
-  let listContent=[];
-
-  function addCurrentRows(listCont: any, curRows: any, catID: string, catName: string, completed: boolean | null) {
-    listCont.push(
-        <IonItemGroup key={"cat"+catID+Boolean(completed).toString()}>
-        <IonItemDivider key={"cat"+catID+Boolean(completed).toString()}>{catName}</IonItemDivider>
-          {curRows}
-      </IonItemGroup>
-    )
-  }
-
   async function deleteCompletedItems(itemDocs: ItemDocs,listID: string) {
     (itemDocs as ItemDocs).forEach(async (itemDoc) => {
         let updatedItem: ItemDoc=cloneDeep(itemDoc);
@@ -367,6 +319,85 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
             }    
         }
     });
+  }
+
+//     <IonPopover side="bottom" event={searchState.event} isOpen={searchState.isOpen} keyboardClose={false} >
+
+  //     <IonPopover side="bottom" event={searchState.event} isOpen={searchState.isOpen} keyboardClose={false} onDidDismiss={() => {leaveSearchBox()}}>
+
+  let popOverElem = (
+    <IonPopover side="bottom" event={searchState.event} isOpen={searchState.isOpen} keyboardClose={false} onDidDismiss={(e) => {console.log("did dismiss:e:",cloneDeep(e)); leaveSearchBox()}}>
+    <IonContent><IonList key="popoverItemList">
+      {(searchState.filteredSearchRows as ItemSearch[]).map((item: ItemSearch) => (
+        <IonItem button key={pageState.selectedListOrGroupID+"-poilist-"+item.itemID} onClick={(e) => {console.log("clicked", cloneDeep(e)); chooseSearchItem(item)}}>{item.itemName}</IonItem>
+      ))}
+    </IonList></IonContent>
+    </IonPopover>
+  )
+
+  let alertElem = (
+    <IonAlert
+      isOpen={pageState.showAlert}
+      onDidDismiss={() => setPageState(prevState => ({...prevState,showAlert: false, alertHeader:"",alertMessage:""}))}
+      header={pageState.alertHeader}
+      message={pageState.alertMessage}
+      buttons={["OK"]}
+    />
+  )
+ //                onIonBlur={() => {console.log("searchbar out of focus"); setSearchState((prevState) => ({...prevState,isFocused: false}))}}
+ 
+/*  <IonSearchbar class="ion-no-padding" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="search" enterkeyhint="enter"
+ onKeyDown= {(e) => searchKeyPress(e)}
+ onIonInput={(e) => updateSearchCriteria(e)}
+ onClick={(e: any) => enterSearchBox(e)} 
+ onIonFocus={(e: any) => {console.log("searchbar focused", cloneDeep(e)); setSearchState((prevState) => ({...prevState,isFocused: true}))}}   >
+</IonSearchbar>
+ */
+
+//               onIonBlur={() => {console.log("searchbar out of focus"); setSearchState((prevState) => ({...prevState,isFocused: false}))}}
+
+
+  let headerElem=(
+    <IonHeader><IonToolbar><IonButtons slot="start"><IonMenuButton /></IonButtons>
+    <IonTitle class="ion-no-padding">
+        <IonItem key="listselector">
+        <IonSelect label="Items On" aria-label="Items On List:" interface="popover" onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListOrGroupID}  >
+            {listCombinedRows.map((listCombinedRow: ListCombinedRow) => (
+                <IonSelectOption disabled={listCombinedRow.rowKey=="G-null"} className={listCombinedRow.rowType == RowType.list ? "indented" : ""} key={listCombinedRow.listOrGroupID} value={listCombinedRow.listOrGroupID}>
+                  {listCombinedRow.rowName}
+                </IonSelectOption>
+            ))}
+          </IonSelect>
+        <SyncIndicator history={props.history}/>  
+        </IonItem>
+        <IonItem key="searchbar">
+          <IonIcon icon={searchOutline} />
+          <IonInput aria-label="" class="ion-no-padding" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="search" enterkeyhint="enter"
+              clearInput={true}
+              onKeyDown= {(e) => searchKeyPress(e)}
+              onIonInput={(e) => updateSearchCriteria(e)}
+              onClick={(e: any) => enterSearchBox(e)} 
+              onIonFocus={(e: any) => {console.log("searchbar focused", cloneDeep(e)); setSearchState((prevState) => ({...prevState,isFocused: true}))}}   >
+           </IonInput>
+          {/* <IonButton onClick={()=> clickedSearchCheck()}><IonIcon icon={checkmark} /></IonButton> */}
+        </IonItem>
+        {popOverElem}
+        {alertElem}
+    </IonTitle></IonToolbar></IonHeader>)
+
+  if (pageState.itemRows.length <=0 )  {return(
+    <IonPage>{headerElem}<IonContent><IonItem key="nonefound"><IonLabel key="nothinghere">No Items On List</IonLabel></IonItem></IonContent></IonPage>
+  )};  
+
+  let listContent=[];
+
+  function addCurrentRows(listCont: any, curRows: any, catID: string, catName: string, completed: boolean | null) {
+    listCont.push(
+        <IonItemGroup key={"cat"+catID+Boolean(completed).toString()}>
+        <IonItemDivider key={"cat"+catID+Boolean(completed).toString()}>{catName}</IonItemDivider>
+          {curRows}
+      </IonItemGroup>
+    )
   }
 
   let lastCategoryID : string | null ="<INITIAL>";
@@ -400,8 +431,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         </IonCol>
         <IonCol size="11">
           <IonItem class="item-button" routerLink={"/item/edit/"+item.itemID} key={pageState.itemRows[i].itemID+"mynewbutton"}>{item.itemName + (item.quantityUOMDesc == "" ? "" : " ("+ item.quantityUOMDesc+")")}</IonItem>
-          {/* <a href={"/item/edit/"+item.itemID}>{item.itemName + (item.quantityUOMDesc == "" ? "" : " ("+ item.quantityUOMDesc+")")}</a> */}
-          {/* <IonButton expand="block" fill="clear" class="textButton item-button" routerLink={"/item/edit/"+item.itemID}>{item.itemName + (item.quantityUOMDesc == "" ? "" : " ("+ item.quantityUOMDesc+")")}</IonButton> */}
         </IonCol>
         </IonRow></IonGrid>
       </IonItem>);
