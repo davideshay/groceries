@@ -1,3 +1,18 @@
+export const maxAppSupportedSchemaVersion = 3;
+
+export interface UUIDDoc {
+  _id: string,
+  _rev: string,
+  type: string,
+  name: string,
+  uuid: string,
+  updatedAt: string,
+  uomContentVersion: number,
+  schemaVersion: number,
+  categoriesVersion: number,
+  globalItemVersion: number
+}
+
 export interface CategoryDoc {
     _id: string,
     _rev: string,

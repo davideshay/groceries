@@ -1,10 +1,10 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
-  IonButtons, IonMenuButton, IonText, useIonAlert, isPlatform, IonIcon, useIonLoading } from '@ionic/react';
+  IonButtons, IonMenuButton, IonText, useIonAlert, isPlatform, IonIcon, useIonLoading, AlertOptions } from '@ionic/react';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { eye, eyeOff } from 'ionicons/icons';
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import { usePouch} from 'use-pouchdb';
-import { ConnectionStatus, DBCreds, DBUUIDAction } from '../components/RemoteDBState';
+import { ConnectionStatus, DBCreds, DBUUIDAction, RemoteDBState } from '../components/RemoteDBState';
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
 import { createNewUser, getTokenInfo, navigateToFirstListID,  } from '../components/RemoteUtilities';
@@ -87,15 +87,29 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
 
     // effect for dbuuidaction not none
     useEffect( () => {
+      async function presentAndExit(alertObject: AlertOptions) {
+        await presentAlert(alertObject);
+        setRemoteDBState(({...remoteDBState,dbUUIDAction: DBUUIDAction.none}))
+      };
       if (remoteDBState.dbUUIDAction !== DBUUIDAction.none) {
+        console.log("got to schema mismatch....");
+        if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_schema_mismatch) {
+          console.log("ERROR: Schema too new, not supported with this app version. Upgrade.");
+          presentAndExit({
+            header:"ERROR",
+            message: "This application does not support a detected newer version of the schema. Please upgrade the app and try again.",
+            buttons: [{text:"OK",handler: () => exitApp()}]
+          });
+
+          return;
+        }
         if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_no_uuid_on_server) {
           console.log("ERROR: No database UUID defined in server todos database. Cannot continue");
-          presentAlert({
+          presentAndExit({
             header: "ERROR",
             message: "The server is incorrectly configured with no unique ID. Please ensure server process is running.",
             buttons: ["OK"]
           });
-          exitApp();
           return;
         } else if (remoteDBState.dbUUIDAction === DBUUIDAction.destroy_needed) {
           presentAlert( {
@@ -127,11 +141,12 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       exitApp();
     }
 
-    function exitApp() {
+    async function exitApp() {
       if (!(isPlatform("desktop") || isPlatform("electron"))) {App.exitApp()}
       console.log("RESETTING TO INITSTATE");
       setRemoteDBState(initialRemoteDBState);
-      window.location.replace('/');
+      window.location.replace('about:blank');
+//      window.location.replace('/');
   
     }
 

@@ -2,6 +2,7 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
         IonMenuButton, IonButtons, IonButton, useIonAlert, IonInput,
         IonRadioGroup, IonRadio, IonCheckbox, isPlatform, IonItemDivider } from '@ionic/react';
 import { useContext, useEffect, useState } from 'react';        
+import { usePouch } from 'use-pouchdb';
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
 import './Settings.css';
@@ -11,6 +12,7 @@ import { initialRemoteDBState, RemoteDBStateContext,  } from '../components/Remo
 import { HistoryProps } from '../components/DataTypes';
 
 const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
+  const db = usePouch();
   const [presentAlert] = useIonAlert();
   const {globalState, updateSettingKey} = useContext(GlobalStateContext);
   const { remoteDBCreds, setRemoteDBState } = useContext(RemoteDBStateContext);
@@ -35,6 +37,19 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
     return false;
   }
 
+  async function destroyDB() {
+    await db.destroy();
+    let credsStr=JSON.stringify({});
+    await Preferences.set({key: 'dbcreds', value: credsStr})
+    if (!(isPlatform("desktop") || isPlatform("electron"))) {App.exitApp()}
+    console.log("RESETTING TO INITSTATE");
+    setRemoteDBState(initialRemoteDBState);
+    window.location.replace('/');
+//    navigate('/');
+    return false;
+  }
+
+
   function stopSyncPopup() {
     presentAlert({
       header: 'Warning',
@@ -52,6 +67,25 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
         ]
     })
   }
+
+  function destroyDBPopup() {
+    presentAlert({
+      header: 'Warning',
+      subHeader: '',
+      message: 'Do you want to remove the local database? This will cause the application to restart and allow you to sign in again if desired. It will also re-sync all data from the server.',
+      buttons: [
+        {
+          text:'Cancel',
+          role: 'cancel',
+          handler: () => {}},
+        {
+        text: 'Remove',
+        role: 'confirm',
+        handler: () => {destroyDB()}}
+        ]
+    })
+  }
+
 
   function changeSetting(key: string, value: any) {
     updateSettingKey(key,value);
@@ -74,7 +108,8 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
           <IonItem>UserID: {remoteDBCreds.dbUsername}</IonItem>
           <IonItem>E-mail: {remoteDBCreds.email}</IonItem>
           <IonItem key="logout">
-            <IonButton onClick={() => stopSyncPopup()} key="stopitall">Stop Sync & Logout</IonButton>
+            <IonButton slot="start" onClick={() => stopSyncPopup()} key="stopitall">Stop Sync & Logout</IonButton>
+            <IonButton slot="end" onClick={() => destroyDBPopup()} key="deletedb">Delete Local Database</IonButton>
           </IonItem>
           <IonItemDivider>Add To Other List Options</IonItemDivider> 
           <IonRadioGroup value={localSettings?.addListOption} onIonChange={(e) => changeSetting("addListOption",e.detail.value)}>

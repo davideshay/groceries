@@ -48,7 +48,6 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   const addListToAllItems = useAddListToAllItems();
   const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
   const [ presentToast ] = useIonToast();
-  const {useFriendState, friendRows} = useFriends(String(remoteDBCreds.dbUsername));
   const { dbError: listError, listDocs, listsLoading, listRowsLoaded, listRows, listCombinedRows } = useLists();
   const { docs: categoryDocs, loading: categoryLoading, error: categoryError } = useFind({
     index: { fields: [ "type","name"] },
@@ -65,7 +64,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   useEffect( () => {
     let newPageState: PageState=cloneDeep(pageState);
-    if (!listsLoading && listRowsLoaded && (useFriendState === UseFriendState.rowsLoaded) && !categoryLoading) {
+    if (!listsLoading && listRowsLoaded && !categoryLoading) {
       if (mode === "new" && pageState.needInitListDoc) {
         let initCategories=categoryDocs.map(cat => cat._id);
         let initListDoc : ListDoc = cloneDeep(ListDocInit);
@@ -90,15 +89,15 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
       newPageState.changesMade=false;
       setPageState(newPageState);
     }
-  },[listsLoading, listRowsLoaded, listGroupLoading, listDocs, listCombinedRows, mode, listGroupDoc, useFriendState,friendRows, categoryLoading,categoryDocs,pageState.selectedListID, remoteDBState.accessJWT]);
+  },[listsLoading, listRowsLoaded, listGroupLoading, listDocs, listCombinedRows, mode, listGroupDoc, categoryLoading,categoryDocs,pageState.selectedListID, remoteDBState.accessJWT]);
 
-  if (useFriendState == UseFriendState.error || listError || listGroupError || categoryError) {
+  if (listError || listGroupError || categoryError) {
     screenLoading.current=false;
     return (
     <ErrorPage errorText="Error Loading List Information... Restart."></ErrorPage>
   )}
 
-  if (listsLoading || !listRowsLoaded || (useFriendState !== UseFriendState.rowsLoaded) || categoryLoading || isEmpty(pageState.listDoc) || (listGroupLoading && pageState.listGroupID !== null) || pageState.deletingDoc)  {return(
+  if (listsLoading || !listRowsLoaded || categoryLoading || isEmpty(pageState.listDoc) || (listGroupLoading && pageState.listGroupID !== null) || pageState.deletingDoc)  {return(
       <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
       <IonContent><IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false;}} 
                    message="Loading Data..."></IonLoading>
@@ -254,7 +253,10 @@ function deletePrompt() {
   }
   
   for (let i = 0; i < pageState.listDoc.categories.length; i++) {
-    categoryLines.push(catItem(pageState.listDoc.categories[i],true));
+    let validList = (categoryDocs as CategoryDoc[]).find((cat) => pageState.listDoc.categories[i] === cat._id);
+    if (validList !== undefined) {
+      categoryLines.push(catItem(pageState.listDoc.categories[i],true));
+    }  
   }
   categoryElem.push(catItemDivider(true,categoryLines));
   categoryLines=[];

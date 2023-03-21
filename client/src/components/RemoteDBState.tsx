@@ -7,6 +7,7 @@ import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import { Device } from '@capacitor/device';
 import PouchDB from 'pouchdb';
 import { getTokenInfo, refreshToken } from "./RemoteUtilities";
+import { maxAppSupportedSchemaVersion, UUIDDoc } from "./DBSchema";
 
 const secondsBeforeAccessRefresh = 180;
 
@@ -52,17 +53,20 @@ export enum SyncStatus {
 
 export enum DBUUIDAction {
     none = 0,
-    exit_no_uuid_on_server = 1,
-    destroy_needed = 2
+    exit_schema_mismatch = 1,
+    exit_no_uuid_on_server = 2,
+    destroy_needed = 3
 }  
 
 export type DBUUIDCheck = {
     checkOK: boolean,
+    schemaVersion: Number,
     dbUUIDAction: DBUUIDAction
 }
   
 const DBUUIDCheckInit: DBUUIDCheck = {
     checkOK: true,
+    schemaVersion: 0,
     dbUUIDAction: DBUUIDAction.none
 }
 
@@ -284,21 +288,32 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     } 
 
     async function checkDBUUID() {
+        console.log("checking DBUUID...");
         let UUIDCheck: DBUUIDCheck = {
             checkOK: true,
+            schemaVersion: 0,
             dbUUIDAction: DBUUIDAction.none
         }
         let UUIDResults = await (globalRemoteDB as PouchDB.Database).find({
             selector: { "type": { "$eq": "dbuuid"} } })
         let UUIDResult : null|string = null;
         if (UUIDResults.docs.length > 0) {
-          UUIDResult = (UUIDResults.docs[0] as any).uuid;
+          UUIDResult = (UUIDResults.docs[0] as UUIDDoc).uuid;
         }
         if (UUIDResult == null) {
           UUIDCheck.checkOK = false; UUIDCheck.dbUUIDAction = DBUUIDAction.exit_no_uuid_on_server;
           return UUIDCheck;
         }
-
+        console.log("checking schema version");
+        UUIDCheck.schemaVersion = (UUIDResults.docs[0] as UUIDDoc).schemaVersion;
+        if (UUIDCheck.schemaVersion > maxAppSupportedSchemaVersion) {
+            UUIDCheck.checkOK = false;
+            UUIDCheck.dbUUIDAction = DBUUIDAction.exit_schema_mismatch;
+            console.log("schema not ok");
+            console.log(UUIDCheck.schemaVersion, maxAppSupportedSchemaVersion);
+            return UUIDCheck;
+        }
+        console.log("past schema check");
         let localDBInfo = null;
         let localHasRecords = false;
         let localDBUUID = null;
@@ -321,7 +336,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             try { localDBFindDocs = await db.find({selector: { "type": { "$eq": "dbuuid"} }}) }
             catch(e) {console.log(e)};
             if ((localDBFindDocs != null) && localDBFindDocs.docs.length == 1) {
-                localDBUUID = (localDBFindDocs.docs[0] as any).uuid;
+                localDBUUID = (localDBFindDocs.docs[0] as UUIDDoc).uuid;
             }
         }      
         // compare to current DBCreds one.
@@ -366,7 +381,8 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     async function CheckDBUUIDAndStartSync() {
         let DBUUIDCheck = await checkDBUUID();
         if (!DBUUIDCheck.checkOK) {
-            setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: "Invalid DBUUID", dbUUIDAction: DBUUIDCheck.dbUUIDAction}))
+            console.log("not check ok, action:",DBUUIDCheck.dbUUIDAction);
+            setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: "Invalid DBUUID", dbUUIDAction: DBUUIDCheck.dbUUIDAction, connectionStatus: ConnectionStatus.navToLoginScreen}))
         } else {
             startSync();
         }
