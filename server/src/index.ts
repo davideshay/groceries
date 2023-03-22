@@ -3,10 +3,12 @@ import cors from 'cors';
 import eta from 'eta';
 const app = express();
 import {
- issueToken, refreshToken, checkUserExists, registerNewUser, dbStartup, getUsersInfo, 
+ issueToken, refreshToken, checkUserExists, registerNewUser, getUsersInfo, 
         checkUserByEmailExists, createAccountUIGet, createAccountUIPost,
         triggerRegEmail, resetPassword, resetPasswordUIGet, resetPasswordUIPost,
-        triggerResolveConflicts, triggerDBCompact, authenticateJWT, logout } from './userfunctions';
+        triggerResolveConflicts, triggerDBCompact, authenticateJWT, logout } from './apicalls';
+
+import { dbStartup } from './dbstartup'
 
 app.use(cors());
 app.use(express.json());
