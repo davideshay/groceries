@@ -11,7 +11,7 @@ export const expireJWTFrequencyMinutes = (process.env.EXPIRE_JWT_FREQUENCY_MINUT
 const groceryUrl = (process.env.GROCERY_URL == undefined) ? "" : process.env.GROCERY_URL.endsWith("/") ? process.env.GROCERY_URL.slice(0,-1): process.env.GROCERY_URL;
 const groceryAPIUrl = (process.env.GROCERY_API_URL == undefined) ? "" : process.env.GROCERY_API_URL.endsWith("/") ? process.env.GROCERY_API_URL.slice(0,-1): process.env.GROCERY_API_URL;
 const smtpHost = process.env.SMTP_HOST;
-const smtpPort = process.env.SMTP_PORT;
+const smtpPort = Number(process.env.SMTP_PORT);
 const smtpSecure = Boolean(process.env.SMTP_SECURE);
 const smtpUser = process.env.SMTP_USER;
 const smtpPassword = process.env.SMTP_PASSWORD;
@@ -21,13 +21,13 @@ export const couchAdminRole = "dbadmin";
 export const couchUserPrefix = "org.couchdb.user";
 export const conflictsViewID = "_conflicts_only_view_id";
 export const conflictsViewName = "conflicts_view";
-const smtpOptions: any = {
+const smtpOptions: SMTPTransport.Options= {
     host: smtpHost, port: smtpPort, 
     auth: { user: smtpUser, pass: smtpPassword}
 };
 
 import nodemailer from 'nodemailer';
-import nanoAdmin from 'nano';
+import nanoAdmin, { DocumentListResponse,  MangoResponse, MaybeDocument } from 'nano';
 const nanoAdminOpts = {
     url: couchdbUrl,
     requestDefaults: {
@@ -40,10 +40,14 @@ import { todosDBAsAdmin, usersDBAsAdmin, couchLogin } from './dbstartup';
 import _ from 'lodash';
 import { cloneDeep, isEmpty, isEqual, isSafeInteger } from 'lodash';
 import { usernamePatternValidation, fullnamePatternValidation, getUserDoc, getUserByEmailDoc,
-    totalDocCount, isNothing, createNewUser, updateUnregisteredFriends, getFriendDocByUUID } from './utilities';
-import { generateJWT, isValidToken, invalidateToken, JWTMatchesUserDB } from './jwt'     
+    totalDocCount, isNothing, createNewUser, updateUnregisteredFriends, getFriendDocByUUID, UserResponse, CreateResponseType } from './utilities';
+import { generateJWT, isValidToken, invalidateToken, JWTMatchesUserDB, TokenReturnType } from './jwt'     
+import { NextFunction, Request, Response } from 'express';
+import { CheckUseEmailReqBody, CheckUserExistsReqBody, CustomRequest, NewUserReqBody, RefreshTokenResponse, checkUserByEmailExistsResponse } from './datatypes';
+import { ConflictDoc, FriendDoc, UserDoc } from './DBSchema';
+import SMTPTransport from 'nodemailer/lib/smtp-transport';
 
-export async function checkUserExists(req, res) {
+export async function checkUserExists(req: CustomRequest<CheckUserExistsReqBody>, res: Response) {
     const { username } = req.body;
     let response = {
         username: username,
@@ -54,12 +58,12 @@ export async function checkUserExists(req, res) {
     return (response);
 }
 
-export async function checkUserByEmailExists(req, res) {
+export async function checkUserByEmailExists(req: CustomRequest<CheckUseEmailReqBody>, res: Response) {
     const { email} = req.body;
-    let response = {
-        username: null,
-        fullname: null,
-        email: null,
+    let response: checkUserByEmailExistsResponse = {
+        username: "",
+        fullname: "",
+        email: "",
         userExists: true
     }
     let userResponse = await getUserByEmailDoc(email);
@@ -72,22 +76,22 @@ export async function checkUserByEmailExists(req, res) {
     return (response);
 }
 
-export async function authenticateJWT(req,res,next) {
+export async function authenticateJWT(req: Request,res: Response,next: NextFunction) {
     const authHeader = req.headers.authorization;
     if (authHeader) {
         const token = authHeader.split(' ')[1];
-        const tokenDecode = await isValidToken(token);
+        const tokenDecode: TokenReturnType = await isValidToken(token);
         if (!tokenDecode.isValid) {
             return res.sendStatus(403);
         }
-        req.username = tokenDecode.payload.sub;
+        req.body.username = tokenDecode.payload?.sub;
         next();
     } else {
         res.sendStatus(401);
     }
 }
 
-export async function issueToken(req, res) {
+export async function issueToken(req: Request, res: Response) {
     const { username, password, deviceUUID } = req.body;
     console.log("STATUS: issuing token for device ID:", JSON.stringify(deviceUUID));
     let response = {
@@ -105,7 +109,8 @@ export async function issueToken(req, res) {
          console.log("STATUS: Authentication failed for device: ",deviceUUID, " user: ",username);
          return (response);
         }     
-    let userDoc = await getUserDoc(username);
+    let userDoc: UserResponse = await getUserDoc(username);
+    if (userDoc == null || userDoc.fullDoc == null ) return response;
     if (loginResponse.loginSuccessful && !(userDoc.error)) {
          response.loginSuccessful = loginResponse.loginSuccessful;
          response.loginRoles = loginResponse.loginRoles;
@@ -114,17 +119,17 @@ export async function issueToken(req, res) {
          response.refreshJWT = await generateJWT({username: username, deviceUUID: deviceUUID, includeRoles:false, timeString: refreshTokenExpires});
          response.accessJWT = await generateJWT({username: username, deviceUUID: deviceUUID, includeRoles:true, timeString: accessTokenExpires});
      }
-     if (!userDoc.fullDoc.hasOwnProperty('refreshJWTs')) {
-        (userDoc.fullDoc as any).refreshJWTs = {};
+     if (!userDoc.fullDoc?.hasOwnProperty('refreshJWTs')) {
+        userDoc.fullDoc.refreshJWTs = {};
      }
-     (userDoc.fullDoc as any).refreshJWTs[deviceUUID] = response.refreshJWT;
+     (userDoc.fullDoc.refreshJWTs as any)[deviceUUID] = response.refreshJWT;
      try {let userUpd = usersDBAsAdmin.insert(userDoc.fullDoc);}
      catch(err) {console.log("ERROR: Could not update user: ",username,":",err); response.loginSuccessful=false;}
     return(response);
 
 }
 
-export async function refreshToken(req, res) {
+export async function refreshToken(req: Request, res: Response) : Promise<{status: number, response: RefreshTokenResponse}> {
     const { refreshJWT, deviceUUID } = req.body;
     console.log("Refreshing token for deviceUUID:",deviceUUID);
     // validate incoming refresh token
@@ -140,45 +145,51 @@ export async function refreshToken(req, res) {
         refreshJWT: "",
         accessJWT: ""
     }
-    const tokenDecode = await isValidToken(refreshJWT);
-    console.log("username of decoded token:",tokenDecode.payload.sub);
-    if (!tokenDecode.isValid) {
+    const tokenDecode: TokenReturnType = await isValidToken(refreshJWT);
+    if (!tokenDecode.isValid || tokenDecode.payload == null) {
         status = 403;
         return({status, response});
     }
     if (tokenDecode.payload.deviceUUID !== deviceUUID) {
         console.log("SECURITY: Attempt to use refresh token with mis-matched device UUIDs. Invalidating all JWTs for ",tokenDecode.payload.sub);
-        invalidateToken(tokenDecode.payload.sub,deviceUUID,true)
+        invalidateToken(String(tokenDecode.payload.sub),deviceUUID,true)
         status = 403;
         return({status, response});
     }
-    if (! (await JWTMatchesUserDB(refreshJWT,deviceUUID, tokenDecode.payload.sub))) {
+    if (! (await JWTMatchesUserDB(refreshJWT,deviceUUID, String(tokenDecode.payload.sub)))) {
         console.log("SECURITY: Login for user ",tokenDecode.payload.sub,"  didn't match stored database JWT. Invalidating this device.");
         status = 403;
-        await invalidateToken(tokenDecode.payload.sub, deviceUUID, false);
+        await invalidateToken(String(tokenDecode.payload.sub), deviceUUID, false);
         return ({status, response});
     }
     response.valid = true;
-    response.refreshJWT = await generateJWT({username: tokenDecode.payload.sub, deviceUUID: deviceUUID, includeRoles: false, timeString: refreshTokenExpires});
-    response.accessJWT = await generateJWT({username: tokenDecode.payload.sub, deviceUUID: deviceUUID, includeRoles: true, timeString: accessTokenExpires});
-    let userResponse: any = await getUserDoc(tokenDecode.payload.sub);
-    userResponse.fullDoc.refreshJWTs[deviceUUID] = response.refreshJWT;
+    response.refreshJWT = await generateJWT({username: String(tokenDecode.payload.sub), deviceUUID: deviceUUID, includeRoles: false, timeString: refreshTokenExpires});
+    response.accessJWT = await generateJWT({username: String(tokenDecode.payload.sub), deviceUUID: deviceUUID, includeRoles: true, timeString: accessTokenExpires});
+    let userResponse: UserResponse = await getUserDoc(String(tokenDecode.payload.sub));
+    if (userResponse == null || userResponse.fullDoc == null) {
+        response.valid = false; return {status, response};
+    }
+    (userResponse.fullDoc.refreshJWTs as any)[deviceUUID] = response.refreshJWT;
     try {let update = await usersDBAsAdmin.insert(userResponse.fullDoc);}
     catch(err) {console.log("ERROR: Could not update user(refresh token):",err); response.valid=false;}
     return ({status, response});
 }
 
-export async function logout(req, res) {
+export async function logout(req: Request, res: Response) {
     const { refreshJWT, deviceUUID, username } = req.body;
     console.log("logging out user: ", username, " for device: ",deviceUUID);
-    let userResponse: any = await getUserDoc(username);
-    userResponse.fullDoc.refreshJWTs[deviceUUID] = ""; 
+    let userResponse: UserResponse = await getUserDoc(username);
+    if (userResponse == null || userResponse.fullDoc == null) {
+        res.sendStatus(404);
+        return;
+    }
+    (userResponse.fullDoc.refreshJWTs as any)[deviceUUID] = ""; 
     let update = null;
     try { update = await usersDBAsAdmin.insert(userResponse.fullDoc); res.sendStatus(200);}
     catch(err) { console.log("ERROR: problem logging out user: ",err); res.sendStatus(404); }
 }
 
-export async function registerNewUser(req, res) {
+export async function registerNewUser(req: CustomRequest<NewUserReqBody>, res: Response) {
     const {username, password, email, fullname, deviceUUID} = req.body;
     const registerResponse = {
         invalidData: false,
@@ -206,39 +217,44 @@ export async function registerNewUser(req, res) {
         let createResponse = await createNewUser({username: username, password: password, email: email, fullname: fullname}, deviceUUID);
         registerResponse.createdSuccessfully = !createResponse.error;
         registerResponse.idCreated = createResponse.idCreated;
-        registerResponse.refreshJWT = createResponse.refreshJWT;
-        registerResponse.accessJWT = createResponse.accessJWT;
+        registerResponse.refreshJWT = String(createResponse.refreshJWT);
+        registerResponse.accessJWT = String(createResponse.accessJWT);
         let updateFriendResponse = await updateUnregisteredFriends(req,email)
     }
     return (registerResponse);
 }
 
-export async function getUsersInfo(req, res) {
+export type GetUsersInfoResponse = {
+    error: boolean,
+    users: { name: string, email: string, fullname: string} []
+}
+
+export async function getUsersInfo (req: Request, res: Response) : Promise<GetUsersInfoResponse>  {
     // input - json list of userIDs : userIDs: ["username1","username2"] -- should be _users ids 
     //        without the org.couchdb.user prefix
     // return - json array of objects:
     //        [ {userID: "username1", email: "username1@gmail.com", fullName: "User 1"},
     //          {userID: "username2", email: "username2@yahoo.com", fullName: "User 2"}]
 
-    const getResponse = {
+    const getResponse: GetUsersInfoResponse = {
         error: false,
-        users: [],
+        users: []
     }
     if (isNothing(req.body?.userIDs)) {getResponse.error=true; return (getResponse)}
-    const requestData = { keys: [], include_docs: true }
-    req.body.userIDs.forEach(uid => { requestData.keys.push(couchUserPrefix+":"+uid) });
-    let userRes = null;
-    try { userRes = await usersDBAsAdmin.list(requestData);}
+    const requestData: { keys: string[], include_docs: boolean} = { keys: [], include_docs: true }
+    req.body.userIDs.forEach((uid: string) => { requestData.keys.push(String(couchUserPrefix)+":"+String(uid)) });
+    let userRes: DocumentListResponse<UserDoc> | null = null;
+    try { userRes = (await usersDBAsAdmin.list(requestData) as DocumentListResponse<UserDoc>);}
     catch(err) { console.log("ERROR: problem retrieving users: ",err); getResponse.error= true }
-    if (!getResponse.error) {
+    if (!getResponse.error && !(userRes == null)) {
         userRes.rows.forEach(el => {
-            getResponse.users.push({name: el?.doc?.name, email: el?.doc?.email, fullname: el?.doc?.fullname})
+            getResponse.users.push({name: String(el.doc?.name), email: String(el.doc?.email), fullname: String(el.doc?.fullname)})
         });
     }
     return(getResponse);
 }
 
-export async function createAccountUIGet(req, res) {
+export async function createAccountUIGet(req: Request, res: Response) {
     // input - query parameter - uuid
     // creates a form pre-filled with email address (cannot change), username,full name, and password
     // on submit (to different endpoint?),
@@ -261,8 +277,8 @@ export async function createAccountUIGet(req, res) {
         fields: [ "friendID1","friendID2","inviteUUID","inviteEmail","friendStatus"],
         limit: await totalDocCount(todosDBAsAdmin)
     }
-    let foundFriendDocs;
-    try {foundFriendDocs =  await todosDBAsAdmin.find(uuidq);}
+    let foundFriendDocs: MangoResponse<FriendDoc> | null = null;
+    try {foundFriendDocs =  (await todosDBAsAdmin.find(uuidq) as MangoResponse<FriendDoc>);}
     catch(err) {console.log("ERROR: Could not find friend documents:",err);
                 respObj.formError="Database Error Encountered";
                 return respObj;}
@@ -286,7 +302,7 @@ export async function createAccountUIGet(req, res) {
 }
 
 
-export async function createAccountUIPost(req,res) {
+export async function createAccountUIPost(req: Request,res: Response) {
 
     let respObj = {
         uuid: req.body.uuid,
@@ -336,12 +352,13 @@ export async function createAccountUIPost(req,res) {
         password: req.body.password
     }
 
-    let userIDRes = await createNewUser(userObj,"");
-    respObj.refreshjwt = userIDRes.refreshJWT;
+    let userIDRes: CreateResponseType = await createNewUser(userObj,"");
+    if (userIDRes == null || userIDRes?.error) { respObj.formError = "Could Not Create User"; return respObj}
+    respObj.refreshjwt = String(userIDRes.refreshJWT);
 
     // change friend doc to registered
     let foundFriendDoc = await getFriendDocByUUID(req.body.uuid);
-    if (foundFriendDoc!=undefined) {
+    if (foundFriendDoc!=null) {
         foundFriendDoc.friendID2 = req.body.username;
         foundFriendDoc.friendStatus = "PENDFROM1";
         foundFriendDoc.updatedAt = (new Date()).toISOString();
@@ -354,12 +371,12 @@ export async function createAccountUIPost(req,res) {
         selector: { type: { "$eq": "friend" }, inviteEmail: { "$eq": req.body.email},
                     limit: totalDocCount(todosDBAsAdmin)}
     }
-    let foundFriendDocs;
-    try {foundFriendDocs =  await todosDBAsAdmin.find(emailq);}
+    let foundFriendDocs : MangoResponse<FriendDoc>;
+    try {foundFriendDocs =  (await todosDBAsAdmin.find(emailq) as MangoResponse<FriendDoc>);}
     catch(err) {console.log("ERROR: Could not find friend by email:",err); 
                 respObj.formError="Database error finding friend by email";
                 return respObj;}
-    foundFriendDoc = undefined;
+    foundFriendDoc = null;
     if (foundFriendDocs.docs.length > 0) {foundFriendDoc = foundFriendDocs.docs[0]}
     foundFriendDocs.docs.forEach(async (doc) => {
         if ((doc.inviteUUID != req.body.uuid) && (doc.friendStatus == "WAITREGISTER")) {
@@ -376,7 +393,7 @@ export async function createAccountUIPost(req,res) {
     return(respObj);
 }
 
-export async function triggerRegEmail(req, res) {
+export async function triggerRegEmail(req: Request, res: Response) {
     const triggerResponse = {
         emailSent : false
     }
@@ -409,7 +426,7 @@ export async function triggerRegEmail(req, res) {
     return (triggerResponse);
 }
 
-export async function resetPassword(req, res) {
+export async function resetPassword(req: Request, res: Response) {
     const resetResponse = {
         emailSent : false
     }
@@ -438,10 +455,10 @@ export async function resetPassword(req, res) {
     return resetResponse;
 }    
 
-export async function resetPasswordUIGet(req, res) {
+export async function resetPasswordUIGet(req: Request, res: Response) {
     let respObj = {
         email: "",
-        username: req.query.username,
+        username: String(req.query.username),
         password: "",
         passwordverify: "",
         formError: "",
@@ -449,7 +466,7 @@ export async function resetPasswordUIGet(req, res) {
         resetSuccessfully: false
     }
     
-    let userDoc = await getUserDoc(req.query.username);
+    let userDoc = await getUserDoc(String(req.query.username));
     if (userDoc.error) {
         respObj.formError = "Cannot locate user name "+req.query.username;
         respObj.disableSubmit = true;
@@ -459,7 +476,7 @@ export async function resetPasswordUIGet(req, res) {
     return respObj;
 }
 
-export async function resetPasswordUIPost(req, res) {
+export async function resetPasswordUIPost(req: Request, res: Response) {
     let respObj = {
         username: req.body.username,
         password: (req.body.password == undefined) ? "" : req.body.password,
@@ -478,9 +495,13 @@ export async function resetPasswordUIPost(req, res) {
         return (respObj);
     }
 
-    let userDoc = await getUserDoc(req.body.username);
-    if (!userDoc.error) {
-        let newDoc: any =cloneDeep(userDoc.fullDoc);
+    let userResponse: UserResponse = await getUserDoc(req.body.username);
+    if (userResponse == null || userResponse.fullDoc == null) {
+        respObj.resetSuccessfully = false;
+        return respObj;
+    }
+    if (!userResponse.error) {
+        let newDoc: UserDoc =cloneDeep(userResponse.fullDoc);
         newDoc.password=req.body.password;
         let newDocFiltered = _.pick(newDoc,['_id','_rev','name','email','fullname','roles','type','password','refreshJWTs']);
         try {let docupdate = await usersDBAsAdmin.insert(newDocFiltered);}
@@ -502,20 +523,23 @@ export async function resolveConflicts() {
     if (conflicts.rows?.length <= 0) {console.log("STATUS: no conflicts found"); return};
     outerloop: for (let i = 0; i < conflicts.rows.length; i++) {
         const conflict = conflicts.rows[i];
-        let curWinner;
+        let curWinner: any;
         try { curWinner = await todosDBAsAdmin.get(conflict.id, {conflicts: true});}
         catch(err) { console.log("ERROR: Error resolving conflicts:",err); resolveFailure = true;}
+        if (curWinner == undefined || curWinner == null) { resolveFailure = true;}
         if (resolveFailure) {continue};
         let latestDocTime = curWinner.updatedAt; 
         let latestIsCurrentWinner = true;
-        let latestDoc = curWinner
-        let bulkObj = { docs: []};
-        let logObj = { type: "conflictlog", docType: curWinner.type, winner: {}, losers: [], updatedAt: ""};
+        let latestDoc = curWinner;
+        let bulkObj: { docs: [{_id: string, _rev: string, _deleted: boolean}?]} = { docs:[] };
+        let logObj: ConflictDoc = { _id: "", _rev: "", type: "conflictlog",
+                docType: curWinner.type, winner: {}, losers: [], updatedAt: ""};
         for (let j = 0; j < curWinner._conflicts.length; j++) {
             const losingRev = curWinner._conflicts[j];
-            let curLoser;
+            let curLoser: any;
             try { curLoser = await todosDBAsAdmin.get(conflict.id,{ rev: losingRev})}
             catch(err) {console.log("ERROR: Error resolving conflicts:",err); resolveFailure=true;}
+            if ( curLoser == null || curLoser == undefined) { resolveFailure = true;}
             if (resolveFailure) {continue outerloop};
             if (curLoser.updatedAt >= latestDocTime) {
                 latestIsCurrentWinner = false;
@@ -540,12 +564,12 @@ export async function resolveConflicts() {
         catch(err) {console.log("ERROR: Error updating bulk docs on conflict resolve"); resolveFailure=true;}
         console.log("STATUS: Bulk Update to resolve doc id : ",conflict.id, " succeeded");
         let logResult;
-        try { logResult = await todosDBAsAdmin.insert(logObj)}
+        try { logResult = await todosDBAsAdmin.insert(logObj as MaybeDocument)}
         catch(err) { console.log("ERROR: creating conflict log document failed: ",err)};
     }
 }
 
-export async function triggerResolveConflicts(req,res) {
+export async function triggerResolveConflicts(req: Request,res: Response) {
     let respObj = {
         triggered: true
     };
@@ -557,7 +581,7 @@ async function compactDB() {
     todosNanoAsAdmin.db.compact(couchDatabase);
 }
 
-export async function triggerDBCompact(req,res) {
+export async function triggerDBCompact(req: Request,res: Response) {
     let respObj = {
         triggered: true
     };

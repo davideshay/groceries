@@ -3,10 +3,12 @@ couchAdminRole, conflictsViewID, refreshTokenExpires, accessTokenExpires,
 enableScheduling, resolveConflictsFrequencyMinutes,expireJWTFrequencyMinutes } from "./apicalls";
 import { resolveConflicts } from "./apicalls";
 import { expireJWTs } from './jwt'
-import axios from 'axios';
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { cloneDeep } from "lodash";
 import { v4 as uuidv4} from 'uuid';
 import { uomContent, categories, globalItems, totalDocCount } from "./utilities";
+import { ServerScope, DocumentScope, MangoResponse, MangoQuery, MaybeDocument, ViewDocument } from "nano";
+import { CategoryDoc, GlobalItemDoc, ItemDoc, ListDoc, ListGroupDoc, UUIDDoc, UomDoc, UserDoc } from "./DBSchema";
 
 
 let uomContentVersion = 0;
@@ -19,28 +21,29 @@ let schemaVersion = 0;
 const targetSchemaVersion = 3;
 
 
-export let todosDBAsAdmin;
-export let usersDBAsAdmin;
+export let todosDBAsAdmin: DocumentScope<unknown>;
+export let usersDBAsAdmin: DocumentScope<unknown>;
 
-export async function couchLogin(username, password) {
+export async function couchLogin(username: string, password: string) {
     const loginResponse = {
         loginSuccessful: true,
         loginRoles: []
     }
-    const config: any = {
+    const config: AxiosRequestConfig = {
         method: 'get',
         url: couchdbUrl+"/_session",
         auth: { username: username, password: password},
         responseType: 'json'
     }
-    let res=null;
+    let res: AxiosResponse| null;
     try  {res = await axios(config)}
-    catch(err) {loginResponse.loginSuccessful = false};
+    catch(err) {loginResponse.loginSuccessful = false; return loginResponse};
+    if (res == null) {loginResponse.loginSuccessful = false; return loginResponse}
     if (loginResponse.loginSuccessful) {
         if (res.status != 200) {
             loginResponse.loginSuccessful = false;
         }
-        if (loginResponse.loginSuccessful && (res.data?.ok != true)) {
+        if (loginResponse.loginSuccessful && (res.data.ok != true)) {
             loginResponse.loginSuccessful = false;
         }
     }
@@ -80,22 +83,22 @@ async function createDBIfNotExists() {
     return (dbCreated)
 }
 
-function getNested(obj, ...args) {
-    return args.reduce((obj, level) => obj && obj[level], obj)
+function getNested(obj: any, ...args: any) {
+    return args.reduce((obj: any, level: any) => obj && obj[level], obj)
   }
 
 async function setDBSecurity() {
     let errorSettingSecurity = false;
-    let config: any = {
+    let config: AxiosRequestConfig = {
         method: 'get',
         url: couchdbUrl+"/"+couchDatabase+"/_security",
-        auth: {username: couchAdminUser, password: couchAdminPassword},
+        auth: {username: String(couchAdminUser), password: String(couchAdminPassword)},
         responseType: 'json'
     }
-    let res = null;
+    let res: AxiosResponse | null = null;
     try { res = await axios(config)}
     catch(err) { console.log("ERROR setting security:",err); errorSettingSecurity= true }
-    if (errorSettingSecurity) return (!errorSettingSecurity);
+    if (errorSettingSecurity || res == null) return (false);
     let newSecurity = cloneDeep(res.data);
     let securityNeedsUpdated = false;
     if ((getNested(res.data.members.roles.length) == 0) || (getNested(res.data.members.roles.length) == undefined)) {
@@ -138,21 +141,21 @@ async function setDBSecurity() {
     return (!errorSettingSecurity);
 }
 
-async function getLatestDBUUIDDoc() {
+async function getLatestDBUUIDDoc(): Promise<UUIDDoc | null> {
     const dbidq = {
         selector: { type: { "$eq": "dbuuid" }}
     }
-    let foundIDDocs = null;
+    let foundIDDocs: MangoResponse<unknown> | null = null;
     try {foundIDDocs =  await todosDBAsAdmin.find(dbidq);}
-    catch(err) {console.log("ERROR: could not read dbUUID record"); return undefined;}
-    let foundIDDoc = undefined;
+    catch(err) {console.log("ERROR: could not read dbUUID record"); return null;}
+    let foundIDDoc: UUIDDoc | null = null;
     if (foundIDDocs && foundIDDocs.hasOwnProperty('docs')) {
-        if (foundIDDocs.docs.length > 0) {foundIDDoc = foundIDDocs.docs[0]}
+        if (foundIDDocs.docs.length > 0) {foundIDDoc = (foundIDDocs.docs[0] as UUIDDoc)}
     }   
     return foundIDDoc;
 }
 
-async function updateDBUUIDDoc(dbuuidDoc) {
+async function updateDBUUIDDoc(dbuuidDoc: UUIDDoc) {
     dbuuidDoc.updatedAt = (new Date()).toISOString();
     let dbResp = null;
     try {dbResp = await todosDBAsAdmin.insert(dbuuidDoc);}
@@ -163,7 +166,9 @@ async function updateDBUUIDDoc(dbuuidDoc) {
 async function addDBIdentifier() {
     let foundIDDoc = await getLatestDBUUIDDoc();
     if (foundIDDoc == undefined) {
-        const newDoc = {
+        const newDoc: UUIDDoc = {
+            _id: "",
+            _rev: "",
             type: "dbuuid",
             name: "Database UUID",
             "uuid": uuidv4(),
@@ -189,6 +194,7 @@ async function addDBIdentifier() {
             uomContentVersion = foundIDDoc.uomContentVersion;
         }
         foundIDDoc = await getLatestDBUUIDDoc();
+        if (foundIDDoc == null) { return false};
         if (!foundIDDoc.hasOwnProperty("categoriesVersion")) {
             foundIDDoc.categoriesVersion = 0;
             let dbResp = await updateDBUUIDDoc(foundIDDoc);
@@ -197,7 +203,8 @@ async function addDBIdentifier() {
         } else {
             categoriesVersion = foundIDDoc.categoriesVersion;
         }
-        foundIDDoc = await getLatestDBUUIDDoc();        
+        foundIDDoc = await getLatestDBUUIDDoc();
+        if (foundIDDoc == null) { return false};        
         if (!foundIDDoc.hasOwnProperty("globalItemVersion")) {
             foundIDDoc.globalItemVersion = 0;
             let dbResp = await updateDBUUIDDoc(foundIDDoc);
@@ -207,6 +214,7 @@ async function addDBIdentifier() {
             globalItemVersion = foundIDDoc.globalItemVersion;
         }
         foundIDDoc = await getLatestDBUUIDDoc();
+        if (foundIDDoc == null) { return false};
         if (!foundIDDoc.hasOwnProperty("schemaVersion")) {
             foundIDDoc.schemaVersion = 0;
             let dbResp = await updateDBUUIDDoc(foundIDDoc);
@@ -223,7 +231,7 @@ async function createUOMContent() {
         selector: { type: { "$eq": "uom" }},
         limit: await totalDocCount(todosDBAsAdmin)
     }
-    let foundUOMDocs =  await todosDBAsAdmin.find(dbuomq);
+    let foundUOMDocs: MangoResponse<UomDoc> =  (await todosDBAsAdmin.find(dbuomq) as MangoResponse<UomDoc>);
     for (let i = 0; i < uomContent.length; i++) {
         let uom: any = uomContent[i];
         const docIdx=foundUOMDocs.docs.findIndex((el) => (el.name.toUpperCase() === uom.name.toUpperCase() || el._id === uom._id));
@@ -265,11 +273,12 @@ async function createCategoriesContent() {
         selector: { type: { "$eq": "category" }},
         limit: await totalDocCount(todosDBAsAdmin)
     }
-    let foundCategoryDocs =  await todosDBAsAdmin.find(dbcatq);
+    let foundCategoryDocs: MangoResponse<CategoryDoc> =  (await todosDBAsAdmin.find(dbcatq) as MangoResponse<CategoryDoc>);
     for (let i = 0; i < categories.length; i++) {
         let category = categories[i];
         category.type = "category";
         category.color = "#ffffff";
+        foundCategoryDocs.docs
         const docIdx=foundCategoryDocs.docs.findIndex((el) => (el.name.toUpperCase() === category.name.toUpperCase() || el._id === category._id));
         let needsAdded = true;
         if (docIdx !== -1) {
@@ -308,7 +317,7 @@ async function createGlobalItemContent() {
         selector: { type: { "$eq": "globalitem" }},
         limit: await totalDocCount(todosDBAsAdmin)
     }
-    let foundGlobalItemDocs =  await todosDBAsAdmin.find(dbglobalq);
+    let foundGlobalItemDocs: MangoResponse<GlobalItemDoc> =  (await todosDBAsAdmin.find(dbglobalq) as MangoResponse<GlobalItemDoc>);
     for (let i = 0; i < globalItems.length; i++) {
         let globalItem = globalItems[i];
         globalItem.type = "globalitem";
@@ -363,8 +372,8 @@ async function addStockedAtIndicatorToSchema() {
     console.log("STATUS: Upgrading schema to support stocked at indicators.");
     const itemq = { selector: { type: { "$eq": "item"}},
                     limit: await totalDocCount(todosDBAsAdmin)};
-    let foundItemDocs;
-    try {foundItemDocs = await todosDBAsAdmin.find(itemq);}                
+    let foundItemDocs: MangoResponse<ItemDoc>;
+    try {foundItemDocs = (await todosDBAsAdmin.find(itemq) as MangoResponse<ItemDoc>);}                
     catch(err) {console.log("ERROR: Could not find item docs to update during schema update"); return false;}
     console.log("STATUS: Found items to update :", foundItemDocs.docs.length)
     for (let i = 0; i < foundItemDocs.docs.length; i++) {
@@ -396,9 +405,9 @@ async function restructureListGroupSchema() {
     console.log("STATUS: Upgrading schema to support listGroups. Most data will be lost in this upgrade.");
     // Delete both lists and items because of structure changes and because categories in list are most likely
     // completely replaced with new Category content/system IDs at same time
-    const delq = { selector: { type : { "$in": ["list","item"]}}, limit: await totalDocCount(todosDBAsAdmin)};
-    let foundDelDocs;
-    try { foundDelDocs = await todosDBAsAdmin.find(delq)}
+    const delq: MangoQuery = { selector: { type : { "$in": ["list","item"]}}, limit: await totalDocCount(todosDBAsAdmin)};
+    let foundDelDocs: MangoResponse<ListDoc | ItemDoc>;
+    try { foundDelDocs = (await todosDBAsAdmin.find(delq) as MangoResponse<ListDoc | ItemDoc>)}
     catch(err) { console.log("ERROR: Could not find items/lists to delete:",err); return false;}
     console.log("Found items/lists to delete:",foundDelDocs.docs.length);
     for (let i = 0; i < foundDelDocs.docs.length; i++) {
@@ -408,9 +417,9 @@ async function restructureListGroupSchema() {
     }
     console.log("STATUS: Finished deleting lists and items.");
     console.log("STATUS: Creating default listgroups for all users");
-    const userq = { selector: { type: "user", name: {$exists: true}}, limit: await totalDocCount(usersDBAsAdmin)};
-    let foundUserDocs;
-    try {foundUserDocs = await usersDBAsAdmin.find(userq);}
+    const userq: MangoQuery = { selector: { type: "user", name: {$exists: true}}, limit: await totalDocCount(usersDBAsAdmin)};
+    let foundUserDocs: MangoResponse<UserDoc>;
+    try {foundUserDocs = (await usersDBAsAdmin.find(userq) as MangoResponse<UserDoc>);}
     catch(err) {console.log("ERROR: Could not find user list during schema update:",err); return false;}
     console.log("STATUS: Found users to create listgroups: ", foundUserDocs.docs.length);
     for (let i = 0; i < foundUserDocs.docs.length; i++) {
@@ -421,7 +430,8 @@ async function restructureListGroupSchema() {
         if (foundListGroupDocs.docs.length == 0) {
             console.log("STATUS: No default listgroup found for :",foundUserDoc.name," ... creating...");
             let newCurDateStr = (new Date()).toISOString()
-            const newListGroupDoc = {
+            const newListGroupDoc: ListGroupDoc = {
+                _id: "", _rev: "",
                 type: "listgroup", name: (foundUserDoc.name + " (default)"),
                 default: true, listGroupOwner: foundUserDoc.name, sharedWith: [], updatedAt: newCurDateStr
             }
@@ -436,7 +446,7 @@ async function restructureListGroupSchema() {
     return updateSuccess;
 }    
 
-async function setSchemaVersion(updSchemaVersion) {
+async function setSchemaVersion(updSchemaVersion: number) {
     console.log("STATUS: Finished schema updates, updating database to :",updSchemaVersion);
     let foundIDDoc = await getLatestDBUUIDDoc();
     if (foundIDDoc == undefined) {
@@ -473,17 +483,19 @@ async function createConflictsView() {
     catch(err) {viewFound = false;}
     if (!viewFound) {
         let viewCreated=true;
+        let viewDoc = {
+            "views": { "conflicts_view" : {
+                "map": "function(doc) { if (doc._conflicts) { emit (doc._conflicts, null)}}"
+        }}}
+
         try {
-            await todosDBAsAdmin.insert({
-                "views": { "conflicts_view" : {
-                    "map": "function(doc) { if (doc._conflicts) { emit (doc._conflicts, null)}}"
-            }}},"_design/"+conflictsViewID)
+            await todosDBAsAdmin.insert(viewDoc as any,"_design/"+conflictsViewID)
         }
         catch(err) {console.log("ERROR: View not created:",{err}); viewCreated=false;}
         console.log("STATUS: View created/ updated");
     }
 }
-function isInteger(str) {
+function isInteger(str: string) {
     return /^\+?(0|[1-9]\d*)$/.test(str);
 }
 
@@ -506,14 +518,14 @@ export async function dbStartup() {
     await checkAndCreateContent();
     await createConflictsView();
     if (enableScheduling) {
-        if(isInteger(resolveConflictsFrequencyMinutes)) {
+        if(isInteger(String(resolveConflictsFrequencyMinutes))) {
             setInterval(() => {resolveConflicts()},60000*Number(resolveConflictsFrequencyMinutes));
             console.log("STATUS: Conflict resolution scheduled every ",resolveConflictsFrequencyMinutes, " minutes.")
             resolveConflicts();
         } else {
             console.log("ERROR: Invalid environment variable for scheduling conflict resolution -- not started.");
         }
-        if (isInteger(expireJWTFrequencyMinutes)) {
+        if (isInteger(String(expireJWTFrequencyMinutes))) {
             setInterval(() => {expireJWTs()},60000*Number(expireJWTFrequencyMinutes));
             console.log("STATUS: JWT expiry scheduled every ",expireJWTFrequencyMinutes," minutes.");
             expireJWTs();

@@ -1,106 +1,95 @@
 import { couchUserPrefix, couchStandardRole, accessTokenExpires, refreshTokenExpires } from "./apicalls";
 import { usersDBAsAdmin, todosDBAsAdmin } from './dbstartup';
 import { generateJWT } from "./jwt";
+import { UserDoc, FriendDoc, FriendDocs} from './DBSchema'
+import { DocumentScope, MangoQuery, MangoResponse, MaybeDocument } from "nano";
+import { cloneDeep } from "lodash";
+import { NewUserReqBody, UserObj, CustomRequest } from "./datatypes";
 
-export const uomContent = [
-    {_id: "system:uom:EA", type: "uom", name: "EA", description: "Each", pluralDescription: "Eaches"},
-    {_id: "system:uom:X2", type: "uom", name: "X2", description: "Bunch", pluralDescription: "Bunches"},
-    {_id: "system:uom:OZ", type: "uom", name: "OZ", description: "Ounce", pluralDescription: "Ounces"},
-    {_id: "system:uom:FO", type: "uom", name: "FO", description: "Fluid Ounce", pluralDescription: "Fluid Ounces"},
-    {_id: "system:uom:LB", type: "uom", name: "LB", description: "Pound", pluralDescription: "Pounds"},
-    {_id: "system:uom:GA", type: "uom", name: "GA", description: "Gallon", pluralDescription: "Gallons"},
-    {_id: "system:uom:GH", type: "uom", name: "GH", description: "Half Gallon", pluralDescription: "Half Gallons"},
-    {_id: "system:uom:QT", type: "uom", name: "QT", description: "Quart", pluralDescription: "Quarts"},
-    {_id: "system:uom:LT", type: "uom", name: "LT", description: "Liter", pluralDescription: "Liters"},
-    {_id: "system:uom:ML", type: "uom", name: "ML", description: "Milliliter", pluralDescription: "Milliliters"},
-    {_id: "system:uom:KG", type: "uom", name: "KG", description: "Kilogram", pluralDescription: "Kilograms"},
-    {_id: "system:uom:GR", type: "uom", name: "GR", description: "Gram", pluralDescription: "Grams"},
-    {_id: "system:uom:BX", type: "uom", name: "BX", description: "Box", pluralDescription: "Boxes"},
-    {_id: "system:uom:BG", type: "uom", name: "BG", description: "Bag", pluralDescription: "Bags"},
-    {_id: "system:uom:BO", type: "uom", name: "BO", description: "Bottle", pluralDescription: "Bottles"},
-    {_id: "system:uom:CA", type: "uom", name: "CA", description: "Case", pluralDescription: "Cases"},
-    {_id: "system:uom:CN", type: "uom", name: "CN", description: "Can", pluralDescription: "Cans"},
-    {_id: "system:uom:CU", type: "uom", name: "CU", description: "Cup", pluralDescription: "Cups"},
-    {_id: "system:uom:CT", type: "uom", name: "CT", description: "Carton", pluralDescription: "Cartons"},
-    {_id: "system:uom:CH", type: "uom", name: "CH", description: "Container", pluralDescription: "Containers"},
-    {_id: "system:uom:DZ", type: "uom", name: "DZ", description: "Dozen", pluralDescription: "Dozen"},
-    {_id: "system:uom:JR", type: "uom", name: "JR", description: "Jar", pluralDescription: "Jars"},
-    {_id: "system:uom:X8", type: "uom", name: "X8", description: "Loaf", pluralDescription: "Loaves"},
-    {_id: "system:uom:Y1", type: "uom", name: "Y1", description: "Slice", pluralDescription: "Slices"},
-    {_id: "system:uom:15", type: "uom", name: "15", description: "Stick", pluralDescription: "Sticks"},
-    {_id: "system:uom:PC", type: "uom", name: "PC", description: "Piece", pluralDescription: "Pieces"},
-    {_id: "system:uom:PK", type: "uom", name: "PK", description: "Package", pluralDescription: "Packages"},
-    {_id: "system:uom:PT", type: "uom", name: "PT", description: "Pint", pluralDescription: "Pints"},
-    {_id: "system:uom:RL", type: "uom", name: "RL", description: "Roll", pluralDescription: "Rolls"},
-]
-
+export const uomContent = require("../data/uomContent.json")
 export const globalItems = require("../data/globalItems.json");
-
 export const categories = require("../data/categories.json");
 
-export function emailPatternValidation(email) {
+export function emailPatternValidation(email: string) {
     const emailRegex=/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
     return emailRegex.test(email);
 };
 
-export function usernamePatternValidation(username) {
+export function usernamePatternValidation(username: string) {
     const usernameRegex=/^[a-zA-Z0-9]*$/
     return usernameRegex.test(username);
 }
 
-export function fullnamePatternValidation(fullname) {
+export function fullnamePatternValidation(fullname: string) {
     const usernameRegex=/^[a-zA-Z0-9 ]*$/
     return usernameRegex.test(fullname);
 }
 
-export async function totalDocCount(db) {
+export async function totalDocCount(db: DocumentScope<unknown>) {
     const info = await db.info();
     return info.doc_count;
 }
 
-export async function getUserDoc(username) {
-    const userResponse = {
-        error: false,
-        fullname: "",
-        email: "",
-        fullDoc: {}
-    }
-    let res = null;
-    try { res = await usersDBAsAdmin.get(couchUserPrefix+":"+username)}
+export type UserResponse = {
+    error: boolean,
+    username: string,
+    fullname: string,
+    email: string,
+    fullDoc: UserDoc | null
+}
+
+const UserResponseInit: UserResponse = {
+    error: false,
+    username: "",
+    fullname: "",
+    email: "",
+    fullDoc: null
+}
+
+export async function getUserDoc(username: string) {
+    const userResponse = cloneDeep(UserResponseInit)
+    
+    let res: UserDoc | null = null;
+    try { res = (await usersDBAsAdmin.get(couchUserPrefix+":"+username) as UserDoc | null)}
     catch(err) { console.log("ERROR GETTING USER:",err); userResponse.error= true }
     if (!userResponse.error) {
-        userResponse.email = res.email;
-        userResponse.fullname = res.fullname;
+        userResponse.email = String(res?.email);
+        userResponse.fullname = String(res?.fullname);
         userResponse.fullDoc = res;
     }
     return (userResponse);
 }
 
-export async function getUserByEmailDoc(email) {
-    const userResponse = {
-        error: false,
-        username: null,
-        fullname: null,
-        email: email,
-    }
-    const query={selector: {"email": {"$eq": email}}, limit: totalDocCount(usersDBAsAdmin)};
-    let res = null;
-    try { res = await usersDBAsAdmin.find(query);}
+export async function getUserByEmailDoc(email: string) {
+    const userResponse  = cloneDeep(UserResponseInit);
+    const query: MangoQuery={selector: {"email": {"$eq": email}}, limit: await totalDocCount(usersDBAsAdmin)};
+    let res: MangoResponse<unknown> | null = null;
+    try { res = (await usersDBAsAdmin.find(query) );}
     catch(err) { console.log("ERROR getting user by email:",err); userResponse.error= true }
     if (!userResponse.error) {
-        if (res.docs.length > 0) {
-            userResponse.username = res.docs[0].name;
-            userResponse.email = res.docs[0].email;
-            userResponse.fullname = res.docs[0].fullname;
-        } else {
-            userResponse.error = true;
-        }
+        if (res != null && res.hasOwnProperty("docs")) {
+            if (res.docs.length > 0) {
+                let resDoc: UserDoc = res.docs[0] as UserDoc;
+                userResponse.username = String(resDoc.name);
+                userResponse.email = String(resDoc.email);
+                userResponse.fullname = String(resDoc.fullname);
+            } else {
+                userResponse.error = true;
+            }
+        } else { userResponse.error = true}
     }
     return (userResponse);
 }
 
-export async function createNewUser(userObj, deviceUUID) {
-    const createResponse = {
+export type CreateResponseType = {
+    error: boolean,
+    idCreated: string,
+    refreshJWT: string | null,
+    accessJWT: string | null
+}
+
+export async function createNewUser(userObj: UserObj, deviceUUID: string) {
+    const createResponse: CreateResponseType = {
         error: false,
         idCreated: "",
         refreshJWT: null,
@@ -125,15 +114,15 @@ export async function createNewUser(userObj, deviceUUID) {
         createResponse.accessJWT = await generateJWT({username: userObj.username,deviceUUID: deviceUUID, includeRoles: true, timeString: accessTokenExpires});
     }    
     let res = null;
-    try { res = await usersDBAsAdmin.insert(newDoc,couchUserPrefix+":"+userObj.username); }
+    try { res = await usersDBAsAdmin.insert(newDoc as MaybeDocument,couchUserPrefix+":"+userObj.username); }
     catch(err) { console.log("ERROR: problem creating user: ",err); createResponse.error= true }
-    if (!createResponse.error) {
+    if (!createResponse.error && res != null) {
         createResponse.idCreated = res.id;
     }
     return (createResponse);
 }
 
-export async function updateUnregisteredFriends(req,email) {
+export async function updateUnregisteredFriends(req: CustomRequest<NewUserReqBody>,email: string) {
     const emailq = {
         selector: { type: { "$eq": "friend" }, inviteEmail: { "$eq": email}},
         limit: await totalDocCount(todosDBAsAdmin)
@@ -143,7 +132,7 @@ export async function updateUnregisteredFriends(req,email) {
     catch(err) {console.log("ERROR: Could not find friend documents:",err); return false;}
     let foundFriendDoc = undefined;
 //    if (foundFriendDocs.docs.length > 0) {foundFriendDoc = foundFriendDocs.docs[0]}
-    foundFriendDocs.docs.forEach(async (doc) => {
+    (foundFriendDocs.docs as FriendDocs).forEach(async (doc) => {
         if (doc.friendStatus == "WAITREGISTER") {
             doc.friendID2 = req.body.username;
             doc.friendStatus = "PENDFROM1";
@@ -155,20 +144,20 @@ export async function updateUnregisteredFriends(req,email) {
     });
 }
 
-export async function getFriendDocByUUID(uuid) {
+export async function getFriendDocByUUID(uuid: string): Promise<FriendDoc|null> {
     const uuidq = {
         selector: { type: { "$eq": "friend" }, inviteUUID: { "$eq": uuid}},
         limit: await totalDocCount(todosDBAsAdmin)
     }
-    let foundFriendDocs;
-    try {foundFriendDocs =  await todosDBAsAdmin.find(uuidq);}
+    let foundFriendDocs: MangoResponse<FriendDoc>;
+    try {foundFriendDocs =  (await todosDBAsAdmin.find(uuidq) as MangoResponse<FriendDoc>);}
     catch(err) {console.log("ERROR: Could not find friend documents:", err); return null;};
-    let foundFriendDoc;
+    let foundFriendDoc: FriendDoc | null = null;
     if (foundFriendDocs.docs.length > 0) {foundFriendDoc = foundFriendDocs.docs[0]}
     return(foundFriendDoc);
 }
 
-export function isNothing(obj) {
+export function isNothing(obj: any) {
     if (obj == "" || obj == null || obj == undefined) {return (true)}
     else {return (false)};
 }

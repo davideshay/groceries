@@ -26,6 +26,20 @@ export const InitCategoryDoc: CategoryDoc = {
     _id: "", _rev: "", type: "category", name: "", color: "", updatedAt: ""
   }
   
+export type CategoryDocs = CategoryDoc[];
+
+export interface ConflictDoc {
+  _id: string,
+  _rev: string,
+  type: string,
+  docType: string,
+  winner: any,
+  losers: any,
+  updatedAt: string
+}
+
+export type ConflictDocs = ConflictDoc[];
+  
 export interface UomDoc {
     _id: string,
     _rev: string,
@@ -156,6 +170,22 @@ export enum FriendStatus {
     Confirmed = "CONFIRMED",
     Deleted = "DELETED"
   }
+
+export type UserDoc = {
+  _id: string,
+  _rev: string,
+  name: string,
+  email: string,
+  fullname: string,
+  roles: string[],
+  type: string,
+  password_scheme: string,
+  password? : string,
+  iterations: Number,
+  derived_key: string,
+  salt: string,
+  refreshJWTs: {}
+}
 
 export type FriendDoc = {
     _id: string,
