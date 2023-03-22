@@ -194,7 +194,7 @@ async function updateDBUUIDDoc(dbuuidDoc) {
     dbuuidDoc.updatedAt = (new Date()).toISOString();
     let dbResp = null;
     try {dbResp = await todosDBAsAdmin.insert(dbuuidDoc);}
-    catch(err) {console.log("ERROR: could not update dbUUID record"); return false;}
+    catch(err) {console.log("ERROR: could not update dbUUID record:",JSON.stringify(err)); return null;}
     return dbResp;
 }
 
@@ -221,8 +221,8 @@ async function addDBIdentifier() {
         if (!foundIDDoc.hasOwnProperty("uomContentVersion")) {
             foundIDDoc.uomContentVersion = 0;
             let dbResp = await updateDBUUIDDoc(foundIDDoc);
-            if (dbResp == null) { console.log("STATUS: Updated UOM Content Version, was missing.") } 
-            else { console.log("ERROR: updating UUID record with uomContentVersion") }
+            if (dbResp == null) { console.log("ERROR: updating UUID record with uomContentVersion");  } 
+            else { console.log("STATUS: Updated UOM Content Version, was missing.") }
         } else {
             uomContentVersion = foundIDDoc.uomContentVersion;
         }
@@ -230,8 +230,8 @@ async function addDBIdentifier() {
         if (!foundIDDoc.hasOwnProperty("categoriesVersion")) {
             foundIDDoc.categoriesVersion = 0;
             let dbResp = await updateDBUUIDDoc(foundIDDoc);
-            if (dbResp == null) { console.log("STATUS: Updated Categories Content Version, was missing.") } 
-            else { console.log("ERROR: updating UUID record with categoriesVersion") }
+            if (dbResp == null) { console.log("ERROR: updating UUID record with categoriesVersion: ",dbResp);  } 
+            else { console.log("STATUS: Updated Categories Content Version, was missing.") }
         } else {
             categoriesVersion = foundIDDoc.categoriesVersion;
         }
@@ -239,8 +239,8 @@ async function addDBIdentifier() {
         if (!foundIDDoc.hasOwnProperty("globalItemVersion")) {
             foundIDDoc.globalItemVersion = 0;
             let dbResp = await updateDBUUIDDoc(foundIDDoc);
-            if (dbResp == null) { console.log("STATUS: Updated global Item Content Version, was missing.") } 
-            else { console.log("ERROR: updating UUID record with globalItemVersion") }
+            if (dbResp == null) { console.log("ERROR: updating UUID record with globalItemVersion");  } 
+            else { console.log("STATUS: Updated global Item Content Version, was missing."); }
         } else {
             globalItemVersion = foundIDDoc.globalItemVersion;
         }
@@ -248,8 +248,8 @@ async function addDBIdentifier() {
         if (!foundIDDoc.hasOwnProperty("schemaVersion")) {
             foundIDDoc.schemaVersion = 0;
             let dbResp = await updateDBUUIDDoc(foundIDDoc);
-            if (dbResp == null) { console.log("STATUS: Updated Categories Content Version, was missing.") } 
-            else { console.log("ERROR: updating UUID record with schemaVersion") }
+            if (dbResp == null) { console.log("ERROR: updating UUID record with schemaVersion") } 
+            else { console.log("STATUS: Updated Categories Content Version, was missing.");  }
         } else {
             schemaVersion = foundIDDoc.schemaVersion;
         }

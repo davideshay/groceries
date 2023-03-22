@@ -373,11 +373,11 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         <IonItem key="searchbar">
           <IonIcon icon={searchOutline} />
           <IonInput aria-label="" class="ion-no-padding" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="search" enterkeyhint="enter"
-              clearInput={true}
+              clearInput={true} placeholder="Search" fill="solid"
               onKeyDown= {(e) => searchKeyPress(e)}
               onIonInput={(e) => updateSearchCriteria(e)}
               onClick={(e: any) => enterSearchBox(e)} 
-              onIonFocus={(e: any) => {console.log("searchbar focused", cloneDeep(e)); setSearchState((prevState) => ({...prevState,isFocused: true}))}}   >
+              onIonFocus={(e: any) => {console.log("searchbar focused", cloneDeep(e)); setSearchState((prevState) => ({...prevState,isFocused: true, event: e}))}}   >
            </IonInput>
           {/* <IonButton onClick={()=> clickedSearchCheck()}><IonIcon icon={checkmark} /></IonButton> */}
         </IonItem>
@@ -443,7 +443,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   if (!createdFinished) {listContent.push(completedDivider)};
   let contentElem=(<IonList lines="full">{listContent}</IonList>)
 
-  if (searchState.isOpen) {
+  if (searchState.isOpen || searchState.isFocused) {
     searchRef.current?.focus();
   }
 
