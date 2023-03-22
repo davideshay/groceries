@@ -1,8 +1,8 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonItemGroup,
   IonItemDivider, IonButton, IonButtons, IonFab, IonFabButton, IonIcon, IonCheckbox, IonLabel, IonSelect,
-  IonSelectOption, IonSearchbar, IonInput, IonPopover, IonAlert,IonMenuButton, useIonToast, IonGrid, IonRow, 
+  IonSelectOption, IonInput, IonPopover, IonAlert,IonMenuButton, useIonToast, IonGrid, IonRow, 
   IonCol, useIonAlert, IonLoading } from '@ionic/react';
-import { add, hourglassOutline, searchOutline } from 'ionicons/icons';
+import { add, searchOutline } from 'ionicons/icons';
 import React, { useState, useEffect, useContext, useRef, KeyboardEvent } from 'react';
 import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
@@ -20,7 +20,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode: routeMode, id: routeListID  } = useParams<{mode: string, id: string}>();
   const [searchRows,setSearchRows] = useState<ItemSearch[]>();
   const [searchState,setSearchState] = useState<SearchState>({searchCriteria:"",isOpen: false,isFocused: false,event: undefined, filteredSearchRows: [], dismissEvent: undefined});
-  const [pageState, setPageState] = useState<PageState>({selectedListOrGroupID: routeListID, 
+  const [pageState, setPageState] = useState<PageState>({selectedListOrGroupID: routeListID,
           selectedListType: (routeMode == "list" ? RowType.list : RowType.listGroup) ,
           ignoreCheckOffWarning: false,
           groupIDforSelectedList: "",
@@ -37,7 +37,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     index: { fields: ["type","name"]},
     selector: {
       type: "item", name: { $exists: true },
-      "$or": [ {listGroupID: pageState.selectedListOrGroupID} , 
+      "$or": [ {listGroupID: pageState.selectedListOrGroupID} ,
                {lists: { $elemMatch: { "listID": pageState.selectedListOrGroupID , "active" : true} }}] },
     sort: [ "type", "name"]})
   const { dbError: listError , listDocs, listCombinedRows,listRows, listRowsLoaded } = useLists();
@@ -59,7 +59,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   })
 
   const { globalState,setStateInfo: setGlobalStateInfo} = useContext(GlobalStateContext);
- 
+
   function getGroupIDForList(listID: string): string {
     if (routeMode == "group") { return pageState.selectedListOrGroupID};
     let retGID = "";
@@ -91,13 +91,13 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   useEffect( () => {
     if (!allItemsLoading && !globalItemsLoading) {
       setSearchRows(getAllSearchRows(allItemDocs as ItemDocs,pageState.selectedListOrGroupID, listDocs, globalItemDocs as GlobalItemDocs));
-    }  
+    }
   },[allItemsLoading, globalItemsLoading, globalItemDocs, allItemDocs, pageState.selectedListOrGroupID])
 
   useEffect( () => {
     let filterRows=filterSearchRows(searchRows, searchState.searchCriteria)
     console.log("new filtered rows: ", cloneDeep(filterRows));
-    
+
     console.log("search changed: ",cloneDeep(searchState.searchCriteria),"is focused: ",cloneDeep(searchState.isFocused),"is open:",cloneDeep(searchState.isOpen));
 //    if (filterRows.length > 0 ) {
     if (filterRows.length > 0 && searchState.isFocused ) {
@@ -106,9 +106,9 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     } else {
       console.log("setting isOpen False");
       setSearchState(prevState => ({...prevState, filteredSearchRows: [], isOpen: false}));
-    }  
+    }
   },[searchState.searchCriteria,searchState.isFocused])
-  
+
   if (itemError || listError || categoryError || allItemsError || uomError || globalItemsError) {return (
     <ErrorPage errorText="Error Loading Items Information... Restart."></ErrorPage>
   )}
@@ -116,11 +116,11 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   if (itemLoading || !listRowsLoaded || categoryLoading || allItemsLoading || globalItemsLoading || uomLoading || pageState.doingUpdate )  {return(
     <IonPage>
         <IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
-        <IonContent><IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false;}} 
+        <IonContent><IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false;}}
                                 message="Loading Data..." />
         </IonContent>
       </IonPage>
-  )};  
+  )};
 
   screenLoading.current=false;
 
@@ -128,9 +128,9 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     console.log("updating search criteria:",event.detail.value);
     setSearchState(prevState => ({...prevState, event: event, searchCriteria: event.detail.value}));
     origSearchCriteria.current=event.detail.value;
-  }  
+  }
 
-  function isItemAlreadyInList(itemName: string) {
+  function isItemAlreadyInList(itemName: string): boolean {
     let existingItem = (allItemDocs as ItemDocs).find((el) => el.name.toUpperCase() === itemName.toUpperCase());
     return(!(existingItem == undefined));
   }
@@ -148,7 +148,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       props.history.push("/item/new/");
     }
   }
-  
+
   function searchKeyPress(event: KeyboardEvent<HTMLElement>) {
     console.log("key pressed", event.key);
     if (event.key === "Enter") {
@@ -195,7 +195,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
           newItemList.uomName = item.globalItemUOM;
           newItemList.quantity = 1;
           newItem.lists.push(newItemList);
-        }  
+        }
       })
       let itemAdded = await addNewItem(newItem);
       if (!itemAdded.successful) {
@@ -203,7 +203,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       }
       return;
     }
-    let existingItem: ItemDoc = cloneDeep((allItemDocs as ItemDocs).find((el) => el._id === item.itemID));    
+    let existingItem: ItemDoc = cloneDeep((allItemDocs as ItemDocs).find((el) => el._id === item.itemID));
     listRows.forEach((listRow: ListRow) => {
       let idxInLists=existingItem.lists.findIndex((el) => el.listID === listRow.listDoc._id);
       let skipThisList=false;
@@ -228,15 +228,15 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       }
       if (!skipThisList) {
         if (idxInLists === -1) {
-          const newListItem: ItemList=cloneDeep(ItemListInit); 
+          const newListItem: ItemList=cloneDeep(ItemListInit);
           newListItem.listID = listRow.listDoc._id;
           newListItem.active = true;
           newListItem.completed = false;
           newListItem.stockedAt = true;
-          existingItem.lists.push(newListItem);    
+          existingItem.lists.push(newListItem);
         } else {
           existingItem.lists[idxInLists].active = true;
-          existingItem.lists[idxInLists].completed = false;     
+          existingItem.lists[idxInLists].completed = false;
         }
       }
     });
@@ -271,7 +271,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       let updateThisList=false;
       if (pageState.selectedListOrGroupID == list.listID) { updateThisList = true;}
       if (pageState.selectedListType == RowType.listGroup) { updateThisList = true};
-      if (pageState.selectedListType == RowType.list && 
+      if (pageState.selectedListType == RowType.list &&
           globalState.settings.removeFromAllLists &&
           newStatus) { updateThisList = true;}
       if (updateThisList) {
@@ -287,7 +287,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       console.log("did update, response is:", cloneDeep(response));
       if (!response.successful) {
         presentToast({message: "Error updating completed status. Please retry", duration: 1500, position: "middle"})
-      }  
+      }
     }
   }
 
@@ -316,7 +316,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
                   presentToast({message: "Error deleting items from list. Please retry.",
                     duration: 1500, position: "middle"})
                 }
-            }    
+            }
         }
     });
   }
@@ -345,11 +345,11 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     />
   )
  //                onIonBlur={() => {console.log("searchbar out of focus"); setSearchState((prevState) => ({...prevState,isFocused: false}))}}
- 
+
 /*  <IonSearchbar class="ion-no-padding" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="search" enterkeyhint="enter"
  onKeyDown= {(e) => searchKeyPress(e)}
  onIonInput={(e) => updateSearchCriteria(e)}
- onClick={(e: any) => enterSearchBox(e)} 
+ onClick={(e: any) => enterSearchBox(e)}
  onIonFocus={(e: any) => {console.log("searchbar focused", cloneDeep(e)); setSearchState((prevState) => ({...prevState,isFocused: true}))}}   >
 </IonSearchbar>
  */
@@ -368,16 +368,16 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
                 </IonSelectOption>
             ))}
           </IonSelect>
-        <SyncIndicator history={props.history}/>  
+        <SyncIndicator history={props.history}/>
         </IonItem>
         <IonItem key="searchbar">
           <IonIcon icon={searchOutline} />
           <IonInput aria-label="" class="ion-no-padding" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="search" enterkeyhint="enter"
-              clearInput={true}
+              clearInput={true} placeholder="Search" fill="solid"
               onKeyDown= {(e) => searchKeyPress(e)}
               onIonInput={(e) => updateSearchCriteria(e)}
-              onClick={(e: any) => enterSearchBox(e)} 
-              onIonFocus={(e: any) => {console.log("searchbar focused", cloneDeep(e)); setSearchState((prevState) => ({...prevState,isFocused: true}))}}   >
+              onClick={(e: any) => enterSearchBox(e)}
+              onIonFocus={(e: any) => {console.log("searchbar focused", cloneDeep(e)); setSearchState((prevState) => ({...prevState,isFocused: true, event: e}))}}   >
            </IonInput>
           {/* <IonButton onClick={()=> clickedSearchCheck()}><IonIcon icon={checkmark} /></IonButton> */}
         </IonItem>
@@ -387,7 +387,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   if (pageState.itemRows.length <=0 )  {return(
     <IonPage>{headerElem}<IonContent><IonItem key="nonefound"><IonLabel key="nothinghere">No Items On List</IonLabel></IonItem></IonContent></IonPage>
-  )};  
+  )};
 
   let listContent=[];
 
@@ -412,14 +412,14 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         </IonItemDivider></IonItemGroup>);
   for (let i = 0; i < pageState.itemRows.length; i++) {
     const item = pageState.itemRows[i];
-    if ((lastCategoryName !== item.categoryName )||(lastCategoryFinished !== item.completed)) { 
+    if ((lastCategoryName !== item.categoryName )||(lastCategoryFinished !== item.completed)) {
       if (currentRows.length > 0) {
         addCurrentRows(listContent,currentRows,String(lastCategoryID),lastCategoryName,lastCategoryFinished);
         currentRows=[];
       }
       lastCategoryID = item.categoryID;
       lastCategoryName=item.categoryName;
-      lastCategoryFinished=item.completed;   
+      lastCategoryFinished=item.completed;
     }
     currentRows.push(
       <IonItem key={pageState.itemRows[i].itemID} >
@@ -437,13 +437,13 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     if (lastCategoryFinished && !createdFinished) {
       listContent.push(completedDivider);
       createdFinished=true;
-    }    
+    }
   }
   addCurrentRows(listContent,currentRows,String(lastCategoryID),lastCategoryName,lastCategoryFinished);
   if (!createdFinished) {listContent.push(completedDivider)};
   let contentElem=(<IonList lines="full">{listContent}</IonList>)
 
-  if (searchState.isOpen) {
+  if (searchState.isOpen || searchState.isFocused) {
     searchRef.current?.focus();
   }
 

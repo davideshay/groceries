@@ -1,11 +1,12 @@
-const express = require('express');
-const cors = require('cors');
-const eta = require('eta');
+import express from 'express';
+import cors from 'cors';
+import eta from 'eta';
 const app = express();
-const { issueToken, refreshToken, checkUserExists, registerNewUser, dbStartup, getUsersInfo, 
+import {
+ issueToken, refreshToken, checkUserExists, registerNewUser, dbStartup, getUsersInfo, 
         checkUserByEmailExists, createAccountUIGet, createAccountUIPost,
         triggerRegEmail, resetPassword, resetPasswordUIGet, resetPasswordUIPost,
-        triggerResolveConflicts, triggerDBCompact, authenticateJWT, logout } = require('./userfunctions');
+        triggerResolveConflicts, triggerDBCompact, authenticateJWT, logout } from './userfunctions';
 
 app.use(cors());
 app.use(express.json());
@@ -20,7 +21,7 @@ app.post('/refreshtoken', authenticateJWT, async (req,res) =>
         { const {status,response} = await refreshToken(req,res);
           res.status(status).send(response); } );
 app.post('/logout', authenticateJWT, async (req,res) => 
-        { const {status, response} = await logout(req,res); res.status(status).send(response); } );          
+        { await logout(req,res); res.send(); } );          
 app.post('/checkuserexists', authenticateJWT, async (req, res) => res.send(await checkUserExists(req,res)));
 app.post('/checkuserbyemailexists', authenticateJWT, async (req,res) => res.send(await checkUserByEmailExists(req,res)))
 app.post('/registernewuser', async (req, res) => res.send(await registerNewUser(req,res)));

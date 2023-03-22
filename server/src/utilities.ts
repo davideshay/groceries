@@ -30,9 +30,9 @@ const uomContent = [
     {_id: "system:uom:RL", type: "uom", name: "RL", description: "Roll", pluralDescription: "Rolls"},
 ]
 
-const globalItems = require("./globalItems.json");
+const globalItems = require("../data/globalItems.json");
 
-const categories = require("./categories.json");
+const categories = require("../data/categories.json");
 
 function emailPatternValidation(email) {
     const emailRegex=/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
@@ -49,7 +49,7 @@ function fullnamePatternValidation(fullname) {
     return usernameRegex.test(fullname);
 }
 
-module.exports = {
+export {
     emailPatternValidation,
     usernamePatternValidation,
     fullnamePatternValidation,
