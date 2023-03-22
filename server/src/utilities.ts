@@ -49,7 +49,7 @@ function fullnamePatternValidation(fullname) {
     return usernameRegex.test(fullname);
 }
 
-module.exports = {
+export {
     emailPatternValidation,
     usernamePatternValidation,
     fullnamePatternValidation,

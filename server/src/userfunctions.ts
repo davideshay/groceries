@@ -123,7 +123,7 @@ async function totalDocCount(db) {
 }
 
 async function setDBSecurity() {
-    errorSettingSecurity = false;
+    let errorSettingSecurity = false;
     let config = {
         method: 'get',
         url: couchdbUrl+"/"+couchDatabase+"/_security",
@@ -158,7 +158,7 @@ async function setDBSecurity() {
         console.log("STATUS: Security roles set correctly");
         return (true);
     }
-    config = {
+    let configSec = {
         method: 'put',
         url: couchdbUrl+"/"+couchDatabase+"/_security",
         auth: {username: couchAdminUser, password: couchAdminPassword},
@@ -166,7 +166,7 @@ async function setDBSecurity() {
         data: newSecurity
     }
     errorSettingSecurity = false;
-    try { res = await axios(config)}
+    try { res = await axios(configSec)}
     catch(err) { console.log("ERROR setting security:", err); errorSettingSecurity = true }
     if (errorSettingSecurity) {
         console.log("ERROR: Problem setting database security")
@@ -263,7 +263,7 @@ async function createUOMContent() {
     }
     let foundUOMDocs =  await todosDBAsAdmin.find(dbuomq);
     for (let i = 0; i < uomContent.length; i++) {
-        uom = uomContent[i];
+        let uom = uomContent[i];
         const docIdx=foundUOMDocs.docs.findIndex((el) => (el.name.toUpperCase() === uom.name.toUpperCase() || el._id === uom._id));
         let needsAdded=true;
         if (docIdx !== -1) {
@@ -514,8 +514,7 @@ async function createConflictsView() {
         try {
             await todosDBAsAdmin.insert({
                 "views": { "conflicts_view" : {
-                    "map": function(doc) { if (doc._conflicts) { emit (doc._conflicts, null)}
-                }
+                    "map": "function(doc) { if (doc._conflicts) { emit (doc._conflicts, null)}}"
             }}},"_design/"+conflictsViewID)
         }
         catch(err) {console.log("ERROR: View not created:",{err}); viewCreated=false;}
@@ -546,14 +545,14 @@ async function dbStartup() {
     await createConflictsView();
     if (enableScheduling) {
         if(isInteger(resolveConflictsFrequencyMinutes)) {
-            setInterval(() => {resolveConflicts()},60000*resolveConflictsFrequencyMinutes);
+            setInterval(() => {resolveConflicts()},60000*Number(resolveConflictsFrequencyMinutes));
             console.log("STATUS: Conflict resolution scheduled every ",resolveConflictsFrequencyMinutes, " minutes.")
             resolveConflicts();
         } else {
             console.log("ERROR: Invalid environment variable for scheduling conflict resolution -- not started.");
         }
         if (isInteger(expireJWTFrequencyMinutes)) {
-            setInterval(() => {expireJWTs()},60000*expireJWTFrequencyMinutes);
+            setInterval(() => {expireJWTs()},60000*Number(expireJWTFrequencyMinutes));
             console.log("STATUS: JWT expiry scheduled every ",expireJWTFrequencyMinutes," minutes.");
             expireJWTs();
         } else {
@@ -679,9 +678,9 @@ async function issueToken(req, res) {
          response.accessJWT = await generateJWT({username: username, deviceUUID: deviceUUID, includeRoles:true, timeString: accessTokenExpires});
      }
      if (!userDoc.fullDoc.hasOwnProperty('refreshJWTs')) {
-        userDoc.fullDoc.refreshJWTs = {};
+        (userDoc.fullDoc as any).refreshJWTs = {};
      }
-     userDoc.fullDoc.refreshJWTs[deviceUUID] = response.refreshJWT;
+     (userDoc.fullDoc as any).refreshJWTs[deviceUUID] = response.refreshJWT;
      try {let userUpd = usersDBAsAdmin.insert(userDoc.fullDoc);}
      catch(err) {console.log("ERROR: Could not update user: ",username,":",err); response.loginSuccessful=false;}
     return(response);
@@ -710,7 +709,7 @@ async function isValidToken(refreshJWT) {
 }
 
 async function JWTMatchesUserDB(refreshJWT, deviceUUID, username) {
-    let userDoc = await getUserDoc(username);
+    let userDoc: any = await getUserDoc(username);
     if (userDoc.fullDoc.hasOwnProperty('refreshJWTs')) {
         console.log("Refresh JWT matches the database:",userDoc.fullDoc.refreshJWTs[deviceUUID] == refreshJWT);    
     }
@@ -723,7 +722,7 @@ async function JWTMatchesUserDB(refreshJWT, deviceUUID, username) {
 
 async function invalidateToken(username, deviceUUID, invalidateAll) {
     console.log("invalidating token now...");
-    let userDoc = await getUserDoc(username);
+    let userDoc: any = await getUserDoc(username);
     if (userDoc.error) { return false;}
     if (userDoc.fullDoc.name !== username) { return false;}
     if (!userDoc.fullDoc.hasOwnProperty("refreshJWTs")) { return false;}
@@ -732,7 +731,7 @@ async function invalidateToken(username, deviceUUID, invalidateAll) {
     } else {
         userDoc.fullDoc.refreshJWTs[deviceUUID] = {};
     }    
-    try { res = await usersDBAsAdmin.insert(userDoc.fullDoc); }
+    try { let res = await usersDBAsAdmin.insert(userDoc.fullDoc); }
     catch(err) { console.log("ERROR: problem invalidating token: ",err); return false; }
     console.log("token now invalidated");
     return true;
@@ -775,7 +774,7 @@ async function refreshToken(req, res) {
     response.valid = true;
     response.refreshJWT = await generateJWT({username: tokenDecode.payload.sub, deviceUUID: deviceUUID, includeRoles: false, timeString: refreshTokenExpires});
     response.accessJWT = await generateJWT({username: tokenDecode.payload.sub, deviceUUID: deviceUUID, includeRoles: true, timeString: accessTokenExpires});
-    let userResponse = await getUserDoc(tokenDecode.payload.sub);
+    let userResponse: any = await getUserDoc(tokenDecode.payload.sub);
     userResponse.fullDoc.refreshJWTs[deviceUUID] = response.refreshJWT;
     try {let update = await usersDBAsAdmin.insert(userResponse.fullDoc);}
     catch(err) {console.log("ERROR: Could not update user(refresh token):",err); response.valid=false;}
@@ -793,7 +792,7 @@ async function createNewUser(userObj, deviceUUID) {
     }
     let refreshJWTs = {};
     if (deviceUUID !== "") {
-        newJWT = await generateJWT({username: userObj.username,deviceUUID: deviceUUID,includeRoles: false, timeString: refreshTokenExpires});
+        let newJWT = await generateJWT({username: userObj.username,deviceUUID: deviceUUID,includeRoles: false, timeString: refreshTokenExpires});
         refreshJWTs = { deviceUUID: newJWT}
         createResponse.refreshJWT = newJWT;
     }
@@ -821,7 +820,7 @@ async function createNewUser(userObj, deviceUUID) {
 async function logout(req, res) {
     const { refreshJWT, deviceUUID, username } = req.body;
     console.log("logging out user: ", username, " for device: ",deviceUUID);
-    let userResponse = await getUserDoc(username);
+    let userResponse: any = await getUserDoc(username);
     userResponse.fullDoc.refreshJWTs[deviceUUID] = ""; 
     let update = null;
     try { update = await usersDBAsAdmin.insert(userResponse.fullDoc); res.sendStatus(200);}
@@ -843,21 +842,22 @@ async function authenticateJWT(req,res,next) {
     }
 }
 
-async function updateUnregisteredFriends(email) {
+async function updateUnregisteredFriends(req,email) {
     const emailq = {
         selector: { type: { "$eq": "friend" }, inviteEmail: { "$eq": email}},
         limit: await totalDocCount(todosDBAsAdmin)
     }
+    let foundFriendDocs;
     try {foundFriendDocs =  await todosDBAsAdmin.find(emailq);}
     catch(err) {console.log("ERROR: Could not find friend documents:",err); return false;}
-    foundFriendDoc = undefined;
+    let foundFriendDoc = undefined;
 //    if (foundFriendDocs.docs.length > 0) {foundFriendDoc = foundFriendDocs.docs[0]}
     foundFriendDocs.docs.forEach(async (doc) => {
         if (doc.friendStatus == "WAITREGISTER") {
             doc.friendID2 = req.body.username;
             doc.friendStatus = "PENDFROM1";
             doc.updatedAt = (new Date()).toISOString();
-            update2Success=true;
+            let update2success=true;
             try { await todosDBAsAdmin.insert(doc);} 
             catch(e) {update2success = false;}
         }
@@ -899,7 +899,7 @@ async function registerNewUser(req, res) {
         registerResponse.idCreated = createResponse.idCreated;
         registerResponse.refreshJWT = createResponse.refreshJWT;
         registerResponse.accessJWT = createResponse.accessJWT;
-        let updateFriendResponse = await updateUnregisteredFriends(email)
+        let updateFriendResponse = await updateUnregisteredFriends(req,email)
     }
     return (registerResponse);
 }
@@ -1048,7 +1048,7 @@ async function createAccountUIPost(req,res) {
         foundFriendDoc.friendID2 = req.body.username;
         foundFriendDoc.friendStatus = "PENDFROM1";
         foundFriendDoc.updatedAt = (new Date()).toISOString();
-        updateSuccessful = true;
+        let updateSuccessful = true;
         try { await todosDBAsAdmin.insert(foundFriendDoc); }
         catch(e) {updateSuccessful = false;}
     }
@@ -1069,9 +1069,9 @@ async function createAccountUIPost(req,res) {
             doc.friendID2 = req.body.username;
             doc.friendStatus = "PENDFROM1";
             doc.updatedAt = (new Date()).toISOString();
-            update2Success=true;
+            let update2Success=true;
             try { await todosDBAsAdmin.insert(doc);} 
-            catch(e) {update2success = false;}
+            catch(e) {update2Success = false;}
         }
     });
 
@@ -1123,7 +1123,7 @@ async function resetPassword(req, res) {
 
     let transport = nodemailer.createTransport(smtpOptions);
     transport.verify(function (error,success) {
-        if (error) {return triggerResponse}
+        if (error) {return resetResponse}
     })
 
     let resetURL = groceryAPIUrl + "/resetpasswordui?username="+encodeURIComponent(username);
@@ -1154,7 +1154,7 @@ async function resetPasswordUIGet(req, res) {
     
     let userDoc = await getUserDoc(req.query.username);
     if (userDoc.error) {
-        respObj.formError = "Cannot locate user name "+username;
+        respObj.formError = "Cannot locate user name "+req.query.username;
         respObj.disableSubmit = true;
         return respObj
     }
@@ -1189,7 +1189,7 @@ async function resetPasswordUIPost(req, res) {
         try {let docupdate = await usersDBAsAdmin.insert(newDocFiltered);}
         catch(err) {console.log("ERROR: Couldn't update user/reset password:",err);
                     respObj.formError="Database error resetting password";
-                    respObj.createdSuccessfully=false;
+                    respObj.resetSuccessfully=false;
                     return respObj;}
     }
     respObj.resetSuccessfully = true;
@@ -1213,7 +1213,7 @@ async function resolveConflicts() {
         let latestIsCurrentWinner = true;
         let latestDoc = curWinner
         let bulkObj = { docs: []};
-        let logObj = { type: "conflictlog", docType: curWinner.type, winner: {}, losers: []};
+        let logObj = { type: "conflictlog", docType: curWinner.type, winner: {}, losers: [], updatedAt: ""};
         for (let j = 0; j < curWinner._conflicts.length; j++) {
             const losingRev = curWinner._conflicts[j];
             let curLoser;
@@ -1293,7 +1293,7 @@ async function triggerDBCompact(req,res) {
     return respObj;
 }
 
-module.exports = {
+export {
     issueToken,
     refreshToken,
     checkUserExists,
