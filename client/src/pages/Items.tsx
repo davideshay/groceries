@@ -130,7 +130,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     origSearchCriteria.current=event.detail.value;
   }  
 
-  function isItemAlreadyInList(itemName: string) {
+  function isItemAlreadyInList(itemName: string): boolean {
     let existingItem = (allItemDocs as ItemDocs).find((el) => el.name.toUpperCase() === itemName.toUpperCase());
     return(!(existingItem == undefined));
   }

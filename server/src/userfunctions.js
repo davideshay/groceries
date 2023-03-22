@@ -1,10 +1,10 @@
-const couchdbUrl = process.env.COUCHDB_URL.endsWith("/") ? process.env.COUCHDB_URL.slice(0,-1): process.env.COUCHDB_URL;
-const couchDatabase = process.env.COUCHDB_DATABASE;
+const couchdbUrl = (process.env.COUCHDB_URL == undefined) ? "" : process.env.COUCHDB_URL.endsWith("/") ? process.env.COUCHDB_URL.slice(0,-1): process.env.COUCHDB_URL;
+const couchDatabase = (process.env.COUCHDB_DATABASE == undefined) ? "" : process.env.COUCHDB_DATABASE;
 const couchKey = process.env.COUCHDB_HMAC_KEY;
 const couchAdminUser = process.env.COUCHDB_ADMIN_USER;
 const couchAdminPassword = process.env.COUCHDB_ADMIN_PASSWORD;
-const groceryUrl = process.env.GROCERY_URL.endsWith("/") ? process.env.GROCERY_URL.slice(0,-1): process.env.GROCERY_URL;
-const groceryAPIUrl = process.env.GROCERY_API_URL.endsWith("/") ? process.env.GROCERY_API_URL.slice(0,-1): process.env.GROCERY_API_URL;
+const groceryUrl = (process.env.GROCERY_URL == undefined) ? "" : process.env.GROCERY_URL.endsWith("/") ? process.env.GROCERY_URL.slice(0,-1): process.env.GROCERY_URL;
+const groceryAPIUrl = (process.env.GROCERY_API_URL == undefined) ? "" : process.env.GROCERY_API_URL.endsWith("/") ? process.env.GROCERY_API_URL.slice(0,-1): process.env.GROCERY_API_URL;
 const smtpHost = process.env.SMTP_HOST;
 const smtpPort = process.env.SMTP_PORT;
 const smtpSecure = Boolean(process.env.SMTP_SECURE);
@@ -528,7 +528,9 @@ function isInteger(str) {
 
 async function dbStartup() {
     console.log("STATUS: Starting up auth server for couchdb...");
+    if (couchdbUrl == "") {console.log("ERROR: No environment variable for CouchDB URL"); return false;}
     console.log("STATUS: Database URL: ",couchdbUrl);
+    if (couchDatabase == "") { console.log("ERROR: No CouchDatabase environment variable."); return false;}
     console.log("STATUS: Using database: ",couchDatabase);
     console.log("STATUS: Refresh token expires in ",refreshTokenExpires);
     console.log("STATUS: Access token expires in ",accessTokenExpires);
@@ -822,8 +824,8 @@ async function logout(req, res) {
     let userResponse = await getUserDoc(username);
     userResponse.fullDoc.refreshJWTs[deviceUUID] = ""; 
     let update = null;
-    try { update = await usersDBAsAdmin.insert(userResponse.fullDoc); }
-    catch(err) { console.log("ERROR: problem logging out user: ",err); }
+    try { update = await usersDBAsAdmin.insert(userResponse.fullDoc); res.sendStatus(200);}
+    catch(err) { console.log("ERROR: problem logging out user: ",err); res.sendStatus(404); }
 }
 
 async function authenticateJWT(req,res,next) {
