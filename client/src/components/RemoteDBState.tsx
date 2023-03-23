@@ -288,7 +288,6 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     } 
 
     async function checkDBUUID() {
-        console.log("checking DBUUID...");
         let UUIDCheck: DBUUIDCheck = {
             checkOK: true,
             schemaVersion: 0,
@@ -304,16 +303,12 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
           UUIDCheck.checkOK = false; UUIDCheck.dbUUIDAction = DBUUIDAction.exit_no_uuid_on_server;
           return UUIDCheck;
         }
-        console.log("checking schema version");
         UUIDCheck.schemaVersion = (UUIDResults.docs[0] as UUIDDoc).schemaVersion;
         if (UUIDCheck.schemaVersion > maxAppSupportedSchemaVersion) {
             UUIDCheck.checkOK = false;
             UUIDCheck.dbUUIDAction = DBUUIDAction.exit_schema_mismatch;
-            console.log("schema not ok");
-            console.log(UUIDCheck.schemaVersion, maxAppSupportedSchemaVersion);
             return UUIDCheck;
         }
-        console.log("past schema check");
         let localDBInfo = null;
         let localHasRecords = false;
         let localDBUUID = null;

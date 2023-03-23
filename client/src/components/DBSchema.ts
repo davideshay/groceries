@@ -1,8 +1,9 @@
 export const maxAppSupportedSchemaVersion = 3;
+export const appVersion = "0.3.0";
 
 export interface UUIDDoc {
-  _id: string,
-  _rev: string,
+  _id?: string,
+  _rev?: string,
   type: string,
   name: string,
   uuid: string,
@@ -14,8 +15,8 @@ export interface UUIDDoc {
 }
 
 export interface CategoryDoc {
-    _id: string,
-    _rev: string,
+    _id?: string,
+    _rev?: string,
     type: string,
     name: string,
     color: string,
@@ -23,14 +24,14 @@ export interface CategoryDoc {
   }
   
 export const InitCategoryDoc: CategoryDoc = {
-    _id: "", _rev: "", type: "category", name: "", color: "", updatedAt: ""
+   type: "category", name: "", color: "", updatedAt: ""
   }
   
 export type CategoryDocs = CategoryDoc[];
 
 export interface ConflictDoc {
-  _id: string,
-  _rev: string,
+  _id?: string,
+  _rev?: string,
   type: string,
   docType: string,
   winner: any,
@@ -41,8 +42,8 @@ export interface ConflictDoc {
 export type ConflictDocs = ConflictDoc[];
   
 export interface UomDoc {
-    _id: string,
-    _rev: string,
+    _id?: string,
+    _rev?: string,
     type: string,
     name: string,
     description: string,
@@ -97,8 +98,8 @@ export type ItemDocs = ItemDoc[];
 
 
 export interface GlobalItemDoc {
-  _id: string,
-  _rev: string,
+  _id?: string,
+  _rev?: string,
   type: string,
   name: string,
   defaultUOM: string | null,
@@ -108,8 +109,6 @@ export interface GlobalItemDoc {
 export type GlobalItemDocs = GlobalItemDoc[];
 
 export const InitGlobalItem:GlobalItemDoc = {
-  _id: "",
-  _rev: "",
   type: "globalitem",
   name: "",
   defaultCategoryID: null,
@@ -117,8 +116,8 @@ export const InitGlobalItem:GlobalItemDoc = {
 }
 
 export interface ListDoc {
-  _id: string,
-  _rev: string,
+  _id?: string,
+  _rev?: string,
   type: string,
   name: string,
   listGroupID: string | null,
@@ -129,8 +128,6 @@ export interface ListDoc {
 export type ListDocs = ListDoc[];
 
 export const ListDocInit:ListDoc = {
-  _id: "",
-  _rev: "",
   type: "list",
   name: "",
   listGroupID: "",
@@ -139,8 +136,8 @@ export const ListDocInit:ListDoc = {
 }
 
 export interface ListGroupDoc {
-  _id: string,
-  _rev: string,
+  _id?: string,
+  _rev?: string,
   type: string,
   name: string,
   default: boolean,
@@ -152,8 +149,6 @@ export interface ListGroupDoc {
 export type ListGroupDocs = ListGroupDoc[];
 
 export const ListGroupDocInit:ListGroupDoc = {
-  _id: "",
-  _rev: "",
   type: "listgroup",
   name: "",
   default: false,
@@ -172,8 +167,8 @@ export enum FriendStatus {
   }
 
 export type UserDoc = {
-  _id: string,
-  _rev: string,
+  _id?: string,
+  _rev?: string,
   name: string,
   email: string,
   fullname: string,
@@ -188,8 +183,8 @@ export type UserDoc = {
 }
 
 export type FriendDoc = {
-    _id: string,
-    _rev: string,
+    _id?: string,
+    _rev?: string,
     type: string,
     friendID1: string,
     friendID2: string,
@@ -202,6 +197,6 @@ export type FriendDoc = {
 export type FriendDocs = FriendDoc[];
 
 export const InitFriendDoc : FriendDoc = {
-    _id: "", _rev: "", type: "friend", friendID1: "", friendID2: "",
+    type: "friend", friendID1: "", friendID2: "",
     inviteEmail: "", inviteUUID: "", friendStatus: FriendStatus.Deleted, updatedAt: ""
   }

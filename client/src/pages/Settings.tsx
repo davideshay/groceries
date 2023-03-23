@@ -10,6 +10,7 @@ import SyncIndicator from '../components/SyncIndicator';
 import { GlobalStateContext, initSettings, GlobalSettings, AddListOptions } from '../components/GlobalState';
 import { initialRemoteDBState, RemoteDBStateContext,  } from '../components/RemoteDBState';
 import { HistoryProps } from '../components/DataTypes';
+import { maxAppSupportedSchemaVersion, appVersion } from '../components/DBSchema';
 
 const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
   const db = usePouch();
@@ -49,7 +50,6 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
     return false;
   }
 
-
   function stopSyncPopup() {
     presentAlert({
       header: 'Warning',
@@ -86,7 +86,6 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
     })
   }
 
-
   function changeSetting(key: string, value: any) {
     updateSettingKey(key,value);
     setLocalSettings(prevState => ({...prevState,[key]: value}));
@@ -103,6 +102,9 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
       </IonHeader>
       <IonContent fullscreen>
         <IonList lines="full">
+          <IonItemDivider>App Info</IonItemDivider>
+          <IonItem>App Version: {appVersion}</IonItem>
+          <IonItem>Database Schema Version: {maxAppSupportedSchemaVersion}</IonItem>
           <IonItemDivider>User Info</IonItemDivider>
           <IonItem>Name: {remoteDBCreds.fullName}</IonItem>
           <IonItem>UserID: {remoteDBCreds.dbUsername}</IonItem>
@@ -125,7 +127,10 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
           </IonRadioGroup>
           <IonItemDivider>Other Settings</IonItemDivider>
           <IonItem key="removesettings">
-            <IonCheckbox justify="space-between" labelPlacement="start" checked={localSettings.removeFromAllLists} onIonChange={(e) => changeSetting("removeFromAllLists",e.detail.checked)}>Remove items from all lists when completed</IonCheckbox>
+            <IonCheckbox justify="space-between" labelPlacement="start" checked={localSettings.removeFromAllLists} onIonChange={(e) => changeSetting("removeFromAllLists",e.detail.checked)}>Remove items from all lists in list group when marked as purchased/completed</IonCheckbox>
+          </IonItem>
+          <IonItem key="deletesettings">
+            <IonCheckbox justify="space-between" labelPlacement="start" checked={localSettings.completeFromAllLists} onIonChange={(e) => changeSetting("completeFromAllLists",e.detail.checked)}>Delete From All lists in list group when deleting completed items</IonCheckbox>
           </IonItem>
           <IonItem key="dayslog">
             <IonInput label="Days of conflict log to view:" labelPlacement="start" type="number" min="0" max="25" onIonInput={(e) => changeSetting("daysOfConflictLog", e.detail.value)} value={Number(localSettings?.daysOfConflictLog)}></IonInput>

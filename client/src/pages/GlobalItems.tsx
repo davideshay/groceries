@@ -5,8 +5,9 @@ import { useRef } from 'react';
 import SyncIndicator from '../components/SyncIndicator';
 import { HistoryProps} from '../components/DataTypes';
 import { GlobalItemDocs } from '../components/DBSchema';
+import { cloneDeep } from 'lodash';
 
-import './AllItems.css';
+import './GlobalItems.css';
 import ErrorPage from './ErrorPage';
 
 // The AllItems component is a master editor of all of the known items in the database.
@@ -49,9 +50,6 @@ const GlobalItems: React.FC<HistoryProps> = (props: HistoryProps) => {
       )
   });
 
-  if (!gotARow) return (<IonPage><IonHeader><IonTitle>Global Items</IonTitle></IonHeader>
-    <IonContent><IonList><IonItem>No Global Items Available</IonItem></IonList></IonContent></IonPage>)
-
   return (
     <IonPage>
       <IonHeader>
@@ -62,9 +60,8 @@ const GlobalItems: React.FC<HistoryProps> = (props: HistoryProps) => {
         </IonToolbar>
       </IonHeader>
       <IonContent>
-        <IonList lines="full">
-          {itemsElem}
-        </IonList>
+        {gotARow ? (<IonList lines="full">{itemsElem}</IonList>) :
+        (<IonList><IonItem>No Global Items Available</IonItem></IonList>)}
       </IonContent>
     </IonPage>
   );

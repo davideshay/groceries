@@ -15,7 +15,7 @@ export function createEmptyItemDoc(listRows:ListRow[], globalState: GlobalState)
   listRows.forEach((listRow: ListRow) => {
     if (listRow.listGroupID == listGroupID) {
       let newListDoc: ItemList ={
-        listID: listRow.listDoc._id,
+        listID: String(listRow.listDoc._id),
         quantity: 1,
         boughtCount: 0,
         note: "",

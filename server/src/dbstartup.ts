@@ -8,7 +8,7 @@ import { cloneDeep } from "lodash";
 import { v4 as uuidv4} from 'uuid';
 import { uomContent, categories, globalItems, totalDocCount } from "./utilities";
 import { ServerScope, DocumentScope, MangoResponse, MangoQuery, MaybeDocument, ViewDocument } from "nano";
-import { CategoryDoc, GlobalItemDoc, ItemDoc, ListDoc, ListGroupDoc, UUIDDoc, UomDoc, UserDoc } from "./DBSchema";
+import { CategoryDoc, GlobalItemDoc, ItemDoc, ListDoc, ListGroupDoc, UUIDDoc, UomDoc, UserDoc, appVersion, maxAppSupportedSchemaVersion } from "./DBSchema";
 
 
 let uomContentVersion = 0;
@@ -167,8 +167,6 @@ async function addDBIdentifier() {
     let foundIDDoc = await getLatestDBUUIDDoc();
     if (foundIDDoc == undefined) {
         const newDoc: UUIDDoc = {
-            _id: "",
-            _rev: "",
             type: "dbuuid",
             name: "Database UUID",
             "uuid": uuidv4(),
@@ -431,13 +429,12 @@ async function restructureListGroupSchema() {
             console.log("STATUS: No default listgroup found for :",foundUserDoc.name," ... creating...");
             let newCurDateStr = (new Date()).toISOString()
             const newListGroupDoc: ListGroupDoc = {
-                _id: "", _rev: "",
                 type: "listgroup", name: (foundUserDoc.name + " (default)"),
                 default: true, listGroupOwner: foundUserDoc.name, sharedWith: [], updatedAt: newCurDateStr
             }
             let dbResp = null;
             try { dbResp = await todosDBAsAdmin.insert(newListGroupDoc)}
-            catch(err) { console.log("ERROR: Couldn't create new list group:",newListGroupDoc.name)
+            catch(err) { console.log("ERROR: Couldn't create new list group:",newListGroupDoc.name, "err:",JSON.stringify(err))
                          updateSuccess = false;}
         } else {
             console.log("STATUS: Default List Group already exists for : ", foundUserDoc.name);
@@ -501,6 +498,8 @@ function isInteger(str: string) {
 
 export async function dbStartup() {
     console.log("STATUS: Starting up auth server for couchdb...");
+    console.log("STATUS: App Version: ",appVersion);
+    console.log("STATUS: Database Schema Version:",maxAppSupportedSchemaVersion);
     if (couchdbUrl == "") {console.log("ERROR: No environment variable for CouchDB URL"); return false;}
     console.log("STATUS: Database URL: ",couchdbUrl);
     if (couchDatabase == "") { console.log("ERROR: No CouchDatabase environment variable."); return false;}

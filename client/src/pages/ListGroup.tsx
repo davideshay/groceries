@@ -79,7 +79,6 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
         setPageState(prevState => ({...prevState,usersInfo:[],usersLoaded:false}));
         usersInfo = await getUsersInfo(userIDList,String(remoteDBCreds.apiServerURL),String(remoteDBState.accessJWT))  
       }
-      console.log("in GetUI, setting usersLoaded to true!!!");
       setPageState(prevState => ({...prevState,usersInfo: usersInfo,usersLoaded: true}))
     }
     let newPageState: PageState =cloneDeep(pageState);
@@ -109,8 +108,6 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   if (listError || listGroupError  || useFriendState === UseFriendState.error || categoryError) {
     <ErrorPage errorText="Error Loading List Group Information... Restart."></ErrorPage>
   }
-
-  console.log(cloneDeep({listRowsLoadedCheck: !listRowsLoaded,listGroupLoadingCheck: (listGroupLoading && pageState.selectedListGroupID !== null), useFriendCheck: (useFriendState !== UseFriendState.rowsLoaded), categoryLoading, emptyListGroupCheck: isEmpty(pageState.listGroupDoc), pusersLoadedCheck: !pageState.usersLoaded,pDeleteingDoc: pageState.deletingDoc }))
 
   if (!listRowsLoaded || (listGroupLoading && pageState.selectedListGroupID !== null) ||(useFriendState !== UseFriendState.rowsLoaded) || categoryLoading || isEmpty(pageState.listGroupDoc) || !pageState.usersLoaded || pageState.deletingDoc)  {return(
       <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent>

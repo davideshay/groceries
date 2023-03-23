@@ -532,7 +532,7 @@ export async function resolveConflicts() {
         let latestIsCurrentWinner = true;
         let latestDoc = curWinner;
         let bulkObj: { docs: [{_id: string, _rev: string, _deleted: boolean}?]} = { docs:[] };
-        let logObj: ConflictDoc = { _id: "", _rev: "", type: "conflictlog",
+        let logObj: ConflictDoc = { type: "conflictlog",
                 docType: curWinner.type, winner: {}, losers: [], updatedAt: ""};
         for (let j = 0; j < curWinner._conflicts.length; j++) {
             const losingRev = curWinner._conflicts[j];

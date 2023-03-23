@@ -1,4 +1,5 @@
-import jose, { JWTPayload } from 'jose';
+const jose = require('jose');
+import { JWTPayload } from 'jose';
 import { usersDBAsAdmin } from './dbstartup';
 import { couchKey, couchStandardRole } from './apicalls';
 import { getUserDoc } from './utilities';
@@ -67,7 +68,7 @@ export async function generateJWT ({ username, deviceUUID, timeString, includeRo
 export async function JWTMatchesUserDB(refreshJWT: string, deviceUUID: string, username: string) {
     let userDoc: any = await getUserDoc(username);
     if (userDoc.fullDoc.hasOwnProperty('refreshJWTs')) {
-        console.log("Refresh JWT matches the database:",userDoc.fullDoc.refreshJWTs[deviceUUID] == refreshJWT);    
+        console.log("STATUS: Refresh JWT matches the database:",userDoc.fullDoc.refreshJWTs[deviceUUID] == refreshJWT);    
     }
     if (userDoc.error) { return false;}
     if (userDoc.fullDoc.name !== username) { return false;}
@@ -77,7 +78,7 @@ export async function JWTMatchesUserDB(refreshJWT: string, deviceUUID: string, u
 }
 
 export async function invalidateToken(username: string, deviceUUID: string, invalidateAll: boolean) {
-    console.log("invalidating token now...");
+    console.log("STATUS: invalidating token now...");
     let userDoc: any = await getUserDoc(username);
     if (userDoc.error) { return false;}
     if (userDoc.fullDoc.name !== username) { return false;}
@@ -89,7 +90,7 @@ export async function invalidateToken(username: string, deviceUUID: string, inva
     }    
     try { let res = await usersDBAsAdmin.insert(userDoc.fullDoc); }
     catch(err) { console.log("ERROR: problem invalidating token: ",err); return false; }
-    console.log("token now invalidated");
+    console.log("STATUS: token now invalidated");
     return true;
 }
 

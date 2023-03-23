@@ -111,7 +111,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
     let numResults = 0;
     if (stateCategoryDoc == null) return numResults;
     listRows.forEach( (lr: ListRow) => {
-      if (lr.listDoc.categories.includes(stateCategoryDoc._id)) {
+      if (lr.listDoc.categories.includes(String(stateCategoryDoc._id))) {
         numResults++;
       }
     })
@@ -119,13 +119,13 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   async function deleteCategoryFromDB() {
-    let catItemDelResponse = await deleteCategoryFromItems(stateCategoryDoc._id);
+    let catItemDelResponse = await deleteCategoryFromItems(String(stateCategoryDoc._id));
     if (!catItemDelResponse.successful) {
       setFormError("Unable to remove category from items");
       setDeletingCategory(false);
       return;
     }
-    let catListDelResponse = await deleteCategoryFromLists(stateCategoryDoc._id);
+    let catListDelResponse = await deleteCategoryFromLists(String(stateCategoryDoc._id));
     if (!catListDelResponse.successful) {
       setFormError("Unable to remove category from lists");
       setDeletingCategory(false);
@@ -183,16 +183,16 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
               <input type="color" value={stateCategoryDoc.color} onChange={(e) => {setStateCategoryDoc((prevState) => ({...prevState,color: e.target.value}))}}></input>
             </IonItem>
           </IonList>
+          <IonItem>
           <IonButton class="ion-float-left" fill="outline" color="danger" onClick={() => deletePrompt()}><IonIcon slot="start" icon={trashOutline}></IonIcon>Delete</IonButton>
           <IonButton class="ion-float-right" onClick={() => updateThisCategory()}>
             <IonIcon slot="start" icon={(mode === "new" ? addOutline : saveOutline)}></IonIcon>
             {(mode === "new") ? "Add" : "Save"}
           </IonButton>
           <IonButton class="ion-float-right" fill="outline" color="secondary" onClick={() => goBack("/categories")}><IonIcon slot="start" icon={closeOutline}></IonIcon>Cancel</IonButton>
+          </IonItem>
+          <IonItem>{formError}</IonItem>
       </IonContent>
-      <IonFooter>
-        <IonLabel>{formError}</IonLabel>
-      </IonFooter>
     </IonPage>
   );
 };

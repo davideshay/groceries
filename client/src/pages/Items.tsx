@@ -96,15 +96,10 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   useEffect( () => {
     let filterRows=filterSearchRows(searchRows, searchState.searchCriteria)
-    console.log("new filtered rows: ", cloneDeep(filterRows));
-
-    console.log("search changed: ",cloneDeep(searchState.searchCriteria),"is focused: ",cloneDeep(searchState.isFocused),"is open:",cloneDeep(searchState.isOpen));
 //    if (filterRows.length > 0 ) {
     if (filterRows.length > 0 && searchState.isFocused ) {
-      console.log("setting isOpen true");
       setSearchState(prevState => ({...prevState, filteredSearchRows: filterRows, isOpen: true }));
     } else {
-      console.log("setting isOpen False");
       setSearchState(prevState => ({...prevState, filteredSearchRows: [], isOpen: false}));
     }
   },[searchState.searchCriteria,searchState.isFocused])
@@ -125,7 +120,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   screenLoading.current=false;
 
   function updateSearchCriteria(event: CustomEvent) {
-    console.log("updating search criteria:",event.detail.value);
     setSearchState(prevState => ({...prevState, event: event, searchCriteria: event.detail.value}));
     origSearchCriteria.current=event.detail.value;
   }
@@ -143,14 +137,12 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       setGlobalStateInfo("callingListID",pageState.selectedListOrGroupID);
       setGlobalStateInfo("callingListType",pageState.selectedListType);
       setGlobalStateInfo("newItemName",itemName);
-      console.log("ANITL: setting is focused/isopen to false");
       setSearchState(prevState => ({...prevState, isOpen: false,searchCriteria:"",isFocused: false}))
       props.history.push("/item/new/");
     }
   }
 
   function searchKeyPress(event: KeyboardEvent<HTMLElement>) {
-    console.log("key pressed", event.key);
     if (event.key === "Enter") {
       addNewItemToList(searchState.searchCriteria)
     }
@@ -161,13 +153,11 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function leaveSearchBox() {
-    console.log("leaving search box... setting is open false");
     origSearchCriteria.current=searchState.searchCriteria;
     setSearchState(prevState => ({...prevState, isOpen: false}));
   }
 
   function enterSearchBox(event: Event) {
-    console.log("entering Search Box..., setting is focused to true");
     let toOpen=true;
     if (searchState.filteredSearchRows.length === 0) { toOpen = false}
     setSearchState(prevState => ({...prevState, event: event, isFocused: true,isOpen: toOpen}));
@@ -181,7 +171,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   async function addExistingItemToList(item: ItemSearch) {
-    console.log("AEITL" , cloneDeep(item));
     if (item.itemType == ItemSearchType.Global) {
       let newItem: ItemDoc = cloneDeep(ItemDocInit);
       newItem.globalItemID = item.globalItemID;
@@ -190,7 +179,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       listRows.forEach((lr) => {
         if (lr.listGroupID == pageState.groupIDforSelectedList) {
           let newItemList: ItemList = cloneDeep(ItemListInit);
-          newItemList.listID = lr.listDoc._id;
+          newItemList.listID = String(lr.listDoc._id);
           newItemList.categoryID = item.globalItemCategoryID;
           newItemList.uomName = item.globalItemUOM;
           newItemList.quantity = 1;
@@ -214,7 +203,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
           if (pageState.selectedListType !== RowType.listGroup) {
             if (idxInLists !== -1) {
               let currItemListCategory = existingItem.lists[idxInLists].categoryID;
-              if (!isCategoryInList(listRow.listDoc._id,String(currItemListCategory))) {
+              if (!isCategoryInList(String(listRow.listDoc._id),String(currItemListCategory))) {
                 skipThisList = true;
               }
             }
@@ -229,7 +218,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       if (!skipThisList) {
         if (idxInLists === -1) {
           const newListItem: ItemList=cloneDeep(ItemListInit);
-          newListItem.listID = listRow.listDoc._id;
+          newListItem.listID = String(listRow.listDoc._id);
           newListItem.active = true;
           newListItem.completed = false;
           newListItem.stockedAt = true;
@@ -247,7 +236,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function chooseSearchItem(item: ItemSearch) {
-    console.log("AEITL setting is open and is focused to false" );
     addExistingItemToList(item);
     setSearchState(prevState => ({...prevState, searchCriteria: "", filteredRows: [],isOpen: false, isFocused: false}))
   }
@@ -284,7 +272,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     });
     if (listChanged) {
       let response = await updateItemInList(itemDoc);
-      console.log("did update, response is:", cloneDeep(response));
       if (!response.successful) {
         presentToast({message: "Error updating completed status. Please retry", duration: 1500, position: "middle"})
       }
@@ -307,16 +294,19 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   async function deleteCompletedItems(itemDocs: ItemDocs,listID: string) {
     (itemDocs as ItemDocs).forEach(async (itemDoc) => {
         let updatedItem: ItemDoc=cloneDeep(itemDoc);
-        let listItemIdx=updatedItem.lists.findIndex((el) => el.listID === listID);
-        if ((listItemIdx !== -1)) {
-            if (updatedItem.lists[listItemIdx].completed) {
-                updatedItem.lists[listItemIdx].active = false;
-                let result = await updateItemInList(updatedItem);
-                if (!result.successful) {
-                  presentToast({message: "Error deleting items from list. Please retry.",
-                    duration: 1500, position: "middle"})
-                }
-            }
+        let itemUpdated = false;
+        for (let i = 0; i < updatedItem.lists.length; i++) {
+          let willUpdate = (updatedItem.lists[i].listID == listID || globalState.settings.completeFromAllLists) && updatedItem.lists[i].completed;
+          if (!willUpdate) {continue}
+          updatedItem.lists[i].active = false;
+          itemUpdated = true;
+        }
+        if (itemUpdated) {
+          let result = await updateItemInList(updatedItem);
+          if (!result.successful) {
+            presentToast({message: "Error deleting items from list. Please retry.",
+              duration: 1500, position: "middle"})
+          }          
         }
     });
   }
@@ -326,10 +316,10 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   //     <IonPopover side="bottom" event={searchState.event} isOpen={searchState.isOpen} keyboardClose={false} onDidDismiss={() => {leaveSearchBox()}}>
 
   let popOverElem = (
-    <IonPopover side="bottom" event={searchState.event} isOpen={searchState.isOpen} keyboardClose={false} onDidDismiss={(e) => {console.log("did dismiss:e:",cloneDeep(e)); leaveSearchBox()}}>
+    <IonPopover side="bottom" event={searchState.event} isOpen={searchState.isOpen} keyboardClose={false} onDidDismiss={(e) => {leaveSearchBox()}}>
     <IonContent><IonList key="popoverItemList">
       {(searchState.filteredSearchRows as ItemSearch[]).map((item: ItemSearch) => (
-        <IonItem button key={pageState.selectedListOrGroupID+"-poilist-"+item.itemID} onClick={(e) => {console.log("clicked", cloneDeep(e)); chooseSearchItem(item)}}>{item.itemName}</IonItem>
+        <IonItem button key={pageState.selectedListOrGroupID+"-poilist-"+item.itemID} onClick={(e) => {chooseSearchItem(item)}}>{item.itemName}</IonItem>
       ))}
     </IonList></IonContent>
     </IonPopover>
@@ -377,7 +367,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
               onKeyDown= {(e) => searchKeyPress(e)}
               onIonInput={(e) => updateSearchCriteria(e)}
               onClick={(e: any) => enterSearchBox(e)}
-              onIonFocus={(e: any) => {console.log("searchbar focused", cloneDeep(e)); setSearchState((prevState) => ({...prevState,isFocused: true, event: e}))}}   >
+              onIonFocus={(e: any) => {setSearchState((prevState) => ({...prevState,isFocused: true, event: e}))}}   >
            </IonInput>
           {/* <IonButton onClick={()=> clickedSearchCheck()}><IonIcon icon={checkmark} /></IonButton> */}
         </IonItem>

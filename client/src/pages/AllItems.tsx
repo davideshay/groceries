@@ -34,7 +34,7 @@ const AllItems: React.FC<HistoryProps> = (props: HistoryProps) => {
   screenLoading.current = false;
 
   let gotARow = false;
-  let itemsElem;
+  let itemsElem: any = [];
   itemRows.forEach((doc: ItemDoc) => {
       gotARow = true;
       itemsElem.push(
@@ -43,9 +43,6 @@ const AllItems: React.FC<HistoryProps> = (props: HistoryProps) => {
         </IonItem>  
       )
   });
-
-  if (!gotARow) return (<IonPage><IonHeader><IonTitle>All Items</IonTitle></IonHeader>
-    <IonContent><IonList><IonItem>No Items Available</IonItem></IonList></IonContent></IonPage>)
 
   return (
     <IonPage>
@@ -57,9 +54,7 @@ const AllItems: React.FC<HistoryProps> = (props: HistoryProps) => {
         </IonToolbar>
       </IonHeader>
       <IonContent>
-        <IonList lines="full">
-          {itemsElem}
-        </IonList>
+        {gotARow ? (<IonList lines="full">{itemsElem}</IonList>) : (<IonList><IonItem>No Items Available</IonItem></IonList>) }
       </IonContent>
     </IonPage>
   );

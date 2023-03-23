@@ -44,7 +44,7 @@ export function useUpdateGenericDocument() {
           updatedDoc.updatedAt = curDateStr;
           let response: PouchResponse = cloneDeep(PouchResponseInit);
           try { response.pouchData = await db.put(updatedDoc); }
-          catch(err) { response.successful = false; response.fullError = err;}
+          catch(err) { response.successful = false; response.fullError = err; console.log("ERROR:",err);}
           if (!response.pouchData.ok) { response.successful = false;}
       return response
     },[db])
@@ -253,7 +253,7 @@ export function useLists() : {dbError: boolean, listsLoading: boolean, listDocs:
           rowName : listGroup.name,
           rowKey: "G-"+listGroup._id,
           listOrGroupID: String(listGroup._id),
-          listGroupID : listGroup._id,
+          listGroupID : String(listGroup._id),
           listGroupName : listGroup.name,
           listGroupOwner: listGroup.listGroupOwner,
           listGroupDefault: listGroup.default,
@@ -267,7 +267,7 @@ export function useLists() : {dbError: boolean, listsLoading: boolean, listDocs:
             rowType: RowType.list,
             rowName: listRow.listDoc.name,
             rowKey: "L-"+listRow.listDoc._id,
-            listOrGroupID: listRow.listDoc._id,
+            listOrGroupID: String(listRow.listDoc._id),
             listGroupID: listRow.listGroupID,
             listGroupName: listRow.listGroupName,
             listGroupOwner: listRow.listGroupOwner,
@@ -292,7 +292,7 @@ export function useLists() : {dbError: boolean, listsLoading: boolean, listDocs:
         if (newListRow.listGroupID == null) {
           let listlistRow: ListCombinedRow = {
             rowType: RowType.list, rowName: newListRow.listDoc.name,
-            rowKey: "L-"+newListRow.listDoc._id, listOrGroupID: newListRow.listDoc._id,listGroupID: null,
+            rowKey: "L-"+newListRow.listDoc._id, listOrGroupID: String(newListRow.listDoc._id),listGroupID: null,
             listGroupName: newListRow.listGroupName, listGroupOwner: null, listGroupDefault: false,
             listDoc: newListRow.listDoc
           }
@@ -484,17 +484,22 @@ export function useAddListToAllItems() {
   const db = usePouch();
   return useCallback(
     async ({listGroupID, listID, listDocs} : {listGroupID: string, listID: string, listDocs: ListDocs}) => {
+          console.log(cloneDeep({listGroupID,listID,listDocs}));
           let updateSuccess=true;
-          let itemRecords = await db.find({
+          let itemRecords: PouchDB.Find.FindResponse<ItemDoc>
+          itemRecords = await db.find({
             selector: { type: "item", 
                         name: { $exists: true},
                         listGroupID: listGroupID},
             sort: [ "type","name"]
-          })
+          }) as PouchDB.Find.FindResponse<ItemDoc>;
           for (let i = 0; i < itemRecords.docs.length; i++) {
-            const item : ItemDoc = itemRecords.docs[i] as ItemDoc;
+            console.log("adding list to item: ",itemRecords.docs[i].name)
+            const item = itemRecords.docs[i];
+            console.log("item: ", cloneDeep(item));
             let itemUpdated=false;
-            let listIdx = item.lists.findIndex((l: ItemList) => l.listID = listID)
+            let listIdx = item.lists.findIndex((l: ItemList) => l.listID === listID)
+            console.log("listIdx is: ",listIdx)
             if (listIdx === -1) {
               let newList = cloneDeep(ItemListInit);
               newList.listID = listID;
@@ -505,10 +510,12 @@ export function useAddListToAllItems() {
               newList.quantity = getCommonKey(item,"quantity",listDocs);
               newList.stockedAt = getCommonKey(item,"stockedAt",listDocs);
               newList.uomName = getCommonKey(item,"uomName",listDocs);
+              console.log("created new list:",cloneDeep(newList));
               item.lists.push(newList);
               itemUpdated=true;
             }
             if (itemUpdated) {
+              console.log("item updated, about to updat/add:",cloneDeep(item));
               let curDateStr=(new Date()).toISOString()
               item.updatedAt = curDateStr;
               let updateResponse = await db.put(item);

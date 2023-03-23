@@ -13,6 +13,7 @@ export enum AddListOptions {
 export type GlobalSettings = {
     addListOption: AddListOptions,
     removeFromAllLists: boolean,
+    completeFromAllLists: boolean,
     daysOfConflictLog: Number
 }
 
@@ -36,6 +37,7 @@ export interface GlobalStateContextType {
 export const initSettings: GlobalSettings = {
     addListOption: AddListOptions.addToAllListsAutomatically,
     removeFromAllLists: true,
+    completeFromAllLists: true,
     daysOfConflictLog: 2
 }
 
@@ -83,14 +85,32 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         let settingsObj: GlobalSettings = cloneDeep(initSettings);
         if (settingsStr != null && isJsonString(String(settingsStr))) {
             settingsObj=JSON.parse(String(settingsStr));
-            let settingsObjFiltered=pick(settingsObj,"addListOption","removeFromAllLists","daysOfConflictLog");
+            let settingsObjFiltered=pick(settingsObj,"addListOption","removeFromAllLists","completeFromAllLists","daysOfConflictLog");
             setGlobalState(prevState => ({...prevState,settings: settingsObjFiltered}))
             settingsObj = settingsObjFiltered;
         } else {
             await Preferences.set({key: 'settings', value: JSON.stringify(initSettings)})
         }
-        if (settingsObj == null || settingsObj.addListOption == undefined || settingsObj.removeFromAllLists == undefined) {
-            settingsObj = initSettings;
+        let needUpdate=false;
+        if (settingsObj == null) {settingsObj = initSettings; needUpdate = true;}
+        if (!settingsObj.hasOwnProperty('addListOption')) {
+            settingsObj.addListOption = initSettings.addListOption;
+            needUpdate = true;
+        }
+        if (!settingsObj.hasOwnProperty('removeFromAllLists')) {
+            settingsObj.removeFromAllLists = initSettings.removeFromAllLists;
+            needUpdate = true;
+        }
+        if (!settingsObj.hasOwnProperty('completeFromAllLists')) {
+            settingsObj.completeFromAllLists = initSettings.completeFromAllLists;
+            needUpdate = true;
+        }
+        if (!settingsObj.hasOwnProperty('daysOfConflictLog')) {
+            settingsObj.daysOfConflictLog = initSettings.daysOfConflictLog;
+            needUpdate = true;
+        }
+        if (needUpdate) {
+            await Preferences.set({key: 'settings', value: JSON.stringify(settingsObj)})
             setGlobalState(prevState => ({...prevState,settings: settingsObj}));
         }
         setSettingsRetrieved(true);

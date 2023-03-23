@@ -37,7 +37,7 @@ export function getAllSearchRows(allItemDocs: ItemDocs, listID: string, listDocs
             itemID: String(globalItem._id),
             itemName: globalItem.name,
             itemType: ItemSearchType.Global,
-            globalItemID: globalItem._id,
+            globalItemID: String(globalItem._id),
             globalItemCategoryID: globalItem.defaultCategoryID,
             globalItemUOM: globalItem.defaultUOM,
             quantity: 0,

@@ -65,7 +65,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
       let foundIdx=newItemDoc.lists.findIndex((el: ItemList) => el.listID === listRows[i].listDoc._id)
       if (foundIdx === -1) {
           let newItemList: ItemList = cloneDeep(ItemListInit);
-          newItemList.listID = listRows[i].listDoc._id;
+          newItemList.listID = String(listRows[i].listDoc._id);
           newItemList.active = getCommonKey(itemDoc,"active",listDocs);
           newItemList.categoryID = getCommonKey(itemDoc,"categoryID",listDocs);
           newItemList.completed = getCommonKey(itemDoc,"completed",listDocs);
@@ -122,7 +122,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
     let alreadyExists = false;
     itemRows.forEach((ir) => {
-      if (ir.listGroupID == stateItemDoc.listGroupID && ir.name.toUpperCase() == stateItemDoc.name.toUpperCase()) {
+      if ( ir._id !== stateItemDoc._id  && ir.listGroupID == stateItemDoc.listGroupID && ir.name.toUpperCase() == stateItemDoc.name.toUpperCase()) {
         alreadyExists = true;
       }
     })
