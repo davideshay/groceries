@@ -7,7 +7,7 @@ import { usePouch} from 'use-pouchdb';
 import { ConnectionStatus, DBCreds, DBUUIDAction } from '../components/RemoteDBState';
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
-import { createNewUser, getTokenInfo, navigateToFirstListID,  } from '../components/RemoteUtilities';
+import { createNewUser, getTokenInfo, navigateToFirstListID, errorCheckCreds  } from '../components/RemoteUtilities';
 import { cloneDeep } from 'lodash';
 import { RemoteDBStateContext, SyncStatus, initialRemoteDBState } from '../components/RemoteDBState';
 import { HistoryProps } from '../components/DataTypes';
@@ -73,7 +73,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     const db=usePouch();
     const [remoteState,setRemoteState]=useState<RemoteState>(initRemoteState);
     const [presentAlert] = useIonAlert();
-    const { remoteDBState, remoteDBCreds, setRemoteDBState, setRemoteDBCreds, errorCheckCreds, assignDB, setDBCredsValue} = useContext(RemoteDBStateContext);
+    const { remoteDBState, remoteDBCreds, setRemoteDBState, setRemoteDBCreds, assignDB, setDBCredsValue} = useContext(RemoteDBStateContext);
     const { listRowsLoaded, listRows } = useLists();
     const [ present, dismiss ]= useIonLoading();
 
@@ -170,7 +170,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
   async function submitForm() {
     await showLoading();
     setRemoteState(prevState => ({...prevState,formError: ""}));
-    let credsCheck = errorCheckCreds(remoteDBCreds,false,false,remoteState.password);
+    let credsCheck = errorCheckCreds({credsObj: remoteDBCreds,background:false,creatingNewUser:false,password: remoteState.password});
     if (credsCheck.credsError ) {
       setRemoteState(prevState => ({...prevState,formError: String(credsCheck.errorText)}))
       await dismiss();
@@ -212,7 +212,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
   async function submitCreateForm() {
     await showLoading();
     let createResponse: HttpResponse | undefined;
-    let credsCheck = errorCheckCreds(remoteDBCreds,false,true,remoteState.password,remoteState.verifyPassword);
+    let credsCheck = errorCheckCreds({credsObj: remoteDBCreds,background: false,creatingNewUser: true,password: remoteState.password,verifyPassword: remoteState.verifyPassword});
     if (!credsCheck.credsError) {
       createResponse = await createNewUser(remoteDBState,remoteDBCreds,String(remoteState.password));
       if (createResponse == undefined) { 

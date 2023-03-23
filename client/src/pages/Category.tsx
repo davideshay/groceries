@@ -1,5 +1,5 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, 
-  IonButtons, IonMenuButton, IonItem, IonLabel, IonFooter, NavContext, IonIcon,
+  IonButtons, IonMenuButton, IonItem, IonLabel, NavContext, IonIcon,
   useIonAlert, IonLoading } from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useFind, usePouch } from 'use-pouchdb';
@@ -29,12 +29,12 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   const deleteCategoryFromLists = useDeleteCategoryFromLists();
   const { doc: categoryDoc, loading: categoryLoading} = useGetOneDoc(routeID);
   const { dbError: listError, listRowsLoaded, listRows } = useLists();
-  const { dbError: itemError, itemRowsLoaded, itemRows } = useItems();
+  const { dbError: itemError, itemRowsLoaded, itemRows } = useItems(null,true);
   const { docs: categoryDocs, loading: categoriesLoading, error: categoriesError } = useFind({
     index: { fields: [ "type","name"] },
     selector: { type: "category", name: { $exists: true}},
     sort: [ "type","name"]
-  })
+  });
   const {goBack} = useContext(NavContext);
   const db = usePouch();
   const screenLoading = useRef(true);
@@ -81,8 +81,8 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
       setFormError("Duplicate Category Name");
       return
     }
-    let result: PouchResponse
-    if (mode === "new") {
+    let result: PouchResponse;
+    if ( mode === "new") {
       result = await createCategory(stateCategoryDoc);
     } else {
       result = await updateCategory(stateCategoryDoc);
@@ -183,15 +183,13 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
               <input type="color" value={stateCategoryDoc.color} onChange={(e) => {setStateCategoryDoc((prevState) => ({...prevState,color: e.target.value}))}}></input>
             </IonItem>
           </IonList>
-          <IonItem>
+          <IonItem>{formError}</IonItem>
           <IonButton class="ion-float-left" fill="outline" color="danger" onClick={() => deletePrompt()}><IonIcon slot="start" icon={trashOutline}></IonIcon>Delete</IonButton>
           <IonButton class="ion-float-right" onClick={() => updateThisCategory()}>
             <IonIcon slot="start" icon={(mode === "new" ? addOutline : saveOutline)}></IonIcon>
             {(mode === "new") ? "Add" : "Save"}
           </IonButton>
           <IonButton class="ion-float-right" fill="outline" color="secondary" onClick={() => goBack("/categories")}><IonIcon slot="start" icon={closeOutline}></IonIcon>Cancel</IonButton>
-          </IonItem>
-          <IonItem>{formError}</IonItem>
       </IonContent>
     </IonPage>
   );

@@ -48,6 +48,7 @@ import './theme/variables.css';
 import { Provider } from 'use-pouchdb';
 import PouchDB from 'pouchdb';
 import find from 'pouchdb-find';
+import { GlobalDataProvider } from './components/GlobalDataProvider';
 
 setupIonicReact();
 
@@ -76,6 +77,7 @@ const App: React.FC = () => {
     <GlobalStateProvider>
     <Provider pouchdb={db}>
     <RemoteDBStateProvider>
+    <GlobalDataProvider>
     <IonReactRouter>
       <IonSplitPane contentId="main">
       <AppMenu />
@@ -107,6 +109,7 @@ const App: React.FC = () => {
         </IonRouterOutlet>
       </IonSplitPane>
     </IonReactRouter>
+    </GlobalDataProvider>
     </RemoteDBStateProvider>
     </Provider>    
     </GlobalStateProvider>

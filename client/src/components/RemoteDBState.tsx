@@ -2,11 +2,11 @@ import React, { createContext, useState, useEffect, useRef} from "react";
 import { usePouch} from 'use-pouchdb';
 import { Preferences } from '@capacitor/preferences';
 import { cloneDeep, pick, keys, isEqual } from 'lodash';
-import { isJsonString, urlPatternValidation, emailPatternValidation, usernamePatternValidation, fullnamePatternValidation, DEFAULT_API_URL } from '../components/Utilities'; 
+import { isJsonString,  DEFAULT_API_URL } from '../components/Utilities'; 
 import { CapacitorHttp, HttpResponse } from '@capacitor/core';
 import { Device } from '@capacitor/device';
 import PouchDB from 'pouchdb';
-import { getTokenInfo, refreshToken } from "./RemoteUtilities";
+import { getTokenInfo, refreshToken, errorCheckCreds } from "./RemoteUtilities";
 import { maxAppSupportedSchemaVersion, UUIDDoc } from "./DBSchema";
 
 const secondsBeforeAccessRefresh = 180;
@@ -35,7 +35,6 @@ export interface RemoteDBStateContextType {
     setRemoteDBState: React.SetStateAction<RemoteDBState>,
     setRemoteDBCreds: any,
     startSync: () => void,
-    errorCheckCreds: () => CredsCheck,
     checkDBUUID: DBUUIDCheck,
     assignDB: boolean,
     setDBCredsValue: any,
@@ -127,7 +126,6 @@ const initialContext = {
     setRemoteDBState: (state: RemoteDBState ) => {},
     setRemoteDBCreds: (dbCreds: DBCreds) => {},
     startSync: () => {},
-    errorCheckCreds: (credsObj: DBCreds,background: boolean, creatingNewUser: boolean = false, password: string = "", verifyPassword: string = ""): CredsCheck => {return CredsCheckInit},
     checkDBUUID: async (remoteDB: PouchDB.Database,credsObj: DBCreds): Promise<DBUUIDCheck> => {return DBUUIDCheckInit },
     assignDB: async (accessJWT: string): Promise<boolean> => {return false},
     setDBCredsValue: (key: any, value: any) => {},
@@ -206,54 +204,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         }
         return remoteDBCreds.current;
       }
-    
-      function errorCheckCreds(credsObj: DBCreds,background: boolean, creatingNewUser: boolean = false, password: string = "", verifyPassword: string = "") {
-        let credsCheck={
-            credsError: false,
-            errorText: ""
-        }
-        function setError(err: string) {
-            credsCheck.credsError = true; credsCheck.errorText=err;
-        }
-        if (background && (credsObj.refreshJWT == null || credsObj.refreshJWT == "")) {
-            setError("No existing credentials found (refresh)"); return credsCheck;}
-        if (credsObj.apiServerURL == null || credsObj.apiServerURL == "") {
-            setError("No API Server URL entered"); return credsCheck;}    
-        if ((background) && (credsObj.couchBaseURL == null || credsObj.couchBaseURL == "")) {
-            setError("No CouchDB URL found"); return credsCheck;}
-        if (!urlPatternValidation(credsObj.apiServerURL)) {
-            setError("Invalid API URL"); return credsCheck;}
-        if ((background) && (!urlPatternValidation(String(credsObj.couchBaseURL)))) {
-            setError("Invalid CouchDB URL"); return credsCheck;}
-        if (credsObj.apiServerURL.endsWith("/")) {
-            credsObj.apiServerURL = String(credsObj.apiServerURL?.slice(0,-1))}
-        if (String(credsObj.couchBaseURL).endsWith("/")) {
-            credsObj.couchBaseURL = String(credsObj.couchBaseURL?.slice(0,-1))}
-        if ((background) && (credsObj.database == null || credsObj.database == "")) {
-            setError("No database name found"); return credsCheck;}
-        if (credsObj.dbUsername == null || credsObj.dbUsername == "") {
-            setError("No database user name entered"); return credsCheck;}
-        if ((creatingNewUser) && credsObj.dbUsername.length < 5) {
-            setError("Please enter username of 6 characters or more");
-            return credsCheck; }    
-        if ((creatingNewUser) && !usernamePatternValidation(credsObj.dbUsername)) {
-            setError("Invalid username format"); return credsCheck; }
-        if ((creatingNewUser) && !fullnamePatternValidation(String(credsObj.fullName))) {
-            setError("Invalid full name format"); return credsCheck; }
-        if ((creatingNewUser) && (credsObj.email == null || credsObj.email == "")) {
-            setError("No email entered"); return credsCheck;}
-        if ((creatingNewUser) && (!emailPatternValidation(String(credsObj.email)))) {
-            setError("Invalid email format"); return credsCheck;}
-        if ((!background && !creatingNewUser) && (password == undefined || password == "")) {
-            setError("No password entered"); return credsCheck;}
-        if ((creatingNewUser) && password.length < 5) {
-            setError("Password not long enough. Please have 6 character or longer password");
-            return credsCheck;}
-        if ((creatingNewUser) && (password != verifyPassword)) {
-            setError("Passwords do not match"); return credsCheck;}
-        return credsCheck;
-    }
-    
+        
     async function checkJWT(accessJWT: string) {
         let checkResponse = {
             JWTValid: false,
@@ -304,7 +255,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
           return UUIDCheck;
         }
         UUIDCheck.schemaVersion = (UUIDResults.docs[0] as UUIDDoc).schemaVersion;
-        if (UUIDCheck.schemaVersion > maxAppSupportedSchemaVersion) {
+        if (Number(UUIDCheck.schemaVersion) > maxAppSupportedSchemaVersion) {
             UUIDCheck.checkOK = false;
             UUIDCheck.dbUUIDAction = DBUUIDAction.exit_schema_mismatch;
             return UUIDCheck;
@@ -391,7 +342,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         }
         setRemoteDBState(prevState => ({...prevState,deviceUUID: devID}));
         let credsObj = await getPrefsDBCreds();
-        let credsCheck =  errorCheckCreds((credsObj as DBCreds),true);
+        let credsCheck =  errorCheckCreds({credsObj: credsObj, background: true});
         if (credsCheck.credsError) {
             setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: credsCheck.errorText, connectionStatus: ConnectionStatus.navToLoginScreen}))
             return;
@@ -480,7 +431,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         return () => clearTimeout(refreshTimer);
     },[remoteDBState.accessJWTExpirationTime])
 
-    let value: any = {remoteDBState, remoteDBCreds: remoteDBCreds.current, remoteDB: globalRemoteDB  , setRemoteDBState, setRemoteDBCreds, startSync, errorCheckCreds, checkDBUUID, assignDB, setDBCredsValue, setConnectionStatus};
+    let value: any = {remoteDBState, remoteDBCreds: remoteDBCreds.current, remoteDB: globalRemoteDB  , setRemoteDBState, setRemoteDBCreds, startSync, checkDBUUID, assignDB, setDBCredsValue, setConnectionStatus};
     return (
         <RemoteDBStateContext.Provider value={value}>{props.children}</RemoteDBStateContext.Provider>
       );

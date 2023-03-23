@@ -16,7 +16,7 @@ import ErrorPage from './ErrorPage';
 
 const AllItems: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { dbError: listError, listRowsLoaded } = useLists()
-  const { dbError: itemError,  itemRowsLoaded, itemRows} = useItems();
+  const { dbError: itemError,  itemRowsLoaded, itemRows} = useItems(null,true);
   const screenLoading = useRef(true);
 
 

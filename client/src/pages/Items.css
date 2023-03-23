@@ -14,3 +14,7 @@ ion-item.item-button::part(native) {
     --padding-start: 0;
     
 }
+
+ion-item-divider.category-divider {
+    --color: var(--ion-color-step-800)
+}

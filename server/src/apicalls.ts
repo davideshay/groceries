@@ -21,6 +21,7 @@ export const couchAdminRole = "dbadmin";
 export const couchUserPrefix = "org.couchdb.user";
 export const conflictsViewID = "_conflicts_only_view_id";
 export const conflictsViewName = "conflicts_view";
+export const utilitiesViewID = "_utilities";
 const smtpOptions: SMTPTransport.Options= {
     host: smtpHost, port: smtpPort, 
     auth: { user: smtpUser, pass: smtpPassword}

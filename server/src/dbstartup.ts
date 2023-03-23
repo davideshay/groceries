@@ -1,5 +1,5 @@
 import { todosNanoAsAdmin, usersNanoAsAdmin, couchDatabase, couchAdminPassword, couchAdminUser, couchdbUrl, couchStandardRole,
-couchAdminRole, conflictsViewID, refreshTokenExpires, accessTokenExpires,
+couchAdminRole, conflictsViewID, conflictsViewName, utilitiesViewID, refreshTokenExpires, accessTokenExpires,
 enableScheduling, resolveConflictsFrequencyMinutes,expireJWTFrequencyMinutes } from "./apicalls";
 import { resolveConflicts } from "./apicalls";
 import { expireJWTs } from './jwt'
@@ -492,6 +492,36 @@ async function createConflictsView() {
         console.log("STATUS: View created/ updated");
     }
 }
+
+async function createUtilitiesViews() {
+    let viewFound=true; let existingView;
+    try {existingView = await todosDBAsAdmin.get("_design/"+utilitiesViewID)}
+    catch(err) {viewFound = false;}
+    if (!viewFound) {
+        let viewCreated=true;
+        let viewDoc = {
+            "views": {
+                "ucase-items" : 
+                    { "map": "function(doc) { if (doc.type=='item') { emit (doc.name.toUpperCase(), doc._id)}}"},
+                "ucase-globalitems" : 
+                   { "map": "function(doc) { if (doc.type=='globalitem') { emit (doc.name.toUpperCase(), doc._id)}}"},
+                "ucase-categories" : 
+                   { "map": "function(doc) { if (doc.type=='category') { emit (doc.name.toUpperCase(), doc._id)}}"}
+                }
+            }
+        try {
+            await todosDBAsAdmin.insert(viewDoc as any,"_design/"+utilitiesViewID)
+        }
+        catch(err) {console.log("ERROR: Utilities View not created:",{err}); viewCreated=false;}
+        console.log("STATUS: Utilities View created/ updated");
+    }
+}
+
+async function  checkAndCreateViews() {
+    await createConflictsView();
+    await createUtilitiesViews();
+}
+
 function isInteger(str: string) {
     return /^\+?(0|[1-9]\d*)$/.test(str);
 }
@@ -515,7 +545,7 @@ export async function dbStartup() {
     await addDBIdentifier();
     await checkAndUpdateSchema();
     await checkAndCreateContent();
-    await createConflictsView();
+    await checkAndCreateViews();
     if (enableScheduling) {
         if(isInteger(String(resolveConflictsFrequencyMinutes))) {
             setInterval(() => {resolveConflicts()},60000*Number(resolveConflictsFrequencyMinutes));

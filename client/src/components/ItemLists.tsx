@@ -2,7 +2,7 @@ import {  IonButton,  IonItem, IonLabel, IonCheckbox, IonIcon,
     IonGrid, IonRow, IonCol, IonText,  } from '@ionic/react';
 import { pencilOutline } from 'ionicons/icons';
 import { Fragment, useState } from 'react';
-import { sortedItemLists } from './ItemUtilities';
+import { sortedItemLists, listIsDifferentThanCommon } from './ItemUtilities';
 import { CategoryDoc, UomDoc, ItemDoc, ItemList, ListDoc, ListDocs } from './DBSchema';
 import ItemListsModal from '../components/ItemListsModal';
 import { cloneDeep } from 'lodash';
@@ -67,41 +67,7 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
         }
         props.setStateItemDoc(newItemDoc);
     }
-    
-    function listIsDifferentThanCommon(sortedLists: ItemList[], listIdx: number): boolean {
-        let combinedKeys: any ={};
-        let maxKey="";
-        let maxCnt=1;
-        let thisKey="";
-        for (let i = 0; i < sortedLists.length; i++) {
-          const thisList=sortedLists[i];
-          let listKey="";
-          for (const [key, value] of Object.entries(thisList).sort((a,b) => a[0].toUpperCase().localeCompare(b[0].toUpperCase()))) {
-            if (!["listID","boughtCount"].includes(key)) {
-              listKey=listKey+key+value;
-            }
-          }
-          if (combinedKeys.hasOwnProperty(listKey)) {
-            combinedKeys[listKey] = combinedKeys[listKey] + 1;
-            if (combinedKeys[listKey] > maxCnt) {
-              maxCnt=combinedKeys[listKey];
-              maxKey=listKey;
-            }
-          } else {
-            combinedKeys[listKey] = 1;
-          }
-          if (i === listIdx) {
-            thisKey=listKey;
-          }
-        }
-        // check if max count occurs > 1 in the list, if so all rows should be different
-        let maxCheckCount=0;
-        for (const [key, value] of Object.entries(combinedKeys)) {
-          if (value == maxCnt) { maxCheckCount++;}
-        }
-        return ((combinedKeys[thisKey] < maxCnt) || (maxCheckCount > 1)) ;
-      }
-    
+        
     function editListModal(listID: string) {
         let listIdx = 0;
         for (let i = 0; i < props.stateItemDoc.lists.length; i++) {

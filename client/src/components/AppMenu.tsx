@@ -13,7 +13,7 @@ const AppMenu: React.FC = () => {
   const { conflictDocs, conflictsLoading } = useConflicts();
  
   const listHeader = (headerName: string) => {
-    return (<IonItemDivider>{headerName}</IonItemDivider>)
+    return (<IonItemDivider class="category-divider">{headerName}</IonItemDivider>)
   }
 
   const listItem = (listItem: string,link: string) => {

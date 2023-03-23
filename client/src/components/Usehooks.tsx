@@ -7,6 +7,7 @@ import { FriendDocs,FriendStatus, ListGroupDoc, ListDoc, ListDocs, ListGroupDocs
 import { GlobalStateContext } from './GlobalState';
 import { getUsersInfo } from './Utilities';
 import { getCommonKey } from './ItemUtilities';
+import { GlobalDataContext } from './GlobalDataProvider';
 
 export function useGetOneDoc(docID: string | null) {
   const db = usePouch();
@@ -319,27 +320,30 @@ export function useLists() : {dbError: boolean, listsLoading: boolean, listDocs:
   return ({dbError, listsLoading, listDocs, listRowsLoading, listRowsLoaded, listRows, listCombinedRows});
 }
 
-export function useItems() : {dbError: boolean, itemsLoading: boolean, itemRowsLoading: boolean, itemRowsLoaded: boolean, itemRows: ItemDocs} {
+export function useItems(selectedListGroupID: string | null, isReady: boolean) : {dbError: boolean, itemsLoading: boolean, itemRowsLoading: boolean, itemRowsLoaded: boolean, itemRows: ItemDocs} {
   const [itemRows,setItemRows] = useState<ItemDocs>([]);
   const [itemRowsLoaded, setItemRowsLoaded] = useState(false);
   const [itemRowsLoading, setItemRowsLoading] = useState(false);
   const [dbError, setDBError] = useState(false);
   const { dbError: listDBError, listCombinedRows, listRowsLoaded, listRowsLoading } = useLists()
-  const { docs: itemDocs, loading: itemsLoading, error: itemError} = useFind({
-    index: { fields: ["type","name"] },
-    selector: { "$and": [ 
-      {  "type": "item",
-         "name": { "$exists": true } }
-    ] },
-    sort: [ "type","name"] });
-
+  // const { docs: itemDocs, loading: itemsLoading, error: itemError} = useFind({
+  //   index: { fields: ["type","name"] },
+  //   selector: { 
+  //       "type": "item",
+  //       "name": { "$exists": true } 
+  //    }
+  //    });
+  const globalData = useContext(GlobalDataContext);
+  
   function buildItemRows() {
-    let curItemDocs: ItemDocs = cloneDeep(itemDocs);
+    let curItemDocs: ItemDocs = cloneDeep(globalData.itemDocs);
     let newItemRows: ItemDocs = [];
     curItemDocs.forEach((itemDoc: ItemDoc) => {
-      let listGroupIdx=listCombinedRows.findIndex((lr: ListCombinedRow) => (itemDoc.listGroupID == lr.listGroupID && lr.rowType == RowType.listGroup))
-      if (listGroupIdx !== -1) {
-        newItemRows.push(itemDoc);
+      if (selectedListGroupID == null || itemDoc.listGroupID == selectedListGroupID) {
+        let listGroupIdx=listCombinedRows.findIndex((lr: ListCombinedRow) => (itemDoc.listGroupID == lr.listGroupID && lr.rowType == RowType.listGroup))
+        if (listGroupIdx !== -1) {
+          newItemRows.push(itemDoc);
+        }
       }
     })
     newItemRows.sort(function (a: ItemDoc, b: ItemDoc) {
@@ -349,19 +353,25 @@ export function useItems() : {dbError: boolean, itemsLoading: boolean, itemRowsL
   }
 
   useEffect( () => {
-    if (itemsLoading || !listRowsLoaded ) { setItemRowsLoaded(false); return };
-    if (itemError !== null || listDBError) { setDBError(true); return;}
+    setItemRowsLoaded(false);
+  },[selectedListGroupID])
+
+  useEffect( () => {
+    if (globalData.itemsLoading || !listRowsLoaded || !isReady) { setItemRowsLoaded(false); return };
+    if (globalData.itemError !== null || listDBError) { setDBError(true); return;}
     setDBError(false);
-    if ( !itemsLoading && listRowsLoaded && !itemRowsLoaded)  {
+    if ( !globalData.itemsLoading && listRowsLoaded && !itemRowsLoaded)  {
+      console.log("triggering build item rows...");
       setItemRowsLoading(true);
       setItemRowsLoaded(false);
       buildItemRows();
       setItemRowsLoading(false)
       setItemRowsLoaded(true);
+      console.log("itemRowsLoaded now true...");
     }
-  },[itemError, listDBError, itemsLoading,listRowsLoading,itemDocs, listCombinedRows])
+  },[isReady,itemRowsLoaded,globalData.itemError, listDBError, globalData.itemsLoading,listRowsLoading,globalData.itemDocs, listCombinedRows])
 
-  return ({dbError, itemsLoading, itemRowsLoading, itemRowsLoaded, itemRows});
+  return ({dbError, itemsLoading: globalData.itemsLoading, itemRowsLoading, itemRowsLoaded, itemRows});
 }
 
 export enum UseFriendState {

@@ -1,4 +1,6 @@
-import {initItemRow, ItemRow, ItemSearch, ListCombinedRow, ListCombinedRows, RowType, ItemSearchType} from '../components/DataTypes';
+import {initItemRow, ItemRow, ItemSearch, ListCombinedRow, ListCombinedRows,
+     ListRow, RowType, ItemSearchType} from '../components/DataTypes';
+import { AddListOptions, GlobalState } from "./GlobalState";
 import { UomDoc, ItemDoc, ItemDocs, ItemList, ListDocs, ListDoc, CategoryDoc, GlobalItemDocs } from './DBSchema';
 import { cloneDeep } from 'lodash';
 
@@ -228,3 +230,92 @@ export function getCommonKey(stateItemDoc: ItemDoc, key: string, listDocs: ListD
     });
     return maxKey;
   }
+
+  export function createEmptyItemDoc(listRows:ListRow[], globalState: GlobalState) {
+    let newItemLists: ItemList[] =[];
+    let listGroupID = "";
+    if (globalState.callingListType == RowType.listGroup) {
+      listGroupID = String(globalState.callingListID);
+    } else {
+      let baseList=listRows.find((listRow:ListRow) => listRow.listDoc._id === globalState.callingListID);
+      listGroupID = String(baseList?.listGroupID);  
+    }
+    listRows.forEach((listRow: ListRow) => {
+      if (listRow.listGroupID == listGroupID) {
+        let newListDoc: ItemList ={
+          listID: String(listRow.listDoc._id),
+          quantity: 1,
+          boughtCount: 0,
+          note: "",
+          uomName: null,
+          categoryID: null,
+          active: true,
+          completed: false,
+          stockedAt: true
+        };
+        if (globalState.settings.addListOption == AddListOptions.addToAllListsAutomatically) {
+          newListDoc.active = true;
+        } else if (listRow.listDoc._id !== globalState.callingListID && globalState.callingListType != RowType.listGroup) {
+          newListDoc.active = false;
+          newListDoc.stockedAt = false;
+          newListDoc.quantity = 0;
+        }
+        newItemLists.push(newListDoc);
+      }
+  
+    });
+    let newItemDoc: ItemDoc ={
+      type: "item",
+      name: String(globalState.newItemName),
+      globalItemID: globalState.newItemGlobalItemID,
+      listGroupID: String(listGroupID),
+      lists: newItemLists
+    }
+    return(newItemDoc);
+  }
+
+export function listIsDifferentThanCommon(sortedLists: ItemList[], listIdx: number): boolean {
+    let combinedKeys: any ={};
+    let maxKey="";
+    let maxCnt=1;
+    let thisKey="";
+    for (let i = 0; i < sortedLists.length; i++) {
+        const thisList=sortedLists[i];
+        let listKey="";
+        for (const [key, value] of Object.entries(thisList).sort((a,b) => a[0].toUpperCase().localeCompare(b[0].toUpperCase()))) {
+        if (!["listID","boughtCount"].includes(key)) {
+            listKey=listKey+key+value;
+        }
+        }
+        if (combinedKeys.hasOwnProperty(listKey)) {
+        combinedKeys[listKey] = combinedKeys[listKey] + 1;
+        if (combinedKeys[listKey] > maxCnt) {
+            maxCnt=combinedKeys[listKey];
+            maxKey=listKey;
+        }
+        } else {
+        combinedKeys[listKey] = 1;
+        }
+        if (i === listIdx) {
+        thisKey=listKey;
+        }
+    }
+    // check if max count occurs > 1 in the list, if so all rows should be different
+    let maxCheckCount=0;
+    for (const [key, value] of Object.entries(combinedKeys)) {
+        if (value == maxCnt) { maxCheckCount++;}
+    }
+    return ((combinedKeys[thisKey] < maxCnt) || (maxCheckCount > 1)) ;
+}
+
+export async function checkNameInGlobal(db: PouchDB.Database, name: string) {
+    let nameExists=false;
+    let globalItemDocs = null;
+    try { globalItemDocs = await db.query('_utilities/ucase-globalitems',{ key: name.toUpperCase()}) }
+    catch(e) {console.log(e)};
+    if (globalItemDocs != null && globalItemDocs.hasOwnProperty("rows") && globalItemDocs.rows.length > 0) {
+        console.log(globalItemDocs);
+        if (globalItemDocs.rows[0].key == name.toUpperCase()) {nameExists = true}
+    }
+    return nameExists;
+}
