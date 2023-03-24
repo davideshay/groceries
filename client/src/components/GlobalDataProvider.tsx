@@ -49,16 +49,6 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
             "name": { "$exists": true } 
             }
         });
-             
-    
-    useEffect( () => {
-        console.log("items loading/reloading globally: ",itemsLoading,Date.now());
-    },[itemsLoading,itemDocs])
-
-    useEffect( () => {
-        console.log("global items loading/reloading globally: ",itemsLoading,Date.now());
-    },[globalItemsLoading,itemDocs])
-
 
     let value: GlobalDataState = {itemDocs: itemDocs as ItemDocs, itemsLoading, itemError,
             globalItemDocs: globalItemDocs as GlobalItemDocs, globalItemsLoading, globalItemError };

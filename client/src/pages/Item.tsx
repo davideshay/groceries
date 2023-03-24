@@ -42,7 +42,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
       index: { fields: [ "type","description"]},
       selector: { type: "uom", description: { $exists: true}},
       sort: [ "type","description"] });
-  const { dbError: itemsError, itemRowsLoaded, itemRows } = useItems({selectedListGroupID: stateItemDoc.listGroupID, isReady: !itemLoading, needListGroupID: true, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
+  const { dbError: itemsError, itemRowsLoaded, itemRows } = useItems({selectedListGroupID: stateItemDoc.listGroupID, isReady: !itemLoading, needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const { globalState, setStateInfo} = useContext(GlobalStateContext);
   const [presentAlert, dismissAlert] = useIonAlert();
   const [presentToast] = useIonToast();
@@ -92,11 +92,12 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
 
 
   useEffect( () => {
-    let newItemDoc : ItemDoc = cloneDeep(itemDoc);
     if (!itemLoading && mode === "new" && !listsLoading && listRowsLoaded && needInitItemDoc) {
-        newItemDoc = createEmptyItemDoc(listRows,globalState)
+        console.log("creating new empty item doc...");
+        let newItemDoc = createEmptyItemDoc(listRows,globalState)
         setStateInfo("newItemMode","none");
         setNeedInitItemDoc(false);
+        setStateItemDoc(newItemDoc);
     }
   },[itemLoading,itemDoc,listsLoading,listDocs,listRowsLoaded,listRowsLoaded, listRows,globalState.itemMode,globalState.newItemName, globalState.callingListID, needInitItemDoc]);
 
@@ -104,15 +105,20 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
     <ErrorPage errorText="Error Loading Item Information... Restart."></ErrorPage>
   )}
 
+//  console.log(cloneDeep({itemLoading, routeItemID, listsLoading, listRowsLoaded, categoryLoading, uomLoading, itemRowsLoaded, stateItemDoc}));
+
+
   if ((itemLoading && routeItemID !== null) || listsLoading || !listRowsLoaded || categoryLoading || uomLoading || !itemRowsLoaded || isEmpty(stateItemDoc))  {
     return(
-    <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
+    <IonPage><IonHeader><IonToolbar><IonButtons slot="start"><IonMenuButton /></IonButtons>
+    <IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
     <IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false;}} 
                 message="Loading Data..." />
     </IonPage>
   )};
 
   screenLoading.current=false;
+  console.log("Item render:",Date.now());
   
   async function updateThisItem() {
     setFormError(prevState => (""));

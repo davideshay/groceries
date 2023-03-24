@@ -330,6 +330,8 @@ export function useItems({selectedListGroupID,isReady, needListGroupID, activeOn
   const { dbError: listDBError, listCombinedRows, listRowsLoaded, listRowsLoading, listDocs } = useLists()
   const globalData = useContext(GlobalDataContext);
   
+//      console.log("UI:", cloneDeep({selectedListGroupID, selectedListID, isReady}));
+
   function buildItemRows() {
     let curItemDocs: ItemDocs = cloneDeep(globalData.itemDocs);
     let newItemRows: ItemDocs = [];
@@ -364,7 +366,6 @@ export function useItems({selectedListGroupID,isReady, needListGroupID, activeOn
   }
 
   useEffect( () => {
-    console.log("selected List Group ID changed",selectedListGroupID,selectedListID,selectedListType)
     setItemRowsLoaded(false);
   },[selectedListGroupID, selectedListID,selectedListType])
 

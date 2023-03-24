@@ -95,10 +95,23 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     <ErrorPage errorText="Error Loading Items Information... Restart."></ErrorPage>
   )}
 
+
+  // <IonPage>
+  // <IonHeader><IonToolbar><IonButtons slot="start"><IonMenuButton /></IonButtons>
+  // <IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
+  // <IonContent><IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false;}}
+  //                         message="Loading Data..." />
+  // </IonContent>
+  // </IonPage>
+
+
+
+
+
   if (!itemRowsLoaded || !listRowsLoaded || categoryLoading || globalData.globalItemsLoading || uomLoading || pageState.doingUpdate )  {return(
     <IonPage>
         <IonHeader><IonToolbar><IonButtons slot="start"><IonMenuButton /></IonButtons>
-        <IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
+        </IonToolbar></IonHeader>
         <IonContent><IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false;}}
                                 message="Loading Data..." />
         </IonContent>
@@ -410,7 +423,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
             checked={Boolean(pageState.itemRows[i].completed)}></IonCheckbox>
         </IonCol>
         <IonCol size="11">
-          <IonItem class="item-button" routerLink={"/item/edit/"+item.itemID} key={pageState.itemRows[i].itemID+"mynewbutton"}>{item.itemName + (item.quantityUOMDesc == "" ? "" : " ("+ item.quantityUOMDesc+")")}</IonItem>
+          <IonItem onClick={() => console.log("clicked item:",Date.now())} class="item-button" routerLink={"/item/edit/"+item.itemID} key={pageState.itemRows[i].itemID+"mynewbutton"}>{item.itemName + (item.quantityUOMDesc == "" ? "" : " ("+ item.quantityUOMDesc+")")}</IonItem>
         </IonCol>
         </IonRow></IonGrid>
       </IonItem>);
