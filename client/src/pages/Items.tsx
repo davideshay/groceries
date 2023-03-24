@@ -34,7 +34,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   const addNewItem = useCreateGenericDocument();
   const screenLoading = useRef(true);
   const globalData = useContext(GlobalDataContext);
-  const { dbError: itemError, itemRowsLoaded, itemRows: itemDocs} = useItems(pageState.groupIDforSelectedList,(pageState.groupIDforSelectedList !== null));
+  const { dbError: itemError, itemRowsLoaded, itemRows: itemDocs} = useItems({selectedListGroupID: pageState.groupIDforSelectedList, isReady: (pageState.groupIDforSelectedList !== null && pageState.selectedListOrGroupID !== null), needListGroupID: true, activeOnly: true, selectedListID: pageState.selectedListOrGroupID, selectedListType: pageState.selectedListType});
   const { dbError: listError , listDocs, listCombinedRows,listRows, listRowsLoaded } = useLists();
   const { docs: uomDocs, loading: uomLoading, error: uomError } = useFind({
     index: { fields: [ "type","name"]},
@@ -97,7 +97,8 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   if (!itemRowsLoaded || !listRowsLoaded || categoryLoading || globalData.globalItemsLoading || uomLoading || pageState.doingUpdate )  {return(
     <IonPage>
-        <IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
+        <IonHeader><IonToolbar><IonButtons slot="start"><IonMenuButton /></IonButtons>
+        <IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
         <IonContent><IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false;}}
                                 message="Loading Data..." />
         </IonContent>
@@ -285,11 +286,13 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         for (let i = 0; i < updatedItem.lists.length; i++) {
           let willUpdate = (updatedItem.lists[i].listID == listID || globalState.settings.completeFromAllLists) && updatedItem.lists[i].completed;
           if (!willUpdate) {continue}
+          console.log("did update to list...");
           updatedItem.lists[i].active = false;
           itemUpdated = true;
         }
         if (itemUpdated) {
           let result = await updateItemInList(updatedItem);
+          console.log("results of updateItemInList...",result);
           if (!result.successful) {
             presentToast({message: "Error deleting items from list. Please retry.",
               duration: 1500, position: "middle"})

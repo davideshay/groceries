@@ -13,7 +13,7 @@ import './Item.css';
 import SyncIndicator from '../components/SyncIndicator';
 import ItemLists from '../components/ItemLists';
 import { getCommonKey, createEmptyItemDoc, checkNameInGlobal  } from '../components/ItemUtilities';
-import { PouchResponse, HistoryProps, ListRow } from '../components/DataTypes';
+import { PouchResponse, HistoryProps, ListRow, RowType } from '../components/DataTypes';
 import { UomDoc, ItemDoc, ItemDocInit, ItemList, ItemListInit, CategoryDoc, GlobalItemDocs } from '../components/DBSchema';
 import ErrorPage from './ErrorPage';
 
@@ -42,7 +42,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
       index: { fields: [ "type","description"]},
       selector: { type: "uom", description: { $exists: true}},
       sort: [ "type","description"] });
-  const { dbError: itemsError, itemRowsLoaded, itemRows } = useItems(stateItemDoc.listGroupID,!itemLoading);
+  const { dbError: itemsError, itemRowsLoaded, itemRows } = useItems({selectedListGroupID: stateItemDoc.listGroupID, isReady: !itemLoading, needListGroupID: true, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const { globalState, setStateInfo} = useContext(GlobalStateContext);
   const [presentAlert, dismissAlert] = useIonAlert();
   const [presentToast] = useIonToast();
@@ -83,23 +83,26 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   useEffect( () => {
+    if (!itemLoading && mode !== "new" && itemDoc && listRowsLoaded) {
+      let newItemDoc: ItemDoc = cloneDeep(itemDoc);
+      newItemDoc = addDeleteLists(itemDoc);
+      setStateItemDoc(cloneDeep(newItemDoc));
+    }
+  },[itemLoading,mode,itemDoc,listRowsLoaded])
+
+
+  useEffect( () => {
     let newItemDoc : ItemDoc = cloneDeep(itemDoc);
-    if ((!itemLoading || mode === "new") && !listsLoading && listRowsLoaded && itemRowsLoaded) {
-      if (globalState.itemMode === "new" && needInitItemDoc) {
+    if (!itemLoading && mode === "new" && !listsLoading && listRowsLoaded && needInitItemDoc) {
         newItemDoc = createEmptyItemDoc(listRows,globalState)
         setStateInfo("newItemMode","none");
         setNeedInitItemDoc(false);
-      } else {
-        if (newItemDoc != null) {newItemDoc=addDeleteLists(itemDoc)};
-      }
-      if (newItemDoc != null) {setStateItemDoc(newItemDoc)};
     }
-  },[itemLoading,itemDoc,itemRowsLoaded,itemRows,listsLoading,listDocs,listRowsLoaded,listRowsLoaded, listRows,globalState.itemMode,globalState.newItemName, globalState.callingListID, needInitItemDoc]);
+  },[itemLoading,itemDoc,listsLoading,listDocs,listRowsLoaded,listRowsLoaded, listRows,globalState.itemMode,globalState.newItemName, globalState.callingListID, needInitItemDoc]);
 
-  if (itemError || listError || categoryError || uomError || itemsError) {return (
+  if (itemError || listError || categoryError || uomError || itemsError) { console.log("ERROR");return (
     <ErrorPage errorText="Error Loading Item Information... Restart."></ErrorPage>
   )}
-
 
   if ((itemLoading && routeItemID !== null) || listsLoading || !listRowsLoaded || categoryLoading || uomLoading || !itemRowsLoaded || isEmpty(stateItemDoc))  {
     return(
@@ -128,7 +131,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
       setFormError(prevState => ("Cannot use name of existing item in list group"));
       return false;
     }
-    if (await checkNameInGlobal(db as PouchDB.Database,stateItemDoc.name.toUpperCase())) {
+    if ( stateItemDoc.globalItemID == null && await checkNameInGlobal(db as PouchDB.Database,stateItemDoc.name.toUpperCase())) {
       setFormError(prevState => ("Cannot use name of existing item in global item list"));
       return false;
     }

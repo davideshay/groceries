@@ -4,7 +4,7 @@ import { useFind } from 'use-pouchdb';
 import { useRef } from 'react';
 import { useLists, useItems } from '../components/Usehooks';
 import SyncIndicator from '../components/SyncIndicator';
-import { HistoryProps} from '../components/DataTypes';
+import { HistoryProps, RowType} from '../components/DataTypes';
 import { ItemDoc } from '../components/DBSchema';
 import './AllItems.css';
 import ErrorPage from './ErrorPage';
@@ -16,7 +16,7 @@ import ErrorPage from './ErrorPage';
 
 const AllItems: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { dbError: listError, listRowsLoaded } = useLists()
-  const { dbError: itemError,  itemRowsLoaded, itemRows} = useItems(null,true);
+  const { dbError: itemError,  itemRowsLoaded, itemRows} = useItems({selectedListGroupID: null, isReady :true, needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const screenLoading = useRef(true);
 
 

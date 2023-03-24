@@ -78,7 +78,7 @@ export interface ItemDoc {
     _id?: string,
     _rev?: string,
     type: string,
-    listGroupID: string,
+    listGroupID: string | null,
     name: string,
     globalItemID: string | null,
     lists: ItemList[],
@@ -89,7 +89,7 @@ export type ItemDocs = ItemDoc[];
   
   export const ItemDocInit:ItemDoc = {
     type: "item",
-    listGroupID: "",
+    listGroupID: null,
     name: "",
     globalItemID: null,
     lists: [],

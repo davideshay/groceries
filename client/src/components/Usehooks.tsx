@@ -320,19 +320,14 @@ export function useLists() : {dbError: boolean, listsLoading: boolean, listDocs:
   return ({dbError, listsLoading, listDocs, listRowsLoading, listRowsLoaded, listRows, listCombinedRows});
 }
 
-export function useItems(selectedListGroupID: string | null, isReady: boolean) : {dbError: boolean, itemsLoading: boolean, itemRowsLoading: boolean, itemRowsLoaded: boolean, itemRows: ItemDocs} {
+export function useItems({selectedListGroupID,isReady, needListGroupID, activeOnly = false, selectedListID = null, selectedListType = RowType.list,} :
+                   {selectedListGroupID: string | null, isReady: boolean, needListGroupID: boolean, activeOnly: boolean, selectedListID: string | null, selectedListType: RowType})
+      : {dbError: boolean, itemsLoading: boolean, itemRowsLoading: boolean, itemRowsLoaded: boolean, itemRows: ItemDocs} {
   const [itemRows,setItemRows] = useState<ItemDocs>([]);
   const [itemRowsLoaded, setItemRowsLoaded] = useState(false);
   const [itemRowsLoading, setItemRowsLoading] = useState(false);
   const [dbError, setDBError] = useState(false);
-  const { dbError: listDBError, listCombinedRows, listRowsLoaded, listRowsLoading } = useLists()
-  // const { docs: itemDocs, loading: itemsLoading, error: itemError} = useFind({
-  //   index: { fields: ["type","name"] },
-  //   selector: { 
-  //       "type": "item",
-  //       "name": { "$exists": true } 
-  //    }
-  //    });
+  const { dbError: listDBError, listCombinedRows, listRowsLoaded, listRowsLoading, listDocs } = useLists()
   const globalData = useContext(GlobalDataContext);
   
   function buildItemRows() {
@@ -342,7 +337,23 @@ export function useItems(selectedListGroupID: string | null, isReady: boolean) :
       if (selectedListGroupID == null || itemDoc.listGroupID == selectedListGroupID) {
         let listGroupIdx=listCombinedRows.findIndex((lr: ListCombinedRow) => (itemDoc.listGroupID == lr.listGroupID && lr.rowType == RowType.listGroup))
         if (listGroupIdx !== -1) {
-          newItemRows.push(itemDoc);
+          let addToList = true;
+          if (activeOnly) {
+            if (selectedListType !== RowType.listGroup) {
+              addToList=false;
+              itemDoc.lists.forEach((il) => {
+                if (il.listID == selectedListID && il.active) { addToList=true}
+              })
+            } else {
+              let activeCommon = getCommonKey(itemDoc,"active",listDocs);
+              if (!Boolean(activeCommon)) {
+                addToList = false;
+              }
+            }
+          }
+          if (addToList) {       
+            newItemRows.push(itemDoc);
+          }
         }
       }
     })
@@ -353,21 +364,20 @@ export function useItems(selectedListGroupID: string | null, isReady: boolean) :
   }
 
   useEffect( () => {
+    console.log("selected List Group ID changed",selectedListGroupID,selectedListID,selectedListType)
     setItemRowsLoaded(false);
-  },[selectedListGroupID])
+  },[selectedListGroupID, selectedListID,selectedListType])
 
   useEffect( () => {
-    if (globalData.itemsLoading || !listRowsLoaded || !isReady) { setItemRowsLoaded(false); return };
+    if (globalData.itemsLoading || !listRowsLoaded || !isReady || (isReady && selectedListGroupID == null && needListGroupID)) { setItemRowsLoaded(false); return };
     if (globalData.itemError !== null || listDBError) { setDBError(true); return;}
     setDBError(false);
     if ( !globalData.itemsLoading && listRowsLoaded && !itemRowsLoaded)  {
-      console.log("triggering build item rows...");
       setItemRowsLoading(true);
       setItemRowsLoaded(false);
       buildItemRows();
       setItemRowsLoading(false)
       setItemRowsLoaded(true);
-      console.log("itemRowsLoaded now true...");
     }
   },[isReady,itemRowsLoaded,globalData.itemError, listDBError, globalData.itemsLoading,listRowsLoading,globalData.itemDocs, listCombinedRows])
 

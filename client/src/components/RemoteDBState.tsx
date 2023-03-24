@@ -172,7 +172,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             retry: true,
             live: true,
             }).on('paused', () => { setSyncStatus(SyncStatus.paused)})
-            .on('active', () => { setSyncStatus(SyncStatus.active)})
+            .on('active', () => { console.log("sync active"); setSyncStatus(SyncStatus.active)})
             .on('denied', (err) => { setSyncStatus(SyncStatus.denied); console.log("sync denied: ",{err})})
             .on('error', (err) => { console.log ("db.sync error state",{err}) ; 
                                 globalSync.cancel();

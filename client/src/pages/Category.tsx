@@ -8,7 +8,7 @@ import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteCategoryFr
    useDeleteCategoryFromLists, useGetOneDoc, useLists, useItems } from '../components/Usehooks';
 import { cloneDeep } from 'lodash';
 import './Category.css';
-import { PouchResponse, HistoryProps, ListRow} from '../components/DataTypes';
+import { PouchResponse, HistoryProps, ListRow, RowType} from '../components/DataTypes';
 import { ItemDoc, ItemList, CategoryDoc, InitCategoryDoc } from '../components/DBSchema';
 import SyncIndicator from '../components/SyncIndicator';
 import { addOutline, closeOutline, saveOutline, trashOutline } from 'ionicons/icons';
@@ -29,7 +29,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   const deleteCategoryFromLists = useDeleteCategoryFromLists();
   const { doc: categoryDoc, loading: categoryLoading} = useGetOneDoc(routeID);
   const { dbError: listError, listRowsLoaded, listRows } = useLists();
-  const { dbError: itemError, itemRowsLoaded, itemRows } = useItems(null,true);
+  const { dbError: itemError, itemRowsLoaded, itemRows } = useItems({selectedListGroupID: null, isReady: true, needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const { docs: categoryDocs, loading: categoriesLoading, error: categoriesError } = useFind({
     index: { fields: [ "type","name"] },
     selector: { type: "category", name: { $exists: true}},
