@@ -118,7 +118,6 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
   )};
 
   screenLoading.current=false;
-  console.log("Item render:",Date.now());
   
   async function updateThisItem() {
     setFormError(prevState => (""));

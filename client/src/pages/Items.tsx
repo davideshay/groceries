@@ -172,6 +172,8 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   async function addExistingItemToList(item: ItemSearch) {
+    const testItemDoc = globalData.itemDocs.find((id) => (id._id === item.itemID));
+    if (testItemDoc !== undefined) {presentToast({message: "Trying to add duplicate item... Error."}); return}
     if (item.itemType == ItemSearchType.Global) {
       let newItem: ItemDoc = cloneDeep(ItemDocInit);
       newItem.globalItemID = item.globalItemID;
@@ -319,7 +321,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   //     <IonPopover side="bottom" event={searchState.event} isOpen={searchState.isOpen} keyboardClose={false} onDidDismiss={() => {leaveSearchBox()}}>
 
   let popOverElem = (
-    <IonPopover side="bottom" event={searchState.event} isOpen={searchState.isOpen} keyboardClose={false} onDidDismiss={(e) => {leaveSearchBox()}}>
+    <IonPopover side="bottom" trigger="itemsearchbox" isOpen={searchState.isOpen} keyboardClose={false} onDidDismiss={(e) => {leaveSearchBox()}}>
     <IonContent><IonList key="popoverItemList">
       {(searchState.filteredSearchRows as ItemSearch[]).map((item: ItemSearch) => (
         <IonItem button key={pageState.selectedListOrGroupID+"-poilist-"+item.itemID} onClick={(e) => {chooseSearchItem(item)}}>{item.itemName}</IonItem>
@@ -365,7 +367,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         </IonItem>
         <IonItem key="searchbar">
           <IonIcon icon={searchOutline} />
-          <IonInput aria-label="" class="ion-no-padding" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="search" enterkeyhint="enter"
+          <IonInput id="itemsearchbox" aria-label="" class="ion-no-padding" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="search" enterkeyhint="enter"
               clearInput={true} placeholder="Search" fill="solid"
               onKeyDown= {(e) => searchKeyPress(e)}
               onIonInput={(e) => updateSearchCriteria(e)}
@@ -423,7 +425,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
             checked={Boolean(pageState.itemRows[i].completed)}></IonCheckbox>
         </IonCol>
         <IonCol size="11">
-          <IonItem onClick={() => console.log("clicked item:",Date.now())} class="item-button" routerLink={"/item/edit/"+item.itemID} key={pageState.itemRows[i].itemID+"mynewbutton"}>{item.itemName + (item.quantityUOMDesc == "" ? "" : " ("+ item.quantityUOMDesc+")")}</IonItem>
+          <IonItem class="item-button" routerLink={"/item/edit/"+item.itemID} key={pageState.itemRows[i].itemID+"mynewbutton"}>{item.itemName + (item.quantityUOMDesc == "" ? "" : " ("+ item.quantityUOMDesc+")")}</IonItem>
         </IonCol>
         </IonRow></IonGrid>
       </IonItem>);
