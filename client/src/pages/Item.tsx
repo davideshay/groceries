@@ -55,6 +55,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function addDeleteLists(itemDoc: ItemDoc) {
+    let adlms=performance.now();
     let newItemDoc: ItemDoc =cloneDeep(itemDoc);
     // loop through all the lists with the same listgroup. if the list is in the
     // listgroup, but not on the item add it.
@@ -79,6 +80,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
     let currentLists=cloneDeep(newItemDoc.lists);
     remove(currentLists, (list: ItemList) => { return groupIDForList(list.listID) !== newItemDoc.listGroupID})
     newItemDoc.lists=currentLists;
+    console.log("ADL took: ",performance.now()-adlms);
     return(newItemDoc);
   }
 
@@ -93,7 +95,6 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   useEffect( () => {
     if (!itemLoading && mode === "new" && !listsLoading && listRowsLoaded && needInitItemDoc) {
-        console.log("creating new empty item doc...");
         let newItemDoc = createEmptyItemDoc(listRows,globalState)
         setStateInfo("newItemMode","none");
         setNeedInitItemDoc(false);

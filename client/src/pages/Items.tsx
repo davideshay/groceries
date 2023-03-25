@@ -137,6 +137,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   screenLoading.current=false;
 
   function updateSearchCriteria(event: CustomEvent) {
+    console.log("USC: event",JSON.stringify(event));
     setSearchState(prevState => ({...prevState, event: event, searchCriteria: event.detail.value}));
     origSearchCriteria.current=event.detail.value;
   }
@@ -160,6 +161,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function searchKeyPress(event: KeyboardEvent<HTMLElement>) {
+    console.log("search key press: ",event.key);
     if (event.key === "Enter") {
       addNewItemToList(searchState.searchCriteria)
     }
@@ -368,7 +370,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         </IonItem>
         <IonItem key="searchbar">
           <IonIcon icon={searchOutline} />
-          <IonInput id="itemsearchbox" aria-label="" class="ion-no-padding" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="search" enterkeyhint="enter"
+          <IonInput id="itemsearchbox" aria-label="" class="ion-no-padding" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="text" enterkeyhint="enter"
               clearInput={true} placeholder="Search" fill="solid"
               onKeyDown= {(e) => searchKeyPress(e)}
               onIonInput={(e) => updateSearchCriteria(e)}
