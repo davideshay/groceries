@@ -1,9 +1,10 @@
 import { DBCreds, RemoteDBState } from "./RemoteDBState";
-import { CapacitorHttp, HttpResponse } from '@capacitor/core';
+import { CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
 import jwt_decode from 'jwt-decode';
 import { ListRow } from "./DataTypes";
 import { History } from "history";
-import { urlPatternValidation, usernamePatternValidation, emailPatternValidation, fullnamePatternValidation } from "./Utilities";
+import { urlPatternValidation, usernamePatternValidation, emailPatternValidation,
+        fullnamePatternValidation, apiConnectTimeout } from "./Utilities";
 
 export async function navigateToFirstListID(phistory: History,remoteDBCreds: DBCreds, listRows: ListRow[]) {
     let firstListID = null;
@@ -19,7 +20,7 @@ export async function navigateToFirstListID(phistory: History,remoteDBCreds: DBC
 
 export async function createNewUser(remoteDBState: RemoteDBState,remoteDBCreds: DBCreds, password: string): Promise<(HttpResponse | undefined)> {
     let response: HttpResponse | undefined;
-    const options = {
+    const options: HttpOptions = {
         url: String(remoteDBCreds.apiServerURL+"/registernewuser"),
         method: "POST",
         headers: { 'Content-Type': 'application/json',
@@ -31,9 +32,11 @@ export async function createNewUser(remoteDBState: RemoteDBState,remoteDBCreds: 
             email: remoteDBCreds.email,
             fullname: remoteDBCreds.fullName,
             deviceUUID: remoteDBState.deviceUUID
-        }           
+        },
+        connectTimeout: apiConnectTimeout
     };
-    response = await CapacitorHttp.post(options);
+    try {response = await CapacitorHttp.post(options);}
+    catch(err) {console.log("http error:",err)}
     return response;
 }
 
@@ -57,13 +60,13 @@ export async function refreshToken(remoteDBCreds: DBCreds, devID: string) {
     console.log("refreshing token, device id: ", devID);
     console.log("apiserverURL:", remoteDBCreds.apiServerURL);
     let response: HttpResponse | undefined;
-    const options = {
+    const options: HttpOptions = {
         url: String(remoteDBCreds.apiServerURL+"/refreshtoken"),
         method: "POST",
         headers: { 'Content-Type' : 'application/json',
                     'Accept': 'application/json',
                     'Authorization': 'Bearer '+remoteDBCreds.refreshJWT},
-        connectTimeOut: 500,            
+        connectTimeout: apiConnectTimeout,            
         data: {
             refreshJWT: remoteDBCreds.refreshJWT,
             deviceUUID: devID

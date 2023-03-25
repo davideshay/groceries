@@ -2,8 +2,8 @@ import React, { createContext, useState, useEffect, useRef} from "react";
 import { usePouch} from 'use-pouchdb';
 import { Preferences } from '@capacitor/preferences';
 import { cloneDeep, pick, keys, isEqual } from 'lodash';
-import { isJsonString,  DEFAULT_API_URL } from '../components/Utilities'; 
-import { CapacitorHttp, HttpResponse } from '@capacitor/core';
+import { isJsonString,  DEFAULT_API_URL, apiConnectTimeout } from '../components/Utilities'; 
+import { CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
 import { Device } from '@capacitor/device';
 import PouchDB from 'pouchdb';
 import { getTokenInfo, refreshToken, errorCheckCreds } from "./RemoteUtilities";
@@ -213,12 +213,13 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         }
         let response: HttpResponse | undefined;
         checkResponse.DBServerAvailable = true;
-        const options = {
+        const options: HttpOptions = {
             url: String(remoteDBCreds.current.couchBaseURL+"/_session"),
             method: "GET",
             headers: { 'Content-Type': 'application/json',
                        'Accept': 'application/json',
                        'Authorization': 'Bearer '+ accessJWT },
+            connectTimeout: apiConnectTimeout          
               };
         try { response = await CapacitorHttp.get(options); }
         catch(err) {console.log("Got error:",err); checkResponse.DBServerAvailable=false}

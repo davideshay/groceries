@@ -1,9 +1,11 @@
-import { CapacitorHttp, HttpResponse } from '@capacitor/core';
+import { CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
 import { initUsersInfo, UserIDList, UsersInfo } from './DataTypes';
 import { ListGroupDoc, ListGroupDocInit } from './DBSchema';
 import { cloneDeep } from 'lodash';
 import { DBCreds} from './RemoteDBState';
 import { PouchResponse, PouchResponseInit } from './DataTypes';
+
+export const apiConnectTimeout = 500;
 
 export function isJsonString(str: string): boolean {
     try {
@@ -36,7 +38,7 @@ export function fullnamePatternValidation(fullname: string) {
 
 export async function checkUserByEmailExists(email: string, remoteDBCreds: DBCreds) {
     let response: HttpResponse | undefined;
-    const options = {
+    const options: HttpOptions = {
         url: String(remoteDBCreds?.apiServerURL+"/checkuserbyemailexists"),
         method: "POST",
         headers: { 'Content-Type': 'application/json',
@@ -44,12 +46,14 @@ export async function checkUserByEmailExists(email: string, remoteDBCreds: DBCre
                    'Authorization': 'Bearer '+remoteDBCreds?.refreshJWT },
         data: {
             email: email,
-        }           
+        },
+        connectTimeout: apiConnectTimeout         
     };
     console.log("about to execute checkuser httpget with options: ", {options})
-    response = await CapacitorHttp.post(options);
+    try { response = await CapacitorHttp.post(options);}
+    catch(err) {console.log("ERROR: http:",err)};
     console.log("got httpget response: ",{response});
-    return response.data;
+    return response?.data;
 }
 
 export async function getUsersInfo(userIDList: UserIDList,apiServerURL: string, accessJWT: string): Promise<UsersInfo> {
@@ -57,13 +61,14 @@ export async function getUsersInfo(userIDList: UserIDList,apiServerURL: string, 
     if (accessJWT == "") { return(usersInfo); }
     const usersUrl = apiServerURL+"/getusersinfo"
     if (!urlPatternValidation(usersUrl)) {return usersInfo}
-    const options = {
+    const options : HttpOptions = {
       url: String(usersUrl),
       data: userIDList,
       method: "POST",
       headers: { 'Content-Type': 'application/json',
                  'Accept': 'application/json',
-                 'Authorization': 'Bearer '+accessJWT }
+                 'Authorization': 'Bearer '+accessJWT },
+      connectTimeout: apiConnectTimeout           
     };
     let response:HttpResponse;
     let httpError=false;

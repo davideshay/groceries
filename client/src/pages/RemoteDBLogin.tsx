@@ -2,7 +2,7 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonLis
   IonButtons, IonMenuButton, IonText, useIonAlert, isPlatform, IonIcon, useIonLoading, AlertOptions } from '@ionic/react';
 import { useState, useEffect, useContext } from 'react';
 import { eye, eyeOff } from 'ionicons/icons';
-import { CapacitorHttp, HttpResponse } from '@capacitor/core';
+import { CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
 import { usePouch} from 'use-pouchdb';
 import { ConnectionStatus, DBCreds, DBUUIDAction } from '../components/RemoteDBState';
 import { Preferences } from '@capacitor/preferences';
@@ -12,6 +12,7 @@ import { cloneDeep } from 'lodash';
 import { RemoteDBStateContext, SyncStatus, initialRemoteDBState } from '../components/RemoteDBState';
 import { HistoryProps } from '../components/DataTypes';
 import { useLists } from '../components/Usehooks';
+import { apiConnectTimeout } from '../components/Utilities';
 
 export type RemoteState = {
   password: string | undefined,
@@ -178,12 +179,12 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
     console.log("creds check ok... trying to issue token...");
     let response: HttpResponse;
-    const options = {
+    const options : HttpOptions = {
         url: String(remoteDBCreds.apiServerURL+"/issuetoken"),
         method: "POST",
         headers: { 'Content-Type': 'application/json; charset=UTF-8',
                    'Accept': 'application/json'},
-        connectTimeout: 500,              
+        connectTimeout: apiConnectTimeout,              
         data: { username: remoteDBCreds.dbUsername,
                 password: remoteState.password,
                 deviceUUID: remoteDBState.deviceUUID},  
@@ -242,14 +243,16 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
   
   async function callResetPasswordAPI() {
-    const options = {
+    const options: HttpOptions = {
         url: String(remoteDBCreds.apiServerURL+"/resetpassword"),
         method: "POST",
         headers: { 'Content-Type': 'application/json',
                    'Accept': 'application/json'},
-        data: { username: remoteDBCreds.dbUsername },           
+        data: { username: remoteDBCreds.dbUsername },   
+        connectTimeout: apiConnectTimeout        
     };
-    await CapacitorHttp.post(options);
+    try {await CapacitorHttp.post(options);}
+    catch(err) {console.log("ERROR: resetting password",err)}
 //    presentAlert({
 //      header: "Password Request Sent",
 //      message: "Please check your email for the link to reset your password",

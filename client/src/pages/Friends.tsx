@@ -3,7 +3,7 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
         IonFab, IonFabButton, IonIcon, IonInput, IonAlert } from '@ionic/react';
 import { useState, useContext, Fragment, useRef } from 'react';
 import { Clipboard } from '@capacitor/clipboard';
-import { CapacitorHttp } from '@capacitor/core';
+import { CapacitorHttp, HttpOptions } from '@capacitor/core';
 import { v4 as uuidv4 } from 'uuid';
 import { cloneDeep } from 'lodash';
 import { useCreateGenericDocument, useFriends, UseFriendState, useUpdateGenericDocument} from '../components/Usehooks';
@@ -12,7 +12,7 @@ import './Friends.css';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
 import { FriendRow, ResolvedFriendStatus, HistoryProps } from '../components/DataTypes';
 import { FriendStatus } from '../components/DBSchema';
-import { checkUserByEmailExists, emailPatternValidation } from '../components/Utilities';
+import { checkUserByEmailExists, emailPatternValidation, apiConnectTimeout } from '../components/Utilities';
 import SyncIndicator from '../components/SyncIndicator';
 import ErrorPage from './ErrorPage';
 
@@ -162,13 +162,14 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
     catch(e) {createFriendSuccessful=false; console.log(e)}
     if (!createFriendSuccessful) { console.log("ERROR: Creating friend"); return false;}
 
-    const options = {
+    const options: HttpOptions = {
       url: String(remoteDBCreds.apiServerURL+"/triggerregemail"),
       method: "POST",
       headers: { 'Content-Type': 'application/json',
                  'Accept': 'application/json',
                  'Authorization': 'Bearer '+remoteDBCreds?.refreshJWT },
-      data: { "uuid": invuid }           
+      data: { "uuid": invuid },
+      connectTimeout: apiConnectTimeout     
       };
       
     try {await CapacitorHttp.post(options)}
