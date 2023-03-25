@@ -183,7 +183,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
         method: "POST",
         headers: { 'Content-Type': 'application/json; charset=UTF-8',
                    'Accept': 'application/json'},
-        connectTimeout: 5,              
+        connectTimeout: 500,              
         data: { username: remoteDBCreds.dbUsername,
                 password: remoteState.password,
                 deviceUUID: remoteDBState.deviceUUID},  

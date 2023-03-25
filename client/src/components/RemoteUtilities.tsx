@@ -63,7 +63,7 @@ export async function refreshToken(remoteDBCreds: DBCreds, devID: string) {
         headers: { 'Content-Type' : 'application/json',
                     'Accept': 'application/json',
                     'Authorization': 'Bearer '+remoteDBCreds.refreshJWT},
-        connectTimeOut: 5,            
+        connectTimeOut: 500,            
         data: {
             refreshJWT: remoteDBCreds.refreshJWT,
             deviceUUID: devID

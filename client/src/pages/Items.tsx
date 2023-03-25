@@ -34,7 +34,17 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   const addNewItem = useCreateGenericDocument();
   const screenLoading = useRef(true);
   const globalData = useContext(GlobalDataContext);
-  const { dbError: itemError, itemRowsLoaded, itemRows: itemDocs} = useItems({selectedListGroupID: pageState.groupIDforSelectedList, isReady: (pageState.groupIDforSelectedList !== null && pageState.selectedListOrGroupID !== null), needListGroupID: true, activeOnly: true, selectedListID: pageState.selectedListOrGroupID, selectedListType: pageState.selectedListType});
+  const { dbError: baseItemError, itemRowsLoaded: baseItemRowsLoaded, itemRows: baseItemDocs} = useItems(
+      {selectedListGroupID: pageState.groupIDforSelectedList,
+        isReady: (pageState.groupIDforSelectedList !== null && pageState.selectedListOrGroupID !== null),
+        needListGroupID: true, activeOnly: true, selectedListID: pageState.selectedListOrGroupID,
+        selectedListType: pageState.selectedListType});
+  const { dbError: baseSearchError, itemRowsLoaded: baseSearchItemRowsLoaded, itemRows: baseSearchItemDocs} = useItems(
+    {selectedListGroupID: pageState.groupIDforSelectedList,
+      isReady: (pageState.groupIDforSelectedList !== null && pageState.selectedListOrGroupID !== null),
+      needListGroupID: true, activeOnly: false, selectedListID: pageState.selectedListOrGroupID,
+      selectedListType: pageState.selectedListType});
+
   const { dbError: listError , listDocs, listCombinedRows,listRows, listRowsLoaded } = useLists();
   const { docs: uomDocs, loading: uomLoading, error: uomError } = useFind({
     index: { fields: [ "type","name"]},
@@ -67,21 +77,22 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   },[listRowsLoaded,pageState.selectedListOrGroupID])
 
   useEffect( () => {
-    if (itemRowsLoaded && listRowsLoaded && !categoryLoading && !uomLoading && !globalData.globalItemsLoading) {
+    if (baseItemRowsLoaded && listRowsLoaded && !categoryLoading && !uomLoading && !globalData.globalItemsLoading) {
       setPageState( (prevState) => ({ ...prevState,
         doingUpdate: false,
-        itemRows: getItemRows(itemDocs as ItemDocs, listCombinedRows, categoryDocs as CategoryDoc[], uomDocs as UomDoc[], pageState.selectedListType, pageState.selectedListOrGroupID)
+        itemRows: getItemRows(baseItemDocs as ItemDocs, listCombinedRows, categoryDocs as CategoryDoc[], uomDocs as UomDoc[], pageState.selectedListType, pageState.selectedListOrGroupID)
       }))
     }
-  },[itemRowsLoaded, listRowsLoaded, categoryLoading, uomLoading, globalData.globalItemsLoading, uomDocs, itemDocs, listCombinedRows, categoryDocs, pageState.selectedListOrGroupID]);
+  },[baseItemRowsLoaded, listRowsLoaded, categoryLoading, uomLoading, globalData.globalItemsLoading, uomDocs, baseItemDocs, listCombinedRows, categoryDocs, pageState.selectedListOrGroupID]);
 
   useEffect( () => {
-    if (itemRowsLoaded && !globalData.globalItemsLoading) {
-      setSearchRows(getAllSearchRows(itemDocs as ItemDocs,pageState.selectedListOrGroupID, listDocs, globalData.globalItemDocs as GlobalItemDocs));
+    if (baseSearchItemRowsLoaded && !globalData.globalItemsLoading) {
+      setSearchState(prevState => ({...prevState,isOpen: false, isFocused: false}));
+      setSearchRows(getAllSearchRows(baseSearchItemDocs as ItemDocs,pageState.selectedListOrGroupID, listDocs, globalData.globalItemDocs as GlobalItemDocs));
     }
-  },[itemRowsLoaded, globalData.globalItemsLoading, globalData.globalItemDocs, itemDocs, pageState.selectedListOrGroupID])
+  },[baseSearchItemRowsLoaded, globalData.globalItemsLoading, globalData.globalItemDocs, baseSearchItemDocs, pageState.selectedListOrGroupID])
 
-  useEffect( () => {
+  function filterAndCheckRows() {
     let filterRows=filterSearchRows(searchRows, searchState.searchCriteria)
 //    if (filterRows.length > 0 ) {
     if (filterRows.length > 0 && searchState.isFocused ) {
@@ -89,9 +100,14 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     } else {
       setSearchState(prevState => ({...prevState, filteredSearchRows: [], isOpen: false}));
     }
-  },[searchState.searchCriteria,searchState.isFocused])
+  }
 
-  if (itemError || listError || categoryError  || uomError || globalData.globalItemError) {return (
+
+  useEffect( () => {
+    filterAndCheckRows();
+  },[searchRows,searchState.searchCriteria,searchState.isFocused])
+
+  if (baseItemError || baseSearchError || listError || categoryError  || uomError || globalData.globalItemError) {return (
     <ErrorPage errorText="Error Loading Items Information... Restart."></ErrorPage>
   )}
 
@@ -108,7 +124,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
 
 
-  if (!itemRowsLoaded || !listRowsLoaded || categoryLoading || globalData.globalItemsLoading || uomLoading || pageState.doingUpdate )  {return(
+  if (!baseItemRowsLoaded || !baseSearchItemRowsLoaded || !listRowsLoaded || categoryLoading || globalData.globalItemsLoading || uomLoading || pageState.doingUpdate )  {return(
     <IonPage>
         <IonHeader><IonToolbar><IonButtons slot="start"><IonMenuButton /></IonButtons>
         </IonToolbar></IonHeader>
@@ -126,7 +142,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function isItemAlreadyInList(itemName: string): boolean {
-    let existingItem = (itemDocs as ItemDocs).find((el) => el.name.toUpperCase() === itemName.toUpperCase());
+    let existingItem = (baseItemDocs as ItemDocs).find((el) => el.name.toUpperCase() === itemName.toUpperCase());
     return(!(existingItem == undefined));
   }
 
@@ -155,13 +171,14 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   function leaveSearchBox() {
     origSearchCriteria.current=searchState.searchCriteria;
-    setSearchState(prevState => ({...prevState, isOpen: false}));
+    setSearchState(prevState => ({...prevState, isOpen: false, isFocused: false}));
   }
 
   function enterSearchBox(event: Event) {
     let toOpen=true;
-    if (searchState.filteredSearchRows.length === 0) { toOpen = false}
-    setSearchState(prevState => ({...prevState, event: event, isFocused: true,isOpen: toOpen}));
+//    filterAndCheckRows();
+//    if (searchState.filteredSearchRows.length === 0) { toOpen = false}
+    setSearchState(prevState => ({...prevState, event: event, isFocused: true,isOpen: true}));
   }
 
   function isCategoryInList(listID: string, categoryID: string) {
@@ -172,8 +189,8 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   async function addExistingItemToList(item: ItemSearch) {
-    const testItemDoc = globalData.itemDocs.find((id) => (id._id === item.itemID));
-    if (testItemDoc !== undefined) {presentToast({message: "Trying to add duplicate item... Error."}); return}
+    const testItemDoc = baseItemDocs.find((id) => (id._id === item.itemID));
+    if (testItemDoc !== undefined) {presentToast({message: "Trying to add duplicate item... Error.", duration: 1500, position: "middle"}); return}
     if (item.itemType == ItemSearchType.Global) {
       let newItem: ItemDoc = cloneDeep(ItemDocInit);
       newItem.globalItemID = item.globalItemID;
@@ -195,7 +212,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       }
       return;
     }
-    let existingItem: ItemDoc = cloneDeep((itemDocs as ItemDocs).find((el) => el._id === item.itemID));
+    let existingItem: ItemDoc = cloneDeep((baseSearchItemDocs as ItemDocs).find((el) => el._id === item.itemID));
     listRows.forEach((listRow: ListRow) => {
       let idxInLists=existingItem.lists.findIndex((el) => el.listID === listRow.listDoc._id);
       let skipThisList=false;
@@ -255,7 +272,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       })
     }
     // make the update in the database, let the refresh of the view change state
-    let itemDoc: ItemDoc = cloneDeep(itemDocs.find(element => (element._id === id)))
+    let itemDoc: ItemDoc = cloneDeep(baseItemDocs.find(element => (element._id === id)))
     setPageState(prevState=> ({...prevState,doingUpdate: true}));
     let listChanged=false;
     itemDoc.lists.forEach((list: ItemList) => {
@@ -285,7 +302,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     if (listOrGroupID == "null" ) { console.log("ungrouped selected");  return }
     let combinedRow: ListCombinedRow | undefined = listCombinedRows.find(lcr => lcr.listOrGroupID == listOrGroupID);
     let newListType: RowType = combinedRow!.rowType;
-    setPageState({...pageState, selectedListOrGroupID: listOrGroupID, selectedListType: newListType, itemRows: getItemRows(itemDocs as ItemDocs, listCombinedRows, categoryDocs as CategoryDoc[], uomDocs as UomDoc[], newListType, listOrGroupID)});
+    setPageState({...pageState, selectedListOrGroupID: listOrGroupID, selectedListType: newListType, itemRows: getItemRows(baseItemDocs as ItemDocs, listCombinedRows, categoryDocs as CategoryDoc[], uomDocs as UomDoc[], newListType, listOrGroupID)});
     if (combinedRow == undefined) {return};
     if (combinedRow.rowType == RowType.list) {
       props.history.push('/items/list/'+combinedRow.listDoc._id);
@@ -316,10 +333,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     });
   }
 
-//     <IonPopover side="bottom" event={searchState.event} isOpen={searchState.isOpen} keyboardClose={false} >
-
-  //     <IonPopover side="bottom" event={searchState.event} isOpen={searchState.isOpen} keyboardClose={false} onDidDismiss={() => {leaveSearchBox()}}>
-
   let popOverElem = (
     <IonPopover side="bottom" trigger="itemsearchbox" isOpen={searchState.isOpen} keyboardClose={false} onDidDismiss={(e) => {leaveSearchBox()}}>
     <IonContent><IonList key="popoverItemList">
@@ -339,18 +352,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       buttons={["OK"]}
     />
   )
- //                onIonBlur={() => {console.log("searchbar out of focus"); setSearchState((prevState) => ({...prevState,isFocused: false}))}}
-
-/*  <IonSearchbar class="ion-no-padding" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="search" enterkeyhint="enter"
- onKeyDown= {(e) => searchKeyPress(e)}
- onIonInput={(e) => updateSearchCriteria(e)}
- onClick={(e: any) => enterSearchBox(e)}
- onIonFocus={(e: any) => {console.log("searchbar focused", cloneDeep(e)); setSearchState((prevState) => ({...prevState,isFocused: true}))}}   >
-</IonSearchbar>
- */
-
-//               onIonBlur={() => {console.log("searchbar out of focus"); setSearchState((prevState) => ({...prevState,isFocused: false}))}}
-
 
   let headerElem=(
     <IonHeader><IonToolbar><IonButtons slot="start"><IonMenuButton /></IonButtons>
@@ -372,7 +373,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
               onKeyDown= {(e) => searchKeyPress(e)}
               onIonInput={(e) => updateSearchCriteria(e)}
               onClick={(e: any) => enterSearchBox(e)}
-              onIonFocus={(e: any) => {setSearchState((prevState) => ({...prevState,isFocused: true, event: e}))}}   >
+              onIonFocus={(e: any) => {/* setSearchState((prevState) => ({...prevState,isFocused: true, event: e})) */}}   >
            </IonInput>
           {/* <IonButton onClick={()=> clickedSearchCheck()}><IonIcon icon={checkmark} /></IonButton> */}
         </IonItem>
@@ -403,7 +404,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   const completedDivider=(
         <IonItemGroup key="completeddividergroup"><IonItemDivider key="Completed">
         <IonLabel key="completed-divider-label">Completed</IonLabel>
-        <IonButton slot="end" onClick={() => deleteCompletedItems(itemDocs as ItemDocs,pageState.selectedListOrGroupID)}>DELETE COMPLETED ITEMS</IonButton>
+        <IonButton slot="end" onClick={() => deleteCompletedItems(baseItemDocs as ItemDocs,pageState.selectedListOrGroupID)}>DELETE COMPLETED ITEMS</IonButton>
         </IonItemDivider></IonItemGroup>);
   for (let i = 0; i < pageState.itemRows.length; i++) {
     const item = pageState.itemRows[i];
@@ -437,10 +438,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   addCurrentRows(listContent,currentRows,String(lastCategoryID),lastCategoryName,lastCategoryFinished);
   if (!createdFinished) {listContent.push(completedDivider)};
   let contentElem=(<IonList lines="full">{listContent}</IonList>)
-
-  if (searchState.isOpen || searchState.isFocused) {
-    searchRef.current?.focus();
-  }
 
   return (
     <IonPage>
