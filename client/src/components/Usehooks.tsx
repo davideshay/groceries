@@ -8,6 +8,7 @@ import { GlobalStateContext } from './GlobalState';
 import { getUsersInfo } from './Utilities';
 import { getCommonKey } from './ItemUtilities';
 import { GlobalDataContext } from './GlobalDataProvider';
+import { nextTick } from 'process';
 
 export function useGetOneDoc(docID: string | null) {
   const db = usePouch();
@@ -194,31 +195,21 @@ export function useLists() : {dbError: boolean, listsLoading: boolean, listDocs:
   const [listRowsLoaded, setListRowsLoaded] = useState(false);
   const [listRowsLoading, setListRowsLoading] = useState(false);
   const [dbError, setDBError] = useState(false);
-  const { docs: listGroupDocs, loading: listGroupsLoading, error: listGroupError } = useFind({
-    index: { fields: ["type","name"]},
-    selector: { "$and": [
-      { "type": "listgroup", "name": { "$exists": true}},
-      { "$or": [{"listGroupOwner": remoteDBCreds.dbUsername},
-                {"sharedWith": { $elemMatch: {$eq: remoteDBCreds.dbUsername}}}]}  ]},
-    sort: [ "type", "name"]  });
-  const { docs: listDocs, loading: listsLoading, error: listError} = useFind<{docs: ListDocs, loading: boolean}>({
-    index: { fields: ["type","name"] },
-    selector: { "$and": [ 
-      {  "type": "list",
-         "name": { "$exists": true } }
-    ] },
-    sort: [ "type","name"] });
+  const globalData = useContext(GlobalDataContext);
 
   function buildListRows() {
-    let curListDocs: ListDocs = cloneDeep(listDocs);
+    let curListDocs: ListDocs = cloneDeep(globalData.listDocs);
     let newListRows: ListRow[] = [];
     curListDocs.forEach((listDoc) => {
       let listGroupID=null;
       let listGroupName="";
       let listGroupDefault=false;
       let listGroupOwner = "";
-      for (let i = 0; i < listGroupDocs.length; i++) {
-        const lgd = (listGroupDocs[i] as ListGroupDoc);
+      for (let i = 0; i < globalData.listGroupDocs.length; i++) {
+        const lgd = (globalData.listGroupDocs[i] as ListGroupDoc);
+        if (lgd.listGroupOwner !== remoteDBCreds.dbUsername || lgd.sharedWith.includes(remoteDBCreds.dbUsername)) {
+          continue;
+        }
         if ( listDoc.listGroupID == lgd._id ) {
           listGroupID=lgd._id
           listGroupName=lgd.name
@@ -242,7 +233,10 @@ export function useLists() : {dbError: boolean, listsLoading: boolean, listDocs:
     })
 
     setListRows(newListRows);
-    const sortedListGroups: ListGroupDocs = cloneDeep(listGroupDocs);
+    const sortedListGroups: ListGroupDocs = cloneDeep(globalData.listGroupDocs).filter( 
+      (lgd: ListGroupDoc) => lgd.listGroupOwner == remoteDBCreds.dbUsername ||
+            lgd.sharedWith.includes(String(remoteDBCreds.dbUsername))
+    );
     sortedListGroups.sort(function (a: ListGroupDoc, b: ListGroupDoc) {
       return a.name.toUpperCase().localeCompare(b.name.toUpperCase());
     });
@@ -305,19 +299,20 @@ export function useLists() : {dbError: boolean, listsLoading: boolean, listDocs:
   }
 
   useEffect( () => {
-    if (listsLoading || listGroupsLoading) { setListRowsLoaded(false); return };
-    if (listError !== null || listGroupError !== null) { setDBError(true); return};
+    if (globalData.listsLoading || globalData.listGroupsLoading) { setListRowsLoaded(false); return };
+    if (globalData.listError !== null || globalData.listGroupError !== null) { setDBError(true); return};
     setDBError(false);
-    if ( !listsLoading && !listGroupsLoading && !listRowsLoaded)  {
+    if ( !globalData.listsLoading && !globalData.listGroupsLoading && !listRowsLoaded)  {
       setListRowsLoading(true);
       setListRowsLoaded(false);
       buildListRows();
       setListRowsLoading(false)
       setListRowsLoaded(true);
     }
-  },[listError, listGroupError, listsLoading,listRowsLoading,listDocs, listGroupDocs, listGroupsLoading])
+  },[globalData.listError, globalData.listGroupError, globalData.listsLoading,listRowsLoading,
+    globalData.listDocs, globalData.listGroupDocs, globalData.listGroupsLoading])
 
-  return ({dbError, listsLoading, listDocs, listRowsLoading, listRowsLoaded, listRows, listCombinedRows});
+  return ({dbError, listsLoading: globalData.listsLoading, listDocs: globalData.listDocs, listRowsLoading, listRowsLoaded, listRows, listCombinedRows});
 }
 
 export function useItems({selectedListGroupID,isReady, needListGroupID, activeOnly = false, selectedListID = null, selectedListType = RowType.list,} :
@@ -330,8 +325,6 @@ export function useItems({selectedListGroupID,isReady, needListGroupID, activeOn
   const { dbError: listDBError, listCombinedRows, listRowsLoaded, listRowsLoading, listDocs } = useLists()
   const globalData = useContext(GlobalDataContext);
   
-//      console.log("UI:", cloneDeep({selectedListGroupID, selectedListID, isReady}));
-
   function buildItemRows() {
     let curItemDocs: ItemDocs = cloneDeep(globalData.itemDocs);
     let newItemRows: ItemDocs = [];
@@ -381,6 +374,8 @@ export function useItems({selectedListGroupID,isReady, needListGroupID, activeOn
       setItemRowsLoaded(true);
     }
   },[isReady,itemRowsLoaded,globalData.itemError, listDBError, globalData.itemsLoading,listRowsLoading,globalData.itemDocs, listCombinedRows])
+
+  console.log("returning from useitem: ", cloneDeep({gdil: globalData.itemsLoading, itemRowsLoading, itemRowsLoaded, itemRows}))
 
   return ({dbError, itemsLoading: globalData.itemsLoading, itemRowsLoading, itemRowsLoaded, itemRows});
 }

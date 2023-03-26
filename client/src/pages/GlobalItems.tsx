@@ -9,6 +9,7 @@ import { cloneDeep } from 'lodash';
 
 import './GlobalItems.css';
 import ErrorPage from './ErrorPage';
+import { Loading } from '../components/Loading';
 
 // The AllItems component is a master editor of all of the known items in the database.
 // Each item has a name, along with data about each list the item is on (list ID, quantity, count of number of times bought,
@@ -27,12 +28,10 @@ const GlobalItems: React.FC<HistoryProps> = (props: HistoryProps) => {
     <ErrorPage errorText="Error Loading Global Item Information... Restart."></ErrorPage>
     )}
 
-  if (globalItemsLoading) { return (
-    <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
-    <IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current = false;}}
-                message="Loading Data..." />
-    <IonContent></IonContent></IonPage>
-  )}
+  if (globalItemsLoading) { 
+    return ( <Loading isOpen={screenLoading.current} message="Loading Categories..."
+    setIsOpen={() => {screenLoading.current = false}} /> )
+  }
   
   screenLoading.current = false;
 

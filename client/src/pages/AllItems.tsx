@@ -1,13 +1,13 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonButtons, 
   IonMenuButton, IonButton, IonLoading } from '@ionic/react';
-import { useFind } from 'use-pouchdb';
 import { useRef } from 'react';
-import { useLists, useItems } from '../components/Usehooks';
+import { useItems } from '../components/Usehooks';
 import SyncIndicator from '../components/SyncIndicator';
 import { HistoryProps, RowType} from '../components/DataTypes';
 import { ItemDoc } from '../components/DBSchema';
 import './AllItems.css';
 import ErrorPage from './ErrorPage';
+import { Loading } from '../components/Loading';
 
 // The AllItems component is a master editor of all of the known items in the database.
 // Each item has a name, along with data about each list the item is on (list ID, quantity, count of number of times bought,
@@ -15,22 +15,21 @@ import ErrorPage from './ErrorPage';
 
 
 const AllItems: React.FC<HistoryProps> = (props: HistoryProps) => {
-  const { dbError: listError, listRowsLoaded } = useLists()
   const { dbError: itemError,  itemRowsLoaded, itemRows} = useItems({selectedListGroupID: null, isReady :true, needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const screenLoading = useRef(true);
 
 
-  if (listError || itemError) { return (
+  if  (itemError) { return (
     <ErrorPage errorText="Error Loading Item Information... Restart."></ErrorPage>
     )}
 
-  if (!itemRowsLoaded || !listRowsLoaded ) { return (
-    <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
-    <IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current = false;}}
-                message="Loading Data..." />
-    <IonContent></IonContent></IonPage>
+  if (!itemRowsLoaded ) {  
+    return ( <Loading isOpen={screenLoading.current} message="Loading List Groups"
+    setIsOpen={() => {screenLoading.current = false}} />
   )}
   
+  console.log("rendering actual content... ???");
+
   screenLoading.current = false;
 
   let gotARow = false;

@@ -15,6 +15,7 @@ import { ItemDoc, ItemDocs, ItemListInit, ItemList, ItemDocInit, CategoryDoc, Uo
 import { getAllSearchRows, getItemRows, filterSearchRows } from '../components/ItemUtilities';
 import SyncIndicator from '../components/SyncIndicator';
 import ErrorPage from './ErrorPage';
+import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
 
 const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
@@ -111,33 +112,14 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     <ErrorPage errorText="Error Loading Items Information... Restart."></ErrorPage>
   )}
 
-
-  // <IonPage>
-  // <IonHeader><IonToolbar><IonButtons slot="start"><IonMenuButton /></IonButtons>
-  // <IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
-  // <IonContent><IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false;}}
-  //                         message="Loading Data..." />
-  // </IonContent>
-  // </IonPage>
-
-
-
-
-
-  if (!baseItemRowsLoaded || !baseSearchItemRowsLoaded || !listRowsLoaded || categoryLoading || globalData.globalItemsLoading || uomLoading || pageState.doingUpdate )  {return(
-    <IonPage>
-        <IonHeader><IonToolbar><IonButtons slot="start"><IonMenuButton /></IonButtons>
-        </IonToolbar></IonHeader>
-        <IonContent><IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false;}}
-                                message="Loading Data..." />
-        </IonContent>
-      </IonPage>
-  )};
+  if (!baseItemRowsLoaded || !baseSearchItemRowsLoaded || !listRowsLoaded || categoryLoading || globalData.globalItemsLoading || uomLoading || pageState.doingUpdate )  {
+    return ( <Loading isOpen={screenLoading.current} message="Loading Items..."
+    setIsOpen={() => {screenLoading.current = false}} /> )
+  };
 
   screenLoading.current=false;
 
   function updateSearchCriteria(event: CustomEvent) {
-    console.log("USC: event",JSON.stringify(event));
     setSearchState(prevState => ({...prevState, event: event, searchCriteria: event.detail.value}));
     origSearchCriteria.current=event.detail.value;
   }

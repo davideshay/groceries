@@ -16,6 +16,8 @@ import { getCommonKey, createEmptyItemDoc, checkNameInGlobal  } from '../compone
 import { PouchResponse, HistoryProps, ListRow, RowType } from '../components/DataTypes';
 import { UomDoc, ItemDoc, ItemDocInit, ItemList, ItemListInit, CategoryDoc, GlobalItemDocs } from '../components/DBSchema';
 import ErrorPage from './ErrorPage';
+import { Loading } from '../components/Loading';
+import { GlobalDataContext } from '../components/GlobalDataProvider';
 
 
 const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
@@ -34,18 +36,12 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
   const db = usePouch();
   const screenLoading = useRef(true);
 
-  const { docs: categoryDocs, loading: categoryLoading, error: categoryError } = useFind({
-      index: { fields: [ "type","name"] },
-      selector: { type: "category", name: { $exists: true}},
-      sort: [ "type","name"] });
-  const { docs: uomDocs, loading: uomLoading, error: uomError } = useFind({
-      index: { fields: [ "type","description"]},
-      selector: { type: "uom", description: { $exists: true}},
-      sort: [ "type","description"] });
   const { dbError: itemsError, itemRowsLoaded, itemRows } = useItems({selectedListGroupID: stateItemDoc.listGroupID, isReady: !itemLoading, needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const { globalState, setStateInfo} = useContext(GlobalStateContext);
+  const globalData  = useContext(GlobalDataContext);
   const [presentAlert, dismissAlert] = useIonAlert();
   const [presentToast] = useIonToast();
+
 
   function groupIDForList(listID: string): string {
     let retGID="";
@@ -80,7 +76,6 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
     let currentLists=cloneDeep(newItemDoc.lists);
     remove(currentLists, (list: ItemList) => { return groupIDForList(list.listID) !== newItemDoc.listGroupID})
     newItemDoc.lists=currentLists;
-    console.log("ADL took: ",performance.now()-adlms);
     return(newItemDoc);
   }
 
@@ -102,21 +97,17 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   },[itemLoading,itemDoc,listsLoading,listDocs,listRowsLoaded,listRowsLoaded, listRows,globalState.itemMode,globalState.newItemName, globalState.callingListID, needInitItemDoc]);
 
-  if (itemError || listError || categoryError || uomError || itemsError) { console.log("ERROR");return (
+  if (itemError || listError || globalData.categoryError || globalData.uomError || itemsError) { console.log("ERROR");return (
     <ErrorPage errorText="Error Loading Item Information... Restart."></ErrorPage>
   )}
 
 //  console.log(cloneDeep({itemLoading, routeItemID, listsLoading, listRowsLoaded, categoryLoading, uomLoading, itemRowsLoaded, stateItemDoc}));
 
 
-  if ((itemLoading && routeItemID !== null) || listsLoading || !listRowsLoaded || categoryLoading || uomLoading || !itemRowsLoaded || isEmpty(stateItemDoc))  {
-    return(
-    <IonPage><IonHeader><IonToolbar><IonButtons slot="start"><IonMenuButton /></IonButtons>
-    <IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
-    <IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false;}} 
-                message="Loading Data..." />
-    </IonPage>
-  )};
+  if ((itemLoading && routeItemID !== null) || listsLoading || !listRowsLoaded || globalData.categoryLoading || globalData.uomLoading || !itemRowsLoaded || isEmpty(stateItemDoc))  {
+    return ( <Loading isOpen={screenLoading.current} message="Loading Categories..."
+    setIsOpen={() => {screenLoading.current = false}} /> )
+  };
 
   screenLoading.current=false;
   
@@ -164,7 +155,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   async function addNewCategory(category: string) {
     let alreadyFound=false;
-    (categoryDocs as CategoryDoc[]).forEach((cat) => 
+    (globalData.categoryDocs as CategoryDoc[]).forEach((cat) => 
       {
         if (category.toUpperCase() === cat.name.toUpperCase()) {alreadyFound=true}
       });
@@ -181,7 +172,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   async function addNewUOM(uomData: UomDoc) {
     let alreadyFound = false;
-    (uomDocs as UomDoc[]).forEach((uom) => {
+    (globalData.uomDocs as UomDoc[]).forEach((uom) => {
       if (uom.name.toUpperCase() === uomData.name.toUpperCase()) {alreadyFound=true;}
     });
     if (alreadyFound) {
@@ -198,7 +189,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
       return false;
     }
     alreadyFound = false;
-    (uomDocs as UomDoc[]).forEach((uom) => {
+    (globalData.uomDocs as UomDoc[]).forEach((uom) => {
       if (uom.description.toUpperCase() === uomData.description.toUpperCase()) {alreadyFound=true;}
     });
     if (alreadyFound) {
@@ -210,7 +201,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
       return false;
     }
     alreadyFound = false;
-    (uomDocs as UomDoc[]).forEach((uom) => {
+    (globalData.uomDocs as UomDoc[]).forEach((uom) => {
       if (uom.pluralDescription.toUpperCase() === uomData.pluralDescription.toUpperCase()) {alreadyFound=true;}
     });
     if (alreadyFound) {
@@ -298,7 +289,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
                   <IonCol size="8">
                     <IonSelect label="UoM" labelPlacement='stacked' interface="popover" onIonChange={(ev) => updateAllKey("uomName", ev.detail.value)} value={getCommonKey(stateItemDoc,"uomName",listDocs)}>
                     <IonSelectOption key="uom-undefined" value={null}>No UOM</IonSelectOption>
-                    {(uomDocs as UomDoc[]).map((uom) => (
+                    {(globalData.uomDocs as UomDoc[]).map((uom) => (
                       <IonSelectOption key={uom.name} value={uom.name}>{uom.description}</IonSelectOption>
                     ))}
                     </IonSelect>
@@ -310,7 +301,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
               <IonItem key="category">
                 <IonSelect label="Category" labelPlacement="stacked" interface="popover" onIonChange={(ev) => updateAllKey("categoryID",ev.detail.value)} value={getCommonKey(stateItemDoc,"categoryID",listDocs)}>
                   <IonSelectOption key="cat-undefined" value={null}>Uncategorized</IonSelectOption>
-                  {(categoryDocs as CategoryDoc[]).map((cat) => (
+                  {(globalData.categoryDocs as CategoryDoc[]).map((cat) => (
                       <IonSelectOption key={cat._id} value={cat._id}>
                         {cat.name}
                       </IonSelectOption>
@@ -326,7 +317,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
               </IonItem>
             </IonCard>
             <ItemLists history={props.history} stateItemDoc={stateItemDoc} setStateItemDoc={setStateItemDoc} 
-                      listDocs={listDocs} categoryDocs={categoryDocs as CategoryDoc[]} uomDocs={uomDocs as UomDoc[]}
+                      listDocs={listDocs} categoryDocs={globalData.categoryDocs as CategoryDoc[]} uomDocs={globalData.uomDocs as UomDoc[]}
                       addCategoryPopup={addCategoryPopup} addUOMPopup={addUOMPopup} />
             <IonItem key="formErrors">{formError}</IonItem>
           </IonList>

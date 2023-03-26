@@ -6,7 +6,7 @@ import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useFriends, useGetOneDoc,
-  UseFriendState, useLists, useDeleteGenericDocument, useDeleteListFromItems, useAddListToAllItems } from '../components/Usehooks';
+  useLists, useDeleteGenericDocument, useDeleteListFromItems, useAddListToAllItems } from '../components/Usehooks';
 import { cloneDeep, isEmpty } from 'lodash';
 import './List.css';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
@@ -15,6 +15,7 @@ import { ListDocInit, ListDoc, CategoryDoc } from '../components/DBSchema'
 import SyncIndicator from '../components/SyncIndicator';
 import { closeCircleOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
+import { Loading } from '../components/Loading';
 
 interface PageState {
   needInitListDoc: boolean,
@@ -97,12 +98,10 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
     <ErrorPage errorText="Error Loading List Information... Restart."></ErrorPage>
   )}
 
-  if (listsLoading || !listRowsLoaded || categoryLoading || isEmpty(pageState.listDoc) || (listGroupLoading && pageState.listGroupID !== null) || pageState.deletingDoc)  {return(
-      <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
-      <IonContent><IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false;}} 
-                   message="Loading Data..."></IonLoading>
-      </IonContent></IonPage>
-  )};
+  if (listsLoading || !listRowsLoaded || categoryLoading || isEmpty(pageState.listDoc) || (listGroupLoading && pageState.listGroupID !== null) || pageState.deletingDoc)  {
+    return ( <Loading isOpen={screenLoading.current} message="Loading List..."
+    setIsOpen={() => {screenLoading.current = false}} /> )
+  };
   
   screenLoading.current = false;
 

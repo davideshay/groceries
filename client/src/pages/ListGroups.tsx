@@ -7,21 +7,20 @@ import { HistoryProps, ListCombinedRow, RowType } from '../components/DataTypes'
 import './ListGroups.css';
 import { useLists } from '../components/Usehooks';
 import ErrorPage from './ErrorPage';
+import Loading  from '../components/Loading';
 
 const ListGroups: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   const { listRowsLoaded, listCombinedRows, dbError: listError} = useLists();
-  const screenLoading = useRef(true);
+  const screenLoading = useRef(false);
 
   if (listError) { return(
     <ErrorPage errorText="Error Loading List Groups Information... Restart."></ErrorPage>
   )}
 
-  if (!listRowsLoaded) { return (
-    <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent>
-    <IonLoading isOpen={screenLoading.current} onDidDismiss={()=>{screenLoading.current=false}}
-      message="Loading List Data..."></IonLoading>
-    </IonContent></IonPage>
+  if (!listRowsLoaded) { 
+    return ( <Loading isOpen={screenLoading.current} message="Loading List Groups"
+    setIsOpen={() => {screenLoading.current = false}} />
   )}
 
   screenLoading.current=false;

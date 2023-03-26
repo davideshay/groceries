@@ -13,6 +13,8 @@ import { ItemDoc, ItemList, CategoryDoc, InitCategoryDoc } from '../components/D
 import SyncIndicator from '../components/SyncIndicator';
 import { addOutline, closeOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
+import { Loading } from '../components/Loading';
+import { GlobalDataContext } from '../components/GlobalDataProvider';
 
 const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
@@ -30,18 +32,14 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { doc: categoryDoc, loading: categoryLoading} = useGetOneDoc(routeID);
   const { dbError: listError, listRowsLoaded, listRows } = useLists();
   const { dbError: itemError, itemRowsLoaded, itemRows } = useItems({selectedListGroupID: null, isReady: true, needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
-  const { docs: categoryDocs, loading: categoriesLoading, error: categoriesError } = useFind({
-    index: { fields: [ "type","name"] },
-    selector: { type: "category", name: { $exists: true}},
-    sort: [ "type","name"]
-  });
   const {goBack} = useContext(NavContext);
   const db = usePouch();
   const screenLoading = useRef(true);
+  const globalData = useContext(GlobalDataContext);
 
   useEffect( () => {
     let newCategoryDoc = cloneDeep(stateCategoryDoc);
-    if (!categoryLoading) {
+    if (!globalData.categoryLoading) {
       if (mode === "new" && needInitCategoryDoc) {
         newCategoryDoc = {type: "category", name: "", color:"#888888"}
         setNeedInitCategoryDoc(false);
@@ -52,16 +50,14 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   },[categoryLoading,categoryDoc]);
 
-  if ( listError || itemError || categoriesError !== null) { return (
+  if ( listError || itemError || globalData.categoryError !== null) { return (
     <ErrorPage errorText="Error Loading Category Information... Restart."></ErrorPage>
     )};
 
-  if ( categoryLoading || categoriesLoading || !stateCategoryDoc || deletingCategory || !listRowsLoaded || !itemRowsLoaded)  {return(
-    <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
-    <IonContent><IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false}}
-                 message="Loading Data..." >
-    </IonLoading></IonContent></IonPage>
-  )};
+  if ( categoryLoading || globalData.categoryLoading || !stateCategoryDoc || deletingCategory || !listRowsLoaded || !itemRowsLoaded)  {
+    return ( <Loading isOpen={screenLoading.current} message="Loading Categories..."
+    setIsOpen={() => {screenLoading.current = false}} /> )
+  };
   
   screenLoading.current=false;
 
@@ -72,7 +68,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
       return false;
     }
     let categoryDup=false;
-    (categoryDocs as CategoryDoc[]).forEach((doc) => {
+    (globalData.categoryDocs as CategoryDoc[]).forEach((doc) => {
       if ((doc._id !== stateCategoryDoc._id) && (doc.name.toUpperCase() == stateCategoryDoc.name.toUpperCase())) {
         categoryDup = true;
       }

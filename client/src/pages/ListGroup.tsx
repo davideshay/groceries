@@ -16,6 +16,7 @@ import { getUsersInfo } from '../components/Utilities';
 import './ListGroup.css';
 import { closeCircleOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
+import { Loading } from '../components/Loading';
 
 interface PageState {
   needInitListGroupDoc: boolean,
@@ -109,12 +110,10 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
     <ErrorPage errorText="Error Loading List Group Information... Restart."></ErrorPage>
   }
 
-  if (!listRowsLoaded || (listGroupLoading && pageState.selectedListGroupID !== null) ||(useFriendState !== UseFriendState.rowsLoaded) || categoryLoading || isEmpty(pageState.listGroupDoc) || !pageState.usersLoaded || pageState.deletingDoc)  {return(
-      <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent>
-      </IonContent><IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false}}
-                    message="Loading Data...">
-      </IonLoading></IonPage>
-  )};
+  if (!listRowsLoaded || (listGroupLoading && pageState.selectedListGroupID !== null) ||(useFriendState !== UseFriendState.rowsLoaded) || categoryLoading || isEmpty(pageState.listGroupDoc) || !pageState.usersLoaded || pageState.deletingDoc)  {
+    return ( <Loading isOpen={screenLoading.current} message="Loading List Group..."
+    setIsOpen={() => {screenLoading.current = false}} /> )
+  };
   
   screenLoading.current=false;
 

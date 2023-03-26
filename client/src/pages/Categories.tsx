@@ -1,6 +1,6 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonButtons, 
   IonMenuButton, IonButton, IonFab, IonFabButton, IonIcon, IonLoading } from '@ionic/react';
-import { useRef } from 'react';
+import { useContext, useRef } from 'react';
 import { add } from 'ionicons/icons';
 import { useFind } from 'use-pouchdb';
 import SyncIndicator from '../components/SyncIndicator';
@@ -8,31 +8,26 @@ import { HistoryProps } from '../components/DataTypes';
 import { CategoryDoc } from '../components/DBSchema';
 import './Categories.css';
 import ErrorPage from './ErrorPage';
+import { Loading } from '../components/Loading';
+import { GlobalDataContext } from '../components/GlobalDataProvider';
 
 const Categories: React.FC<HistoryProps> = (props: HistoryProps) => {
-
-  const { docs, loading, error } = useFind({
-    index: { fields: ["type","name"]},
-    selector: { type: "category", name: { $exists: true }},
-    sort: [ "type", "name" ]
-  })
+  const globalData = useContext(GlobalDataContext);
   const screenLoading=useRef(true);
 
-  if (error !== null) { return (
+  if (globalData.categoryError !== null) { return (
     <ErrorPage errorText="Error Loading Category Information... Restart."></ErrorPage>
 
   )}
 
-  if (loading) { return (
-    <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
-    <IonContent><IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false;}}
-                            message="Loading Data..."></IonLoading>
-    </IonContent></IonPage>
-  )}
+  if (globalData.categoryLoading) { 
+    return ( <Loading isOpen={screenLoading.current} message="Loading Categories..."
+    setIsOpen={() => {screenLoading.current = false}} /> )
+  }
 
   screenLoading.current=false;
 
-  (docs as CategoryDoc[]).sort(function(a,b) {
+  (globalData.categoryDocs as CategoryDoc[]).sort(function(a,b) {
     return a.name.toUpperCase().localeCompare(b.name.toUpperCase())
   })
 
@@ -47,7 +42,7 @@ const Categories: React.FC<HistoryProps> = (props: HistoryProps) => {
       </IonHeader>
       <IonContent>
         <IonList lines="full">
-               {(docs as CategoryDoc[]).map((doc) => (
+               {(globalData.categoryDocs as CategoryDoc[]).map((doc) => (
                   <IonItem key={doc._id} >
                     <IonButton slot="start" class="textButton" fill="clear" routerLink={("/category/edit/" + doc._id)}>{doc.name}</IonButton>
                   </IonItem>  

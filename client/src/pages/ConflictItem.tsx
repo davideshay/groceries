@@ -8,6 +8,7 @@ import { HistoryProps } from '../components/DataTypes';
 import './Category.css';
 import SyncIndicator from '../components/SyncIndicator';
 import ErrorPage from './ErrorPage';
+import { Loading } from '../components/Loading';
 
 const ConflictItem: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { id: routeID } = useParams<{ id: string}>();
@@ -21,12 +22,10 @@ const ConflictItem: React.FC<HistoryProps> = (props: HistoryProps) => {
     <ErrorPage errorText="Error Loading Conflict Information... Restart."></ErrorPage>
     )}
 
-  if ( conflictLoading  )  {return(
-    <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
-    <IonContent><IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false}}
-                 message="Loading Data..." >
-    </IonLoading></IonContent></IonPage>
-  )};
+  if ( conflictLoading  )  {
+    return ( <Loading isOpen={screenLoading.current} message="Loading Conflict Item..."
+    setIsOpen={() => {screenLoading.current = false}} /> )
+  };
   
   screenLoading.current=false;
   const localDate = (new Date(conflictDoc.updatedAt)).toLocaleString();

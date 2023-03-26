@@ -15,6 +15,7 @@ import { FriendStatus } from '../components/DBSchema';
 import { checkUserByEmailExists, emailPatternValidation, apiConnectTimeout } from '../components/Utilities';
 import SyncIndicator from '../components/SyncIndicator';
 import ErrorPage from './ErrorPage';
+import { Loading } from '../components/Loading';
 
 /* 
 
@@ -82,10 +83,8 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
     )};
 
   if (useFriendState !== UseFriendState.rowsLoaded) {
-    return(<IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
-    <IonContent><IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false;}}
-              message="Loading Friends Data..."></IonLoading>
-    </IonContent></IonPage>)
+    return ( <Loading isOpen={screenLoading.current} message="Loading Friends..."
+    setIsOpen={() => {screenLoading.current = false}} /> )
   }
 
   screenLoading.current=false;

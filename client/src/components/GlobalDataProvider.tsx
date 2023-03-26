@@ -2,7 +2,7 @@ import React, { createContext, useState, useEffect, useRef} from "react";
 import { usePouch, useFind} from 'use-pouchdb';
 import { cloneDeep, pick, keys, isEqual } from 'lodash';
 import PouchDB from 'pouchdb';
-import { GlobalItemDocs, ItemDocs } from "./DBSchema";
+import { CategoryDocs, GlobalItemDocs, ItemDocs, ListDocs, ListGroupDocs, UomDoc } from "./DBSchema";
 
 
 export type GlobalDataState = {
@@ -11,7 +11,19 @@ export type GlobalDataState = {
     itemError: PouchDB.Core.Error | null,
     globalItemDocs: GlobalItemDocs,
     globalItemsLoading: boolean,
-    globalItemError: PouchDB.Core.Error | null
+    globalItemError: PouchDB.Core.Error | null,
+    listDocs: ListDocs,
+    listsLoading: boolean,
+    listError: PouchDB.Core.Error | null,
+    listGroupDocs: ListGroupDocs,
+    listGroupsLoading: boolean,
+    listGroupError: PouchDB.Core.Error | null,
+    categoryDocs: CategoryDocs,
+    categoryLoading: boolean,
+    categoryError: PouchDB.Core.Error | null,
+    uomDocs: UomDoc[],
+    uomLoading: boolean,
+    uomError: PouchDB.Core.Error | null,
 }
 
 export interface GlobalDataContextType {
@@ -24,7 +36,20 @@ export const initialGlobalDataState: GlobalDataState = {
     itemError: null,
     globalItemDocs: [],
     globalItemsLoading: false,
-    globalItemError: null
+    globalItemError: null,
+    listDocs: [],
+    listsLoading: false,
+    listError: null,
+    listGroupDocs: [],
+    listGroupsLoading: false,
+    listGroupError: null,
+    categoryDocs: [],
+    categoryLoading: false,
+    categoryError: null,
+    uomDocs: [],
+    uomLoading: false,
+    uomError: null
+
 }
 
 export const GlobalDataContext = createContext(initialGlobalDataState)
@@ -50,8 +75,46 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
             }
         });
 
+    const { docs: listDocs, loading: listsLoading, error: listError} = useFind({
+        index: { fields: ["type","name"] },
+        selector: { 
+            "type": "list",
+            "name": { "$exists": true } 
+            }
+        });
+
+
+    const { docs: listGroupDocs, loading: listGroupsLoading, error: listGroupError} = useFind({
+        index: { fields: ["type","name"] },
+        selector: { 
+            "type": "listgroup",
+            "name": { "$exists": true } 
+            }
+        });
+
+    const { docs: categoryDocs, loading: categoryLoading, error: categoryError} = useFind({
+        index: { fields: ["type","name"] },
+        selector: { 
+            "type": "category",
+            "name": { "$exists": true } 
+            }
+        });
+
+    const { docs: uomDocs, loading: uomLoading, error: uomError} = useFind({
+        index: { fields: ["type","name"] },
+        selector: { 
+            "type": "uom",
+            "name": { "$exists": true } 
+            }
+        });
+
     let value: GlobalDataState = {itemDocs: itemDocs as ItemDocs, itemsLoading, itemError,
-            globalItemDocs: globalItemDocs as GlobalItemDocs, globalItemsLoading, globalItemError };
+            globalItemDocs: globalItemDocs as GlobalItemDocs, globalItemsLoading, globalItemError,
+            listDocs: listDocs as ListDocs,listsLoading,listError,
+            listGroupDocs: listGroupDocs as ListGroupDocs, listGroupsLoading, listGroupError,
+            categoryDocs: categoryDocs as CategoryDocs, categoryLoading, categoryError,
+            uomDocs: uomDocs as UomDoc[], uomLoading, uomError
+        };
     return (
         <GlobalDataContext.Provider value={value}>{props.children}</GlobalDataContext.Provider>
       );

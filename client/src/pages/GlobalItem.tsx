@@ -11,47 +11,34 @@ import { CategoryDoc, UomDoc } from '../components/DBSchema';
 import SyncIndicator from '../components/SyncIndicator';
 import { closeOutline} from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
+import { Loading } from '../components/Loading';
+import { GlobalDataContext } from '../components/GlobalDataProvider';
 
 const GlobalItem: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
   if ( mode === "new" ) { routeID = "<new>"};
   const [formError,setFormError] = useState<string>("");
   const { doc: globalItemDoc, loading: globalItemLoading, dbError: globalItemError} = useGetOneDoc(routeID);
-  const { docs: globalItemDocs, loading: globalItemsLoading, error: globalItemsError } = useFind({
-    index: { fields: [ "type","name"] },
-    selector: { type: "globalitem", name: { $exists: true}},
-    sort: [ "type","name"]
-  })
-  const { docs: uomDocs, loading: uomLoading, error: uomError } = useFind({
-    index: { fields: [ "type","name"] },
-    selector: { type: "uom", name: { $exists: true}},
-    sort: [ "type","name"]
-  })
-  const { docs: categoryDocs, loading: categoryLoading, error: categoryError } = useFind({
-    index: { fields: [ "type","name"] },
-    selector: { type: "category", name: { $exists: true}},
-    sort: [ "type","name"]
-  })
-
+  const globalData = useContext(GlobalDataContext);
   const {goBack} = useContext(NavContext);
   const db = usePouch();
   const screenLoading = useRef(true);
 
-  if ( globalItemError || globalItemsError || uomError || categoryError) { return (
+  if ( globalItemError || globalData.uomError || globalData.categoryError) { return (
     <ErrorPage errorText="Error Loading Global Item Information... Restart."></ErrorPage>
     )};
 
-  if ( globalItemsLoading || globalItemLoading || uomLoading || categoryLoading)  {return(
-    <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader>
-    <IonContent><IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false}}
-                 message="Loading Data..." >
-    </IonLoading></IonContent></IonPage>
-  )};
+console.log(globalData.uomLoading, globalData.categoryLoading);
+
+  if ( globalItemLoading || globalData.uomLoading || globalData.categoryLoading)  {
+    return ( <Loading isOpen={screenLoading.current} message="Loading Global Item..."
+    setIsOpen={() => {screenLoading.current = false}} /> )
+};
   
   screenLoading.current=false;
-  let curUOMItem : UomDoc | undefined = (uomDocs as UomDoc[]).find((uom) => (uom.name == globalItemDoc.defaultUOM));
+  let curUOMItem : UomDoc | undefined = (globalData.uomDocs as UomDoc[]).find((uom) => (uom.name == globalItemDoc.defaultUOM));
   let curUOM = (curUOMItem == undefined) ? "Undefined" : curUOMItem.description;
-  let curCategoryItem : CategoryDoc | undefined = (categoryDocs as CategoryDoc[]).find((cat) => (cat._id == globalItemDoc.defaultCategoryID));
+  let curCategoryItem : CategoryDoc | undefined = (globalData.categoryDocs as CategoryDoc[]).find((cat) => (cat._id == globalItemDoc.defaultCategoryID));
   let curCategory = (curCategoryItem == undefined) ? "Undefined" : curCategoryItem.name;
 
   return (
