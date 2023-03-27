@@ -31,7 +31,6 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   const deleteCategoryFromItems = useDeleteCategoryFromItems();
   const deleteCategoryFromLists = useDeleteCategoryFromLists();
   const { doc: categoryDoc, loading: categoryLoading} = useGetOneDoc(routeID);
-  const { dbError: listError, listRowsLoaded, listRows } = useLists();
   const { dbError: itemError, itemRowsLoaded, itemRows } = useItems({selectedListGroupID: null, isReady: true, needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const {goBack} = useContext(NavContext);
   const db = usePouch();
@@ -51,11 +50,11 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   },[categoryLoading,categoryDoc]);
 
-  if ( listError || itemError || globalData.categoryError !== null) { return (
+  if ( globalData.listError || itemError || globalData.categoryError !== null) { return (
     <ErrorPage errorText="Error Loading Category Information... Restart."></ErrorPage>
     )};
 
-  if ( categoryLoading || globalData.categoryLoading || !stateCategoryDoc || deletingCategory || !listRowsLoaded || !itemRowsLoaded)  {
+  if ( categoryLoading || globalData.categoryLoading || !stateCategoryDoc || deletingCategory || !globalData.listRowsLoaded || !itemRowsLoaded)  {
     return ( <Loading isOpen={screenLoading.current} message="Loading Category..."     />)
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   };
@@ -107,7 +106,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   async function getNumberOfListsUsingCategory() {
     let numResults = 0;
     if (stateCategoryDoc == null) return numResults;
-    listRows.forEach( (lr: ListRow) => {
+    globalData.listRows.forEach( (lr: ListRow) => {
       if (lr.listDoc.categories.includes(String(stateCategoryDoc._id))) {
         numResults++;
       }

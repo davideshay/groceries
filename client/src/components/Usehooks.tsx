@@ -332,7 +332,7 @@ export function useItems({selectedListGroupID,isReady, needListGroupID, activeOn
   const [itemRowsLoaded, setItemRowsLoaded] = useState(false);
   const [itemRowsLoading, setItemRowsLoading] = useState(false);
   const [dbError, setDBError] = useState(false);
-  const { dbError: listDBError, listCombinedRows, listRowsLoaded, listDocs } = useLists()
+  const { listError: listDBError, listCombinedRows, listRowsLoaded, listDocs } = useContext(GlobalDataContext)
   const globalData = useContext(GlobalDataContext);
   const [perfms,setperfms] = useState(performance.now());
 

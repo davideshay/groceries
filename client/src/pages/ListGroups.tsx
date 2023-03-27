@@ -1,18 +1,17 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonButtons, 
   IonMenuButton, IonButton, IonFab, IonFabButton, IonIcon, IonLoading} from '@ionic/react';
-import { useRef } from 'react';
+import { useContext, useRef } from 'react';
 import { add } from 'ionicons/icons';
-import SyncIndicator from '../components/SyncIndicator';
 import { HistoryProps, ListCombinedRow, RowType } from '../components/DataTypes';
 import './ListGroups.css';
-import { useLists } from '../components/Usehooks';
 import ErrorPage from './ErrorPage';
 import Loading  from '../components/Loading';
 import PageHeader from '../components/PageHeader';
+import { GlobalDataContext } from '../components/GlobalDataProvider';
 
 const ListGroups: React.FC<HistoryProps> = (props: HistoryProps) => {
 
-  const { listRowsLoaded, listCombinedRows, dbError: listError} = useLists();
+  const { listRowsLoaded, listCombinedRows, listError} = useContext(GlobalDataContext);
   const screenLoading = useRef(false);
 
   if (listError) { return(

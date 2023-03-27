@@ -6,7 +6,7 @@ import { addOutline, closeCircleOutline, trashOutline, saveOutline } from 'ionic
 import { useParams } from 'react-router-dom';
 import { usePouch } from 'use-pouchdb';
 import { useState, useEffect, useContext, useRef } from 'react';
-import { useCreateGenericDocument, useUpdateGenericDocument, useLists, useDeleteGenericDocument, useGetOneDoc, useItems } from '../components/Usehooks';
+import { useCreateGenericDocument, useUpdateGenericDocument, useDeleteGenericDocument, useGetOneDoc, useItems } from '../components/Usehooks';
 import { GlobalStateContext } from '../components/GlobalState';
 import { cloneDeep, isEmpty, remove } from 'lodash';
 import './Item.css';

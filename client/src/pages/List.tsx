@@ -6,16 +6,17 @@ import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useFriends, useGetOneDoc,
-  useLists, useDeleteGenericDocument, useDeleteListFromItems, useAddListToAllItems } from '../components/Usehooks';
+   useDeleteGenericDocument, useDeleteListFromItems, useAddListToAllItems } from '../components/Usehooks';
 import { cloneDeep, isEmpty } from 'lodash';
 import './List.css';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
 import { PouchResponse, HistoryProps, ListRow, RowType } from '../components/DataTypes';
-import { ListDocInit, ListDoc, CategoryDoc } from '../components/DBSchema'
+import { ListDocInit, ListDoc, CategoryDoc, ListDocs } from '../components/DBSchema'
 import SyncIndicator from '../components/SyncIndicator';
 import { closeCircleOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
+import { GlobalDataContext } from '../components/GlobalDataProvider';
 
 interface PageState {
   needInitListDoc: boolean,
@@ -49,7 +50,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   const addListToAllItems = useAddListToAllItems();
   const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
   const [ presentToast ] = useIonToast();
-  const { dbError: listError, listDocs, listsLoading, listRowsLoaded, listRows, listCombinedRows } = useLists();
+  const { listError, listDocs, listsLoading, listRowsLoaded, listRows, listCombinedRows } = useContext(GlobalDataContext);
   const { docs: categoryDocs, loading: categoryLoading, error: categoryError } = useFind({
     index: { fields: [ "type","name"] },
     selector: { type: "category", name: { $exists: true}},
@@ -107,7 +108,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   function changeListUpdateState(listID: string) {
     setPageState(prevState => ({...prevState,
-        listDoc: listDocs.find((el: ListDoc) => el._id === listID),
+        listDoc: ((listDocs as ListDocs).find((el: ListDoc) => el._id === listID)) as ListDoc,
         selectedListID: listID}))
     props.history.push('/list/edit/'+listID);    
   }

@@ -8,7 +8,7 @@ import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
 import { cloneDeep } from 'lodash';
 import './Items.css';
-import { useUpdateGenericDocument, useLists, useCreateGenericDocument, useItems } from '../components/Usehooks';
+import { useUpdateGenericDocument, useCreateGenericDocument, useItems } from '../components/Usehooks';
 import { AddListOptions, GlobalStateContext } from '../components/GlobalState';
 import { ItemSearch, SearchState, PageState, ListRow, ListCombinedRow, HistoryProps, RowType, ItemSearchType} from '../components/DataTypes'
 import { ItemDoc, ItemDocs, ItemListInit, ItemList, ItemDocInit, CategoryDoc, UomDoc, GlobalItemDocs } from '../components/DBSchema';
@@ -46,7 +46,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       needListGroupID: true, activeOnly: false, selectedListID: pageState.selectedListOrGroupID,
       selectedListType: pageState.selectedListType});
 
-  const { dbError: listError , listDocs, listCombinedRows,listRows, listRowsLoaded } = useLists();
+  const { listError , listDocs, listCombinedRows,listRows, listRowsLoaded } = useContext(GlobalDataContext);
   const { docs: uomDocs, loading: uomLoading, error: uomError } = useFind({
     index: { fields: [ "type","name"]},
     selector: { type: "uom", name: { $exists: true}},

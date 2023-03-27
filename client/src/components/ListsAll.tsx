@@ -2,10 +2,10 @@ import {  IonItem, IonButton, IonMenuToggle, IonIcon } from '@ionic/react';
 import { useContext } from 'react';
 import { pencilOutline } from 'ionicons/icons';
 import { RemoteDBStateContext } from './RemoteDBState';
-import { useLists } from './Usehooks';
 import './ListsAll.css';
 import './common.css';
 import { RowType } from './DataTypes';
+import { GlobalDataContext } from './GlobalDataProvider';
 
 interface ListsAllProps {
   separatePage: boolean
@@ -13,7 +13,7 @@ interface ListsAllProps {
 
 const ListsAll: React.FC<ListsAllProps> = (props: ListsAllProps) => {
   const { remoteDBCreds } = useContext(RemoteDBStateContext);
-  const { listRowsLoaded, listCombinedRows} = useLists();
+  const { listRowsLoaded, listCombinedRows} = useContext(GlobalDataContext)
 
   if (!listRowsLoaded) { return (<></>) }
   
