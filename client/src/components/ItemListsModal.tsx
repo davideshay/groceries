@@ -1,7 +1,7 @@
 import { IonTitle,  IonButton, IonList, IonInput, IonItem, IonSelect, IonCheckbox, IonIcon,
     IonSelectOption, IonTextarea, IonGrid, IonRow, IonCol, IonText, IonModal } from '@ionic/react';
 import { addOutline, closeCircleOutline, saveOutline } from 'ionicons/icons';    
-import { SetStateAction, useContext } from 'react';    
+import { SetStateAction, useContext, useState } from 'react';    
 import {  ModalState, ModalStateInit } from '../components/DataTypes';
 import {  CategoryDoc, ItemDoc, ItemList,  UomDoc } from '../components/DBSchema';
 

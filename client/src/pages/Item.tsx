@@ -21,9 +21,7 @@ import PageHeader from '../components/PageHeader';
 
 
 const Item: React.FC = (props) => {
-//  let { mode, itemid } = useParams<{mode: string, itemid: string}>();
-//  console.log("rendering . params:",cloneDeep({mode, itemid, pmode: (props as any).match.params.mode, pitemid: (props as any).match.params.itemid}))
-  const {mode, itemid} = (props as any).match.params;
+  let { mode, itemid } = useParams<{mode: string, itemid: string}>();
   const routeItemID = (mode === "new" ? null : itemid)
   const [needInitItemDoc,setNeedInitItemDoc] = useState((mode === "new") ? true: false);
   const [stateItemDoc,setStateItemDoc] = useState<ItemDoc>(ItemDocInit);
@@ -38,21 +36,12 @@ const Item: React.FC = (props) => {
   const screenLoading = useRef(true);
   const {goBack} = useContext(NavContext);
 
-
   const { dbError: itemsError, itemRowsLoaded, itemRows } = useItems({selectedListGroupID: stateItemDoc.listGroupID, isReady: !itemLoading, needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const { globalState, setStateInfo} = useContext(GlobalStateContext);
   const globalData  = useContext(GlobalDataContext);
   const [presentAlert, dismissAlert] = useIonAlert();
   const [presentToast] = useIonToast();
-  const [perfms,setperfms] = useState(performance.now());
-
-  useEffect(() => {
-    console.log("first render...");
-    setperfms(performance.now());
-  },[])
-
-  //console.log("time to this render:",performance.now()-perfms);
-
+  
   function groupIDForList(listID: string): string {
     let retGID="";
     let searchList=globalData.listRows.find((el: ListRow) => el.listDoc._id === listID);
@@ -111,7 +100,6 @@ const Item: React.FC = (props) => {
     <ErrorPage errorText="Error Loading Item Information... Restart."></ErrorPage>
   )}
 
-//  console.log(cloneDeep({itemLoading, routeItemID, listsLoading, listRowsLoaded, categoryLoading, uomLoading, itemRowsLoaded, stateItemDoc}));
 
 
   if ((itemLoading && routeItemID !== null) || globalData.listsLoading || !globalData.listRowsLoaded || globalData.categoryLoading || globalData.uomLoading || !itemRowsLoaded || isEmpty(stateItemDoc))  {
@@ -120,8 +108,6 @@ const Item: React.FC = (props) => {
   };
 
   screenLoading.current=false;
-
-  console.log("Item rendering... after loading..");
   
   async function updateThisItem() {
     setFormError(prevState => (""));

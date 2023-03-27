@@ -25,7 +25,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   const [pageState, setPageState] = useState<PageState>({selectedListOrGroupID: routeListID,
           selectedListType: (routeMode == "list" ? RowType.list : RowType.listGroup) ,
           ignoreCheckOffWarning: false,
-          groupIDforSelectedList: "",
+          groupIDforSelectedList: null,
           doingUpdate: false, itemRows: [], showAlert: false, alertHeader: "", alertMessage: ""});
   const searchRef=useRef<HTMLIonInputElement>(null);
   const origSearchCriteria = useRef("");
@@ -46,21 +46,12 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       needListGroupID: true, activeOnly: false, selectedListID: pageState.selectedListOrGroupID,
       selectedListType: pageState.selectedListType});
 
-  const { listError , listDocs, listCombinedRows,listRows, listRowsLoaded } = useContext(GlobalDataContext);
-  const { docs: uomDocs, loading: uomLoading, error: uomError } = useFind({
-    index: { fields: [ "type","name"]},
-    selector: { type: "uom", name: { $exists: true}},
-    sort: [ "type","name"] })
-  const { docs: categoryDocs, loading: categoryLoading, error: categoryError } = useFind({
-      index: { fields: [ "type","name"] },
-      selector: { type: "category", name: { $exists: true}},
-      sort: [ "type","name"] });
-
+  const { listError , listDocs, listCombinedRows,listRows, listRowsLoaded, uomDocs, uomLoading, uomError, categoryDocs, categoryLoading, categoryError, itemDocs } = useContext(GlobalDataContext);
   const { globalState,setStateInfo: setGlobalStateInfo} = useContext(GlobalStateContext);
 
-  function getGroupIDForList(listID: string): string {
+  function getGroupIDForList(listID: string): string | null {
     if (routeMode == "group") { return pageState.selectedListOrGroupID};
-    let retGID = "";
+    let retGID = null;
     for (let i = 0; i < listRows.length; i++) {
       if (listRows[i].listDoc._id == listID) { retGID=String(listRows[i].listGroupID); break}
     }
@@ -89,7 +80,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   useEffect( () => {
     if (baseSearchItemRowsLoaded && !globalData.globalItemsLoading) {
       setSearchState(prevState => ({...prevState,isOpen: false, isFocused: false}));
-      setSearchRows(getAllSearchRows(baseSearchItemDocs as ItemDocs,pageState.selectedListOrGroupID, listDocs, globalData.globalItemDocs as GlobalItemDocs));
+      setSearchRows(getAllSearchRows(baseSearchItemDocs as ItemDocs,pageState.selectedListOrGroupID, pageState.selectedListType, listDocs, globalData.globalItemDocs as GlobalItemDocs));
     }
   },[baseSearchItemRowsLoaded, globalData.globalItemsLoading, globalData.globalItemDocs, baseSearchItemDocs, pageState.selectedListOrGroupID])
 
@@ -103,7 +94,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   }
 
-
   useEffect( () => {
     filterAndCheckRows();
   },[searchRows,searchState.searchCriteria,searchState.isFocused])
@@ -116,6 +106,8 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     return ( <Loading isOpen={screenLoading.current} message="Loading Items..."    /> )
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   };
+
+  console.log("past load in items: ",cloneDeep({baseItemDocs, baseSearchItemDocs,searchRows}))
 
   screenLoading.current=false;
 
@@ -172,20 +164,27 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     return catexists;
   }
 
-  async function addExistingItemToList(item: ItemSearch) {
-    const testItemDoc = baseItemDocs.find((id) => (id._id === item.itemID));
+  async function addExistingItemToList(itemSearch: ItemSearch) {
+    console.log("AEITL: ",cloneDeep(itemSearch));
+    let testItemDoc = undefined
+    if (pageState.selectedListType == RowType.list) {
+       testItemDoc =itemDocs.find((item) => (item._id === itemSearch.itemID && item.lists.some(il => il.listID === pageState.selectedListOrGroupID)));
+    } else {
+      testItemDoc = itemDocs.find((item) => (item._id === itemSearch.itemID && item.listGroupID == pageState.selectedListOrGroupID))
+    }
     if (testItemDoc !== undefined) {presentToast({message: "Trying to add duplicate item... Error.", duration: 1500, position: "middle"}); return}
-    if (item.itemType == ItemSearchType.Global) {
+    console.log("Found test itemdoc: ",cloneDeep(testItemDoc)); return;
+    if (itemSearch.itemType == ItemSearchType.Global) {
       let newItem: ItemDoc = cloneDeep(ItemDocInit);
-      newItem.globalItemID = item.globalItemID;
+      newItem.globalItemID = itemSearch.globalItemID;
       newItem.listGroupID = pageState.groupIDforSelectedList;
-      newItem.name = item.itemName;
+      newItem.name = itemSearch.itemName;
       listRows.forEach((lr) => {
         if (lr.listGroupID == pageState.groupIDforSelectedList) {
           let newItemList: ItemList = cloneDeep(ItemListInit);
           newItemList.listID = String(lr.listDoc._id);
-          newItemList.categoryID = item.globalItemCategoryID;
-          newItemList.uomName = item.globalItemUOM;
+          newItemList.categoryID = itemSearch.globalItemCategoryID;
+          newItemList.uomName = itemSearch.globalItemUOM;
           newItemList.quantity = 1;
           newItem.lists.push(newItemList);
         }
@@ -196,7 +195,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       }
       return;
     }
-    let existingItem: ItemDoc = cloneDeep((baseSearchItemDocs as ItemDocs).find((el) => el._id === item.itemID));
+    let existingItem: ItemDoc = cloneDeep((baseSearchItemDocs as ItemDocs).find((el) => el._id === itemSearch.itemID));
     listRows.forEach((listRow: ListRow) => {
       let idxInLists=existingItem.lists.findIndex((el) => el.listID === listRow.listDoc._id);
       let skipThisList=false;

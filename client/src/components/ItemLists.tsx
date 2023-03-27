@@ -1,7 +1,7 @@
 import {  IonButton,  IonItem, IonLabel, IonCheckbox, IonIcon, 
     IonGrid, IonRow, IonCol, IonText,  } from '@ionic/react';
 import { pencilOutline } from 'ionicons/icons';
-import { Fragment, useContext, useState } from 'react';
+import { Fragment, useContext, useEffect, useState } from 'react';
 import { sortedItemLists, listIsDifferentThanCommon } from './ItemUtilities';
 import { CategoryDoc, UomDoc, ItemDoc, ItemList, ListDoc, ListDocs } from './DBSchema';
 import ItemListsModal from '../components/ItemListsModal';
@@ -78,7 +78,6 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
 
     let listsElem=[];
     let listsInnerElem=[];
-  //  listsElem.push(<IonGrid>);
     listsInnerElem.push(<IonRow key="listlabelrow">
         <IonCol size="10"><IonLabel key="listlabel" position='stacked'>Item is on these lists:</IonLabel></IonCol>
         <IonCol size="2"><IonLabel key="resetlabel" position="stacked">Edit</IonLabel></IonCol></IonRow>
@@ -104,7 +103,6 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
     listsElem.push(<IonItem key="listlist"><IonGrid>{listsInnerElem}</IonGrid></IonItem>)
     listsElem.push(<IonItem key="diffNote"><IonText class="small-note-text">Highlighted lists have different values at the item-list level</IonText></IonItem>)
   
-
     return (
         <Fragment key="itemlists">
         {listsElem}

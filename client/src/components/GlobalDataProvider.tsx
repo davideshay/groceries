@@ -72,6 +72,7 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
     const [ listCombinedRows, setListCombinedRows] = useState<ListCombinedRows>();
     const [ listRowsLoaded, setListRowsLoaded] = useState(false);
     const { remoteDBCreds } = useContext(RemoteDBStateContext);
+
     const { docs: itemDocs, loading: itemsLoading, error: itemError} = useFind({
         index: { fields: ["type","name"] },
         selector: { 
@@ -122,19 +123,15 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
         });
 
     useEffect( () => {
-        if (!listsLoading) {
+        if (!listsLoading && !listGroupsLoading) {
             setListRowsLoaded(false);
             const { listRows: localListRows, listCombinedRows: localListCombinedRows} = getListRows(listDocs as ListDocs,listGroupDocs as ListGroupDocs,remoteDBCreds)
             setListRows(localListRows);
             setListCombinedRows(localListCombinedRows);
             setListRowsLoaded(true);
-            console.log("Global data, rendered list rows:",cloneDeep({localListRows,localListCombinedRows}))
         }
     },[listsLoading, listDocs, listGroupDocs, listGroupsLoading, remoteDBCreds])
 
-
-
-    console.log("GLOBAL DATA CAUSED RERENDER...");
     let value: GlobalDataState = {itemDocs: itemDocs as ItemDocs, itemsLoading, itemError,
             globalItemDocs: globalItemDocs as GlobalItemDocs, globalItemsLoading, globalItemError,
             listDocs: listDocs as ListDocs,listsLoading,listError,
@@ -143,6 +140,7 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
             uomDocs: uomDocs as UomDoc[], uomLoading, uomError,
             listRows: listRows as ListRow[], listRowsLoaded, listCombinedRows: listCombinedRows as ListCombinedRows
         };
+        console.log("GLOBAL DATA CAUSED RERENDER...",cloneDeep(value));    
     return (
         <GlobalDataContext.Provider value={value}>{props.children}</GlobalDataContext.Provider>
       );

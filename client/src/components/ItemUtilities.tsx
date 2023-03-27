@@ -4,7 +4,15 @@ import { AddListOptions, GlobalState } from "./GlobalState";
 import { UomDoc, ItemDoc, ItemDocs, ItemList, ListDocs, ListDoc, CategoryDoc, GlobalItemDocs } from './DBSchema';
 import { cloneDeep } from 'lodash';
 
-export function getAllSearchRows(allItemDocs: ItemDocs, listID: string, listDocs: ListDocs, globalItemDocs: GlobalItemDocs): ItemSearch[] {
+export function getGroupIDForList(listID: string, listDocs: ListDocs): string | null {
+    let retGID = null;
+    for (let i = 0; i < listDocs.length; i++) {
+      if (listDocs[i]._id === listID) { retGID=String(listDocs[i].listGroupID); break}
+    }
+    return retGID;
+}
+
+export function getAllSearchRows(allItemDocs: ItemDocs, listID: string,listType: RowType ,listDocs: ListDocs, globalItemDocs: GlobalItemDocs): ItemSearch[] {
     let searchRows: ItemSearch[] = [];
     allItemDocs.forEach((itemDoc) => {
       let searchRow: ItemSearch = {
@@ -17,22 +25,46 @@ export function getAllSearchRows(allItemDocs: ItemDocs, listID: string, listDocs
         quantity: getMaxKey(itemDoc,"quantity",listDocs),
         boughtCount: getMaxKey(itemDoc,"quantity",listDocs)
       }
-      let list=itemDoc.lists.find((el) => el.listID === listID)
-      if (list) {searchRow.boughtCount=list.boughtCount}
-      if (!list || !list?.active) {
+      let addRowToSearch=true;
+      if (listType === RowType.list) {
+        let list = itemDoc.lists.find((el) => el.listID === listID);
+        if (list !== undefined) {
+            searchRow.boughtCount = list.boughtCount;
+            if (list.active) {addRowToSearch=false}
+        }
+      } else { // RowType is ListGroup
+        if (itemDoc.listGroupID !== listID) {
+            addRowToSearch=false
+        } else {
+            let commonActive= allValuesSame(itemDoc,"active",listDocs)
+            console.log("GASR: common active key for ",itemDoc.name, " is : ",commonActive);
+            if (commonActive !== null && commonActive) {addRowToSearch = false}
+        }
+      }
+      console.log("GASR: adding ItemDoc : ", itemDoc.name,cloneDeep({itemDoc,addRowToSearch,searchRow}))
+      if (addRowToSearch) {
         searchRows.push(searchRow);
       }  
     })
     globalItemDocs.forEach((globalItem) => {
       let itemExistsInSearchIdx = searchRows.findIndex((sr) => (sr.globalItemID == globalItem._id || sr.itemName == globalItem.name));
-      let itemNameMatch = allItemDocs.find((item) => (item.name == globalItem.name));
       let itemExistsInItem = false;
-      if (itemNameMatch !== undefined) {
-        itemNameMatch.lists.forEach((list) => {
-            if (list.active && list.listID==listID) {
-                itemExistsInItem=true;
-            }
-        })
+      if (listType == RowType.list) {
+        let itemNameMatch = allItemDocs.find((item) => (item.name.toUpperCase() === globalItem.name.toUpperCase()));
+        if (itemNameMatch !== undefined) {
+            itemNameMatch.lists.forEach((list) => {
+                if (list.active && list.listID===listID) {
+                    itemExistsInItem=true;
+                }
+            })
+        }
+      } else {
+        let itemNameMatch = allItemDocs.find((item) => (item.name.toUpperCase() == globalItem.name.toUpperCase() && item.listGroupID == listID))
+        console.log("GASR: Global: ",globalItem.name," itemNameMatch:",itemNameMatch);
+        if (itemNameMatch !== undefined) {
+            console.log("GASR: Global:",globalItem.defaultUOM," setting item exists in item to true")
+            itemExistsInItem = true;
+        }
       }
       if (itemExistsInSearchIdx === -1 && !itemExistsInItem) {
         let searchRow: ItemSearch = {
@@ -48,6 +80,7 @@ export function getAllSearchRows(allItemDocs: ItemDocs, listID: string, listDocs
         searchRows.push(searchRow);
       }   
     })
+    console.log("returned searchrows: ",cloneDeep(searchRows))
     return searchRows;
   }
 
@@ -202,6 +235,15 @@ export function sortedItemLists(itemList: ItemList[], listDocs: ListDocs) {
         }
     })
     return sortedLists;
+}
+
+export function allValuesSame(stateItemDoc: ItemDoc, key: string, listDocs: ListDocs) {
+    let allSame=true; let lastValue=null;
+    for (let i = 0; i < stateItemDoc.lists.length; i++) {
+        if ((stateItemDoc.lists[i] as any)[key] !== (stateItemDoc.lists[0] as any)[key]) {
+            allSame=false; break;
+        }
+    }
 }
 
 export function getCommonKey(stateItemDoc: ItemDoc, key: string, listDocs: ListDocs) {

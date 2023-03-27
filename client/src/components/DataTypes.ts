@@ -50,7 +50,7 @@ export enum ItemSearchType {
   export interface PageState {
     selectedListOrGroupID: string,
     selectedListType: RowType,
-    groupIDforSelectedList: string,
+    groupIDforSelectedList: null | string,
     doingUpdate: boolean,
     itemRows: Array<ItemRow>,
     ignoreCheckOffWarning: boolean,

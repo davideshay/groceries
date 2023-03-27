@@ -332,19 +332,11 @@ export function useItems({selectedListGroupID,isReady, needListGroupID, activeOn
   const [itemRowsLoaded, setItemRowsLoaded] = useState(false);
   const [itemRowsLoading, setItemRowsLoading] = useState(false);
   const [dbError, setDBError] = useState(false);
-  const { listError: listDBError, listCombinedRows, listRowsLoaded, listDocs } = useContext(GlobalDataContext)
-  const globalData = useContext(GlobalDataContext);
-  const [perfms,setperfms] = useState(performance.now());
-
-  useEffect( () => {
-    console.log("initial render of useitems");
-    setperfms(performance.now())
-  },[])
-
- // console.log("useitems, time from initial: ",performance.now()-perfms);
+  const { listError: listDBError, listCombinedRows, listRowsLoaded, listDocs, itemsLoading, itemDocs, itemError } = useContext(GlobalDataContext)
   
   function buildItemRows() {
-    let curItemDocs: ItemDocs = cloneDeep(globalData.itemDocs);
+    let birms = performance.now()
+    let curItemDocs: ItemDocs = cloneDeep(itemDocs);
     let newItemRows: ItemDocs = [];
     curItemDocs.forEach((itemDoc: ItemDoc) => {
       if (selectedListGroupID == null || itemDoc.listGroupID == selectedListGroupID) {
@@ -376,26 +368,39 @@ export function useItems({selectedListGroupID,isReady, needListGroupID, activeOn
     setItemRows(newItemRows);
   }
 
-  useEffect( () => {
-    setItemRowsLoaded(false);
-  },[selectedListGroupID, selectedListID,selectedListType])
-
-  useEffect( () => {
-    if (globalData.itemsLoading || !listRowsLoaded || !isReady || (isReady && selectedListGroupID == null && needListGroupID)) { setItemRowsLoaded(false); return };
-    if (globalData.itemError !== null || listDBError) { setDBError(true); return;}
+  function checkAndBuild() {
+    console.log("CAB");
+    if (itemsLoading || !listRowsLoaded || !isReady || (isReady && selectedListGroupID == null && needListGroupID)) { setItemRowsLoaded(false); return };
+    if (itemError !== null || listDBError) { setDBError(true); return;}
     setDBError(false);
-    if ( !globalData.itemsLoading && listRowsLoaded && !itemRowsLoaded)  {
+    if ( !itemsLoading && listRowsLoaded)  {
       setItemRowsLoading(true);
       setItemRowsLoaded(false);
+      console.log("about to BIR")
       buildItemRows();
       setItemRowsLoading(false)
       setItemRowsLoaded(true);
     }
-  },[isReady,itemRowsLoaded,globalData.itemError, listDBError, globalData.itemsLoading,listRowsLoaded,globalData.itemDocs, listCombinedRows])
+  }
 
-//  console.log("returning from useitem: ", cloneDeep({gdil: globalData.itemsLoading, itemRowsLoading, itemRowsLoaded, itemRows}))
+ // useEffect( () => {
+ //   console.log("INITIAL CAB for UI");
+ //   checkAndBuild()
+ // },[])
 
-  return ({dbError, itemsLoading: globalData.itemsLoading, itemRowsLoading, itemRowsLoaded, itemRows});
+ // useEffect( () => {
+ //   console.log("Change in SLG, SLI, or SLT");  
+ //   checkAndBuild;
+ // },[selectedListGroupID, selectedListID,selectedListType])
+
+  useEffect( () => {
+    console.log("UI UE Changed",cloneDeep({isReady,itemError,listDBError,itemRowsLoading,listRowsLoaded,itemDocs,listCombinedRows,selectedListGroupID,needListGroupID}))
+    checkAndBuild();
+  },[isReady,itemError, listDBError,itemsLoading,listRowsLoaded,itemDocs, listCombinedRows, selectedListGroupID, selectedListID, selectedListType, needListGroupID])
+
+  console.log("UI Inputs:",cloneDeep({selectedListGroupID,isReady, needListGroupID, activeOnly, selectedListID, selectedListType}));
+  console.log("UI returning:",cloneDeep({dbError, itemsLoading, itemRowsLoaded,itemRows, itemDocs}));
+  return ({dbError, itemsLoading, itemRowsLoading, itemRowsLoaded, itemRows});
 }
 
 export enum UseFriendState {

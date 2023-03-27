@@ -5,10 +5,6 @@ import { cloneDeep } from "lodash";
 
 export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, remoteDBCreds: DBCreds) : {listRows: ListRow[], listCombinedRows: ListCombinedRows} {
 
-
-    console.log("GetListRows:",cloneDeep({listDocs, listGroupDocs, remoteDBCreds}));
-
-    let blrms = performance.now(); console.log("starting blr...");
     let curListDocs: ListDocs = cloneDeep(listDocs);
     let newListRows: ListRow[] = [];
     curListDocs.forEach((listDoc) => {
@@ -105,8 +101,6 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
         }
     })
     }
-    console.log("ending blr...",performance.now()-blrms)
-
     
     return ({listRows: newListRows, listCombinedRows: newCombinedRows});
   }

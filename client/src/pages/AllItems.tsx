@@ -9,6 +9,7 @@ import './AllItems.css';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import PageHeader from '../components/PageHeader';
+import { cloneDeep } from 'lodash';
 
 // The AllItems component is a master editor of all of the known items in the database.
 // Each item has a name, along with data about each list the item is on (list ID, quantity, count of number of times bought,
