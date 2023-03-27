@@ -16,6 +16,7 @@ import { checkUserByEmailExists, emailPatternValidation, apiConnectTimeout } fro
 import SyncIndicator from '../components/SyncIndicator';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
+import PageHeader from '../components/PageHeader';
 
 /* 
 
@@ -83,8 +84,8 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
     )};
 
   if (useFriendState !== UseFriendState.rowsLoaded) {
-    return ( <Loading isOpen={screenLoading.current} message="Loading Friends..."
-    setIsOpen={() => {screenLoading.current = false}} /> )
+    return ( <Loading isOpen={screenLoading.current} message="Loading Friends..."   /> )
+//    setIsOpen={() => {screenLoading.current = false}} /> )
   }
 
   screenLoading.current=false;
@@ -254,13 +255,7 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-        <IonButtons key="buttonsinmenu" slot="start"><IonMenuButton key="menuhamburger" /></IonButtons>
-          <IonTitle class="ion-no-padding">Friends</IonTitle>
-          <SyncIndicator history={props.history}/>
-        </IonToolbar>
-      </IonHeader>
+      <PageHeader title="Friends" />
       <IonContent>
         <IonAlert isOpen={pageState.showNewUserAlert}
                   header="User not found, send registration request?"

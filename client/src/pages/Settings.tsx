@@ -11,6 +11,7 @@ import { GlobalStateContext, initSettings, GlobalSettings, AddListOptions } from
 import { initialRemoteDBState, RemoteDBStateContext,  } from '../components/RemoteDBState';
 import { HistoryProps } from '../components/DataTypes';
 import { maxAppSupportedSchemaVersion, appVersion } from '../components/DBSchema';
+import PageHeader from '../components/PageHeader';
 
 const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
   const db = usePouch();
@@ -93,13 +94,7 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-        <IonButtons slot="start"><IonMenuButton /></IonButtons>
-          <IonTitle class="ion-no-padding">Settings</IonTitle>
-          <SyncIndicator history={props.history}/>
-        </IonToolbar>
-      </IonHeader>
+      <PageHeader title="Settings" />
       <IonContent fullscreen>
         <IonList lines="full">
           <IonItemDivider>App Info</IonItemDivider>

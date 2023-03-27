@@ -2,7 +2,6 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
   IonMenuButton, IonButton, IonFab, IonFabButton, IonIcon, IonLoading } from '@ionic/react';
 import { useContext, useRef } from 'react';
 import { add } from 'ionicons/icons';
-import { useFind } from 'use-pouchdb';
 import SyncIndicator from '../components/SyncIndicator';
 import { HistoryProps } from '../components/DataTypes';
 import { CategoryDoc } from '../components/DBSchema';
@@ -10,6 +9,7 @@ import './Categories.css';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
+import PageHeader from '../components/PageHeader';
 
 const Categories: React.FC<HistoryProps> = (props: HistoryProps) => {
   const globalData = useContext(GlobalDataContext);
@@ -21,8 +21,8 @@ const Categories: React.FC<HistoryProps> = (props: HistoryProps) => {
   )}
 
   if (globalData.categoryLoading) { 
-    return ( <Loading isOpen={screenLoading.current} message="Loading Categories..."
-    setIsOpen={() => {screenLoading.current = false}} /> )
+    return ( <Loading isOpen={screenLoading.current} message="Loading Categories..." /> )
+//    setIsOpen={() => {screenLoading.current = false}} /> )
   }
 
   screenLoading.current=false;
@@ -33,13 +33,7 @@ const Categories: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonButtons slot="start"><IonMenuButton /></IonButtons>
-          <IonTitle class="ion-no-padding">Categories</IonTitle>
-          <SyncIndicator history={props.history}/>
-        </IonToolbar>
-      </IonHeader>
+      <PageHeader title="Categories" />
       <IonContent>
         <IonList lines="full">
                {(globalData.categoryDocs as CategoryDoc[]).map((doc) => (

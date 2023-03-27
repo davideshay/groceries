@@ -10,6 +10,7 @@ import { cloneDeep } from 'lodash';
 import './GlobalItems.css';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
+import PageHeader from '../components/PageHeader';
 
 // The AllItems component is a master editor of all of the known items in the database.
 // Each item has a name, along with data about each list the item is on (list ID, quantity, count of number of times bought,
@@ -29,8 +30,8 @@ const GlobalItems: React.FC<HistoryProps> = (props: HistoryProps) => {
     )}
 
   if (globalItemsLoading) { 
-    return ( <Loading isOpen={screenLoading.current} message="Loading Categories..."
-    setIsOpen={() => {screenLoading.current = false}} /> )
+    return ( <Loading isOpen={screenLoading.current} message="Loading Global Items..."    /> )
+//    setIsOpen={() => {screenLoading.current = false}} /> )
   }
   
   screenLoading.current = false;
@@ -51,13 +52,7 @@ const GlobalItems: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonButtons slot="start"><IonMenuButton /></IonButtons>
-          <IonTitle class="ion-no-padding">Global Items</IonTitle>
-          <SyncIndicator history={props.history}/>
-        </IonToolbar>
-      </IonHeader>
+      <PageHeader title="Global Items" />
       <IonContent>
         {gotARow ? (<IonList lines="full">{itemsElem}</IonList>) :
         (<IonList><IonItem>No Global Items Available</IonItem></IonList>)}

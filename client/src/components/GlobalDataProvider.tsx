@@ -108,6 +108,7 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
             }
         });
 
+    console.log("GLOBAL DATA CAUSED RERENDER...");
     let value: GlobalDataState = {itemDocs: itemDocs as ItemDocs, itemsLoading, itemError,
             globalItemDocs: globalItemDocs as GlobalItemDocs, globalItemsLoading, globalItemError,
             listDocs: listDocs as ListDocs,listsLoading,listError,

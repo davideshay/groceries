@@ -3,22 +3,19 @@ import { IonPage, IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle,
 import { HistoryProps } from "../components/DataTypes";
 import SyncIndicator from "../components/SyncIndicator";
 import ListsAll from "../components/ListsAll";
+import PageHeader from "../components/PageHeader";
 
 const Lists: React.FC<HistoryProps> = (props: HistoryProps) => {
 
 return (
-    <IonPage><IonHeader>
-        <IonToolbar>
-        <IonButtons slot="start"><IonMenuButton /></IonButtons>
-        <IonTitle>All Lists</IonTitle>
-        <SyncIndicator history={props.history}/>
-        </IonToolbar>
+    <IonPage>
+        <PageHeader title="All Lists" />
         <IonContent>
         <IonList>
             <ListsAll separatePage={true}/>
         </IonList>
         </IonContent>
-    </IonHeader></IonPage>
+    </IonPage>
 )
 
 }

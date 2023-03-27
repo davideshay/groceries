@@ -1,7 +1,7 @@
 import { useCallback, useState, useEffect, useContext, useRef } from 'react'
 import { usePouch, useFind } from 'use-pouchdb'
 import { cloneDeep, pull } from 'lodash';
-import { RemoteDBStateContext, SyncStatus } from './RemoteDBState';
+import { DBCreds, RemoteDBStateContext, SyncStatus } from './RemoteDBState';
 import { FriendRow,InitFriendRow, ResolvedFriendStatus, ListRow, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType, UsersInfo } from './DataTypes';
 import { FriendDocs,FriendStatus, ListGroupDoc, ListDoc, ListDocs, ListGroupDocs, ListDocInit, ItemDocs, ItemDoc, ItemList, ItemListInit} from './DBSchema';
 import { GlobalStateContext } from './GlobalState';
@@ -196,8 +196,18 @@ export function useLists() : {dbError: boolean, listsLoading: boolean, listDocs:
   const [listRowsLoading, setListRowsLoading] = useState(false);
   const [dbError, setDBError] = useState(false);
   const globalData = useContext(GlobalDataContext);
+  const [ perfms, setperfms] = useState(performance.now());
+
+  useEffect(() => {
+    console.log("uselists first render");
+    setperfms(performance.now());
+  },[])
+
+//  console.log("WHY ul render: ", cloneDeep({listRows, listCombinedRows,listRowsLoaded,listRowsLoading,dbError,globalData}))
+  console.log("UL render, time from initial:",performance.now()-perfms);
 
   function buildListRows() {
+    let blrms = performance.now(); console.log("starting blr...");
     let curListDocs: ListDocs = cloneDeep(globalData.listDocs);
     let newListRows: ListRow[] = [];
     curListDocs.forEach((listDoc) => {
@@ -296,9 +306,11 @@ export function useLists() : {dbError: boolean, listsLoading: boolean, listDocs:
       })
     }
     setListCombinedRows(newCombinedRows);
+    console.log("ending blr...",performance.now()-blrms)
   }
 
   useEffect( () => {
+    let somethingms = performance.now(); console.log("somethingchanged");
     if (globalData.listsLoading || globalData.listGroupsLoading) { setListRowsLoaded(false); return };
     if (globalData.listError !== null || globalData.listGroupError !== null) { setDBError(true); return};
     setDBError(false);
@@ -309,6 +321,7 @@ export function useLists() : {dbError: boolean, listsLoading: boolean, listDocs:
       setListRowsLoading(false)
       setListRowsLoaded(true);
     }
+    console.log("somethingchangedtime:",performance.now()-somethingms);
   },[globalData.listError, globalData.listGroupError, globalData.listsLoading,listRowsLoading,
     globalData.listDocs, globalData.listGroupDocs, globalData.listGroupsLoading])
 
@@ -324,6 +337,14 @@ export function useItems({selectedListGroupID,isReady, needListGroupID, activeOn
   const [dbError, setDBError] = useState(false);
   const { dbError: listDBError, listCombinedRows, listRowsLoaded, listRowsLoading, listDocs } = useLists()
   const globalData = useContext(GlobalDataContext);
+  const [perfms,setperfms] = useState(performance.now());
+
+  useEffect( () => {
+    console.log("initial render of useitems");
+    setperfms(performance.now())
+  },[])
+
+ // console.log("useitems, time from initial: ",performance.now()-perfms);
   
   function buildItemRows() {
     let curItemDocs: ItemDocs = cloneDeep(globalData.itemDocs);
@@ -375,7 +396,7 @@ export function useItems({selectedListGroupID,isReady, needListGroupID, activeOn
     }
   },[isReady,itemRowsLoaded,globalData.itemError, listDBError, globalData.itemsLoading,listRowsLoading,globalData.itemDocs, listCombinedRows])
 
-  console.log("returning from useitem: ", cloneDeep({gdil: globalData.itemsLoading, itemRowsLoading, itemRowsLoaded, itemRows}))
+//  console.log("returning from useitem: ", cloneDeep({gdil: globalData.itemsLoading, itemRowsLoading, itemRowsLoaded, itemRows}))
 
   return ({dbError, itemsLoading: globalData.itemsLoading, itemRowsLoading, itemRowsLoaded, itemRows});
 }

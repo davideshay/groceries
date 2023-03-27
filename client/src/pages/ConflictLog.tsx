@@ -8,6 +8,7 @@ import './Categories.css';
 import { useConflicts } from '../components/Usehooks';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
+import PageHeader from '../components/PageHeader';
 
 const ConflictLog: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { setDBCredsValue } = useContext(RemoteDBStateContext);
@@ -19,8 +20,8 @@ const ConflictLog: React.FC<HistoryProps> = (props: HistoryProps) => {
     )}
 
   if (conflictsLoading) { 
-    return ( <Loading isOpen={screenLoading.current} message="Loading Conflict Log..."
-    setIsOpen={() => {screenLoading.current = false}} /> )
+    return ( <Loading isOpen={screenLoading.current} message="Loading Conflict Log..." /> )
+//    setIsOpen={() => {screenLoading.current = false}} /> )
   }
   
     screenLoading.current=false;
@@ -38,7 +39,7 @@ const ConflictLog: React.FC<HistoryProps> = (props: HistoryProps) => {
           <IonButtons slot="start"><IonMenuButton /></IonButtons>
           <IonTitle class="ion-no-padding">Conflict Log</IonTitle>
           <IonButton size="small" slot="end" onClick={() => {setConflictsAsViewed()}}>Set As Viewed</IonButton>
-          <SyncIndicator history={props.history}/>
+          <SyncIndicator/>
         </IonToolbar>
       </IonHeader>
       <IonContent>

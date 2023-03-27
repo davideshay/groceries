@@ -1,27 +1,29 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
-  IonButtons, IonMenuButton, IonSelect, IonIcon, IonLoading,
+import { IonContent, IonPage, IonButton, IonList, IonInput, IonItem,
+  IonSelect, IonIcon, 
   IonSelectOption, useIonAlert,useIonToast, IonTextarea, IonGrid, IonRow, IonCol, IonText, IonCard,
-  IonCardSubtitle } from '@ionic/react';
+  IonCardSubtitle, NavContext } from '@ionic/react';
 import { addOutline, closeCircleOutline, trashOutline, saveOutline } from 'ionicons/icons';
 import { useParams } from 'react-router-dom';
-import { useFind, usePouch } from 'use-pouchdb';
+import { usePouch } from 'use-pouchdb';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useCreateGenericDocument, useUpdateGenericDocument, useLists, useDeleteGenericDocument, useGetOneDoc, useItems } from '../components/Usehooks';
 import { GlobalStateContext } from '../components/GlobalState';
 import { cloneDeep, isEmpty, remove } from 'lodash';
 import './Item.css';
-import SyncIndicator from '../components/SyncIndicator';
 import ItemLists from '../components/ItemLists';
 import { getCommonKey, createEmptyItemDoc, checkNameInGlobal  } from '../components/ItemUtilities';
-import { PouchResponse, HistoryProps, ListRow, RowType } from '../components/DataTypes';
+import { PouchResponse, ListRow, RowType } from '../components/DataTypes';
 import { UomDoc, ItemDoc, ItemDocInit, ItemList, ItemListInit, CategoryDoc, GlobalItemDocs } from '../components/DBSchema';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
+import PageHeader from '../components/PageHeader';
 
 
-const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
-  let { mode, itemid } = useParams<{mode: string, itemid: string}>();
+const Item: React.FC = (props) => {
+//  let { mode, itemid } = useParams<{mode: string, itemid: string}>();
+//  console.log("rendering . params:",cloneDeep({mode, itemid, pmode: (props as any).match.params.mode, pitemid: (props as any).match.params.itemid}))
+  const {mode, itemid} = (props as any).match.params;
   const routeItemID = (mode === "new" ? null : itemid)
   const [needInitItemDoc,setNeedInitItemDoc] = useState((mode === "new") ? true: false);
   const [stateItemDoc,setStateItemDoc] = useState<ItemDoc>(ItemDocInit);
@@ -32,16 +34,25 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
   const addUOMDoc = useCreateGenericDocument();
   const delItem = useDeleteGenericDocument();
   const { doc: itemDoc, loading: itemLoading, dbError: itemError } = useGetOneDoc(routeItemID);
-  const { dbError: listError, listDocs, listCombinedRows, listsLoading, listRows, listRowsLoaded} = useLists();
+  const { dbError: listError, listCombinedRows, listsLoading, listRows, listRowsLoaded} = useLists();
   const db = usePouch();
   const screenLoading = useRef(true);
+  const {goBack} = useContext(NavContext);
+
 
   const { dbError: itemsError, itemRowsLoaded, itemRows } = useItems({selectedListGroupID: stateItemDoc.listGroupID, isReady: !itemLoading, needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const { globalState, setStateInfo} = useContext(GlobalStateContext);
   const globalData  = useContext(GlobalDataContext);
   const [presentAlert, dismissAlert] = useIonAlert();
   const [presentToast] = useIonToast();
+  const [perfms,setperfms] = useState(performance.now());
 
+  useEffect(() => {
+    console.log("first render...");
+    setperfms(performance.now());
+  },[])
+
+  //console.log("time to this render:",performance.now()-perfms);
 
   function groupIDForList(listID: string): string {
     let retGID="";
@@ -61,13 +72,13 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
       if (foundIdx === -1) {
           let newItemList: ItemList = cloneDeep(ItemListInit);
           newItemList.listID = String(listRows[i].listDoc._id);
-          newItemList.active = getCommonKey(itemDoc,"active",listDocs);
-          newItemList.categoryID = getCommonKey(itemDoc,"categoryID",listDocs);
-          newItemList.completed = getCommonKey(itemDoc,"completed",listDocs);
-          newItemList.note = getCommonKey(itemDoc,"note",listDocs);
-          newItemList.quantity = getCommonKey(itemDoc,"quantity",listDocs);
-          newItemList.stockedAt = getCommonKey(itemDoc,"stockedAt",listDocs);
-          newItemList.uomName = getCommonKey(itemDoc,"uomName",listDocs);
+          newItemList.active = getCommonKey(itemDoc,"active",globalData.listDocs);
+          newItemList.categoryID = getCommonKey(itemDoc,"categoryID",globalData.listDocs);
+          newItemList.completed = getCommonKey(itemDoc,"completed",globalData.listDocs);
+          newItemList.note = getCommonKey(itemDoc,"note",globalData.listDocs);
+          newItemList.quantity = getCommonKey(itemDoc,"quantity",globalData.listDocs);
+          newItemList.stockedAt = getCommonKey(itemDoc,"stockedAt",globalData.listDocs);
+          newItemList.uomName = getCommonKey(itemDoc,"uomName",globalData.listDocs);
           newItemDoc.lists.push(newItemList);
       }  
     }
@@ -95,7 +106,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
         setNeedInitItemDoc(false);
         setStateItemDoc(newItemDoc);
     }
-  },[itemLoading,itemDoc,listsLoading,listDocs,listRowsLoaded,listRowsLoaded, listRows,globalState.itemMode,globalState.newItemName, globalState.callingListID, needInitItemDoc]);
+  },[itemLoading,itemDoc,listsLoading,globalData.listDocs,listRowsLoaded,listRowsLoaded, listRows,globalState.itemMode,globalState.newItemName, globalState.callingListID, needInitItemDoc]);
 
   if (itemError || listError || globalData.categoryError || globalData.uomError || itemsError) { console.log("ERROR");return (
     <ErrorPage errorText="Error Loading Item Information... Restart."></ErrorPage>
@@ -105,11 +116,13 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
 
 
   if ((itemLoading && routeItemID !== null) || listsLoading || !listRowsLoaded || globalData.categoryLoading || globalData.uomLoading || !itemRowsLoaded || isEmpty(stateItemDoc))  {
-    return ( <Loading isOpen={screenLoading.current} message="Loading Categories..."
-    setIsOpen={() => {screenLoading.current = false}} /> )
+    return ( <Loading isOpen={screenLoading.current} message="Loading Item..."    /> )
+//    setIsOpen={() => {screenLoading.current = false}} /> )
   };
 
   screenLoading.current=false;
+
+  console.log("Item rendering... after loading..");
   
   async function updateThisItem() {
     setFormError(prevState => (""));
@@ -139,7 +152,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
       result = await updateItem(stateItemDoc);
     }
     if (result.successful) {
-      props.history.goBack();
+      goBack();
     } else {
       setFormError("Error updating item. Please retry.");
     }
@@ -245,7 +258,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
       let result: PouchResponse;
       result = await delItem(stateItemDoc);
       if (result.successful) {
-        props.history.goBack();
+        goBack();
       } else {
         setFormError("Error updating item. Please retry.");
       }
@@ -265,13 +278,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
   
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-        <IonButtons slot="start"><IonMenuButton /></IonButtons>
-          <IonTitle class="ion-no-padding">Editing Item: {stateItemDoc.name}</IonTitle>
-          <SyncIndicator history={props.history}/>
-        </IonToolbar>
-      </IonHeader>
+      <PageHeader title={"Editing Item: "+stateItemDoc.name} />
       <IonContent>
           <IonList>
             <IonItem key="name">
@@ -285,9 +292,9 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
               <IonItem key="quantity">
                 <IonGrid>
                 <IonRow>
-                  <IonCol size="3"><IonInput label="Quantity" labelPlacement="stacked" type="number" min="0" max="9999" onIonInput={(e) => updateAllKey("quantity",e.detail.value)} value={getCommonKey(stateItemDoc,"quantity",listDocs)}></IonInput></IonCol>
+                  <IonCol size="3"><IonInput label="Quantity" labelPlacement="stacked" type="number" min="0" max="9999" onIonInput={(e) => updateAllKey("quantity",e.detail.value)} value={getCommonKey(stateItemDoc,"quantity",globalData.listDocs)}></IonInput></IonCol>
                   <IonCol size="8">
-                    <IonSelect label="UoM" labelPlacement='stacked' interface="popover" onIonChange={(ev) => updateAllKey("uomName", ev.detail.value)} value={getCommonKey(stateItemDoc,"uomName",listDocs)}>
+                    <IonSelect label="UoM" labelPlacement='stacked' interface="popover" onIonChange={(ev) => updateAllKey("uomName", ev.detail.value)} value={getCommonKey(stateItemDoc,"uomName",globalData.listDocs)}>
                     <IonSelectOption key="uom-undefined" value={null}>No UOM</IonSelectOption>
                     {(globalData.uomDocs as UomDoc[]).map((uom) => (
                       <IonSelectOption key={uom.name} value={uom.name}>{uom.description}</IonSelectOption>
@@ -299,7 +306,7 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
                 </IonGrid>
               </IonItem>
               <IonItem key="category">
-                <IonSelect label="Category" labelPlacement="stacked" interface="popover" onIonChange={(ev) => updateAllKey("categoryID",ev.detail.value)} value={getCommonKey(stateItemDoc,"categoryID",listDocs)}>
+                <IonSelect label="Category" labelPlacement="stacked" interface="popover" onIonChange={(ev) => updateAllKey("categoryID",ev.detail.value)} value={getCommonKey(stateItemDoc,"categoryID",globalData.listDocs)}>
                   <IonSelectOption key="cat-undefined" value={null}>Uncategorized</IonSelectOption>
                   {(globalData.categoryDocs as CategoryDoc[]).map((cat) => (
                       <IonSelectOption key={cat._id} value={cat._id}>
@@ -312,12 +319,11 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
                 </IonButton>  
               </IonItem>
               <IonItem key="note">
-                <IonTextarea label="Note" labelPlacement="stacked" placeholder="Item Note" inputMode='text' debounce={100} rows={4} onIonInput={(ev) => updateAllKey("note",String(ev.detail.value))} value={getCommonKey(stateItemDoc,"note",listDocs)}>   
+                <IonTextarea label="Note" labelPlacement="stacked" placeholder="Item Note" inputMode='text' debounce={100} rows={4} onIonInput={(ev) => updateAllKey("note",String(ev.detail.value))} value={getCommonKey(stateItemDoc,"note",globalData.listDocs)}>   
                 </IonTextarea>
               </IonItem>
             </IonCard>
-            <ItemLists history={props.history} stateItemDoc={stateItemDoc} setStateItemDoc={setStateItemDoc} 
-                      listDocs={listDocs} categoryDocs={globalData.categoryDocs as CategoryDoc[]} uomDocs={globalData.uomDocs as UomDoc[]}
+            <ItemLists stateItemDoc={stateItemDoc} setStateItemDoc={setStateItemDoc}           
                       addCategoryPopup={addCategoryPopup} addUOMPopup={addUOMPopup} />
             <IonItem key="formErrors">{formError}</IonItem>
           </IonList>
@@ -325,10 +331,12 @@ const Item: React.FC<HistoryProps> = (props: HistoryProps) => {
             (<IonButton class="ion-float-left" fill="outline" color="danger" onClick={() => deleteItem()}><IonIcon slot="start" icon={trashOutline}></IonIcon>Delete</IonButton>)
             : <></>}
           <IonButton class="ion-float-right" onClick={() => updateThisItem()}>{mode === "new" ? "Add": "Save"}<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>
-          <IonButton class="ion-float-right" fill="outline" onClick={() => props.history.goBack()}><IonIcon slot="start" icon={closeCircleOutline}></IonIcon>Cancel</IonButton>
+          <IonButton class="ion-float-right" fill="outline" onClick={() => goBack()}><IonIcon slot="start" icon={closeCircleOutline}></IonIcon>Cancel</IonButton>
       </IonContent>
     </IonPage>
   );
 };
+
+Item.whyDidYouRender = true;
 
 export default Item;

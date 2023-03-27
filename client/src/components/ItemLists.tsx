@@ -1,7 +1,7 @@
 import {  IonButton,  IonItem, IonLabel, IonCheckbox, IonIcon, 
     IonGrid, IonRow, IonCol, IonText,  } from '@ionic/react';
 import { pencilOutline } from 'ionicons/icons';
-import { Fragment, useState } from 'react';
+import { Fragment, useContext, useState } from 'react';
 import { sortedItemLists, listIsDifferentThanCommon } from './ItemUtilities';
 import { CategoryDoc, UomDoc, ItemDoc, ItemList, ListDoc, ListDocs } from './DBSchema';
 import ItemListsModal from '../components/ItemListsModal';
@@ -9,20 +9,18 @@ import { cloneDeep } from 'lodash';
 import { ModalState, ModalStateInit } from '../components/DataTypes';
 import './ItemLists.css';
 import { History } from 'history';
+import { GlobalDataContext } from './GlobalDataProvider';
 
 export type ItemListsProps = { 
-    history: History,
     stateItemDoc: ItemDoc,
     setStateItemDoc: any,
-    listDocs: ListDocs,
-    categoryDocs: CategoryDoc[],
-    uomDocs: UomDoc[],
     addCategoryPopup: () => void,
     addUOMPopup: () => void
 }
     
 const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
     const [modalState, setModalState] = useState<ModalState>(ModalStateInit)
+    const globalData = useContext(GlobalDataContext)
 
     function changeStockedAt(listID: string, updateVal: boolean) {
         let newItemDoc=cloneDeep(props.stateItemDoc);
@@ -73,8 +71,8 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
         for (let i = 0; i < props.stateItemDoc.lists.length; i++) {
           if (props.stateItemDoc.lists[i].listID == listID) { listIdx=i; break;}
         }
-        let listFoundIdx=props.listDocs.findIndex((element: ListDoc) => (element._id === listID));
-        let listName = (listFoundIdx == -1) ? "" : props.listDocs[listFoundIdx].name
+        let listFoundIdx=globalData.listDocs.findIndex((element: ListDoc) => (element._id === listID));
+        let listName = (listFoundIdx == -1) ? "" : globalData.listDocs[listFoundIdx].name
         setModalState(prevState => ({...prevState,isOpen: true, selectedListId: listID, 
           selectedListName: listName, selectedListIdx: listIdx, itemList: cloneDeep(props.stateItemDoc.lists[listIdx])}));
     }
@@ -86,14 +84,14 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
         <IonCol size="10"><IonLabel key="listlabel" position='stacked'>Item is on these lists:</IonLabel></IonCol>
         <IonCol size="2"><IonLabel key="resetlabel" position="stacked">Edit</IonLabel></IonCol></IonRow>
     )
-    let sortedLists = sortedItemLists(props.stateItemDoc.lists,props.listDocs);
+    let sortedLists = sortedItemLists(props.stateItemDoc.lists,globalData.listDocs);
     
     for (let i = 0; i < sortedLists.length; i++) {
       let listID = sortedLists[i].listID;
-      let itemFoundIdx=props.listDocs.findIndex((element: ListDoc) => (element._id === listID));
+      let itemFoundIdx=globalData.listDocs.findIndex((element: ListDoc) => (element._id === listID));
       if (itemFoundIdx !== -1) {
         let itemActive=(sortedLists[i].active);
-        let listName=props.listDocs[itemFoundIdx].name;
+        let listName=globalData.listDocs[itemFoundIdx].name;
         let stockedAt=(sortedLists[i].stockedAt);
         listsInnerElem.push(
           <IonRow key={listID} class={listIsDifferentThanCommon(sortedLists,i) ? "highlighted-row ion-no-padding" : "ion-no-padding"}>
@@ -111,8 +109,8 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
     return (
         <Fragment key="itemlists">
         {listsElem}
-        <ItemListsModal history={props.history} stateItemDoc={props.stateItemDoc} setStateItemDoc={props.setStateItemDoc} 
-                        categoryDocs={props.categoryDocs} uomDocs={props.uomDocs} modalState={modalState} setModalState={setModalState}
+        <ItemListsModal stateItemDoc={props.stateItemDoc} setStateItemDoc={props.setStateItemDoc} 
+                        modalState={modalState} setModalState={setModalState}
                         addCategoryPopup={props.addCategoryPopup} addUOMPopup={props.addUOMPopup} />
         </Fragment>
     )

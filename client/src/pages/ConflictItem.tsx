@@ -9,6 +9,7 @@ import './Category.css';
 import SyncIndicator from '../components/SyncIndicator';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
+import PageHeader from '../components/PageHeader';
 
 const ConflictItem: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { id: routeID } = useParams<{ id: string}>();
@@ -23,8 +24,8 @@ const ConflictItem: React.FC<HistoryProps> = (props: HistoryProps) => {
     )}
 
   if ( conflictLoading  )  {
-    return ( <Loading isOpen={screenLoading.current} message="Loading Conflict Item..."
-    setIsOpen={() => {screenLoading.current = false}} /> )
+    return ( <Loading isOpen={screenLoading.current} message="Loading Conflict Item..." /> )
+//    setIsOpen={() => {screenLoading.current = false}} /> )
   };
   
   screenLoading.current=false;
@@ -61,13 +62,7 @@ const ConflictItem: React.FC<HistoryProps> = (props: HistoryProps) => {
   
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-        <IonButtons slot="start"><IonMenuButton /></IonButtons>
-          <IonTitle>Conflict Item: {(conflictDoc as any).docType} from {localDate}</IonTitle>
-          <SyncIndicator history={props.history}/>
-        </IonToolbar>
-      </IonHeader>
+      <PageHeader title={"Conflict Item: "+(conflictDoc as any).docType +" from "+localDate} />
       <IonContent> 
           <IonList>
             <IonItem key="maindiffs">

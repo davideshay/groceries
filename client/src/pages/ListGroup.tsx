@@ -111,8 +111,8 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   if (!listRowsLoaded || (listGroupLoading && pageState.selectedListGroupID !== null) ||(useFriendState !== UseFriendState.rowsLoaded) || categoryLoading || isEmpty(pageState.listGroupDoc) || !pageState.usersLoaded || pageState.deletingDoc)  {
-    return ( <Loading isOpen={screenLoading.current} message="Loading List Group..."
-    setIsOpen={() => {screenLoading.current = false}} /> )
+    return ( <Loading isOpen={screenLoading.current} message="Loading List Group..."  /> )
+//    setIsOpen={() => {screenLoading.current = false}} /> )
   };
   
   screenLoading.current=false;
@@ -342,7 +342,7 @@ function deletePrompt() {
         <IonToolbar>
         <IonButtons slot="start"><IonMenuButton /></IonButtons>
             {selectDropDown}
-            <SyncIndicator history={props.history}/>
+            <SyncIndicator />
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>

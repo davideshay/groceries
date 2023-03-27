@@ -1,18 +1,16 @@
 import { IonTitle,  IonButton, IonList, IonInput, IonItem, IonSelect, IonCheckbox, IonIcon,
     IonSelectOption, IonTextarea, IonGrid, IonRow, IonCol, IonText, IonModal } from '@ionic/react';
 import { addOutline, closeCircleOutline, saveOutline } from 'ionicons/icons';    
-import { SetStateAction } from 'react';    
+import { SetStateAction, useContext } from 'react';    
 import {  ModalState, ModalStateInit } from '../components/DataTypes';
 import {  CategoryDoc, ItemDoc, ItemList,  UomDoc } from '../components/DBSchema';
 
 import { cloneDeep } from 'lodash';
 import { History } from 'history';
+import { GlobalDataContext } from './GlobalDataProvider';
 
 type ModalProps = {
-    history: History,
     stateItemDoc: ItemDoc,
-    categoryDocs: CategoryDoc[],
-    uomDocs: UomDoc[],
     setStateItemDoc: React.Dispatch<SetStateAction<ItemDoc>>,
     modalState: ModalState,
     setModalState: React.Dispatch<SetStateAction<ModalState>>,
@@ -21,6 +19,7 @@ type ModalProps = {
 }
   
 const ItemListsModal: React.FC<ModalProps> = (props: ModalProps) => {
+    const globalData = useContext(GlobalDataContext);
     
       function saveModal() {
         let newItemLists: ItemList[] = cloneDeep(props.stateItemDoc.lists);
@@ -56,7 +55,7 @@ const ItemListsModal: React.FC<ModalProps> = (props: ModalProps) => {
         <IonItem>
           <IonSelect label="Category" labelPlacement="stacked" interface="popover" onIonChange={(ev) => props.setModalState(prevState => ({...prevState, itemList: {...prevState.itemList, categoryID: ev.detail.value}}))} value={props.modalState.itemList.categoryID}>
                   <IonSelectOption key="cat-undefined" value={null}>Uncategorized</IonSelectOption>
-                  {props.categoryDocs.map((cat) => (
+                  {globalData.categoryDocs.map((cat) => (
                       <IonSelectOption key={cat._id} value={cat._id}>
                         {cat.name}
                       </IonSelectOption>
@@ -70,7 +69,7 @@ const ItemListsModal: React.FC<ModalProps> = (props: ModalProps) => {
           <IonInput key="modal-qty" label="Quantity" labelPlacement="stacked" type="number" min="0" max="9999" value={props.modalState.itemList.quantity} onIonInput={(e) => props.setModalState(prevState => ({...prevState,itemList: {...prevState.itemList,quantity: Number(e.detail.value)}}))}></IonInput>
           <IonSelect label="UoM" labelPlacement="stacked" interface="popover" onIonChange={(ev) => props.setModalState(prevState => ({...prevState, itemList: {...prevState.itemList, uomName: ev.detail.value}}))} value={props.modalState.itemList.uomName}>
                     <IonSelectOption key="uom-undefined" value={null}>No UOM</IonSelectOption>
-                    {props.uomDocs.map((uom) => (
+                    {globalData.uomDocs.map((uom) => (
                       <IonSelectOption key={uom.name} value={uom.name}>{uom.description}</IonSelectOption>
                     ))}
           </IonSelect>

@@ -8,6 +8,7 @@ import './ListGroups.css';
 import { useLists } from '../components/Usehooks';
 import ErrorPage from './ErrorPage';
 import Loading  from '../components/Loading';
+import PageHeader from '../components/PageHeader';
 
 const ListGroups: React.FC<HistoryProps> = (props: HistoryProps) => {
 
@@ -19,21 +20,16 @@ const ListGroups: React.FC<HistoryProps> = (props: HistoryProps) => {
   )}
 
   if (!listRowsLoaded) { 
-    return ( <Loading isOpen={screenLoading.current} message="Loading List Groups"
-    setIsOpen={() => {screenLoading.current = false}} />
+    screenLoading.current = true;
+    return ( <Loading isOpen={screenLoading.current} message="Loading List Groups"  />
+//    setIsOpen={() => {screenLoading.current = false}} />
   )}
 
   screenLoading.current=false;
 
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonButtons slot="start"><IonMenuButton /></IonButtons>
-          <IonTitle class="ion-no-padding">List Groups</IonTitle>
-          <SyncIndicator history={props.history}/>
-        </IonToolbar>
-      </IonHeader>
+      <PageHeader title="List Groups" />
       <IonContent>
         <IonList lines="full">
                {listCombinedRows.map((row: ListCombinedRow) => { 

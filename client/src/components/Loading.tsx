@@ -6,7 +6,7 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
 export type LoadingProps = {
     isOpen: boolean,
     message: string
-    setIsOpen: (newOpen: boolean) => void
+//    setIsOpen: (newOpen: boolean) => void
 }    
 
 export const Loading: React.FC<LoadingProps> = (props: LoadingProps) => {
@@ -19,11 +19,12 @@ return (
         <IonHeader>
             <IonToolbar>
                 <IonButtons slot="start"><IonMenuButton /></IonButtons>
-                <IonTitle>Loading...</IonTitle>
+                <IonTitle>{props.message}</IonTitle>
             </IonToolbar>
         </IonHeader>
-    <IonLoading isOpen={props.isOpen} onDidDismiss={() => {props.setIsOpen(false);}}
+{/*        <IonLoading isOpen={props.isOpen} onDidDismiss={() => {props.setIsOpen(false);}}
                 message="Loading All Items Data..." />
+ */}
     </IonPage>
  
 

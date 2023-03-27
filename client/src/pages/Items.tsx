@@ -113,8 +113,8 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   )}
 
   if (!baseItemRowsLoaded || !baseSearchItemRowsLoaded || !listRowsLoaded || categoryLoading || globalData.globalItemsLoading || uomLoading || pageState.doingUpdate )  {
-    return ( <Loading isOpen={screenLoading.current} message="Loading Items..."
-    setIsOpen={() => {screenLoading.current = false}} /> )
+    return ( <Loading isOpen={screenLoading.current} message="Loading Items..."    /> )
+//    setIsOpen={() => {screenLoading.current = false}} /> )
   };
 
   screenLoading.current=false;
@@ -348,7 +348,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
                 </IonSelectOption>
             ))}
           </IonSelect>
-        <SyncIndicator history={props.history}/>
+        <SyncIndicator />
         </IonItem>
         <IonItem key="searchbar">
           <IonIcon icon={searchOutline} />

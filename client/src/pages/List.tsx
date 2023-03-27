@@ -99,8 +99,8 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   )}
 
   if (listsLoading || !listRowsLoaded || categoryLoading || isEmpty(pageState.listDoc) || (listGroupLoading && pageState.listGroupID !== null) || pageState.deletingDoc)  {
-    return ( <Loading isOpen={screenLoading.current} message="Loading List..."
-    setIsOpen={() => {screenLoading.current = false}} /> )
+    return ( <Loading isOpen={screenLoading.current} message="Loading List..."   /> )
+//    setIsOpen={() => {screenLoading.current = false}} /> )
   };
   
   screenLoading.current = false;
@@ -328,7 +328,7 @@ function deletePrompt() {
         <IonToolbar>
         <IonButtons slot="start"><IonMenuButton /></IonButtons>
             {selectDropDown}
-            <SyncIndicator history={props.history}/>
+            <SyncIndicator />
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>

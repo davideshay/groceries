@@ -15,6 +15,7 @@ import { addOutline, closeOutline, saveOutline, trashOutline } from 'ionicons/ic
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
+import PageHeader from '../components/PageHeader';
 
 const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
@@ -55,8 +56,8 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
     )};
 
   if ( categoryLoading || globalData.categoryLoading || !stateCategoryDoc || deletingCategory || !listRowsLoaded || !itemRowsLoaded)  {
-    return ( <Loading isOpen={screenLoading.current} message="Loading Categories..."
-    setIsOpen={() => {screenLoading.current = false}} /> )
+    return ( <Loading isOpen={screenLoading.current} message="Loading Category..."     />)
+//    setIsOpen={() => {screenLoading.current = false}} /> )
   };
   
   screenLoading.current=false;
@@ -162,13 +163,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-        <IonButtons slot="start"><IonMenuButton /></IonButtons>
-          <IonTitle>Editing Category: {stateCategoryDoc.name}</IonTitle>
-          <SyncIndicator history={props.history}/>
-        </IonToolbar>
-      </IonHeader>
+      <PageHeader title={"Editing Category: "+stateCategoryDoc.name} />
       <IonContent>
           <IonList>
             <IonItem key="name">

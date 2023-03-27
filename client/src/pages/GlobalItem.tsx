@@ -13,6 +13,7 @@ import { closeOutline} from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
+import PageHeader from '../components/PageHeader';
 
 const GlobalItem: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
@@ -31,8 +32,8 @@ const GlobalItem: React.FC<HistoryProps> = (props: HistoryProps) => {
 console.log(globalData.uomLoading, globalData.categoryLoading);
 
   if ( globalItemLoading || globalData.uomLoading || globalData.categoryLoading)  {
-    return ( <Loading isOpen={screenLoading.current} message="Loading Global Item..."
-    setIsOpen={() => {screenLoading.current = false}} /> )
+    return ( <Loading isOpen={screenLoading.current} message="Loading Global Item..."    /> )
+//    setIsOpen={() => {screenLoading.current = false}} /> )
 };
   
   screenLoading.current=false;
@@ -43,13 +44,7 @@ console.log(globalData.uomLoading, globalData.categoryLoading);
 
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-        <IonButtons slot="start"><IonMenuButton /></IonButtons>
-          <IonTitle>Viewing Global Item: {globalItemDoc.name}</IonTitle>
-          <SyncIndicator history={props.history}/>
-        </IonToolbar>
-      </IonHeader>
+      <PageHeader title={"Viewing Global Item"+globalItemDoc.name} />
       <IonContent>
           <IonList>
             <IonItem key="name">
