@@ -1,8 +1,11 @@
-import React, { createContext, useState, useEffect, useRef} from "react";
+import React, { createContext, useState, useEffect, useRef, useContext} from "react";
 import { usePouch, useFind} from 'use-pouchdb';
 import { cloneDeep, pick, keys, isEqual } from 'lodash';
 import PouchDB from 'pouchdb';
 import { CategoryDocs, GlobalItemDocs, ItemDocs, ListDocs, ListGroupDocs, UomDoc } from "./DBSchema";
+import { ListCombinedRows, ListRow } from "./DataTypes";
+import { getListRows } from "./GlobalDataUtilities";
+import { RemoteDBStateContext } from "./RemoteDBState";
 
 
 export type GlobalDataState = {
@@ -24,6 +27,9 @@ export type GlobalDataState = {
     uomDocs: UomDoc[],
     uomLoading: boolean,
     uomError: PouchDB.Core.Error | null,
+    listRowsLoaded: boolean,
+    listRows: ListRow[],
+    listCombinedRows: ListCombinedRows
 }
 
 export interface GlobalDataContextType {
@@ -48,7 +54,10 @@ export const initialGlobalDataState: GlobalDataState = {
     categoryError: null,
     uomDocs: [],
     uomLoading: false,
-    uomError: null
+    uomError: null,
+    listRowsLoaded: false,
+    listRows: [],
+    listCombinedRows: []
 
 }
 
@@ -59,6 +68,10 @@ type GlobalDataProviderProps = {
 }
 
 export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: GlobalDataProviderProps) => {
+    const [ listRows, setListRows ] = useState<ListRow[]>();
+    const [ listCombinedRows, setListCombinedRows] = useState<ListCombinedRows>();
+    const [ listRowsLoaded, setListRowsLoaded] = useState(false);
+    const { remoteDBCreds } = useContext(RemoteDBStateContext);
     const { docs: itemDocs, loading: itemsLoading, error: itemError} = useFind({
         index: { fields: ["type","name"] },
         selector: { 
@@ -108,13 +121,27 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
             }
         });
 
+    useEffect( () => {
+        if (!listsLoading) {
+            setListRowsLoaded(false);
+            const { listRows: localListRows, listCombinedRows: localListCombinedRows} = getListRows(listDocs as ListDocs,listGroupDocs as ListGroupDocs,remoteDBCreds)
+            setListRows(localListRows);
+            setListCombinedRows(localListCombinedRows);
+            setListRowsLoaded(true);
+            console.log("Global data, rendered list rows:",cloneDeep({localListRows,localListCombinedRows}))
+        }
+    },[listsLoading, listDocs, listGroupDocs, listGroupsLoading, remoteDBCreds])
+
+
+
     console.log("GLOBAL DATA CAUSED RERENDER...");
     let value: GlobalDataState = {itemDocs: itemDocs as ItemDocs, itemsLoading, itemError,
             globalItemDocs: globalItemDocs as GlobalItemDocs, globalItemsLoading, globalItemError,
             listDocs: listDocs as ListDocs,listsLoading,listError,
             listGroupDocs: listGroupDocs as ListGroupDocs, listGroupsLoading, listGroupError,
             categoryDocs: categoryDocs as CategoryDocs, categoryLoading, categoryError,
-            uomDocs: uomDocs as UomDoc[], uomLoading, uomError
+            uomDocs: uomDocs as UomDoc[], uomLoading, uomError,
+            listRows: listRows as ListRow[], listRowsLoaded, listCombinedRows: listCombinedRows as ListCombinedRows
         };
     return (
         <GlobalDataContext.Provider value={value}>{props.children}</GlobalDataContext.Provider>

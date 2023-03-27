@@ -8,7 +8,6 @@ import ItemListsModal from '../components/ItemListsModal';
 import { cloneDeep } from 'lodash';
 import { ModalState, ModalStateInit } from '../components/DataTypes';
 import './ItemLists.css';
-import { History } from 'history';
 import { GlobalDataContext } from './GlobalDataProvider';
 
 export type ItemListsProps = { 

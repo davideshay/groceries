@@ -188,12 +188,11 @@ export function useDeleteCategoryFromLists() {
     },[db]) 
 }
 
-export function useLists() : {dbError: boolean, listsLoading: boolean, listDocs: any, listRowsLoading: boolean, listRowsLoaded: boolean, listRows: ListRow[], listCombinedRows: ListCombinedRow[]} {
+export function useLists() : {dbError: boolean, listsLoading: boolean, listDocs: any, listRowsLoaded: boolean, listRows: ListRow[], listCombinedRows: ListCombinedRow[]} {
   const { remoteDBCreds } = useContext(RemoteDBStateContext);
   const [listRows,setListRows] = useState<ListRow[]>([]);
   const [listCombinedRows,setListCombinedRows] = useState<ListCombinedRow[]>([]);
   const [listRowsLoaded, setListRowsLoaded] = useState(false);
-  const [listRowsLoading, setListRowsLoading] = useState(false);
   const [dbError, setDBError] = useState(false);
   const globalData = useContext(GlobalDataContext);
   const [ perfms, setperfms] = useState(performance.now());
@@ -315,17 +314,15 @@ export function useLists() : {dbError: boolean, listsLoading: boolean, listDocs:
     if (globalData.listError !== null || globalData.listGroupError !== null) { setDBError(true); return};
     setDBError(false);
     if ( !globalData.listsLoading && !globalData.listGroupsLoading && !listRowsLoaded)  {
-      setListRowsLoading(true);
       setListRowsLoaded(false);
       buildListRows();
-      setListRowsLoading(false)
       setListRowsLoaded(true);
     }
     console.log("somethingchangedtime:",performance.now()-somethingms);
-  },[globalData.listError, globalData.listGroupError, globalData.listsLoading,listRowsLoading,
+  },[globalData.listError, globalData.listGroupError, globalData.listsLoading,
     globalData.listDocs, globalData.listGroupDocs, globalData.listGroupsLoading])
 
-  return ({dbError, listsLoading: globalData.listsLoading, listDocs: globalData.listDocs, listRowsLoading, listRowsLoaded, listRows, listCombinedRows});
+  return ({dbError, listsLoading: globalData.listsLoading, listDocs: globalData.listDocs, listRowsLoaded, listRows, listCombinedRows});
 }
 
 export function useItems({selectedListGroupID,isReady, needListGroupID, activeOnly = false, selectedListID = null, selectedListType = RowType.list,} :
@@ -335,7 +332,7 @@ export function useItems({selectedListGroupID,isReady, needListGroupID, activeOn
   const [itemRowsLoaded, setItemRowsLoaded] = useState(false);
   const [itemRowsLoading, setItemRowsLoading] = useState(false);
   const [dbError, setDBError] = useState(false);
-  const { dbError: listDBError, listCombinedRows, listRowsLoaded, listRowsLoading, listDocs } = useLists()
+  const { dbError: listDBError, listCombinedRows, listRowsLoaded, listDocs } = useLists()
   const globalData = useContext(GlobalDataContext);
   const [perfms,setperfms] = useState(performance.now());
 
@@ -394,7 +391,7 @@ export function useItems({selectedListGroupID,isReady, needListGroupID, activeOn
       setItemRowsLoading(false)
       setItemRowsLoaded(true);
     }
-  },[isReady,itemRowsLoaded,globalData.itemError, listDBError, globalData.itemsLoading,listRowsLoading,globalData.itemDocs, listCombinedRows])
+  },[isReady,itemRowsLoaded,globalData.itemError, listDBError, globalData.itemsLoading,listRowsLoaded,globalData.itemDocs, listCombinedRows])
 
 //  console.log("returning from useitem: ", cloneDeep({gdil: globalData.itemsLoading, itemRowsLoading, itemRowsLoaded, itemRows}))
 

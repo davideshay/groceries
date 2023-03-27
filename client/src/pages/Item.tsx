@@ -34,7 +34,6 @@ const Item: React.FC = (props) => {
   const addUOMDoc = useCreateGenericDocument();
   const delItem = useDeleteGenericDocument();
   const { doc: itemDoc, loading: itemLoading, dbError: itemError } = useGetOneDoc(routeItemID);
-  const { dbError: listError, listCombinedRows, listsLoading, listRows, listRowsLoaded} = useLists();
   const db = usePouch();
   const screenLoading = useRef(true);
   const {goBack} = useContext(NavContext);
@@ -56,7 +55,7 @@ const Item: React.FC = (props) => {
 
   function groupIDForList(listID: string): string {
     let retGID="";
-    let searchList=listRows.find((el: ListRow) => el.listDoc._id === listID);
+    let searchList=globalData.listRows.find((el: ListRow) => el.listDoc._id === listID);
     if (searchList) {retGID = String(searchList.listGroupID)}
     return retGID;
   }
@@ -66,12 +65,12 @@ const Item: React.FC = (props) => {
     let newItemDoc: ItemDoc =cloneDeep(itemDoc);
     // loop through all the lists with the same listgroup. if the list is in the
     // listgroup, but not on the item add it.
-    for (let i = 0; i < listRows.length; i++) {
-      if (listRows[i].listGroupID !== newItemDoc.listGroupID) {continue}
-      let foundIdx=newItemDoc.lists.findIndex((el: ItemList) => el.listID === listRows[i].listDoc._id)
+    for (let i = 0; i < globalData.listRows.length; i++) {
+      if (globalData.listRows[i].listGroupID !== newItemDoc.listGroupID) {continue}
+      let foundIdx=newItemDoc.lists.findIndex((el: ItemList) => el.listID === globalData.listRows[i].listDoc._id)
       if (foundIdx === -1) {
           let newItemList: ItemList = cloneDeep(ItemListInit);
-          newItemList.listID = String(listRows[i].listDoc._id);
+          newItemList.listID = String(globalData.listRows[i].listDoc._id);
           newItemList.active = getCommonKey(itemDoc,"active",globalData.listDocs);
           newItemList.categoryID = getCommonKey(itemDoc,"categoryID",globalData.listDocs);
           newItemList.completed = getCommonKey(itemDoc,"completed",globalData.listDocs);
@@ -91,31 +90,31 @@ const Item: React.FC = (props) => {
   }
 
   useEffect( () => {
-    if (!itemLoading && mode !== "new" && itemDoc && listRowsLoaded) {
+    if (!itemLoading && mode !== "new" && itemDoc && globalData.listRowsLoaded) {
       let newItemDoc: ItemDoc = cloneDeep(itemDoc);
       newItemDoc = addDeleteLists(itemDoc);
       setStateItemDoc(cloneDeep(newItemDoc));
     }
-  },[itemLoading,mode,itemDoc,listRowsLoaded])
+  },[itemLoading,mode,itemDoc,globalData.listRowsLoaded])
 
 
   useEffect( () => {
-    if (!itemLoading && mode === "new" && !listsLoading && listRowsLoaded && needInitItemDoc) {
-        let newItemDoc = createEmptyItemDoc(listRows,globalState)
+    if (!itemLoading && mode === "new" && !globalData.listsLoading && globalData.listRowsLoaded && needInitItemDoc) {
+        let newItemDoc = createEmptyItemDoc(globalData.listRows,globalState)
         setStateInfo("newItemMode","none");
         setNeedInitItemDoc(false);
         setStateItemDoc(newItemDoc);
     }
-  },[itemLoading,itemDoc,listsLoading,globalData.listDocs,listRowsLoaded,listRowsLoaded, listRows,globalState.itemMode,globalState.newItemName, globalState.callingListID, needInitItemDoc]);
+  },[itemLoading,itemDoc,globalData.listsLoading,globalData.listDocs,globalData.listRowsLoaded, globalData.listRows,globalState.itemMode,globalState.newItemName, globalState.callingListID, needInitItemDoc]);
 
-  if (itemError || listError || globalData.categoryError || globalData.uomError || itemsError) { console.log("ERROR");return (
+  if (itemError || globalData.listError || globalData.categoryError || globalData.uomError || itemsError) { console.log("ERROR");return (
     <ErrorPage errorText="Error Loading Item Information... Restart."></ErrorPage>
   )}
 
 //  console.log(cloneDeep({itemLoading, routeItemID, listsLoading, listRowsLoaded, categoryLoading, uomLoading, itemRowsLoaded, stateItemDoc}));
 
 
-  if ((itemLoading && routeItemID !== null) || listsLoading || !listRowsLoaded || globalData.categoryLoading || globalData.uomLoading || !itemRowsLoaded || isEmpty(stateItemDoc))  {
+  if ((itemLoading && routeItemID !== null) || globalData.listsLoading || !globalData.listRowsLoaded || globalData.categoryLoading || globalData.uomLoading || !itemRowsLoaded || isEmpty(stateItemDoc))  {
     return ( <Loading isOpen={screenLoading.current} message="Loading Item..."    /> )
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   };
@@ -274,7 +273,7 @@ const Item: React.FC = (props) => {
     })
   }
   
-  let thisListGroup = listCombinedRows.find(el => el.listGroupID == stateItemDoc.listGroupID);
+  let thisListGroup = globalData.listCombinedRows.find(el => el.listGroupID == stateItemDoc.listGroupID);
   
   return (
     <IonPage>

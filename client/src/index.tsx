@@ -1,4 +1,4 @@
-import './wdyr'; // <--- first import
+// import './wdyr'; // <--- first import
 
 import React from 'react';
 import { createRoot } from 'react-dom/client';
