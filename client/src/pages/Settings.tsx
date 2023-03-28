@@ -1,12 +1,11 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
-        IonMenuButton, IonButtons, IonButton, useIonAlert, IonInput,
+import { IonContent, IonPage, IonList, IonItem,
+        IonButton, useIonAlert, IonInput,
         IonRadioGroup, IonRadio, IonCheckbox, isPlatform, IonItemDivider } from '@ionic/react';
 import { useContext, useEffect, useState } from 'react';        
 import { usePouch } from 'use-pouchdb';
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
 import './Settings.css';
-import SyncIndicator from '../components/SyncIndicator';
 import { GlobalStateContext, initSettings, GlobalSettings, AddListOptions } from '../components/GlobalState';
 import { initialRemoteDBState, RemoteDBStateContext,  } from '../components/RemoteDBState';
 import { HistoryProps } from '../components/DataTypes';

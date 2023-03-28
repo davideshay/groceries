@@ -1,9 +1,9 @@
 import {  IonButton,  IonItem, IonLabel, IonCheckbox, IonIcon, 
     IonGrid, IonRow, IonCol, IonText,  } from '@ionic/react';
 import { pencilOutline } from 'ionicons/icons';
-import { Fragment, useContext, useEffect, useState } from 'react';
+import { Fragment, useContext, useState } from 'react';
 import { sortedItemLists, listIsDifferentThanCommon } from './ItemUtilities';
-import { CategoryDoc, UomDoc, ItemDoc, ItemList, ListDoc, ListDocs } from './DBSchema';
+import { ItemDoc,  ListDoc } from './DBSchema';
 import ItemListsModal from '../components/ItemListsModal';
 import { cloneDeep } from 'lodash';
 import { ModalState, ModalStateInit } from '../components/DataTypes';
@@ -20,28 +20,6 @@ export type ItemListsProps = {
 const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
     const [modalState, setModalState] = useState<ModalState>(ModalStateInit)
     const globalData = useContext(GlobalDataContext)
-
-    function changeStockedAt(listID: string, updateVal: boolean) {
-        let newItemDoc=cloneDeep(props.stateItemDoc);
-        let listFound=false
-        for (let i = 0; i < newItemDoc.lists.length; i++) {
-          if (newItemDoc.lists[i].listID === listID) {
-            newItemDoc.lists[i].stockedAt = updateVal;
-            listFound=true;
-          }    
-        }
-        if (!listFound) {
-          let listobj={
-            listID: listID,
-            boughtCount: 0,
-            active: updateVal,
-            stockedAt: true,
-            checked: false
-          }
-          newItemDoc.lists.push(listobj);
-        }
-        props.setStateItemDoc(newItemDoc);
-      }
     
     function selectList(listID: string, updateVal: boolean) {
         let newItemDoc=cloneDeep(props.stateItemDoc);
@@ -68,10 +46,10 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
     function editListModal(listID: string) {
         let listIdx = 0;
         for (let i = 0; i < props.stateItemDoc.lists.length; i++) {
-          if (props.stateItemDoc.lists[i].listID == listID) { listIdx=i; break;}
+          if (props.stateItemDoc.lists[i].listID === listID) { listIdx=i; break;}
         }
         let listFoundIdx=globalData.listDocs.findIndex((element: ListDoc) => (element._id === listID));
-        let listName = (listFoundIdx == -1) ? "" : globalData.listDocs[listFoundIdx].name
+        let listName = (listFoundIdx === -1) ? "" : globalData.listDocs[listFoundIdx].name
         setModalState(prevState => ({...prevState,isOpen: true, selectedListId: listID, 
           selectedListName: listName, selectedListIdx: listIdx, itemList: cloneDeep(props.stateItemDoc.lists[listIdx])}));
     }
@@ -90,7 +68,6 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
       if (itemFoundIdx !== -1) {
         let itemActive=(sortedLists[i].active);
         let listName=globalData.listDocs[itemFoundIdx].name;
-        let stockedAt=(sortedLists[i].stockedAt);
         listsInnerElem.push(
           <IonRow key={listID} class={listIsDifferentThanCommon(sortedLists,i) ? "highlighted-row ion-no-padding" : "ion-no-padding"}>
             <IonCol class="ion-no-padding" size="1"><IonCheckbox aria-label="" onIonChange={(e: any) => selectList(listID,Boolean(e.detail.checked))} checked={itemActive}></IonCheckbox></IonCol>

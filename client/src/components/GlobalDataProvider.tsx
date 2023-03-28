@@ -1,7 +1,6 @@
-import React, { createContext, useState, useEffect, useRef, useContext} from "react";
-import { usePouch, useFind} from 'use-pouchdb';
-import { cloneDeep, pick, keys, isEqual } from 'lodash';
-import PouchDB from 'pouchdb';
+import React, { createContext, useState, useEffect, useContext} from "react";
+import { useFind} from 'use-pouchdb';
+import { cloneDeep } from 'lodash';
 import { CategoryDocs, GlobalItemDocs, ItemDocs, ListDocs, ListGroupDocs, UomDoc } from "./DBSchema";
 import { ListCombinedRows, ListRow } from "./DataTypes";
 import { getListRows } from "./GlobalDataUtilities";

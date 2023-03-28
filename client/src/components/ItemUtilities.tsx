@@ -41,13 +41,12 @@ export function getAllSearchRows(allItemDocs: ItemDocs, listID: string,listType:
             }
         }
       }
-//      console.log("GASR: adding ItemDoc : ", itemDoc.name,cloneDeep({itemDoc,addRowToSearch,searchRow}))
       if (addRowToSearch) {
         searchRows.push(searchRow);
       }  
     })
     globalItemDocs.forEach((globalItem) => {
-      let itemExistsInSearchIdx = searchRows.findIndex((sr) => (sr.globalItemID == globalItem._id || sr.itemName == globalItem.name));
+      let itemExistsInSearchIdx = searchRows.findIndex((sr) => (sr.globalItemID === globalItem._id || sr.itemName === globalItem.name));
       let itemExistsInItem = false;
       if (listType == RowType.list) {
         let itemNameMatch = allItemDocs.find((item) => (item.name.toUpperCase() === globalItem.name.toUpperCase()));
@@ -59,10 +58,8 @@ export function getAllSearchRows(allItemDocs: ItemDocs, listID: string,listType:
             })
         }
       } else {
-        let itemNameMatch = allItemDocs.find((item) => (item.name.toUpperCase() == globalItem.name.toUpperCase() && item.listGroupID == listID))
-//        console.log("GASR: Global: ",globalItem.name," itemNameMatch:",itemNameMatch);
+        let itemNameMatch = allItemDocs.find((item) => (item.name.toUpperCase() === globalItem.name.toUpperCase() && item.listGroupID === listID))
         if (itemNameMatch !== undefined) {
-//            console.log("GASR: Global:",globalItem.defaultUOM," setting item exists in item to true")
             itemExistsInItem = true;
         }
       }
@@ -340,7 +337,7 @@ export async function checkNameInGlobal(db: PouchDB.Database, name: string) {
     catch(e) {console.log(e)};
     if (globalItemDocs != null && globalItemDocs.hasOwnProperty("rows") && globalItemDocs.rows.length > 0) {
         console.log(globalItemDocs);
-        if (globalItemDocs.rows[0].key == name.toUpperCase()) {nameExists = true}
+        if (globalItemDocs.rows[0].key === name.toUpperCase()) {nameExists = true}
     }
     return nameExists;
 }
