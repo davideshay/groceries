@@ -173,7 +173,10 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       testItemDoc = itemDocs.find((item) => (item._id === itemSearch.itemID && item.listGroupID == pageState.selectedListOrGroupID))
     }
     if (testItemDoc !== undefined) {presentToast({message: "Trying to add duplicate item... Error.", duration: 1500, position: "middle"}); return}
-    console.log("Found test itemdoc: ",cloneDeep(testItemDoc)); return;
+    console.log("Found test itemdoc: ",cloneDeep(testItemDoc)); 
+
+    // differentiate adding global item to list vs. adding item not active on an list vs. adding item active not on this list
+
     if (itemSearch.itemType == ItemSearchType.Global) {
       let newItem: ItemDoc = cloneDeep(ItemDocInit);
       newItem.globalItemID = itemSearch.globalItemID;

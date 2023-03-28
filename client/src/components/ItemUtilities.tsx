@@ -36,9 +36,9 @@ export function getAllSearchRows(allItemDocs: ItemDocs, listID: string,listType:
         if (itemDoc.listGroupID !== listID) {
             addRowToSearch=false
         } else {
-            let commonActive= allValuesSame(itemDoc,"active",listDocs)
-            console.log("GASR: common active key for ",itemDoc.name, " is : ",commonActive);
-            if (commonActive !== null && commonActive) {addRowToSearch = false}
+            if (itemDoc.lists.filter((il) => il.active).length > 0) {
+                addRowToSearch=false
+            }
         }
       }
       console.log("GASR: adding ItemDoc : ", itemDoc.name,cloneDeep({itemDoc,addRowToSearch,searchRow}))
