@@ -369,14 +369,12 @@ export function useItems({selectedListGroupID,isReady, needListGroupID, activeOn
   }
 
   function checkAndBuild() {
-    console.log("CAB");
     if (itemsLoading || !listRowsLoaded || !isReady || (isReady && selectedListGroupID == null && needListGroupID)) { setItemRowsLoaded(false); return };
     if (itemError !== null || listDBError) { setDBError(true); return;}
     setDBError(false);
     if ( !itemsLoading && listRowsLoaded)  {
       setItemRowsLoading(true);
       setItemRowsLoaded(false);
-      console.log("about to BIR")
       buildItemRows();
       setItemRowsLoading(false)
       setItemRowsLoaded(true);
@@ -394,12 +392,11 @@ export function useItems({selectedListGroupID,isReady, needListGroupID, activeOn
  // },[selectedListGroupID, selectedListID,selectedListType])
 
   useEffect( () => {
-    console.log("UI UE Changed",cloneDeep({isReady,itemError,listDBError,itemRowsLoading,listRowsLoaded,itemDocs,listCombinedRows,selectedListGroupID,needListGroupID}))
     checkAndBuild();
   },[isReady,itemError, listDBError,itemsLoading,listRowsLoaded,itemDocs, listCombinedRows, selectedListGroupID, selectedListID, selectedListType, needListGroupID])
 
-  console.log("UI Inputs:",cloneDeep({selectedListGroupID,isReady, needListGroupID, activeOnly, selectedListID, selectedListType}));
-  console.log("UI returning:",cloneDeep({dbError, itemsLoading, itemRowsLoaded,itemRows, itemDocs}));
+//  console.log("UI Inputs:",cloneDeep({selectedListGroupID,isReady, needListGroupID, activeOnly, selectedListID, selectedListType}));
+//  console.log("UI returning:",cloneDeep({dbError, itemsLoading, itemRowsLoaded,itemRows, itemDocs}));
   return ({dbError, itemsLoading, itemRowsLoading, itemRowsLoaded, itemRows});
 }
 

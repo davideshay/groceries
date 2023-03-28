@@ -82,7 +82,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
         newPageState.needInitListDoc=false;
       }
       else if (mode !== "new") {
-        let newListRow = listRows.find((lr: ListRow) => lr.listDoc._id === pageState.selectedListID);
+        let newListRow = cloneDeep(listRows.find((lr: ListRow) => lr.listDoc._id === pageState.selectedListID));
         if (newListRow == undefined) {return}
         newPageState.listDoc = newListRow.listDoc;
         newPageState.listGroupID = newListRow.listGroupID;
@@ -108,7 +108,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   function changeListUpdateState(listID: string) {
     setPageState(prevState => ({...prevState,
-        listDoc: ((listDocs as ListDocs).find((el: ListDoc) => el._id === listID)) as ListDoc,
+        listDoc: (cloneDeep((listDocs as ListDocs).find((el: ListDoc) => el._id === listID))) as ListDoc,
         selectedListID: listID}))
     props.history.push('/list/edit/'+listID);    
   }

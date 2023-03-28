@@ -2,10 +2,9 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
   IonItemDivider, IonButton, IonButtons, IonFab, IonFabButton, IonIcon, IonCheckbox, IonLabel, IonSelect,
   IonSelectOption, IonInput, IonPopover, IonAlert,IonMenuButton, useIonToast, IonGrid, IonRow, 
   IonCol, useIonAlert, IonLoading } from '@ionic/react';
-import { add, searchOutline } from 'ionicons/icons';
+import { add,searchOutline } from 'ionicons/icons';
 import React, { useState, useEffect, useContext, useRef, KeyboardEvent } from 'react';
 import { useParams } from 'react-router-dom';
-import { useFind } from 'use-pouchdb';
 import { cloneDeep } from 'lodash';
 import './Items.css';
 import { useUpdateGenericDocument, useCreateGenericDocument, useItems } from '../components/Usehooks';
@@ -17,6 +16,7 @@ import SyncIndicator from '../components/SyncIndicator';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
+import { isEqual } from 'lodash';
 
 const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode: routeMode, id: routeListID  } = useParams<{mode: string, id: string}>();
@@ -107,7 +107,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   };
 
-  console.log("past load in items: ",cloneDeep({baseItemDocs, baseSearchItemDocs,searchRows}))
+//  console.log("past load in items: ",cloneDeep({baseItemDocs, baseSearchItemDocs,searchRows}))
 
   screenLoading.current=false;
 
@@ -135,7 +135,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function searchKeyPress(event: KeyboardEvent<HTMLElement>) {
-    console.log("search key press: ",event.key);
     if (event.key === "Enter") {
       addNewItemToList(searchState.searchCriteria)
     }
@@ -153,91 +152,129 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   function enterSearchBox(event: Event) {
     let toOpen=true;
 //    filterAndCheckRows();
-//    if (searchState.filteredSearchRows.length === 0) { toOpen = false}
-    setSearchState(prevState => ({...prevState, event: event, isFocused: true,isOpen: true}));
+    if (searchState.filteredSearchRows.length === 0) { toOpen = false}
+    setSearchState(prevState => ({...prevState, event: event, isFocused: true,isOpen: toOpen}));
   }
 
-  function isCategoryInList(listID: string, categoryID: string) {
-    let listIdx = listRows.findIndex(el => el.listDoc._id === listID);
-    if (listIdx === -1) {return false;}
-    let catexists= listRows[listIdx].listDoc.categories.includes(categoryID);
-    return catexists;
+  function shouldBeActive(itemList: ItemList, newRow: boolean): boolean {
+    if (!newRow && !itemList.stockedAt) {
+      if (pageState.selectedListType === RowType.list && itemList.listID === pageState.selectedListOrGroupID) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+    if (globalState.settings.addListOption === AddListOptions.dontAddAutomatically) {
+      if (pageState.selectedListType === RowType.listGroup) {
+         return true;
+      } else {
+        if (newRow) {
+          return (itemList.listID == pageState.selectedListOrGroupID)
+        } else {
+          return itemList.active || (itemList.listID == pageState.selectedListOrGroupID)
+        }
+      }
+    }
+    if (globalState.settings.addListOption === AddListOptions.addToAllListsAutomatically) {
+      return true;
+    } 
+    // Add list option = by category
+    if (pageState.selectedListType === RowType.list) {
+      if (itemList.listID === pageState.selectedListOrGroupID) {
+        return true;
+      }
+    }
+    // add by category mode, either in listgroup mode or are in list mode and we are on a different list
+    if (itemList.categoryID == null) { return true}
+    let matchingListRow = listRows.find((lr) => lr.listDoc._id == itemList.listID)
+    if (matchingListRow == undefined) {return false}
+    if (matchingListRow.listDoc.categories.includes(String(itemList.categoryID))) {
+      return true;
+    }
+    return false;
   }
+
 
   async function addExistingItemToList(itemSearch: ItemSearch) {
-    console.log("AEITL: ",cloneDeep(itemSearch));
-    let testItemDoc = undefined
-    if (pageState.selectedListType == RowType.list) {
-       testItemDoc =itemDocs.find((item) => (item._id === itemSearch.itemID && item.lists.some(il => il.listID === pageState.selectedListOrGroupID)));
-    } else {
-      testItemDoc = itemDocs.find((item) => (item._id === itemSearch.itemID && item.listGroupID == pageState.selectedListOrGroupID))
+
+    /*  scenarios:
+      
+    Item exist check:
+      if global item, check for same name or same globalitemID in listgroup
+      If local item, check for same name or item id in listgroup
+
+      * Item exists
+          * Item is active on all lists -- error
+          * Item is active on no lists -- in listgroup, update all to active, in list, check setting, same as below
+          * Item is active on some lists -- in listgroup mode, update item to active on all
+                                            in list mode, depending on setting to "add to all", update item to active on all or just one
+      * Item does not exist
+          * Add item, set to active based on listgroup mode/list selected -- data comes from global item if needed
+ */
+
+    let testItemDoc: ItemDoc | undefined = undefined;
+    testItemDoc = cloneDeep(itemDocs.find((item) => ((item._id === itemSearch.itemID && item.listGroupID === pageState.groupIDforSelectedList) || 
+              (item.name == itemSearch.itemName && item.listGroupID == pageState.groupIDforSelectedList))) );
+
+    const addingNewItem = (testItemDoc == undefined);
+
+    if (!addingNewItem) {
+      if (testItemDoc!.lists.filter(il => il.active).length === testItemDoc!.lists.length) {
+        presentToast({message: "Trying to add duplicate item... Error.", duration: 1500, position: "middle"});
+        return;
+      }
     }
-    if (testItemDoc !== undefined) {presentToast({message: "Trying to add duplicate item... Error.", duration: 1500, position: "middle"}); return}
-    console.log("Found test itemdoc: ",cloneDeep(testItemDoc)); 
-
-    // differentiate adding global item to list vs. adding item not active on an list vs. adding item active not on this list
-
-    if (itemSearch.itemType == ItemSearchType.Global) {
-      let newItem: ItemDoc = cloneDeep(ItemDocInit);
-      newItem.globalItemID = itemSearch.globalItemID;
-      newItem.listGroupID = pageState.groupIDforSelectedList;
-      newItem.name = itemSearch.itemName;
-      listRows.forEach((lr) => {
-        if (lr.listGroupID == pageState.groupIDforSelectedList) {
-          let newItemList: ItemList = cloneDeep(ItemListInit);
-          newItemList.listID = String(lr.listDoc._id);
-          newItemList.categoryID = itemSearch.globalItemCategoryID;
-          newItemList.uomName = itemSearch.globalItemUOM;
-          newItemList.quantity = 1;
-          newItem.lists.push(newItemList);
-        }
-      })
+    
+    let newItem: ItemDoc = cloneDeep(ItemDocInit);
+    if (addingNewItem) {
+      if (itemSearch.itemType === ItemSearchType.Global) {
+        newItem.globalItemID = itemSearch.globalItemID;
+        newItem.listGroupID = pageState.groupIDforSelectedList;
+        newItem.name = itemSearch.itemName;
+        listRows.forEach((lr) => {
+          if (lr.listGroupID == pageState.groupIDforSelectedList) {
+            let newItemList: ItemList = cloneDeep(ItemListInit); // sets to active true by default
+            newItemList.listID = String(lr.listDoc._id);
+            newItemList.categoryID = itemSearch.globalItemCategoryID;
+            newItemList.uomName = itemSearch.globalItemUOM;
+            newItemList.quantity = 1;
+            newItemList.active = shouldBeActive(newItemList,true);
+            newItem.lists.push(newItemList);
+          }
+        })
+      }  
+      else { 
+        newItem.globalItemID = null;
+        newItem.listGroupID = pageState.groupIDforSelectedList;
+        newItem.name = itemSearch.itemName;
+        listRows.forEach((lr) => {
+          if (lr.listGroupID == pageState.groupIDforSelectedList) {
+            let newItemList: ItemList = cloneDeep(ItemListInit);
+            newItemList.listID = String(lr.listDoc._id);
+            newItemList.quantity = 1;
+            newItemList.active = shouldBeActive(newItemList,true);
+            newItem.lists.push(newItemList);
+          }
+        })
+      }  
       let itemAdded = await addNewItem(newItem);
       if (!itemAdded.successful) {
         presentToast({message: "Error adding item, please retry.",duration: 1500, position: "middle"});
       }
       return;
     }
-    let existingItem: ItemDoc = cloneDeep((baseSearchItemDocs as ItemDocs).find((el) => el._id === itemSearch.itemID));
-    listRows.forEach((listRow: ListRow) => {
-      let idxInLists=existingItem.lists.findIndex((el) => el.listID === listRow.listDoc._id);
-      let skipThisList=false;
-      if (listRow.listDoc._id !== pageState.selectedListOrGroupID) {
-        if (globalState.settings.addListOption === AddListOptions.dontAddAutomatically) {
-          skipThisList=true;
-        } else if (globalState.settings.addListOption === AddListOptions.addToListsWithCategoryAutomatically) {
-          if (pageState.selectedListType !== RowType.listGroup) {
-            if (idxInLists !== -1) {
-              let currItemListCategory = existingItem.lists[idxInLists].categoryID;
-              if (!isCategoryInList(String(listRow.listDoc._id),String(currItemListCategory))) {
-                skipThisList = true;
-              }
-            }
-          }
-        }
+
+// Finished adding new item where it didn't exist. Now update existing item, active on no or some lists
+    let origLists = cloneDeep(testItemDoc!.lists);
+    testItemDoc!.lists.forEach(il => {
+      il.active = shouldBeActive(il,false);
+      if (il.active) { il.completed = false;}
+    })
+    if (!isEqual(origLists,testItemDoc!.lists)) {
+      let result = await updateItemInList(testItemDoc);
+      if (!result.successful) {
+        presentToast({message: "Error updating item, please retry.",duration: 1500, position: "middle"});
       }
-      if (!skipThisList && (idxInLists !== -1) && listRow.listDoc._id !== pageState.selectedListOrGroupID) {
-        if (!existingItem.lists[idxInLists].stockedAt) {
-          skipThisList = true;
-        }
-      }
-      if (!skipThisList) {
-        if (idxInLists === -1) {
-          const newListItem: ItemList=cloneDeep(ItemListInit);
-          newListItem.listID = String(listRow.listDoc._id);
-          newListItem.active = true;
-          newListItem.completed = false;
-          newListItem.stockedAt = true;
-          existingItem.lists.push(newListItem);
-        } else {
-          existingItem.lists[idxInLists].active = true;
-          existingItem.lists[idxInLists].completed = false;
-        }
-      }
-    });
-    let result = await updateItemInList(existingItem);
-    if (!result.successful) {
-      presentToast({message: "Error updating item, please retry.",duration: 1500, position: "middle"});
     }
   }
 

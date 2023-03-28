@@ -41,7 +41,7 @@ export function getAllSearchRows(allItemDocs: ItemDocs, listID: string,listType:
             }
         }
       }
-      console.log("GASR: adding ItemDoc : ", itemDoc.name,cloneDeep({itemDoc,addRowToSearch,searchRow}))
+//      console.log("GASR: adding ItemDoc : ", itemDoc.name,cloneDeep({itemDoc,addRowToSearch,searchRow}))
       if (addRowToSearch) {
         searchRows.push(searchRow);
       }  
@@ -60,9 +60,9 @@ export function getAllSearchRows(allItemDocs: ItemDocs, listID: string,listType:
         }
       } else {
         let itemNameMatch = allItemDocs.find((item) => (item.name.toUpperCase() == globalItem.name.toUpperCase() && item.listGroupID == listID))
-        console.log("GASR: Global: ",globalItem.name," itemNameMatch:",itemNameMatch);
+//        console.log("GASR: Global: ",globalItem.name," itemNameMatch:",itemNameMatch);
         if (itemNameMatch !== undefined) {
-            console.log("GASR: Global:",globalItem.defaultUOM," setting item exists in item to true")
+//            console.log("GASR: Global:",globalItem.defaultUOM," setting item exists in item to true")
             itemExistsInItem = true;
         }
       }
@@ -80,7 +80,7 @@ export function getAllSearchRows(allItemDocs: ItemDocs, listID: string,listType:
         searchRows.push(searchRow);
       }   
     })
-    console.log("returned searchrows: ",cloneDeep(searchRows))
+//    console.log("returned searchrows: ",cloneDeep(searchRows))
     return searchRows;
   }
 
@@ -116,34 +116,17 @@ function findRightList(itemDoc: ItemDoc, listType: RowType, listOrGroupID: strin
         list = itemDoc.lists.find((list : ItemList) => (list.listID == listOrGroupID));
         if (list == undefined) {return undefined}
         else
-        {return list}
+        {return cloneDeep(list)}
     }
 // otherwise, for group type of list, just find the first list that is a member of the listgroup    
     for (let i = 0; i < itemDoc.lists.length; i++) {
-        let lcr = listCombinedRows.find((el) => el.rowType == RowType.list && el.listGroupID == itemDoc.listGroupID)
         if ( listCombinedRow.listGroupID == itemDoc.listGroupID && isListPartOfGroup(itemDoc.lists[i].listID,listOrGroupID,listCombinedRows) ) {
             list = itemDoc.lists[i];
             break
         }
     }
-    if (list == undefined) { return undefined} else {return list}
+    if (list == undefined) { return undefined} else {return cloneDeep(list)}
 }
-
-
-/* function findCategoryID(itemDoc: ItemDoc, listType: RowType, listOrGroupID: string, listCombinedRow: ListCombinedRow ) {
-    let list: ItemList | undefined;
-    if (listType == RowType.list) {
-        list = itemDoc.lists.find((list : ItemList) => (list.listID == listOrGroupID));
-        if (list == undefined) {return null} else {return list.categoryID}
-    }
-    for (let i = 0; i < itemDoc.lists.length; i++) {
-        if (listCombinedRow.listGroupLists.includes(itemDoc.lists[i].listID)) {
-            list = itemDoc.lists[i];
-            break
-        }
-    }
-    if (list == undefined) { return null} else {return list.categoryID}
-} */
 
 export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRow[], categoryDocs: CategoryDoc[], uomDocs: UomDoc[], listType: RowType, listOrGroupID: string) {
     let itemRows: Array<ItemRow> =[];
