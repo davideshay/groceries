@@ -274,10 +274,10 @@ const Item: React.FC = (props) => {
             <IonCard>
               <IonCardSubtitle>Change values here to change on all lists below</IonCardSubtitle>
               <IonItem key="quantity">
-                <IonGrid>
+                <IonGrid class="ion-no-padding">
                 <IonRow>
-                  <IonCol size="3"><IonInput label="Quantity" labelPlacement="stacked" type="number" min="0" max="9999" onIonInput={(e) => updateAllKey("quantity",e.detail.value)} value={getCommonKey(stateItemDoc,"quantity",globalData.listDocs)}></IonInput></IonCol>
-                  <IonCol size="8">
+                  <IonCol class="ion-no-padding" size="3"><IonInput label="Quantity" labelPlacement="stacked" type="number" min="0" max="9999" onIonInput={(e) => updateAllKey("quantity",e.detail.value)} value={getCommonKey(stateItemDoc,"quantity",globalData.listDocs)}></IonInput></IonCol>
+                  <IonCol class="ion-no-padding" size="8">
                     <IonSelect label="UoM" labelPlacement='stacked' interface="popover" onIonChange={(ev) => updateAllKey("uomName", ev.detail.value)} value={getCommonKey(stateItemDoc,"uomName",globalData.listDocs)}>
                     <IonSelectOption key="uom-undefined" value={null}>No UOM</IonSelectOption>
                     {(globalData.uomDocs as UomDoc[]).map((uom) => (
@@ -285,7 +285,7 @@ const Item: React.FC = (props) => {
                     ))}
                     </IonSelect>
                   </IonCol>
-                  <IonCol size="1"><IonButton fill="default" onClick={(e) => {addUOMPopup()}}><IonIcon icon={addOutline}></IonIcon></IonButton></IonCol>
+                  <IonCol class="ion-no-padding" size="1"><IonButton fill="default" onClick={(e) => {addUOMPopup()}}><IonIcon icon={addOutline}></IonIcon></IonButton></IonCol>
                 </IonRow>
                 </IonGrid>
               </IonItem>

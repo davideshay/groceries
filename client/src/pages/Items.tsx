@@ -438,15 +438,15 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       lastCategoryFinished=item.completed;
     }
     currentRows.push(
-      <IonItem key={pageState.itemRows[i].itemID} >
-        <IonGrid><IonRow>
-        <IonCol size="1">
+      <IonItem class="item-outer" key={pageState.itemRows[i].itemID} >
+        <IonGrid class="grid-no-pad"><IonRow>
+        <IonCol class="col-no-pad" size="1">
         <IonCheckbox aria-label=""
             onIonChange={(e) => completeItemRow(item.itemID,e.detail.checked)}
             checked={Boolean(pageState.itemRows[i].completed)}></IonCheckbox>
         </IonCol>
-        <IonCol size="11">
-          <IonItem class="item-button" routerLink={"/item/edit/"+item.itemID} key={pageState.itemRows[i].itemID+"mynewbutton"}>{item.itemName + (item.quantityUOMDesc === "" ? "" : " ("+ item.quantityUOMDesc+")")}</IonItem>
+        <IonCol class="col-no-pad" size="11">
+          <IonItem class="item-inner" routerLink={"/item/edit/"+item.itemID} key={pageState.itemRows[i].itemID+"mynewbutton"}>{item.itemName + (item.quantityUOMDesc === "" ? "" : " ("+ item.quantityUOMDesc+")")}</IonItem>
         </IonCol>
         </IonRow></IonGrid>
       </IonItem>);

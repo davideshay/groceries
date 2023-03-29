@@ -101,7 +101,7 @@ export function filterSearchRows(searchRows: ItemSearch[] | undefined, searchCri
 function isListPartOfGroup(listID: string, listGroupID: string, listCombinedRows: ListCombinedRows): boolean {
     let isPart = false;
     let lcr = listCombinedRows.find((el) => (el.rowType===RowType.list && el.listOrGroupID===listID))
-    if (lcr == undefined) return isPart;
+    if (lcr === undefined) return isPart;
     isPart = (lcr.listDoc.listGroupID === listGroupID)
     return isPart;
 }
@@ -110,7 +110,7 @@ function findRightList(itemDoc: ItemDoc, listType: RowType, listOrGroupID: strin
     let list: ItemList | undefined;
 // for requested row type of list, just match on listID
     if (listType === RowType.list) {
-        list = itemDoc.lists.find((list : ItemList) => (list.listID == listOrGroupID));
+        list = itemDoc.lists.find((list : ItemList) => (list.listID === listOrGroupID));
         if (list === undefined) {return undefined}
         else
         {return cloneDeep(list)}
@@ -148,7 +148,7 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
             itemRow.categoryColor = "primary"
         } else {
             let thisCat = (categoryDocs.find((element: CategoryDoc) => (element._id === itemRow.categoryID)) as CategoryDoc);
-            if (thisCat != undefined) {
+            if (thisCat !== undefined) {
                 itemRow.categoryName = thisCat.name;
                 if (thisCat.color === undefined) {
                     itemRow.categoryColor = "primary"
@@ -157,7 +157,7 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
                 itemRow.categoryName = "UNDEFINED";
                 itemRow.categoryColor = "primary"
             }
-            if (listType ==  RowType.list) {
+            if (listType === RowType.list) {
                 const tmpIdx = (listRow?.listDoc.categories.findIndex((element: string) => (element === itemRow.categoryID)));
                 if (tmpIdx === -1) {itemRow.categorySeq=Number.MAX_VALUE} else {itemRow.categorySeq=tmpIdx}
             } else {
@@ -169,7 +169,7 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
         let uomDesc = "";
         if (uomName != null) {
             const uomDoc = uomDocs.find((el: UomDoc) => (el.name === uomName));
-            if (uomDoc != undefined) {
+            if (uomDoc !== undefined) {
                 if (Number(itemRow.quantity) === 1) {
                     uomDesc = uomDoc.description;
                 } else {
@@ -179,8 +179,8 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
         }    
         itemRow.uomDesc = uomDesc;
         let quantityUOMDesc = "";
-        if (! (itemRow.quantity == 1 && itemRow.uomDesc == "")) {
-            quantityUOMDesc = itemRow.quantity.toString() + ((itemRow.uomDesc == "" ? "" : " " + itemRow.uomDesc));
+        if (! (itemRow.quantity === 1 && itemRow.uomDesc === "")) {
+            quantityUOMDesc = itemRow.quantity.toString() + ((itemRow.uomDesc === "" ? "" : " " + itemRow.uomDesc));
             itemRow.quantityUOMDesc = quantityUOMDesc;
         }
         if (listType === RowType.list) {
@@ -208,22 +208,13 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
 export function sortedItemLists(itemList: ItemList[], listDocs: ListDocs) {
     let sortedLists = cloneDeep(itemList);
     sortedLists.sort(function (a: ItemList, b: ItemList) {
-        let aList: ListDoc | undefined = listDocs.find((listDoc: ListDoc) => (listDoc._id == a.listID));
-        let bList: ListDoc | undefined = listDocs.find((listDoc: ListDoc) => (listDoc._id == b.listID));
+        let aList: ListDoc | undefined = listDocs.find((listDoc: ListDoc) => (listDoc._id === a.listID));
+        let bList: ListDoc | undefined = listDocs.find((listDoc: ListDoc) => (listDoc._id === b.listID));
         if (aList === undefined || bList === undefined) {return 0 }
         else { return aList.name.toUpperCase().localeCompare(bList.name.toUpperCase());
         }
     })
     return sortedLists;
-}
-
-export function allValuesSame(stateItemDoc: ItemDoc, key: string, listDocs: ListDocs) {
-    let allSame=true; let lastValue=null;
-    for (let i = 0; i < stateItemDoc.lists.length; i++) {
-        if ((stateItemDoc.lists[i] as any)[key] !== (stateItemDoc.lists[0] as any)[key]) {
-            allSame=false; break;
-        }
-    }
 }
 
 export function getCommonKey(stateItemDoc: ItemDoc, key: string, listDocs: ListDocs) {
@@ -256,7 +247,7 @@ export function getCommonKey(stateItemDoc: ItemDoc, key: string, listDocs: ListD
   export function createEmptyItemDoc(listRows:ListRow[], globalState: GlobalState) {
     let newItemLists: ItemList[] =[];
     let listGroupID = "";
-    if (globalState.callingListType == RowType.listGroup) {
+    if (globalState.callingListType === RowType.listGroup) {
       listGroupID = String(globalState.callingListID);
     } else {
       let baseList=listRows.find((listRow:ListRow) => listRow.listDoc._id === globalState.callingListID);
@@ -298,7 +289,7 @@ export function getCommonKey(stateItemDoc: ItemDoc, key: string, listDocs: ListD
 
 export function listIsDifferentThanCommon(sortedLists: ItemList[], listIdx: number): boolean {
     let combinedKeys: any ={};
-    let maxKey="";
+//    let maxKey="";
     let maxCnt=1;
     let thisKey="";
     for (let i = 0; i < sortedLists.length; i++) {
@@ -313,7 +304,7 @@ export function listIsDifferentThanCommon(sortedLists: ItemList[], listIdx: numb
         combinedKeys[listKey] = combinedKeys[listKey] + 1;
         if (combinedKeys[listKey] > maxCnt) {
             maxCnt=combinedKeys[listKey];
-            maxKey=listKey;
+//            maxKey=listKey;
         }
         } else {
         combinedKeys[listKey] = 1;
@@ -325,7 +316,7 @@ export function listIsDifferentThanCommon(sortedLists: ItemList[], listIdx: numb
     // check if max count occurs > 1 in the list, if so all rows should be different
     let maxCheckCount=0;
     for (const [key, value] of Object.entries(combinedKeys)) {
-        if (value == maxCnt) { maxCheckCount++;}
+        if (value === maxCnt) { maxCheckCount++;}
     }
     return ((combinedKeys[thisKey] < maxCnt) || (maxCheckCount > 1)) ;
 }

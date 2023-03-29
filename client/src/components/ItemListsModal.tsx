@@ -22,7 +22,7 @@ const ItemListsModal: React.FC<ModalProps> = (props: ModalProps) => {
       function saveModal() {
         let newItemLists: ItemList[] = cloneDeep(props.stateItemDoc.lists);
         for (let i = 0; i < newItemLists.length; i++) {
-          if (newItemLists[i].listID == props.modalState.selectedListId) {
+          if (newItemLists[i].listID === props.modalState.selectedListId) {
             newItemLists[i]=cloneDeep(props.modalState.itemList); break;
           }
         }

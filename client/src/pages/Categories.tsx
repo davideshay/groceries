@@ -36,9 +36,7 @@ const Categories: React.FC<HistoryProps> = (props: HistoryProps) => {
       <IonContent>
         <IonList lines="full">
                {(globalData.categoryDocs as CategoryDoc[]).map((doc) => (
-                  <IonItem key={doc._id} >
-                    <IonButton slot="start" class="textButton" fill="clear" routerLink={("/category/edit/" + doc._id)}>{doc.name}</IonButton>
-                  </IonItem>  
+                  <IonItem class="list-button" key={doc._id} routerLink={("/category/edit/" + doc._id)}>{doc.name}</IonItem>
             ))}
         </IonList>
       </IonContent>

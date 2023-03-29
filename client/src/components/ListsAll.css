@@ -1,11 +1,19 @@
 ion-button.indented {
     margin-left: 1rem;
+    margin-bottom: 0px;
 }
 
-ion-button.textButton {
-    color: var(--color-primary);
+ion-button.standard-text-button {
+/*     color: var(--color-primary);
+ */  
     margin-right: 4px;
+    margin-top: 0px;
+    margin-right: 0px;
     text-overflow: ellipsis;
-
+    min-height: 2px;
 }
 
+ion-button.standard-text-button::part(native) {
+    color:orangered;
+    min-height: 6px;
+}

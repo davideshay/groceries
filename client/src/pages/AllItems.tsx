@@ -36,9 +36,7 @@ const AllItems: React.FC<HistoryProps> = (props: HistoryProps) => {
   itemRows.forEach((doc: ItemDoc) => {
       gotARow = true;
       itemsElem.push(
-        <IonItem key={doc._id} >
-          <IonButton slot="start" class="textButton" fill="clear" routerLink={("/item/edit/" + doc._id)}>{doc.name}</IonButton>
-        </IonItem>  
+        <IonItem button key={doc._id} class="list-button" routerLink={("/item/edit/" + doc._id)}>{doc.name}</IonItem>
       )
   });
 

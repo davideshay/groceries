@@ -25,6 +25,7 @@ import AllItems from './pages/AllItems';
 import ErrorBoundary from './components/ErrorBoundary';
 import { GlobalStateProvider } from './components/GlobalState';
 import { RemoteDBStateProvider } from './components/RemoteDBState';
+import "./App.css"
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';

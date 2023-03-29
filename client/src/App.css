@@ -1,0 +1,10 @@
+
+ion-item.list-button::part(native) { 
+    min-height: unset;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.textButton {
+    text-transform: none;
+}

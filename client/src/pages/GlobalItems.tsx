@@ -41,9 +41,7 @@ const GlobalItems: React.FC<HistoryProps> = (props: HistoryProps) => {
   (globalItemDocs as GlobalItemDocs).forEach((gi) => {
       gotARow = true;
       itemsElem.push(
-        <IonItem key={gi._id} >
-          <IonButton slot="start" class="textButton" fill="clear" routerLink={("/globalitem/edit/" + gi._id)}>{gi.name}</IonButton>
-        </IonItem>  
+        <IonItem button key={gi._id} class="list-button" routerLink={("/globalitem/edit/" + gi._id)}>{gi.name}</IonItem>
       )
   });
 

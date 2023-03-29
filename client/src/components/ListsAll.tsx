@@ -25,7 +25,7 @@ const ListsAll: React.FC<ListsAllProps> = (props: ListsAllProps) => {
       baseRow = (<IonItem key={rowKey}>{rowName}</IonItem>)
     } else {
       baseRow = (
-      <IonItem key={rowKey} >
+      <IonItem className="" key={rowKey} >
         <IonButton slot="start" size="default" className={"standard-text-button "+extraClass} fill="clear" routerLink={(showLinkID)}>{rowName}</IonButton>
         <IonButton fill="clear" className="standard-text-button" routerLink={editLinkID} slot="end">
         <IonIcon slot="end" icon={pencilOutline}></IonIcon>

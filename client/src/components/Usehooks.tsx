@@ -448,7 +448,7 @@ export function useFriends(username: string) : { useFriendState: UseFriendState,
             { friendRow.targetUserName = friendRow.friendDoc.friendID2}
           else { friendRow.targetUserName = friendRow.friendDoc.friendID1}
           let user=usersInfo.find((el) => el?.name === friendRow.targetUserName)
-          if (user == undefined) {user = cloneDeep(initUserInfo)};
+          if (user === undefined) {user = cloneDeep(initUserInfo)};
           if (friendDoc.friendStatus === FriendStatus.WaitingToRegister) {
             friendRow.targetEmail = friendDoc.inviteEmail
           } else {
