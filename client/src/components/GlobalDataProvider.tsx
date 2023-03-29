@@ -139,7 +139,7 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
             uomDocs: uomDocs as UomDoc[], uomLoading, uomError,
             listRows: listRows as ListRow[], listRowsLoaded, listCombinedRows: listCombinedRows as ListCombinedRows
         };
-        console.log("GLOBAL DATA CAUSED RERENDER...",cloneDeep(value));    
+//        console.log("GLOBAL DATA CAUSED RERENDER...",cloneDeep(value));    
     return (
         <GlobalDataContext.Provider value={value}>{props.children}</GlobalDataContext.Provider>
       );

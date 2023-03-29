@@ -25,8 +25,6 @@ const GlobalItem: React.FC<HistoryProps> = (props: HistoryProps) => {
     <ErrorPage errorText="Error Loading Global Item Information... Restart."></ErrorPage>
     )};
 
-console.log(globalData.uomLoading, globalData.categoryLoading);
-
   if ( globalItemLoading || globalData.uomLoading || globalData.categoryLoading)  {
     return ( <Loading isOpen={screenLoading.current} message="Loading Global Item..."    /> )
 //    setIsOpen={() => {screenLoading.current = false}} /> )
