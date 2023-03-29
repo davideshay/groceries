@@ -1,8 +1,7 @@
-import { IonContent,  IonPage, IonList, IonItem, IonButton  } from '@ionic/react';
+import { IonContent,  IonPage, IonList, IonItem } from '@ionic/react';
 import { useRef } from 'react';
 import { useItems } from '../components/Usehooks';
 import { HistoryProps, RowType} from '../components/DataTypes';
-import { ItemDoc } from '../components/DBSchema';
 import './AllItems.css';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
@@ -31,20 +30,14 @@ const AllItems: React.FC<HistoryProps> = (props: HistoryProps) => {
   
   screenLoading.current = false;
 
-  let gotARow = false;
-  let itemsElem: any = [];
-  itemRows.forEach((doc: ItemDoc) => {
-      gotARow = true;
-      itemsElem.push(
-        <IonItem button key={doc._id} class="list-button" routerLink={("/item/edit/" + doc._id)}>{doc.name}</IonItem>
-      )
-  });
-
   return (
     <IonPage>
       <PageHeader title="All Items" />
       <IonContent>
-        {gotARow ? (<IonList lines="full">{itemsElem}</IonList>) : (<IonList><IonItem>No Items Available</IonItem></IonList>) }
+        {itemRows.length === 0 ? (<IonList><IonItem>No Items Available</IonItem></IonList>) : <></> }
+        {itemRows.map(ir => (
+          <IonItem button key={ir._id} class="list-button" routerLink={("/item/edit/" + ir._id)}>{ir.name}</IonItem>
+        ))}
       </IonContent>
     </IonPage>
   );

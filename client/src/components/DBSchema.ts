@@ -35,7 +35,7 @@ export interface ConflictDoc {
   type: string,
   docType: string,
   winner: any,
-  losers: any,
+  losers: any[],
   updatedAt: string
 }
 

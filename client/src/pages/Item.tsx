@@ -142,7 +142,7 @@ const Item: React.FC = (props) => {
     }
   }
 
-  function updateAllKey(key: string, val: any) {
+  function updateAllKey(key: string, val: string | boolean | number| null) {
     let newItemDoc: ItemDoc = cloneDeep(stateItemDoc);
     newItemDoc.lists.forEach((list: ItemList) => {
       (list as any)[key] = val;
@@ -276,7 +276,7 @@ const Item: React.FC = (props) => {
               <IonItem key="quantity">
                 <IonGrid class="ion-no-padding">
                 <IonRow>
-                  <IonCol class="ion-no-padding" size="3"><IonInput label="Quantity" labelPlacement="stacked" type="number" min="0" max="9999" onIonInput={(e) => updateAllKey("quantity",e.detail.value)} value={getCommonKey(stateItemDoc,"quantity",globalData.listDocs)}></IonInput></IonCol>
+                  <IonCol class="ion-no-padding" size="3"><IonInput label="Quantity" labelPlacement="stacked" type="number" min="0" max="9999" onIonInput={(e) => updateAllKey("quantity",Number(e.detail.value))} value={getCommonKey(stateItemDoc,"quantity",globalData.listDocs)}></IonInput></IonCol>
                   <IonCol class="ion-no-padding" size="8">
                     <IonSelect label="UoM" labelPlacement='stacked' interface="popover" onIonChange={(ev) => updateAllKey("uomName", ev.detail.value)} value={getCommonKey(stateItemDoc,"uomName",globalData.listDocs)}>
                     <IonSelectOption key="uom-undefined" value={null}>No UOM</IonSelectOption>

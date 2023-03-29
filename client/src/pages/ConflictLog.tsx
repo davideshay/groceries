@@ -8,6 +8,7 @@ import './Categories.css';
 import { useConflicts } from '../components/Usehooks';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
+import { ConflictDocs } from '../components/DBSchema';
 
 const ConflictLog: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { setDBCredsValue } = useContext(RemoteDBStateContext);
@@ -44,7 +45,7 @@ const ConflictLog: React.FC<HistoryProps> = (props: HistoryProps) => {
       <IonContent>
         <IonList lines="full">
             {(conflictDocs.length === 0) ? (<IonItem>No Items In Conflict Log</IonItem>) : <></>}
-               {conflictDocs.map((doc: any) => (
+               {(conflictDocs as ConflictDocs).map((doc) => (
                   <IonItem class="list-button" button key={doc._id} routerLink={("/conflictitem/" + doc._id)} >{doc.docType} {doc.updatedAt} </IonItem>
             ))}
         </IonList>

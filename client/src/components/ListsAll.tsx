@@ -1,7 +1,6 @@
 import {  IonItem, IonButton, IonMenuToggle, IonIcon } from '@ionic/react';
 import { useContext } from 'react';
 import { pencilOutline } from 'ionicons/icons';
-import { RemoteDBStateContext } from './RemoteDBState';
 import './ListsAll.css';
 import './common.css';
 import { RowType } from './DataTypes';
@@ -12,7 +11,6 @@ interface ListsAllProps {
 }
 
 const ListsAll: React.FC<ListsAllProps> = (props: ListsAllProps) => {
-  const { remoteDBCreds } = useContext(RemoteDBStateContext);
   const { listRowsLoaded, listCombinedRows} = useContext(GlobalDataContext)
 
   if (!listRowsLoaded) { return (<></>) }
@@ -43,7 +41,7 @@ const ListsAll: React.FC<ListsAllProps> = (props: ListsAllProps) => {
   let listsElem: JSX.Element[] = [];
   
   listCombinedRows.forEach(combinedRow => {
-    if (combinedRow.rowType == RowType.listGroup ) {
+    if (combinedRow.rowType === RowType.listGroup ) {
       listsElem.push(
           addRow({separatePage: props.separatePage, showLinkID:"/items/group/"+combinedRow.listGroupID,
               editLinkID: "/listgroup/edit/"+combinedRow.listGroupID,

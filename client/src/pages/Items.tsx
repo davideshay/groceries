@@ -21,7 +21,7 @@ import { isEqual } from 'lodash';
 const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode: routeMode, id: routeListID  } = useParams<{mode: string, id: string}>();
   const [searchRows,setSearchRows] = useState<ItemSearch[]>();
-  const [searchState,setSearchState] = useState<SearchState>({searchCriteria:"",isOpen: false,isFocused: false,event: undefined, filteredSearchRows: [], dismissEvent: undefined});
+  const [searchState,setSearchState] = useState<SearchState>({searchCriteria:"",isOpen: false,isFocused: false, filteredSearchRows: [], dismissEvent: undefined});
   const [pageState, setPageState] = useState<PageState>({selectedListOrGroupID: routeListID,
           selectedListType: (routeMode === "list" ? RowType.list : RowType.listGroup) ,
           ignoreCheckOffWarning: false,
@@ -145,11 +145,11 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     setSearchState(prevState => ({...prevState, isOpen: false, isFocused: false}));
   }
 
-  function enterSearchBox(event: Event) {
+  function enterSearchBox() {
     let toOpen=true;
 //    filterAndCheckRows();
     if (searchState.filteredSearchRows.length === 0) { toOpen = false}
-    setSearchState(prevState => ({...prevState, event: event, isFocused: true,isOpen: toOpen}));
+    setSearchState(prevState => ({...prevState, isFocused: true,isOpen: toOpen}));
   }
 
   function shouldBeActive(itemList: ItemList, newRow: boolean): boolean {
@@ -391,8 +391,8 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
               clearInput={true} placeholder="Search" fill="solid"
               onKeyDown= {(e) => searchKeyPress(e)}
               onIonInput={(e) => updateSearchCriteria(e)}
-              onClick={(e: any) => enterSearchBox(e)}
-              onIonFocus={(e: any) => {/* setSearchState((prevState) => ({...prevState,isFocused: true, event: e})) */}}   >
+              onClick={() => enterSearchBox()}
+           >   
            </IonInput>
           {/* <IonButton onClick={()=> clickedSearchCheck()}><IonIcon icon={checkmark} /></IonButton> */}
         </IonItem>
@@ -406,7 +406,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   let listContent=[];
 
-  function addCurrentRows(listCont: any, curRows: any, catID: string, catName: string, completed: boolean | null) {
+  function addCurrentRows(listCont: JSX.Element[], curRows: JSX.Element[], catID: string, catName: string, completed: boolean | null) {
     listCont.push(
         <IonItemGroup key={"cat"+catID+Boolean(completed).toString()}>
         <IonItemDivider class="category-divider" key={"cat"+catID+Boolean(completed).toString()}>{catName}</IonItemDivider>

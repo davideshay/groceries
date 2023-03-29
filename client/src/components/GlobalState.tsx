@@ -29,9 +29,9 @@ export type GlobalState = {
 
 export interface GlobalStateContextType {
     globalState: GlobalState,
-    setGlobalState: React.SetStateAction<GlobalState>,
-    setStateInfo: void,
-    updateSettingKey: boolean
+    setGlobalState: React.Dispatch<React.SetStateAction<GlobalState>>,
+    setStateInfo: (key: string, value: string | null | RowType) => void,
+    updateSettingKey: (key: string, value: AddListOptions | boolean | number) => Promise<boolean>
 }
 
 export const initSettings: GlobalSettings = {
@@ -54,8 +54,8 @@ const initialState: GlobalState = {
 const initialContext = {
     globalState: initialState,
     setGlobalState: (state: GlobalState ) => {},
-    setStateInfo: (key: string, value: any) => {},
-    updateSettingKey: (key: string, value: any) => Promise
+    setStateInfo: (key: string, value: string | null | RowType) => {},
+    updateSettingKey: async (key: string, value: AddListOptions | boolean | number) => {return false}
 }
 
 export const GlobalStateContext = createContext(initialContext)
@@ -68,11 +68,11 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
     const [globalState,setGlobalState] = useState(initialState);
     const [settingsRetrieved,setSettingsRetrieved] = useState(false);
 
-    function setStateInfo(key: string,value: any) {
+    function setStateInfo(key: string,value: string | null | RowType) {
         setGlobalState(prevState => ({ ...prevState, [key]: value}))
     }
 
-    async function updateSettingKey(key: string, value: any) {
+    async function updateSettingKey(key: string, value: AddListOptions | boolean | number): Promise<boolean> {
         setGlobalState(prevState => ({...prevState,settings: {...prevState.settings, [key]: value}}))
         let settingsStr = JSON.stringify({...globalState.settings,[key]: value})
         try { await Preferences.set({key: 'settings', value: settingsStr}) }
@@ -125,7 +125,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
     },[])
 
 
-    let value: any = {globalState, setGlobalState, setStateInfo, updateSettingKey};
+    let value: GlobalStateContextType = {globalState, setGlobalState, setStateInfo, updateSettingKey};
     return (
         <GlobalStateContext.Provider value={value}>{props.children}</GlobalStateContext.Provider>
       );

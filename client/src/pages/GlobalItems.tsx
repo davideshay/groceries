@@ -1,4 +1,4 @@
-import { IonContent, IonPage, IonList, IonItem, IonButton } from '@ionic/react';
+import { IonContent, IonPage, IonList, IonItem } from '@ionic/react';
 import { useFind } from 'use-pouchdb';
 import { useRef } from 'react';
 import { HistoryProps} from '../components/DataTypes';
@@ -33,24 +33,18 @@ const GlobalItems: React.FC<HistoryProps> = (props: HistoryProps) => {
   
   screenLoading.current = false;
 
-  let gotARow = false;
   (globalItemDocs as GlobalItemDocs).sort((a,b) => (
     a.name.toLocaleUpperCase().localeCompare(b.name.toLocaleUpperCase())
   ));
-  let itemsElem:any = [];
-  (globalItemDocs as GlobalItemDocs).forEach((gi) => {
-      gotARow = true;
-      itemsElem.push(
-        <IonItem button key={gi._id} class="list-button" routerLink={("/globalitem/edit/" + gi._id)}>{gi.name}</IonItem>
-      )
-  });
 
   return (
     <IonPage>
       <PageHeader title="Global Items" />
       <IonContent>
-        {gotARow ? (<IonList lines="full">{itemsElem}</IonList>) :
-        (<IonList><IonItem>No Global Items Available</IonItem></IonList>)}
+        {globalItemDocs.length === 0 ?(<IonList><IonItem>No Global Items Available</IonItem></IonList>) : <></> }
+        {(globalItemDocs as GlobalItemDocs).map(gi => (
+             <IonItem button key={gi._id} class="list-button" routerLink={("/globalitem/edit/" + gi._id)}>{gi.name}</IonItem>
+        ))}
       </IonContent>
     </IonPage>
   );

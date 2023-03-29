@@ -86,7 +86,7 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
     })
   }
 
-  function changeSetting(key: string, value: any) {
+  function changeSetting(key: string, value: AddListOptions | boolean | number) {
     updateSettingKey(key,value);
     setLocalSettings(prevState => ({...prevState,[key]: value}));
   }
@@ -127,7 +127,7 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
             <IonCheckbox justify="space-between" labelPlacement="start" checked={localSettings.completeFromAllLists} onIonChange={(e) => changeSetting("completeFromAllLists",e.detail.checked)}>Delete From All lists in list group when deleting completed items</IonCheckbox>
           </IonItem>
           <IonItem key="dayslog">
-            <IonInput label="Days of conflict log to view:" labelPlacement="start" type="number" min="0" max="25" onIonInput={(e) => changeSetting("daysOfConflictLog", e.detail.value)} value={Number(localSettings?.daysOfConflictLog)}></IonInput>
+            <IonInput label="Days of conflict log to view:" labelPlacement="start" type="number" min="0" max="25" onIonInput={(e) => changeSetting("daysOfConflictLog", Number(e.detail.value))} value={Number(localSettings?.daysOfConflictLog)}></IonInput>
           </IonItem>
         </IonList>
       </IonContent>

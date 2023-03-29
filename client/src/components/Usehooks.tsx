@@ -3,7 +3,7 @@ import { usePouch, useFind } from 'use-pouchdb'
 import { cloneDeep, pull } from 'lodash';
 import { RemoteDBStateContext, SyncStatus } from './RemoteDBState';
 import { FriendRow,InitFriendRow, ResolvedFriendStatus, ListRow, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType, UsersInfo } from './DataTypes';
-import { FriendDocs,FriendStatus, ListGroupDoc, ListDoc, ListDocs, ListGroupDocs, ListDocInit, ItemDocs, ItemDoc, ItemList, ItemListInit} from './DBSchema';
+import { FriendDocs,FriendStatus, ListGroupDoc, ListDoc, ListDocs, ListGroupDocs, ListDocInit, ItemDocs, ItemDoc, ItemList, ItemListInit, ConflictDocs} from './DBSchema';
 import { GlobalStateContext } from './GlobalState';
 import { getUsersInfo } from './Utilities';
 import { getCommonKey } from './ItemUtilities';
@@ -11,7 +11,7 @@ import { GlobalDataContext } from './GlobalDataProvider';
 
 export function useGetOneDoc(docID: string | null) {
   const db = usePouch();
-  const changesRef = useRef<any>();
+  const changesRef = useRef<PouchDB.Core.Changes<any>>();
   const [doc,setDoc] = useState<any>(null);
   const [dbError, setDBError] = useState(false);
   const loadingRef = useRef(true);
@@ -90,8 +90,8 @@ export function useDeleteItemsInListGroup() {
           listGroupID: listGroupID}
       })
       for (let i = 0; i < itemResults.docs.length; i++) {
-        const itemDoc: any = itemResults.docs[i];
-        try {await db.remove(itemDoc)}
+        const itemDoc: ItemDoc = (itemResults.docs[i] as ItemDoc); 
+        try {await db.remove(itemDoc as PouchDB.Core.RemoveDocument)}
         catch(err) { response.successful= false; response.fullError = err; }
         }
       return response;
@@ -185,25 +185,15 @@ export function useDeleteCategoryFromLists() {
     },[db]) 
 }
 
-export function useLists() : {dbError: boolean, listsLoading: boolean, listDocs: any, listRowsLoaded: boolean, listRows: ListRow[], listCombinedRows: ListCombinedRow[]} {
+export function useLists() : {dbError: boolean, listsLoading: boolean, listDocs: ListDocs, listRowsLoaded: boolean, listRows: ListRow[], listCombinedRows: ListCombinedRow[]} {
   const { remoteDBCreds } = useContext(RemoteDBStateContext);
   const [listRows,setListRows] = useState<ListRow[]>([]);
   const [listCombinedRows,setListCombinedRows] = useState<ListCombinedRow[]>([]);
   const [listRowsLoaded, setListRowsLoaded] = useState(false);
   const [dbError, setDBError] = useState(false);
   const globalData = useContext(GlobalDataContext);
-  const [ perfms, setperfms] = useState(performance.now());
-
-  useEffect(() => {
-    console.log("uselists first render");
-    setperfms(performance.now());
-  },[])
-
-//  console.log("WHY ul render: ", cloneDeep({listRows, listCombinedRows,listRowsLoaded,listRowsLoading,dbError,globalData}))
-  console.log("UL render, time from initial:",performance.now()-perfms);
 
   function buildListRows() {
-    let blrms = performance.now(); console.log("starting blr...");
     let curListDocs: ListDocs = cloneDeep(globalData.listDocs);
     let newListRows: ListRow[] = [];
     curListDocs.forEach((listDoc) => {
@@ -302,11 +292,9 @@ export function useLists() : {dbError: boolean, listsLoading: boolean, listDocs:
       })
     }
     setListCombinedRows(newCombinedRows);
-    console.log("ending blr...",performance.now()-blrms)
   }
 
   useEffect( () => {
-    let somethingms = performance.now(); console.log("somethingchanged");
     if (globalData.listsLoading || globalData.listGroupsLoading) { setListRowsLoaded(false); return };
     if (globalData.listError !== null || globalData.listGroupError !== null) { setDBError(true); return};
     setDBError(false);
@@ -315,7 +303,6 @@ export function useLists() : {dbError: boolean, listsLoading: boolean, listDocs:
       buildListRows();
       setListRowsLoaded(true);
     }
-    console.log("somethingchangedtime:",performance.now()-somethingms);
   },[globalData.listError, globalData.listGroupError, globalData.listsLoading,
     globalData.listDocs, globalData.listGroupDocs, globalData.listGroupsLoading])
 
@@ -481,7 +468,7 @@ export function useFriends(username: string) : { useFriendState: UseFriendState,
     return({useFriendState: useFriendState, friendRows});
 }
 
-export function useConflicts() : { conflictsError: boolean, conflictDocs: any[], conflictsLoading: boolean} {
+export function useConflicts() : { conflictsError: boolean, conflictDocs: ConflictDocs, conflictsLoading: boolean} {
   const { remoteDBCreds } = useContext(RemoteDBStateContext);
   const { globalState } = useContext(GlobalStateContext);
   const [mostRecentDate,setMostRecentDate] = useState<Date>(new Date());
@@ -499,7 +486,7 @@ export function useConflicts() : { conflictsError: boolean, conflictDocs: any[],
     setMostRecentDate((lastConflictsViewed > oneDayOldDate) ? lastConflictsViewed : oneDayOldDate);  
   },[remoteDBCreds.lastConflictsViewed,globalState.settings.daysOfConflictLog])
 
-  return({conflictsError: dbError !== null, conflictDocs, conflictsLoading});
+  return({conflictsError: dbError !== null, conflictDocs: (conflictDocs as ConflictDocs), conflictsLoading});
 }
 
 export function useAddListToAllItems() {

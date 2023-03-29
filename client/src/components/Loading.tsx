@@ -1,5 +1,5 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonButtons, 
-    IonMenuButton, IonButton, IonFab, IonFabButton, IonIcon, IonLoading} from '@ionic/react';
+import { IonHeader, IonPage, IonTitle, IonToolbar, IonButtons, 
+    IonMenuButton} from '@ionic/react';
 
     
 

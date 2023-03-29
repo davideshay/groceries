@@ -5,6 +5,7 @@ import { useGetOneDoc} from '../components/Usehooks';
 import { useContext, useRef } from 'react';
 import { isEqual, pull } from 'lodash';
 import { HistoryProps } from '../components/DataTypes';
+import { ConflictDoc } from '../components/DBSchema';
 import './Category.css';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
@@ -47,7 +48,7 @@ const ConflictItem: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   const mainPropsDifferent= new Set();
-  conflictDoc.losers.forEach((loser:any) => {
+  (conflictDoc as ConflictDoc).losers.forEach((loser) => {
     let initDiffs=getObjectDiff(conflictDoc.winner,loser);
     pull(initDiffs,'_rev','updatedAt','_conflicts');
     initDiffs.forEach(element => {
@@ -61,7 +62,7 @@ const ConflictItem: React.FC<HistoryProps> = (props: HistoryProps) => {
   
   return (
     <IonPage>
-      <PageHeader title={"Conflict Item: "+(conflictDoc as any).docType +" from "+localDate} />
+      <PageHeader title={"Conflict Item: "+(conflictDoc as ConflictDoc).docType +" from "+localDate} />
       <IonContent> 
           <IonList>
             <IonItem key="maindiffs">

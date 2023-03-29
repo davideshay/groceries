@@ -1,7 +1,4 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
-    IonButtons, IonMenuButton, IonSelect, IonIcon, IonLoading,
-    IonSelectOption, useIonAlert,useIonToast, IonTextarea, IonGrid, IonRow, IonCol, IonText, IonCard,
-    IonCardSubtitle, NavContext } from '@ionic/react';
+import { IonHeader, IonTitle, IonToolbar, IonButtons, IonMenuButton  } from '@ionic/react';
 import SyncIndicator from './SyncIndicator';    
 
 type HeaderProps = {
@@ -9,7 +6,6 @@ type HeaderProps = {
 }
 
 const PageHeader: React.FC<HeaderProps> = (props: HeaderProps) => {
-    
     return (
         <IonHeader>
             <IonToolbar>
@@ -19,7 +15,6 @@ const PageHeader: React.FC<HeaderProps> = (props: HeaderProps) => {
             </IonToolbar>
         </IonHeader>
     )
-
 }
 
 export default PageHeader;

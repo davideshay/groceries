@@ -240,7 +240,7 @@ function deletePrompt() {
     }
   }
 
-  function catItemDivider(active: boolean, lines: any) {
+  function catItemDivider(active: boolean, lines: JSX.Element[]) {
     const actname=active ? "Active" : "Inactive"
     return (
       <div key={actname+"-div"}>

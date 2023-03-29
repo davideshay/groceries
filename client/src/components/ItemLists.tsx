@@ -1,7 +1,7 @@
 import {  IonButton,  IonItem, IonLabel, IonCheckbox, IonIcon, 
-    IonGrid, IonRow, IonCol, IonText,  } from '@ionic/react';
+    IonGrid, IonRow, IonCol, IonText, CheckboxCustomEvent,  } from '@ionic/react';
 import { pencilOutline } from 'ionicons/icons';
-import { Fragment, useContext, useState } from 'react';
+import { Fragment, useContext, useState, SetStateAction } from 'react';
 import { sortedItemLists, listIsDifferentThanCommon } from './ItemUtilities';
 import { ItemDoc,  ListDoc } from './DBSchema';
 import ItemListsModal from '../components/ItemListsModal';
@@ -12,7 +12,7 @@ import { GlobalDataContext } from './GlobalDataProvider';
 
 export type ItemListsProps = { 
     stateItemDoc: ItemDoc,
-    setStateItemDoc: any,
+    setStateItemDoc: React.Dispatch<SetStateAction<ItemDoc>>,
     addCategoryPopup: () => void,
     addUOMPopup: () => void
 }
@@ -70,9 +70,9 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
         let listName=globalData.listDocs[itemFoundIdx].name;
         listsInnerElem.push(
           <IonRow key={listID} class={listIsDifferentThanCommon(sortedLists,i) ? "highlighted-row ion-no-padding" : "ion-no-padding"}>
-            <IonCol class="ion-no-padding" size="1"><IonCheckbox aria-label="" onIonChange={(e: any) => selectList(listID,Boolean(e.detail.checked))} checked={itemActive}></IonCheckbox></IonCol>
+            <IonCol class="ion-no-padding" size="1"><IonCheckbox aria-label="" onIonChange={(e: CheckboxCustomEvent) => selectList(listID,Boolean(e.detail.checked))} checked={itemActive}></IonCheckbox></IonCol>
             <IonCol class="ion-no-padding ion-align-self-center" size="9"><IonLabel>{listName}</IonLabel></IonCol>
-            <IonCol class="ion-no-padding" size="2"><IonButton onClick={(e) => {console.log(e); editListModal(listID)}} ><IonIcon icon={pencilOutline}></IonIcon></IonButton></IonCol>
+            <IonCol class="ion-no-padding" size="2"><IonButton onClick={() => {editListModal(listID)}} ><IonIcon icon={pencilOutline}></IonIcon></IonButton></IonCol>
           </IonRow>
         )
       }

@@ -42,7 +42,6 @@ export enum ItemSearchType {
     searchCriteria: string,
     isOpen: boolean,
     isFocused: boolean,
-    event: Event | undefined,
     filteredSearchRows: Array<ItemSearch>,
     dismissEvent: CustomEvent | undefined
   }

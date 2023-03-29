@@ -17,14 +17,14 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
         if (lgd.listGroupOwner !== remoteDBCreds.dbUsername || lgd.sharedWith.includes(remoteDBCreds.dbUsername)) {
         continue;
         }
-        if ( listDoc.listGroupID == lgd._id ) {
+        if ( listDoc.listGroupID === lgd._id ) {
         listGroupID=lgd._id
         listGroupName=lgd.name
         listGroupDefault=lgd.default;
         listGroupOwner=lgd.listGroupOwner;
         }
     }
-    if (listGroupID == null) { return };
+    if (listGroupID === null) { return };
     let listRow: ListRow ={
         listGroupID: listGroupID,
         listGroupName: listGroupName,
@@ -40,7 +40,7 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
     })
 
     const sortedListGroups: ListGroupDocs = cloneDeep(listGroupDocs).filter( 
-    (lgd: ListGroupDoc) => lgd.listGroupOwner == remoteDBCreds.dbUsername ||
+    (lgd: ListGroupDoc) => lgd.listGroupOwner === remoteDBCreds.dbUsername ||
             lgd.sharedWith.includes(String(remoteDBCreds.dbUsername))
     );
     sortedListGroups.sort(function (a: ListGroupDoc, b: ListGroupDoc) {
@@ -63,7 +63,7 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
     newCombinedRows.push(groupRow);
     for (let i = 0; i < newListRows.length; i++) {
         const listRow = newListRows[i];
-        if (listGroup._id == listRow.listGroupID) {
+        if (listGroup._id === listRow.listGroupID) {
         let listListRow: ListCombinedRow = {
             rowType: RowType.list,
             rowName: listRow.listDoc.name,
@@ -81,7 +81,7 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
     });
     // now add any ungrouped (error) lists:
     let testRow = newListRows.find(el => (el.listGroupID == null))
-    if (testRow != undefined) {
+    if (testRow !== undefined) {
     let groupRow: ListCombinedRow = {
         rowType : RowType.listGroup, rowName : testRow.listGroupName,
         rowKey: "G-null", listOrGroupID: null, listGroupID : null,
@@ -90,7 +90,7 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
     }
     newCombinedRows.push(groupRow);
     newListRows.forEach(newListRow => {
-        if (newListRow.listGroupID == null) {
+        if (newListRow.listGroupID === null) {
         let listlistRow: ListCombinedRow = {
             rowType: RowType.list, rowName: newListRow.listDoc.name,
             rowKey: "L-"+newListRow.listDoc._id, listOrGroupID: String(newListRow.listDoc._id),listGroupID: null,

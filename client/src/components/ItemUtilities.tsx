@@ -205,7 +205,7 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
     return (itemRows)
 }
 
-export function sortedItemLists(itemList: ItemList[], listDocs: ListDocs) {
+export function sortedItemLists(itemList: ItemList[], listDocs: ListDocs) : ItemList[] {
     let sortedLists = cloneDeep(itemList);
     sortedLists.sort(function (a: ItemList, b: ItemList) {
         let aList: ListDoc | undefined = listDocs.find((listDoc: ListDoc) => (listDoc._id === a.listID));
