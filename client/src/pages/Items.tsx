@@ -86,9 +86,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   },[baseSearchItemRowsLoaded, globalData.globalItemsLoading, globalData.globalItemDocs, baseSearchItemDocs, pageState.selectedListOrGroupID, pageState.selectedListType, listDocs])
 
   function filterAndCheckRows() {
-    console.log("FACR", cloneDeep({crit: searchState.searchCriteria, isfoc: searchState.isFocused}));
     let filterRows=filterSearchRows(searchRows, searchState.searchCriteria)
-//    if (filterRows.length > 0 ) {
     if (filterRows.length > 0 && searchState.isFocused ) {
       setSearchState(prevState => ({...prevState, filteredSearchRows: filterRows, isOpen: true }));
     } else {
