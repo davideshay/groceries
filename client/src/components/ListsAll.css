@@ -3,17 +3,16 @@ ion-button.indented {
     margin-bottom: 0px;
 }
 
+ion-item.menu-item {
+    --min-height: 3px;
+}
+
 ion-button.standard-text-button {
-/*     color: var(--color-primary);
- */  
-    margin-right: 4px;
+    color: var(--color-primary); 
+    margin-right: 0px;
     margin-top: 0px;
     margin-right: 0px;
     text-overflow: ellipsis;
-    min-height: 2px;
+    min-height: 3px;
 }
 
-ion-button.standard-text-button::part(native) {
-    color:orangered;
-    min-height: 6px;
-}

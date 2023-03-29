@@ -25,9 +25,9 @@ const ListsAll: React.FC<ListsAllProps> = (props: ListsAllProps) => {
       baseRow = (<IonItem key={rowKey}>{rowName}</IonItem>)
     } else {
       baseRow = (
-      <IonItem className="" key={rowKey} >
-        <IonButton slot="start" size="default" className={"standard-text-button "+extraClass} fill="clear" routerLink={(showLinkID)}>{rowName}</IonButton>
-        <IonButton fill="clear" className="standard-text-button" routerLink={editLinkID} slot="end">
+      <IonItem className="menu-item ion-no-padding" key={rowKey} >
+        <IonButton slot="start" size="default" className={"ion-no-margin standard-text-button "+extraClass} fill="clear" routerLink={(showLinkID)}>{rowName}</IonButton>
+        <IonButton fill="clear" className="ion-no-margin standard-text-button" routerLink={editLinkID} slot="end">
         <IonIcon slot="end" icon={pencilOutline}></IonIcon>
         </IonButton>
       </IonItem>)
