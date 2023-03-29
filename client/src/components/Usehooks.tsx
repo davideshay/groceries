@@ -493,7 +493,6 @@ export function useAddListToAllItems() {
   const db = usePouch();
   return useCallback(
     async ({listGroupID, listID, listDocs} : {listGroupID: string, listID: string, listDocs: ListDocs}) => {
-          console.log(cloneDeep({listGroupID,listID,listDocs}));
           let updateSuccess=true;
           let itemRecords: PouchDB.Find.FindResponse<ItemDoc>
           itemRecords = await db.find({
@@ -503,12 +502,9 @@ export function useAddListToAllItems() {
             sort: [ "type","name"]
           }) as PouchDB.Find.FindResponse<ItemDoc>;
           for (let i = 0; i < itemRecords.docs.length; i++) {
-            console.log("adding list to item: ",itemRecords.docs[i].name)
             const item = itemRecords.docs[i];
-            console.log("item: ", cloneDeep(item));
             let itemUpdated=false;
             let listIdx = item.lists.findIndex((l: ItemList) => l.listID === listID)
-            console.log("listIdx is: ",listIdx)
             if (listIdx === -1) {
               let newList = cloneDeep(ItemListInit);
               newList.listID = listID;
@@ -524,7 +520,6 @@ export function useAddListToAllItems() {
               itemUpdated=true;
             }
             if (itemUpdated) {
-              console.log("item updated, about to updat/add:",cloneDeep(item));
               let curDateStr=(new Date()).toISOString()
               item.updatedAt = curDateStr;
               let updateResponse = await db.put(item);

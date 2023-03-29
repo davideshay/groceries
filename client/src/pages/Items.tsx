@@ -88,6 +88,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   function filterAndCheckRows() {
     let filterRows=filterSearchRows(searchRows, searchState.searchCriteria)
     if (filterRows.length > 0 && searchState.isFocused ) {
+      console.log("FACR, setting open to true")
       setSearchState(prevState => ({...prevState, filteredSearchRows: filterRows, isOpen: true }));
     } else {
       setSearchState(prevState => ({...prevState, filteredSearchRows: [], isOpen: false}));
@@ -111,7 +112,8 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   function updateSearchCriteria(event: CustomEvent) {
     let toOpen=true;
-    if (searchState.filteredSearchRows.length === 0) { toOpen = false}
+//    if (searchState.filteredSearchRows.length === 0) { toOpen = false}
+    if (event.detail.value.length === 0) {toOpen = false}
     setSearchState(prevState => ({...prevState, event: event, searchCriteria: event.detail.value, isOpen: toOpen, isFocused: true}));
     origSearchCriteria.current=event.detail.value;
   }
@@ -337,13 +339,11 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         for (let i = 0; i < updatedItem.lists.length; i++) {
           let willUpdate = (updatedItem.lists[i].listID === listID || globalState.settings.completeFromAllLists) && updatedItem.lists[i].completed;
           if (!willUpdate) {continue}
-          console.log("did update to list...");
           updatedItem.lists[i].active = false;
           itemUpdated = true;
         }
         if (itemUpdated) {
           let result = await updateItemInList(updatedItem);
-          console.log("results of updateItemInList...",result);
           if (!result.successful) {
             presentToast({message: "Error deleting items from list. Please retry.",
               duration: 1500, position: "middle"})
