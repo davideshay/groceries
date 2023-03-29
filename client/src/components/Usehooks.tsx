@@ -479,7 +479,10 @@ export function useConflicts() : { conflictsError: boolean, conflictDocs: Confli
     sort: [ "type", "docType","updatedAt" ]
   })
 
+  console.log("UC Rendering...",cloneDeep({mostRecentDate, rdlc: remoteDBCreds.lastConflictsViewed}))
+
   useEffect( () => {
+    console.log("UC UE",remoteDBCreds.lastConflictsViewed,mostRecentDate);
     const oneDayOldDate=new Date();
     oneDayOldDate.setDate(oneDayOldDate.getDate()-Number(globalState.settings.daysOfConflictLog));
     const lastConflictsViewed = new Date(String(remoteDBCreds.lastConflictsViewed))

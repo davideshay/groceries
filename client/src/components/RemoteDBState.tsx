@@ -137,6 +137,8 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     const [remoteDBState,setRemoteDBState] = useState<RemoteDBState>(initialRemoteDBState);
     const loginAttempted = useRef(false);
     const remoteDBCreds = useRef<DBCreds>(DBCredsInit);
+    const [, forceUpdateState] = React.useState<{}>();
+    const forceUpdate = React.useCallback(() => forceUpdateState({}), []);
     const db=usePouch();
 
     function setSyncStatus(status: number) {
@@ -146,10 +148,12 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     function setDBCredsValue(key: string, value: string | null) { 
         (remoteDBCreds.current as any)[key] = value;
         setPrefsDBCreds();
+        forceUpdate();
     }
 
     function setRemoteDBCreds(newCreds: DBCreds) {
         remoteDBCreds.current = newCreds;
+        forceUpdate();
     }
 
     function setConnectionStatus(value: ConnectionStatus) {
@@ -426,6 +430,8 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         }, secondsToRefresh*1000);
         return () => clearTimeout(refreshTimer);
     },[remoteDBState.accessJWTExpirationTime])
+
+    console.log("RemoteDBState rendering... ",cloneDeep({remoteDBState, remoteDBCreds}));
 
     let value: RemoteDBStateContextType = {remoteDBState, remoteDBCreds: remoteDBCreds.current, remoteDB: globalRemoteDB as PouchDB.Database<{}> , setRemoteDBState, setRemoteDBCreds, startSync, checkDBUUID, assignDB, setDBCredsValue, setConnectionStatus};
     return (
