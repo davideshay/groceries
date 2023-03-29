@@ -398,7 +398,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
 
     useEffect(() => {
         if (!loginAttempted.current && !(remoteDBState.connectionStatus === ConnectionStatus.navToLoginScreen) && !(remoteDBState.connectionStatus === ConnectionStatus.onLoginScreen)) {
-            console.log("about to attempt full login...");
+            console.log("STATUS: about to attempt full login...");
             attemptFullLogin()
             loginAttempted.current = true;
         }
@@ -423,15 +423,13 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     useEffect(() => {
         if (remoteDBState.accessJWTExpirationTime === 0) {return;}
         const secondsToRefresh = Number(remoteDBState.accessJWTExpirationTime) - (Math.round(Date.now() / 1000)) - secondsBeforeAccessRefresh;
-        console.log("expires in seconds:",secondsToRefresh);
+        console.log("STATUS: JWT expires in seconds:",secondsToRefresh);
         const refreshTimer = setTimeout(() => {
-            console.log("refreshing token now...");
+            console.log("STATUS: refreshing token now...");
             refreshTokenAndUpdate();
         }, secondsToRefresh*1000);
         return () => clearTimeout(refreshTimer);
     },[remoteDBState.accessJWTExpirationTime])
-
-    console.log("RemoteDBState rendering... ",cloneDeep({remoteDBState, remoteDBCreds}));
 
     let value: RemoteDBStateContextType = {remoteDBState, remoteDBCreds: remoteDBCreds.current, remoteDB: globalRemoteDB as PouchDB.Database<{}> , setRemoteDBState, setRemoteDBCreds, startSync, checkDBUUID, assignDB, setDBCredsValue, setConnectionStatus};
     return (
