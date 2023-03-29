@@ -3,7 +3,6 @@ import { cloudDoneOutline, cloudDownloadOutline, cloudOfflineOutline, warningOut
 import { useContext } from 'react';
 import { RemoteDBStateContext, SyncStatus } from '../components/RemoteDBState';
 import { useConflicts } from './Usehooks';
-import { HistoryProps } from './DataTypes';
 
 const SyncIndicator: React.FC = () => {
     const { remoteDBState } = useContext(RemoteDBStateContext);

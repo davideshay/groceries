@@ -1,8 +1,7 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonButtons, 
-  IonMenuButton, IonButton, IonFab, IonFabButton, IonIcon, IonLoading } from '@ionic/react';
+import { IonContent, IonPage, IonList, IonItem, IonButton, IonFab,
+     IonFabButton, IonIcon } from '@ionic/react';
 import { useContext, useRef } from 'react';
 import { add } from 'ionicons/icons';
-import SyncIndicator from '../components/SyncIndicator';
 import { HistoryProps } from '../components/DataTypes';
 import { CategoryDoc } from '../components/DBSchema';
 import './Categories.css';

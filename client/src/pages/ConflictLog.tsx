@@ -1,5 +1,5 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonButtons, 
-  IonMenuButton, IonButton, IonLoading } from '@ionic/react';
+  IonMenuButton, IonButton } from '@ionic/react';
 import { useContext, useRef } from 'react';
 import SyncIndicator from '../components/SyncIndicator';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
@@ -8,7 +8,6 @@ import './Categories.css';
 import { useConflicts } from '../components/Usehooks';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
-import PageHeader from '../components/PageHeader';
 
 const ConflictLog: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { setDBCredsValue } = useContext(RemoteDBStateContext);

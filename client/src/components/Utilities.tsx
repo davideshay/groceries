@@ -58,7 +58,7 @@ export async function checkUserByEmailExists(email: string, remoteDBCreds: DBCre
 
 export async function getUsersInfo(userIDList: UserIDList,apiServerURL: string, accessJWT: string): Promise<UsersInfo> {
     let usersInfo: UsersInfo = cloneDeep(initUsersInfo);
-    if (accessJWT == "") { return(usersInfo); }
+    if (accessJWT === "") { return(usersInfo); }
     const usersUrl = apiServerURL+"/getusersinfo"
     if (!urlPatternValidation(usersUrl)) {return usersInfo}
     const options : HttpOptions = {
@@ -71,9 +71,8 @@ export async function getUsersInfo(userIDList: UserIDList,apiServerURL: string, 
       connectTimeout: apiConnectTimeout           
     };
     let response:HttpResponse;
-    let httpError=false;
     try { response = await CapacitorHttp.post(options); }
-    catch(err) {httpError=true; console.log("HTTP Error: ",err); return usersInfo}
+    catch(err) {console.log("HTTP Error: ",err); return usersInfo}
     if (response && response.data) {
         if (response.data.hasOwnProperty("users")) {
             usersInfo = response.data.users
@@ -87,7 +86,7 @@ export async function initialSetupActivities(db: PouchDB.Database, username: str
     const totalDocs = (await db.info()).doc_count
     const listGroupDocs = await db.find({ selector: { type: "listgroup", listGroupOwner: username, default: true},
          limit: totalDocs});
-    if (listGroupDocs.docs.length == 0) {
+    if (listGroupDocs.docs.length === 0) {
         console.log("STATUS: No default group found for ",username, "... creating now ...");
         const defaultListGroupDoc : ListGroupDoc = cloneDeep(ListGroupDocInit);
         defaultListGroupDoc.default = true;

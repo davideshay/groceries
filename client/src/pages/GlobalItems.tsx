@@ -1,11 +1,8 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonButtons, 
-  IonMenuButton, IonButton, IonLoading } from '@ionic/react';
+import { IonContent, IonPage, IonList, IonItem, IonButton } from '@ionic/react';
 import { useFind } from 'use-pouchdb';
 import { useRef } from 'react';
-import SyncIndicator from '../components/SyncIndicator';
 import { HistoryProps} from '../components/DataTypes';
 import { GlobalItemDocs } from '../components/DBSchema';
-import { cloneDeep } from 'lodash';
 
 import './GlobalItems.css';
 import ErrorPage from './ErrorPage';

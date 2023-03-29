@@ -1,11 +1,11 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput,
    IonItem, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonSelectOption,
    IonReorder, IonReorderGroup,ItemReorderEventDetail, IonButtons, IonMenuButton, 
-   useIonToast, IonFooter, IonIcon, useIonAlert, IonLoading } from '@ionic/react';
+   useIonToast, IonFooter, IonIcon, useIonAlert } from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext, useRef } from 'react';
-import { useUpdateGenericDocument, useCreateGenericDocument, useFriends, useGetOneDoc,
+import { useUpdateGenericDocument, useCreateGenericDocument, useGetOneDoc,
    useDeleteGenericDocument, useDeleteListFromItems, useAddListToAllItems } from '../components/Usehooks';
 import { cloneDeep, isEmpty } from 'lodash';
 import './List.css';
@@ -83,7 +83,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
       }
       else if (mode !== "new") {
         let newListRow = cloneDeep(listRows.find((lr: ListRow) => lr.listDoc._id === pageState.selectedListID));
-        if (newListRow == undefined) {return}
+        if (newListRow === undefined) {return}
         newPageState.listDoc = newListRow.listDoc;
         newPageState.listGroupID = newListRow.listGroupID;
         newPageState.listGroupOwner = newListRow.listGroupOwner;
@@ -114,11 +114,11 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   async function updateThisItem() {
-    if (pageState.listDoc.name == "" || pageState.listDoc.name == undefined || pageState.listDoc.name == null) {
+    if (pageState.listDoc.name === "" || pageState.listDoc.name === undefined || pageState.listDoc.name === null) {
       setPageState(prevState => ({...prevState,formError: "Must enter name for list"}));
       return false;
     }
-    if (pageState.listGroupID == null) {
+    if (pageState.listGroupID === null) {
       setPageState(prevState => ({...prevState,formError: "Must select a valid group ID"}));
       return false;
     }
@@ -223,7 +223,7 @@ function deletePrompt() {
   function catItem(id: string, active: boolean) {
     const actname=active ? "active" : "inactive"
     const catDoc : CategoryDoc | undefined = (categoryDocs as CategoryDoc[]).find(element => (element._id === id))
-    if (catDoc != undefined) {
+    if (catDoc !== undefined) {
       let name = catDoc.name;
       return (
         <IonItem key={pageState.selectedListID+"-"+actname+"-"+id}>

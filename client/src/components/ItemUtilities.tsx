@@ -48,7 +48,7 @@ export function getAllSearchRows(allItemDocs: ItemDocs, listID: string,listType:
     globalItemDocs.forEach((globalItem) => {
       let itemExistsInSearchIdx = searchRows.findIndex((sr) => (sr.globalItemID === globalItem._id || sr.itemName === globalItem.name));
       let itemExistsInItem = false;
-      if (listType == RowType.list) {
+      if (listType === RowType.list) {
         let itemNameMatch = allItemDocs.find((item) => (item.name.toUpperCase() === globalItem.name.toUpperCase()));
         if (itemNameMatch !== undefined) {
             itemNameMatch.lists.forEach((list) => {
@@ -100,35 +100,35 @@ export function filterSearchRows(searchRows: ItemSearch[] | undefined, searchCri
 
 function isListPartOfGroup(listID: string, listGroupID: string, listCombinedRows: ListCombinedRows): boolean {
     let isPart = false;
-    let lcr = listCombinedRows.find((el) => (el.rowType==RowType.list && el.listOrGroupID==listID))
+    let lcr = listCombinedRows.find((el) => (el.rowType===RowType.list && el.listOrGroupID===listID))
     if (lcr == undefined) return isPart;
-    isPart = (lcr.listDoc.listGroupID == listGroupID)
+    isPart = (lcr.listDoc.listGroupID === listGroupID)
     return isPart;
 }
 
 function findRightList(itemDoc: ItemDoc, listType: RowType, listOrGroupID: string, listCombinedRow: ListCombinedRow, listCombinedRows: ListCombinedRows) {
     let list: ItemList | undefined;
 // for requested row type of list, just match on listID
-    if (listType == RowType.list) {
+    if (listType === RowType.list) {
         list = itemDoc.lists.find((list : ItemList) => (list.listID == listOrGroupID));
-        if (list == undefined) {return undefined}
+        if (list === undefined) {return undefined}
         else
         {return cloneDeep(list)}
     }
 // otherwise, for group type of list, just find the first list that is a member of the listgroup    
     for (let i = 0; i < itemDoc.lists.length; i++) {
-        if ( listCombinedRow.listGroupID == itemDoc.listGroupID && isListPartOfGroup(itemDoc.lists[i].listID,listOrGroupID,listCombinedRows) ) {
+        if ( listCombinedRow.listGroupID === itemDoc.listGroupID && isListPartOfGroup(itemDoc.lists[i].listID,listOrGroupID,listCombinedRows) ) {
             list = itemDoc.lists[i];
             break
         }
     }
-    if (list == undefined) { return undefined} else {return cloneDeep(list)}
+    if (list === undefined) { return undefined} else {return cloneDeep(list)}
 }
 
 export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRow[], categoryDocs: CategoryDoc[], uomDocs: UomDoc[], listType: RowType, listOrGroupID: string) {
     let itemRows: Array<ItemRow> =[];
     let listRow=listCombinedRows.find((el: ListCombinedRow) => (el.rowType === listType && el.listOrGroupID === listOrGroupID));
-    if (listRow == undefined) {return itemRows};
+    if (listRow === undefined) {return itemRows};
     let sortedItemDocs: ItemDocs = cloneDeep(itemDocs);
     if (sortedItemDocs.length > 0) {
         sortedItemDocs.sort(function(a,b) {
@@ -140,9 +140,9 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
         itemRow.itemID = String(itemDoc._id);
         itemRow.itemName = itemDoc.name;
         let list = findRightList(itemDoc,listType,listOrGroupID,(listRow as ListCombinedRow), listCombinedRows);
-        if (list == undefined) {return itemRows};
+        if (list === undefined) {return itemRows};
         itemRow.categoryID = list.categoryID;
-        if (itemRow.categoryID == null) {
+        if (itemRow.categoryID === null) {
             itemRow.categoryName = "Uncategorized";
             itemRow.categorySeq = -1;
             itemRow.categoryColor = "primary"
@@ -150,7 +150,7 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
             let thisCat = (categoryDocs.find((element: CategoryDoc) => (element._id === itemRow.categoryID)) as CategoryDoc);
             if (thisCat != undefined) {
                 itemRow.categoryName = thisCat.name;
-                if (thisCat.color == undefined) {
+                if (thisCat.color === undefined) {
                     itemRow.categoryColor = "primary"
                 } else { itemRow.categoryColor = thisCat.color; };    
             } else {
@@ -183,7 +183,7 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
             quantityUOMDesc = itemRow.quantity.toString() + ((itemRow.uomDesc == "" ? "" : " " + itemRow.uomDesc));
             itemRow.quantityUOMDesc = quantityUOMDesc;
         }
-        if (listType == RowType.list) {
+        if (listType === RowType.list) {
             const listIdx = itemDoc.lists.findIndex((element: ItemList) => (element.listID === listOrGroupID))
             if (listIdx === -1) {itemRow.completed=false} else {
                 itemRow.completed = itemDoc.lists[listIdx].completed;
@@ -210,7 +210,7 @@ export function sortedItemLists(itemList: ItemList[], listDocs: ListDocs) {
     sortedLists.sort(function (a: ItemList, b: ItemList) {
         let aList: ListDoc | undefined = listDocs.find((listDoc: ListDoc) => (listDoc._id == a.listID));
         let bList: ListDoc | undefined = listDocs.find((listDoc: ListDoc) => (listDoc._id == b.listID));
-        if (aList == undefined || bList == undefined) {return 0 }
+        if (aList === undefined || bList === undefined) {return 0 }
         else { return aList.name.toUpperCase().localeCompare(bList.name.toUpperCase());
         }
     })
@@ -263,7 +263,7 @@ export function getCommonKey(stateItemDoc: ItemDoc, key: string, listDocs: ListD
       listGroupID = String(baseList?.listGroupID);  
     }
     listRows.forEach((listRow: ListRow) => {
-      if (listRow.listGroupID == listGroupID) {
+      if (listRow.listGroupID === listGroupID) {
         let newListDoc: ItemList ={
           listID: String(listRow.listDoc._id),
           quantity: 1,
@@ -275,9 +275,9 @@ export function getCommonKey(stateItemDoc: ItemDoc, key: string, listDocs: ListD
           completed: false,
           stockedAt: true
         };
-        if (globalState.settings.addListOption == AddListOptions.addToAllListsAutomatically) {
+        if (globalState.settings.addListOption === AddListOptions.addToAllListsAutomatically) {
           newListDoc.active = true;
-        } else if (listRow.listDoc._id !== globalState.callingListID && globalState.callingListType != RowType.listGroup) {
+        } else if (listRow.listDoc._id !== globalState.callingListID && globalState.callingListType !== RowType.listGroup) {
           newListDoc.active = false;
           newListDoc.stockedAt = false;
           newListDoc.quantity = 0;
@@ -335,7 +335,7 @@ export async function checkNameInGlobal(db: PouchDB.Database, name: string) {
     let globalItemDocs = null;
     try { globalItemDocs = await db.query('_utilities/ucase-globalitems',{ key: name.toUpperCase()}) }
     catch(e) {console.log(e)};
-    if (globalItemDocs != null && globalItemDocs.hasOwnProperty("rows") && globalItemDocs.rows.length > 0) {
+    if (globalItemDocs !== null && globalItemDocs.hasOwnProperty("rows") && globalItemDocs.rows.length > 0) {
         console.log(globalItemDocs);
         if (globalItemDocs.rows[0].key === name.toUpperCase()) {nameExists = true}
     }

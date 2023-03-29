@@ -1,12 +1,11 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonLoading,
-  IonButtons, IonMenuButton, IonItem, IonLabel, IonFooter, IonTextarea, NavContext } from '@ionic/react';
+import { IonContent,IonPage, IonButton, IonList,
+  IonItem, IonLabel, IonFooter, IonTextarea, NavContext } from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useGetOneDoc} from '../components/Usehooks';
 import { useContext, useRef } from 'react';
 import { isEqual, pull } from 'lodash';
 import { HistoryProps } from '../components/DataTypes';
 import './Category.css';
-import SyncIndicator from '../components/SyncIndicator';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import PageHeader from '../components/PageHeader';

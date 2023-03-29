@@ -1,14 +1,12 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, 
-  IonButtons, IonMenuButton, IonItem, IonLabel, IonFooter, NavContext, IonIcon,
-  IonLoading } from '@ionic/react';
+import { IonContent, IonPage,IonButton, IonList, IonInput, 
+  IonItem, IonFooter, NavContext, IonIcon,
+  } from '@ionic/react';
 import { useParams } from 'react-router-dom';
-import { useFind, usePouch } from 'use-pouchdb';
-import { useState,  useContext, useRef } from 'react';
+import { useContext, useRef } from 'react';
 import { useGetOneDoc } from '../components/Usehooks';
 import './Category.css';
 import {  HistoryProps} from '../components/DataTypes';
 import { CategoryDoc, UomDoc } from '../components/DBSchema';
-import SyncIndicator from '../components/SyncIndicator';
 import { closeOutline} from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
@@ -18,11 +16,9 @@ import PageHeader from '../components/PageHeader';
 const GlobalItem: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
   if ( mode === "new" ) { routeID = "<new>"};
-  const [formError,setFormError] = useState<string>("");
   const { doc: globalItemDoc, loading: globalItemLoading, dbError: globalItemError} = useGetOneDoc(routeID);
   const globalData = useContext(GlobalDataContext);
   const {goBack} = useContext(NavContext);
-  const db = usePouch();
   const screenLoading = useRef(true);
 
   if ( globalItemError || globalData.uomError || globalData.categoryError) { return (
@@ -37,10 +33,10 @@ console.log(globalData.uomLoading, globalData.categoryLoading);
 };
   
   screenLoading.current=false;
-  let curUOMItem : UomDoc | undefined = (globalData.uomDocs as UomDoc[]).find((uom) => (uom.name == globalItemDoc.defaultUOM));
-  let curUOM = (curUOMItem == undefined) ? "Undefined" : curUOMItem.description;
-  let curCategoryItem : CategoryDoc | undefined = (globalData.categoryDocs as CategoryDoc[]).find((cat) => (cat._id == globalItemDoc.defaultCategoryID));
-  let curCategory = (curCategoryItem == undefined) ? "Undefined" : curCategoryItem.name;
+  let curUOMItem : UomDoc | undefined = (globalData.uomDocs as UomDoc[]).find((uom) => (uom.name === globalItemDoc.defaultUOM));
+  let curUOM = (curUOMItem === undefined) ? "Undefined" : curUOMItem.description;
+  let curCategoryItem : CategoryDoc | undefined = (globalData.categoryDocs as CategoryDoc[]).find((cat) => (cat._id === globalItemDoc.defaultCategoryID));
+  let curCategory = (curCategoryItem === undefined) ? "Undefined" : curCategoryItem.name;
 
   return (
     <IonPage>
@@ -60,7 +56,6 @@ console.log(globalData.uomLoading, globalData.categoryLoading);
           <IonButton class="ion-float-right" fill="outline" color="secondary" onClick={() => goBack("/categories")}><IonIcon slot="start" icon={closeOutline}></IonIcon>Go Back</IonButton>
       </IonContent>
       <IonFooter>
-        <IonLabel>{formError}</IonLabel>
       </IonFooter>
     </IonPage>
   );

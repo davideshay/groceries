@@ -86,11 +86,11 @@ export function errorCheckCreds({credsObj,background, creatingNewUser = false, p
     function setError(err: string) {
         credsCheck.credsError = true; credsCheck.errorText=err;
     }
-    if (background && (credsObj.refreshJWT == null || credsObj.refreshJWT == "")) {
+    if (background && (credsObj.refreshJWT === null || credsObj.refreshJWT === "")) {
         setError("No existing credentials found (refresh)"); return credsCheck;}
-    if (credsObj.apiServerURL == null || credsObj.apiServerURL == "") {
+    if (credsObj.apiServerURL === null || credsObj.apiServerURL === "") {
         setError("No API Server URL entered"); return credsCheck;}    
-    if ((background) && (credsObj.couchBaseURL == null || credsObj.couchBaseURL == "")) {
+    if ((background) && (credsObj.couchBaseURL === null || credsObj.couchBaseURL === "")) {
         setError("No CouchDB URL found"); return credsCheck;}
     if (!urlPatternValidation(credsObj.apiServerURL)) {
         setError("Invalid API URL"); return credsCheck;}
@@ -100,9 +100,9 @@ export function errorCheckCreds({credsObj,background, creatingNewUser = false, p
         credsObj.apiServerURL = String(credsObj.apiServerURL?.slice(0,-1))}
     if (String(credsObj.couchBaseURL).endsWith("/")) {
         credsObj.couchBaseURL = String(credsObj.couchBaseURL?.slice(0,-1))}
-    if ((background) && (credsObj.database == null || credsObj.database == "")) {
+    if ((background) && (credsObj.database === null || credsObj.database === "")) {
         setError("No database name found"); return credsCheck;}
-    if (credsObj.dbUsername == null || credsObj.dbUsername == "") {
+    if (credsObj.dbUsername === null || credsObj.dbUsername === "") {
         setError("No database user name entered"); return credsCheck;}
     if ((creatingNewUser) && credsObj.dbUsername.length < 5) {
         setError("Please enter username of 6 characters or more");
@@ -111,16 +111,16 @@ export function errorCheckCreds({credsObj,background, creatingNewUser = false, p
         setError("Invalid username format"); return credsCheck; }
     if ((creatingNewUser) && !fullnamePatternValidation(String(credsObj.fullName))) {
         setError("Invalid full name format"); return credsCheck; }
-    if ((creatingNewUser) && (credsObj.email == null || credsObj.email == "")) {
+    if ((creatingNewUser) && (credsObj.email === null || credsObj.email === "")) {
         setError("No email entered"); return credsCheck;}
     if ((creatingNewUser) && (!emailPatternValidation(String(credsObj.email)))) {
         setError("Invalid email format"); return credsCheck;}
-    if ((!background && !creatingNewUser) && (password == undefined || password == "")) {
+    if ((!background && !creatingNewUser) && (password === undefined || password === "")) {
         setError("No password entered"); return credsCheck;}
     if ((creatingNewUser) && password.length < 5) {
         setError("Password not long enough. Please have 6 character or longer password");
         return credsCheck;}
-    if ((creatingNewUser) && (password != verifyPassword)) {
+    if ((creatingNewUser) && (password !== verifyPassword)) {
         setError("Passwords do not match"); return credsCheck;}
     return credsCheck;
 }

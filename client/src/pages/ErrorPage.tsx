@@ -1,4 +1,4 @@
-import { IonHeader, IonPage, IonTitle, IonToolbar, IonLoading, IonContent,IonItem } from '@ionic/react';
+import { IonHeader, IonPage, IonTitle, IonToolbar, IonContent,IonItem } from '@ionic/react';
 
 interface ErrorRequiredProps {
 

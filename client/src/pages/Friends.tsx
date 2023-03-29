@@ -1,5 +1,5 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonLabel,
-        IonMenuButton, IonButtons, IonButton, useIonToast, IonLoading,
+import { IonContent, IonPage, IonList, IonItem, IonLabel,
+        IonButton, useIonToast, 
         IonFab, IonFabButton, IonIcon, IonInput, IonAlert } from '@ionic/react';
 import { useState, useContext, Fragment, useRef } from 'react';
 import { Clipboard } from '@capacitor/clipboard';
@@ -13,7 +13,6 @@ import { RemoteDBStateContext } from '../components/RemoteDBState';
 import { FriendRow, ResolvedFriendStatus, HistoryProps } from '../components/DataTypes';
 import { FriendStatus } from '../components/DBSchema';
 import { checkUserByEmailExists, emailPatternValidation, apiConnectTimeout } from '../components/Utilities';
-import SyncIndicator from '../components/SyncIndicator';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import PageHeader from '../components/PageHeader';
@@ -133,7 +132,7 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
     friendsElem=[];
     if (friendRows.length > 0) {
       friendRows.forEach((friendRow: FriendRow) => {
-        const itemKey = (friendRow.targetUserName == "" || friendRow.targetUserName == null) ? friendRow.targetEmail : friendRow.targetUserName;
+        const itemKey = (friendRow.targetUserName === "" || friendRow.targetUserName === null) ? friendRow.targetEmail : friendRow.targetUserName;
         let elem=<IonItem key={itemKey}>{URLButtonElem(friendRow)}{statusItem(friendRow)}<IonLabel>{friendRow.targetEmail}</IonLabel><IonLabel>{friendRow.targetFullName}</IonLabel></IonItem>
         friendsElem.push(elem);
       });

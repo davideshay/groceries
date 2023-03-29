@@ -1,15 +1,12 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonButtons, 
-  IonMenuButton, IonButton  } from '@ionic/react';
+import { IonContent,  IonPage, IonList, IonItem, IonButton  } from '@ionic/react';
 import { useRef } from 'react';
 import { useItems } from '../components/Usehooks';
-import SyncIndicator from '../components/SyncIndicator';
 import { HistoryProps, RowType} from '../components/DataTypes';
 import { ItemDoc } from '../components/DBSchema';
 import './AllItems.css';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import PageHeader from '../components/PageHeader';
-import { cloneDeep } from 'lodash';
 
 // The AllItems component is a master editor of all of the known items in the database.
 // Each item has a name, along with data about each list the item is on (list ID, quantity, count of number of times bought,

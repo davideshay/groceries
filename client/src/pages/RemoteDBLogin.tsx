@@ -100,7 +100,6 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
             message: "This application does not support a detected newer version of the schema. Please upgrade the app and try again.",
             buttons: [{text:"OK",handler: () => exitApp()}]
           });
-
           return;
         }
         if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_no_uuid_on_server) {
@@ -216,7 +215,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     let credsCheck = errorCheckCreds({credsObj: remoteDBCreds,background: false,creatingNewUser: true,password: remoteState.password,verifyPassword: remoteState.verifyPassword});
     if (!credsCheck.credsError) {
       createResponse = await createNewUser(remoteDBState,remoteDBCreds,String(remoteState.password));
-      if (createResponse == undefined) { 
+      if (createResponse === undefined) { 
         setRemoteState(prevState => ({...prevState, formError: "Error creating user"}));
         await dismiss();
         return;
@@ -262,7 +261,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function resetPassword() {
-    if (remoteDBCreds.dbUsername == "" || remoteDBCreds.dbUsername == null || remoteDBCreds.dbUsername == undefined) {
+    if (remoteDBCreds.dbUsername === "" || remoteDBCreds.dbUsername === null || remoteDBCreds.dbUsername === undefined) {
       setRemoteState(prevState => ({...prevState, formError: "Must enter username to reset password"}))
     } else {
       presentAlert({

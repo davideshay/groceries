@@ -1,16 +1,13 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, 
-  IonButtons, IonMenuButton, IonItem, IonLabel, NavContext, IonIcon,
-  useIonAlert, IonLoading } from '@ionic/react';
+import { IonContent, IonPage, IonButton, IonList, IonInput, 
+ IonItem, IonLabel, NavContext, IonIcon, useIonAlert} from '@ionic/react';
 import { useParams } from 'react-router-dom';
-import { useFind, usePouch } from 'use-pouchdb';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteCategoryFromItems, useDeleteGenericDocument,
-   useDeleteCategoryFromLists, useGetOneDoc, useLists, useItems } from '../components/Usehooks';
+   useDeleteCategoryFromLists, useGetOneDoc, useItems } from '../components/Usehooks';
 import { cloneDeep } from 'lodash';
 import './Category.css';
 import { PouchResponse, HistoryProps, ListRow, RowType} from '../components/DataTypes';
 import { ItemDoc, ItemList, CategoryDoc, InitCategoryDoc } from '../components/DBSchema';
-import SyncIndicator from '../components/SyncIndicator';
 import { addOutline, closeOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
@@ -33,13 +30,12 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { doc: categoryDoc, loading: categoryLoading} = useGetOneDoc(routeID);
   const { dbError: itemError, itemRowsLoaded, itemRows } = useItems({selectedListGroupID: null, isReady: true, needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const {goBack} = useContext(NavContext);
-  const db = usePouch();
   const screenLoading = useRef(true);
   const globalData = useContext(GlobalDataContext);
 
   useEffect( () => {
     let newCategoryDoc = cloneDeep(stateCategoryDoc);
-    if (!globalData.categoryLoading) {
+    if (!categoryLoading) {
       if (mode === "new" && needInitCategoryDoc) {
         newCategoryDoc = {type: "category", name: "", color:"#888888"}
         setNeedInitCategoryDoc(false);
@@ -63,13 +59,13 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   async function updateThisCategory() {
     setFormError("");
-    if (stateCategoryDoc.name == undefined || stateCategoryDoc.name == "" || stateCategoryDoc.name == null) {
+    if (stateCategoryDoc.name === undefined || stateCategoryDoc.name === "" || stateCategoryDoc.name === null) {
       setFormError("Must enter a name");
       return false;
     }
     let categoryDup=false;
     (globalData.categoryDocs as CategoryDoc[]).forEach((doc) => {
-      if ((doc._id !== stateCategoryDoc._id) && (doc.name.toUpperCase() == stateCategoryDoc.name.toUpperCase())) {
+      if ((doc._id !== stateCategoryDoc._id) && (doc.name.toUpperCase() === stateCategoryDoc.name.toUpperCase())) {
         categoryDup = true;
       }
     });
@@ -92,7 +88,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   
   async function getNumberOfItemsUsingCategory() {
     let numResults = 0;
-    if (stateCategoryDoc == null) return numResults;
+    if (stateCategoryDoc === null) return numResults;
     itemRows.forEach( (ir: ItemDoc) => {
       ir.lists.forEach( (list: ItemList) => {
         if (list.categoryID === stateCategoryDoc._id) {
@@ -105,7 +101,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   async function getNumberOfListsUsingCategory() {
     let numResults = 0;
-    if (stateCategoryDoc == null) return numResults;
+    if (stateCategoryDoc === null) return numResults;
     globalData.listRows.forEach( (lr: ListRow) => {
       if (lr.listDoc.categories.includes(String(stateCategoryDoc._id))) {
         numResults++;
@@ -158,7 +154,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
     
     }
 
-  if (stateCategoryDoc.color == undefined) {setStateCategoryDoc((prevState) => ({...prevState,color:"#888888"}))};
+  if (stateCategoryDoc.color === undefined) {setStateCategoryDoc((prevState) => ({...prevState,color:"#888888"}))};
 
   return (
     <IonPage>

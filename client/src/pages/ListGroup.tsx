@@ -1,7 +1,6 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput,
    IonItem, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonSelectOption,
-  IonButtons, IonMenuButton, IonLoading,
-   useIonToast, IonIcon, useIonAlert } from '@ionic/react';
+  IonButtons, IonMenuButton, useIonToast, IonIcon, useIonAlert } from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext, useRef } from 'react';
@@ -105,7 +104,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
       });
       getUI(userIDList);
     }
-  },[listGroupLoading, listGroupDoc, listRowsLoaded,useFriendState,friendRows, categoryLoading,categoryDocs,pageState.selectedListGroupID, remoteDBState.accessJWT]);
+  },[listGroupLoading, listGroupDoc, listRowsLoaded, mode, useFriendState,friendRows, categoryLoading,categoryDocs,pageState.selectedListGroupID, remoteDBState.accessJWT]);
 
   if (listError || listGroupError  || useFriendState === UseFriendState.error || categoryError) {
     <ErrorPage errorText="Error Loading List Group Information... Restart."></ErrorPage>
@@ -119,7 +118,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   screenLoading.current=false;
 
   async function updateThisItem() {
-    if (pageState.listGroupDoc.name == "" || pageState.listGroupDoc.name == undefined || pageState.listGroupDoc.name == null) {
+    if (pageState.listGroupDoc.name === "" || pageState.listGroupDoc.name === undefined || pageState.listGroupDoc.name === null) {
       setPageState(prevState => ({...prevState,formError: "Must enter name for list group"}));
       return false;
     }
@@ -169,7 +168,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   let assignedListsElem=[];
   assignedListsElem.push(<IonItemDivider key="assigneddivider">Lists assigned to this group:</IonItemDivider>)
   listCombinedRows.forEach((lcr: ListCombinedRow)  => {
-    if (lcr.rowType == RowType.list && lcr.listGroupID == pageState.selectedListGroupID) {
+    if (lcr.rowType === RowType.list && lcr.listGroupID === pageState.selectedListGroupID) {
       assignedListsElem.push(<IonItem key={lcr.rowKey}>{lcr.rowName}</IonItem>)
     }
   });
@@ -258,7 +257,7 @@ function deletePrompt() {
   let ownListGroupsCount=0;
   for (let i = 0; i < listCombinedRows.length; i++) {
     if (listCombinedRows[i].rowType === RowType.listGroup && 
-       listCombinedRows[i].listGroupOwner == remoteDBCreds.dbUsername ) {
+       listCombinedRows[i].listGroupOwner === remoteDBCreds.dbUsername ) {
         ownListGroupsCount++;
        }
   }
@@ -284,7 +283,7 @@ function deletePrompt() {
 
   let selectOptionListElem = (
     listCombinedRows.map((list: ListCombinedRow) => { 
-      if (list.rowType == RowType.listGroup) { return (
+      if (list.rowType === RowType.listGroup) { return (
       <IonSelectOption key={list.rowKey} value={list.listGroupID}>
         {list.listGroupName}
       </IonSelectOption>) }

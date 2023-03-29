@@ -13,7 +13,7 @@ import './Item.css';
 import ItemLists from '../components/ItemLists';
 import { getCommonKey, createEmptyItemDoc, checkNameInGlobal  } from '../components/ItemUtilities';
 import { PouchResponse, ListRow, RowType } from '../components/DataTypes';
-import { UomDoc, ItemDoc, ItemDocInit, ItemList, ItemListInit, CategoryDoc, GlobalItemDocs } from '../components/DBSchema';
+import { UomDoc, ItemDoc, ItemDocInit, ItemList, ItemListInit, CategoryDoc } from '../components/DBSchema';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
@@ -50,7 +50,6 @@ const Item: React.FC = (props) => {
   }
 
   function addDeleteLists(itemDoc: ItemDoc) {
-    let adlms=performance.now();
     let newItemDoc: ItemDoc =cloneDeep(itemDoc);
     // loop through all the lists with the same listgroup. if the list is in the
     // listgroup, but not on the item add it.
@@ -112,13 +111,13 @@ const Item: React.FC = (props) => {
   async function updateThisItem() {
     setFormError(prevState => (""));
     let result: PouchResponse;
-    if (stateItemDoc.name == undefined || stateItemDoc.name=="" || stateItemDoc.name == null) {
+    if (stateItemDoc.name === undefined || stateItemDoc.name==="" || stateItemDoc.name === null) {
       setFormError(prevState => ("Name is required"));
       return false;
     }
     let alreadyExists = false;
     itemRows.forEach((ir) => {
-      if ( ir._id !== stateItemDoc._id  && ir.listGroupID == stateItemDoc.listGroupID && ir.name.toUpperCase() == stateItemDoc.name.toUpperCase()) {
+      if ( ir._id !== stateItemDoc._id  && ir.listGroupID === stateItemDoc.listGroupID && ir.name.toUpperCase() === stateItemDoc.name.toUpperCase()) {
         alreadyExists = true;
       }
     })
@@ -259,7 +258,7 @@ const Item: React.FC = (props) => {
     })
   }
   
-  let thisListGroup = globalData.listCombinedRows.find(el => el.listGroupID == stateItemDoc.listGroupID);
+  let thisListGroup = globalData.listCombinedRows.find(el => el.listGroupID === stateItemDoc.listGroupID);
   
   return (
     <IonPage>

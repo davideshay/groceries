@@ -1,14 +1,13 @@
 import { useCallback, useState, useEffect, useContext, useRef } from 'react'
 import { usePouch, useFind } from 'use-pouchdb'
 import { cloneDeep, pull } from 'lodash';
-import { DBCreds, RemoteDBStateContext, SyncStatus } from './RemoteDBState';
+import { RemoteDBStateContext, SyncStatus } from './RemoteDBState';
 import { FriendRow,InitFriendRow, ResolvedFriendStatus, ListRow, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType, UsersInfo } from './DataTypes';
 import { FriendDocs,FriendStatus, ListGroupDoc, ListDoc, ListDocs, ListGroupDocs, ListDocInit, ItemDocs, ItemDoc, ItemList, ItemListInit} from './DBSchema';
 import { GlobalStateContext } from './GlobalState';
 import { getUsersInfo } from './Utilities';
 import { getCommonKey } from './ItemUtilities';
 import { GlobalDataContext } from './GlobalDataProvider';
-import { nextTick } from 'process';
 
 export function useGetOneDoc(docID: string | null) {
   const db = usePouch();
@@ -92,7 +91,7 @@ export function useDeleteItemsInListGroup() {
       })
       for (let i = 0; i < itemResults.docs.length; i++) {
         const itemDoc: any = itemResults.docs[i];
-        try {db.remove(itemDoc)}
+        try {await db.remove(itemDoc)}
         catch(err) { response.successful= false; response.fullError = err; }
         }
       return response;
@@ -121,7 +120,7 @@ export function useDeleteListFromItems() {
           }
         }
         itemDoc.lists = newLists;
-        try {db.put(itemDoc)}
+        try {await db.put(itemDoc)}
         catch(err) {response.successful = false; response.fullError = err; }
       }
       return response;
@@ -143,14 +142,13 @@ export function useDeleteCategoryFromItems() {
           }
           })
       } catch(err) {response.successful=false; response.fullError="Could not find items"; return response}
-      if (itemResults != undefined && itemResults.hasOwnProperty('docs')) {
+      if (itemResults !== undefined && itemResults.hasOwnProperty('docs')) {
         for (let i = 0; i < itemResults.docs.length; i++) {
           const itemDoc: ItemDoc = cloneDeep(itemResults.docs[i]);
           itemDoc.lists.forEach(list => {
             list.categoryID = null;
           });
-          let updResults ;
-          try {updResults = db.put(itemDoc)}
+          try { await db.put(itemDoc) }
           catch(err) {response.successful = false; response.fullError = err; }
         }  
       }
@@ -173,14 +171,13 @@ export function useDeleteCategoryFromLists() {
           }
           })
       } catch(err) {response.successful=false; response.fullError="Could not find items"; return response}
-      if (listResults != undefined && listResults.hasOwnProperty('docs')) {
+      if (listResults !== undefined && listResults.hasOwnProperty('docs')) {
         for (let i = 0; i < listResults.docs.length; i++) {
           const listDoc: ListDoc = cloneDeep(listResults.docs[i]);
           let newCats = cloneDeep(listDoc.categories);
           pull(newCats,catID);
           listDoc.categories = newCats;
-          let updResults ;
-          try {updResults = db.put(listDoc)}
+          try {await db.put(listDoc)}
           catch(err) {response.successful = false; response.fullError = err; }
         }  
       }
@@ -219,7 +216,7 @@ export function useLists() : {dbError: boolean, listsLoading: boolean, listDocs:
         if (lgd.listGroupOwner !== remoteDBCreds.dbUsername || lgd.sharedWith.includes(remoteDBCreds.dbUsername)) {
           continue;
         }
-        if ( listDoc.listGroupID == lgd._id ) {
+        if ( listDoc.listGroupID === lgd._id ) {
           listGroupID=lgd._id
           listGroupName=lgd.name
           listGroupDefault=lgd.default;
@@ -243,7 +240,7 @@ export function useLists() : {dbError: boolean, listsLoading: boolean, listDocs:
 
     setListRows(newListRows);
     const sortedListGroups: ListGroupDocs = cloneDeep(globalData.listGroupDocs).filter( 
-      (lgd: ListGroupDoc) => lgd.listGroupOwner == remoteDBCreds.dbUsername ||
+      (lgd: ListGroupDoc) => lgd.listGroupOwner === remoteDBCreds.dbUsername ||
             lgd.sharedWith.includes(String(remoteDBCreds.dbUsername))
     );
     sortedListGroups.sort(function (a: ListGroupDoc, b: ListGroupDoc) {
@@ -266,7 +263,7 @@ export function useLists() : {dbError: boolean, listsLoading: boolean, listDocs:
       newCombinedRows.push(groupRow);
       for (let i = 0; i < newListRows.length; i++) {
         const listRow = newListRows[i];
-        if (listGroup._id == listRow.listGroupID) {
+        if (listGroup._id === listRow.listGroupID) {
           let listListRow: ListCombinedRow = {
             rowType: RowType.list,
             rowName: listRow.listDoc.name,
@@ -283,8 +280,8 @@ export function useLists() : {dbError: boolean, listsLoading: boolean, listDocs:
       }  
     });
     // now add any ungrouped (error) lists:
-    let testRow = newListRows.find(el => (el.listGroupID == null))
-    if (testRow != undefined) {
+    let testRow = newListRows.find(el => (el.listGroupID === null))
+    if (testRow !== undefined) {
       let groupRow: ListCombinedRow = {
         rowType : RowType.listGroup, rowName : testRow.listGroupName,
         rowKey: "G-null", listOrGroupID: null, listGroupID : null,
@@ -335,19 +332,18 @@ export function useItems({selectedListGroupID,isReady, needListGroupID, activeOn
   const { listError: listDBError, listCombinedRows, listRowsLoaded, listDocs, itemsLoading, itemDocs, itemError } = useContext(GlobalDataContext)
   
   function buildItemRows() {
-    let birms = performance.now()
     let curItemDocs: ItemDocs = cloneDeep(itemDocs);
     let newItemRows: ItemDocs = [];
     curItemDocs.forEach((itemDoc: ItemDoc) => {
-      if (selectedListGroupID == null || itemDoc.listGroupID == selectedListGroupID) {
-        let listGroupIdx=listCombinedRows.findIndex((lr: ListCombinedRow) => (itemDoc.listGroupID == lr.listGroupID && lr.rowType == RowType.listGroup))
+      if (selectedListGroupID === null || itemDoc.listGroupID === selectedListGroupID) {
+        let listGroupIdx=listCombinedRows.findIndex((lr: ListCombinedRow) => (itemDoc.listGroupID === lr.listGroupID && lr.rowType === RowType.listGroup))
         if (listGroupIdx !== -1) {
           let addToList = true;
           if (activeOnly) {
             if (selectedListType !== RowType.listGroup) {
               addToList=false;
               itemDoc.lists.forEach((il) => {
-                if (il.listID == selectedListID && il.active) { addToList=true}
+                if (il.listID === selectedListID && il.active) { addToList=true}
               })
             } else {
               let activeCommon = getCommonKey(itemDoc,"active",listDocs);
@@ -369,7 +365,7 @@ export function useItems({selectedListGroupID,isReady, needListGroupID, activeOn
   }
 
   function checkAndBuild() {
-    if (itemsLoading || !listRowsLoaded || !isReady || (isReady && selectedListGroupID == null && needListGroupID)) { setItemRowsLoaded(false); return };
+    if (itemsLoading || !listRowsLoaded || !isReady || (isReady && selectedListGroupID === null && needListGroupID)) { setItemRowsLoaded(false); return };
     if (itemError !== null || listDBError) { setDBError(true); return;}
     setDBError(false);
     if ( !itemsLoading && listRowsLoaded)  {
@@ -380,16 +376,6 @@ export function useItems({selectedListGroupID,isReady, needListGroupID, activeOn
       setItemRowsLoaded(true);
     }
   }
-
- // useEffect( () => {
- //   console.log("INITIAL CAB for UI");
- //   checkAndBuild()
- // },[])
-
- // useEffect( () => {
- //   console.log("Change in SLG, SLI, or SLT");  
- //   checkAndBuild;
- // },[selectedListGroupID, selectedListID,selectedListType])
 
   useEffect( () => {
     checkAndBuild();
@@ -428,8 +414,8 @@ export function useFriends(username: string) : { useFriendState: UseFriendState,
     })
 
     useEffect( () => {
-      if (useFriendState == UseFriendState.baseFriendsLoaded) {
-        if (remoteDBState.syncStatus == SyncStatus.active || remoteDBState.syncStatus == SyncStatus.paused) {
+      if (useFriendState === UseFriendState.baseFriendsLoaded) {
+        if (remoteDBState.syncStatus === SyncStatus.active || remoteDBState.syncStatus === SyncStatus.paused) {
           setUseFriendState((prevState) => UseFriendState.rowsLoading);
           loadFriendRows();
         }  
@@ -437,9 +423,9 @@ export function useFriends(username: string) : { useFriendState: UseFriendState,
     },[useFriendState,remoteDBState.syncStatus])
 
     useEffect( () => {
-      if (friendState == "error") {setUseFriendState((prevState) => UseFriendState.error); return};
-      if (friendState == "loading") {setUseFriendState((prevState) => UseFriendState.baseFriendsLoading)};
-      if (friendState == "done" && useFriendState == UseFriendState.baseFriendsLoading) {
+      if (friendState === "error") {setUseFriendState((prevState) => UseFriendState.error); return};
+      if (friendState === "loading") {setUseFriendState((prevState) => UseFriendState.baseFriendsLoading)};
+      if (friendState === "done" && useFriendState === UseFriendState.baseFriendsLoading) {
         setUseFriendState((prevState) => UseFriendState.baseFriendsLoaded);
       } 
     },[friendState] )
@@ -448,7 +434,7 @@ export function useFriends(username: string) : { useFriendState: UseFriendState,
       let userIDList : { userIDs: string[]} = { userIDs: []};
       (friendDocs as FriendDocs).forEach((element) => {
         if (element.friendStatus !== FriendStatus.Deleted) {
-          if(username == element.friendID1) {userIDList.userIDs.push(element.friendID2)}
+          if(username === element.friendID1) {userIDList.userIDs.push(element.friendID2)}
           else {userIDList.userIDs.push(element.friendID1)}
         }
       });
@@ -458,20 +444,20 @@ export function useFriends(username: string) : { useFriendState: UseFriendState,
         (friendDocs as FriendDocs).forEach((friendDoc) => {
           let friendRow : FriendRow = cloneDeep(InitFriendRow);
           friendRow.friendDoc=cloneDeep(friendDoc);
-          if (friendRow.friendDoc.friendID1 == remoteDBCreds.dbUsername)
+          if (friendRow.friendDoc.friendID1 === remoteDBCreds.dbUsername)
             { friendRow.targetUserName = friendRow.friendDoc.friendID2}
           else { friendRow.targetUserName = friendRow.friendDoc.friendID1}
-          let user=usersInfo.find((el) => el?.name == friendRow.targetUserName)
+          let user=usersInfo.find((el) => el?.name === friendRow.targetUserName)
           if (user == undefined) {user = cloneDeep(initUserInfo)};
-          if (friendDoc.friendStatus == FriendStatus.WaitingToRegister) {
+          if (friendDoc.friendStatus === FriendStatus.WaitingToRegister) {
             friendRow.targetEmail = friendDoc.inviteEmail
           } else {
             friendRow.targetEmail = String(user?.email);
           }
           friendRow.targetFullName = String(user?.fullname);
-          if (friendDoc.friendStatus == FriendStatus.PendingFrom1 || friendDoc.friendStatus == FriendStatus.PendingFrom2) {
-            if ((remoteDBCreds.dbUsername == friendDoc.friendID1 && friendDoc.friendStatus == FriendStatus.PendingFrom2) || 
-                (remoteDBCreds.dbUsername == friendDoc.friendID2 && friendDoc.friendStatus == FriendStatus.PendingFrom1))
+          if (friendDoc.friendStatus === FriendStatus.PendingFrom1 || friendDoc.friendStatus === FriendStatus.PendingFrom2) {
+            if ((remoteDBCreds.dbUsername === friendDoc.friendID1 && friendDoc.friendStatus === FriendStatus.PendingFrom2) || 
+                (remoteDBCreds.dbUsername === friendDoc.friendID2 && friendDoc.friendStatus === FriendStatus.PendingFrom1))
             {
               friendRow.friendStatusText = "Confirm?"
               friendRow.resolvedStatus = ResolvedFriendStatus.PendingConfirmation;
@@ -479,10 +465,10 @@ export function useFriends(username: string) : { useFriendState: UseFriendState,
               friendRow.friendStatusText = "Requested";
               friendRow.resolvedStatus = ResolvedFriendStatus.Requested;
             }
-          } else if (friendDoc.friendStatus == FriendStatus.Confirmed) {
+          } else if (friendDoc.friendStatus === FriendStatus.Confirmed) {
             friendRow.friendStatusText = "Confirmed";
             friendRow.resolvedStatus = ResolvedFriendStatus.Confirmed;
-          } else if (friendDoc.friendStatus == FriendStatus.WaitingToRegister) {
+          } else if (friendDoc.friendStatus === FriendStatus.WaitingToRegister) {
             friendRow.friendStatusText = "Needs to Register";
             friendRow.resolvedStatus = ResolvedFriendStatus.WaitingToRegister
           }
@@ -496,7 +482,7 @@ export function useFriends(username: string) : { useFriendState: UseFriendState,
 }
 
 export function useConflicts() : { conflictsError: boolean, conflictDocs: any[], conflictsLoading: boolean} {
-  const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
+  const { remoteDBCreds } = useContext(RemoteDBStateContext);
   const { globalState } = useContext(GlobalStateContext);
   const [mostRecentDate,setMostRecentDate] = useState<Date>(new Date());
 
@@ -511,7 +497,7 @@ export function useConflicts() : { conflictsError: boolean, conflictDocs: any[],
     oneDayOldDate.setDate(oneDayOldDate.getDate()-Number(globalState.settings.daysOfConflictLog));
     const lastConflictsViewed = new Date(String(remoteDBCreds.lastConflictsViewed))
     setMostRecentDate((lastConflictsViewed > oneDayOldDate) ? lastConflictsViewed : oneDayOldDate);  
-  },[remoteDBCreds.lastConflictsViewed])
+  },[remoteDBCreds.lastConflictsViewed,globalState.settings.daysOfConflictLog])
 
   return({conflictsError: dbError !== null, conflictDocs, conflictsLoading});
 }
