@@ -86,6 +86,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   },[baseSearchItemRowsLoaded, globalData.globalItemsLoading, globalData.globalItemDocs, baseSearchItemDocs, pageState.selectedListOrGroupID, pageState.selectedListType, listDocs])
 
   function filterAndCheckRows() {
+    console.log("FACR", cloneDeep({crit: searchState.searchCriteria, isfoc: searchState.isFocused}));
     let filterRows=filterSearchRows(searchRows, searchState.searchCriteria)
 //    if (filterRows.length > 0 ) {
     if (filterRows.length > 0 && searchState.isFocused ) {
@@ -108,12 +109,12 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   };
 
-//  console.log("past load in items: ",cloneDeep({baseItemDocs, baseSearchItemDocs,searchRows}))
-
   screenLoading.current=false;
 
   function updateSearchCriteria(event: CustomEvent) {
-    setSearchState(prevState => ({...prevState, event: event, searchCriteria: event.detail.value}));
+    let toOpen=true;
+    if (searchState.filteredSearchRows.length === 0) { toOpen = false}
+    setSearchState(prevState => ({...prevState, event: event, searchCriteria: event.detail.value, isOpen: toOpen, isFocused: true}));
     origSearchCriteria.current=event.detail.value;
   }
 
