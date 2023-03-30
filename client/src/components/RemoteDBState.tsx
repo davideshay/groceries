@@ -255,7 +255,10 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
           return UUIDCheck;
         }
         UUIDCheck.schemaVersion = (UUIDResults.docs[0] as UUIDDoc).schemaVersion;
+        console.log("server based UUID",cloneDeep(UUIDResults.docs[0]),UUIDCheck.schemaVersion);
+        console.log("maxAppSupportedVersion",maxAppSupportedSchemaVersion)
         if (Number(UUIDCheck.schemaVersion) > maxAppSupportedSchemaVersion) {
+            console.log("failed schema check");
             UUIDCheck.checkOK = false;
             UUIDCheck.dbUUIDAction = DBUUIDAction.exit_schema_mismatch;
             return UUIDCheck;
