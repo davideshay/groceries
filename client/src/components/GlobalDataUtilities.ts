@@ -4,35 +4,34 @@ import { DBCreds } from "./RemoteDBState";
 import { cloneDeep } from "lodash";
 
 export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, remoteDBCreds: DBCreds) : {listRows: ListRow[], listCombinedRows: ListCombinedRows} {
-
     let curListDocs: ListDocs = cloneDeep(listDocs);
     let newListRows: ListRow[] = [];
     curListDocs.forEach((listDoc) => {
-    let listGroupID=null;
-    let listGroupName="";
-    let listGroupDefault=false;
-    let listGroupOwner = "";
-    for (let i = 0; i < listGroupDocs.length; i++) {
-        const lgd = (listGroupDocs[i] as ListGroupDoc);
-        if (lgd.listGroupOwner !== remoteDBCreds.dbUsername || lgd.sharedWith.includes(remoteDBCreds.dbUsername)) {
-        continue;
+        let listGroupID=null;
+        let listGroupName="";
+        let listGroupDefault=false;
+        let listGroupOwner = "";
+        for (let i = 0; i < listGroupDocs.length; i++) {
+            const lgd = (listGroupDocs[i] as ListGroupDoc);
+            if (!(lgd.listGroupOwner === remoteDBCreds.dbUsername || (lgd.sharedWith.includes(String(remoteDBCreds.dbUsername))))) {
+                continue;
+            }
+            if ( listDoc.listGroupID === lgd._id ) {
+                listGroupID=lgd._id
+                listGroupName=lgd.name
+                listGroupDefault=lgd.default;
+                listGroupOwner=lgd.listGroupOwner;
+            }
         }
-        if ( listDoc.listGroupID === lgd._id ) {
-        listGroupID=lgd._id
-        listGroupName=lgd.name
-        listGroupDefault=lgd.default;
-        listGroupOwner=lgd.listGroupOwner;
+        if (listGroupID === null) { return };
+        let listRow: ListRow ={
+            listGroupID: listGroupID,
+            listGroupName: listGroupName,
+            listGroupDefault: listGroupDefault,
+            listGroupOwner: listGroupOwner,
+            listDoc: listDoc,
         }
-    }
-    if (listGroupID === null) { return };
-    let listRow: ListRow ={
-        listGroupID: listGroupID,
-        listGroupName: listGroupName,
-        listGroupDefault: listGroupDefault,
-        listGroupOwner: listGroupOwner,
-        listDoc: listDoc,
-    }
-    newListRows.push(listRow);
+        newListRows.push(listRow);
     });
 
     newListRows.sort(function (a: ListRow, b: ListRow) {

@@ -284,11 +284,8 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
                 localSchemaVersion = Number((localDBFindDocs.docs[0] as UUIDDoc).schemaVersion);
             }
         }
-        
-        console.log("server based UUID",cloneDeep(UUIDResults.docs[0]),UUIDCheck.schemaVersion);
         console.log("maxAppSupportedVersion",maxAppSupportedSchemaVersion)
         if (Number(UUIDCheck.schemaVersion) > maxAppSupportedSchemaVersion) {
-            console.log("failed schema check");
             UUIDCheck.checkOK = false;
             UUIDCheck.dbUUIDAction = DBUUIDAction.exit_app_schema_mismatch;
             return UUIDCheck;
@@ -296,7 +293,6 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
 
         // compare to current DBCreds one.
         if (localDBUUID === UUIDResult) {
-            console.log("same DBUUID:",localDBUUID,UUIDResult);
             console.log("Schema: remote:",remoteSchemaVersion," local:",localSchemaVersion);
             if (remoteSchemaVersion > localSchemaVersion) {
                 console.log("ERROR: Remote Schema greater than local");
@@ -307,7 +303,6 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         } 
           // if current DBCreds doesn't have one, set it to the remote one.
         if ((localDBUUID === null || localDBUUID === "" ) && !localHasRecords) {
- //           credsObj.remoteDBUUID = UUIDResult;
           return UUIDCheck;
         }
         UUIDCheck.checkOK = false; UUIDCheck.dbUUIDAction = DBUUIDAction.destroy_needed;
@@ -434,7 +429,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             console.log("ERROR syncing, refreshing access token and retrying...");
             retrySync();
         }
-    },[remoteDBState.syncStatus])
+    },[remoteDBState.syncStatus,remoteDBState.connectionStatus])
 
     useEffect(() => {
         if (remoteDBState.accessJWTExpirationTime === 0) {return;}
