@@ -52,9 +52,10 @@ export enum SyncStatus {
 
 export enum DBUUIDAction {
     none = 0,
-    exit_schema_mismatch = 1,
-    exit_no_uuid_on_server = 2,
-    destroy_needed = 3
+    exit_app_schema_mismatch = 1,
+    exit_local_remote_schema_mismatch = 2,
+    exit_no_uuid_on_server = 3,
+    destroy_needed = 4
 }  
 
 export type DBUUIDCheck = {
@@ -289,16 +290,19 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         if (Number(UUIDCheck.schemaVersion) > maxAppSupportedSchemaVersion) {
             console.log("failed schema check");
             UUIDCheck.checkOK = false;
-            UUIDCheck.dbUUIDAction = DBUUIDAction.exit_schema_mismatch;
+            UUIDCheck.dbUUIDAction = DBUUIDAction.exit_app_schema_mismatch;
             return UUIDCheck;
         }
 
         // compare to current DBCreds one.
         if (localDBUUID === UUIDResult) {
-            if (remoteSchemaVersion > localSchemaVersion)
+            console.log("same DBUUID:",localDBUUID,UUIDResult);
+            console.log("Schema: remote:",remoteSchemaVersion," local:",localSchemaVersion);
+            if (remoteSchemaVersion > localSchemaVersion) {
                 console.log("ERROR: Remote Schema greater than local");
                 UUIDCheck.checkOK = false;
-                UUIDCheck.dbUUIDAction = DBUUIDAction.exit_schema_mismatch;
+                UUIDCheck.dbUUIDAction = DBUUIDAction.exit_local_remote_schema_mismatch;
+            }   
             return UUIDCheck;
         } 
           // if current DBCreds doesn't have one, set it to the remote one.

@@ -92,14 +92,25 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
         setRemoteDBState(({...remoteDBState,dbUUIDAction: DBUUIDAction.none}))
       };
       if (remoteDBState.dbUUIDAction !== DBUUIDAction.none) {
-        console.log("got to schema mismatch....");
-        if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_schema_mismatch) {
+        if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_app_schema_mismatch) {
           console.log("ERROR: Schema too new, not supported with this app version. Upgrade.");
           presentAndExit({
             header:"ERROR",
             message: "This application does not support a detected newer version of the schema. Please upgrade the app and try again.",
             buttons: [{text:"OK",handler: () => exitApp()}]
           });
+          return;
+        }
+        if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_local_remote_schema_mismatch) {
+          console.log("ERROR: Local/Remote schema mismatch. Must destroy local Databse.");
+          presentAlert( {
+            header: "WARNING",
+            message: "The Database schema on the server is not the same as the local copy. This is normal when there is a significant application update happening. You should delete your local copy in order to continue. App will exit.",
+            buttons: [
+              {text: "Delete/Exit",handler: () => destroyAndExit()},
+              {text: "Cancel/Exit",handler: () => exitApp()}
+              ]
+          })
           return;
         }
         if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_no_uuid_on_server) {

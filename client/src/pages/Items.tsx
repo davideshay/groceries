@@ -28,7 +28,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
           groupIDforSelectedList: null,
           doingUpdate: false, itemRows: [], showAlert: false, alertHeader: "", alertMessage: ""});
   const searchRef=useRef<HTMLIonInputElement>(null);
-  const origSearchCriteria = useRef("");
   const [presentToast] = useIonToast();
   const [presentAlert, dismissAlert] = useIonAlert();
   const updateItemInList = useUpdateGenericDocument();
@@ -85,19 +84,20 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   },[baseSearchItemRowsLoaded, globalData.globalItemsLoading, globalData.globalItemDocs, baseSearchItemDocs, pageState.selectedListOrGroupID, pageState.selectedListType, listDocs])
 
-  function filterAndCheckRows() {
-    let filterRows=filterSearchRows(searchRows, searchState.searchCriteria)
-    if (filterRows.length > 0 && searchState.isFocused ) {
-      console.log("FACR, setting open to true")
-      setSearchState(prevState => ({...prevState, filteredSearchRows: filterRows, isOpen: true }));
-    } else {
-      setSearchState(prevState => ({...prevState, filteredSearchRows: [], isOpen: false}));
+  function filterAndCheckRows(searchCriteria: string, setFocus : boolean) {
+    let filterRows=filterSearchRows(searchRows, searchCriteria)
+    let toOpen=true;
+    if (filterRows.length === 0 || !setFocus) {
+      toOpen=false;
     }
+    let toFocus=setFocus;
+    if (toOpen) { toFocus = true};
+    setSearchState(prevState => ({...prevState, searchCriteria: searchCriteria, filteredSearchRows: filterRows, isOpen: toOpen, isFocused: toFocus }));
   }
 
   useEffect( () => {
-    filterAndCheckRows();
-  },[searchRows,searchState.searchCriteria,searchState.isFocused])
+    filterAndCheckRows(searchState.searchCriteria,searchState.isFocused);
+  },[searchRows,searchState.isFocused])
 
   if (baseItemError || baseSearchError || listError || categoryError  || uomError || globalData.globalItemError) {return (
     <ErrorPage errorText="Error Loading Items Information... Restart."></ErrorPage>
@@ -112,10 +112,10 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   function updateSearchCriteria(event: CustomEvent) {
     let toOpen=true;
-//    if (searchState.filteredSearchRows.length === 0) { toOpen = false}
     if (event.detail.value.length === 0) {toOpen = false}
-    setSearchState(prevState => ({...prevState, event: event, searchCriteria: event.detail.value, isOpen: toOpen, isFocused: true}));
-    origSearchCriteria.current=event.detail.value;
+//    console.log("USC: ",event.detail.value,"toOpen:",toOpen);
+    setSearchState(prevState => ({...prevState, isFocused: true}));
+    filterAndCheckRows(event.detail.value,true)
   }
 
   function isItemAlreadyInList(itemName: string): boolean {
@@ -131,6 +131,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       setGlobalStateInfo("callingListID",pageState.selectedListOrGroupID);
       setGlobalStateInfo("callingListType",pageState.selectedListType);
       setGlobalStateInfo("newItemName",itemName);
+//      console.log("ANITL, setting is Open/is Focused to false")
       setSearchState(prevState => ({...prevState, isOpen: false,searchCriteria:"",isFocused: false}))
       props.history.push("/item/new/");
     }
@@ -143,14 +144,14 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function leaveSearchBox() {
-    origSearchCriteria.current=searchState.searchCriteria;
+//    console.log("LSB: setting open/focused to false");
     setSearchState(prevState => ({...prevState, isOpen: false, isFocused: false}));
   }
 
   function enterSearchBox() {
     let toOpen=true;
-//    filterAndCheckRows();
     if (searchState.filteredSearchRows.length === 0) { toOpen = false}
+//    console.log("ESB:",searchState.filteredSearchRows.length,toOpen, " focus to true");
     setSearchState(prevState => ({...prevState, isFocused: true,isOpen: toOpen}));
   }
 
@@ -278,6 +279,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   function chooseSearchItem(item: ItemSearch) {
     addExistingItemToList(item);
+    console.log("CSI: unsetting rows, etc. is open/is focused false:", item.itemName);
     setSearchState(prevState => ({...prevState, searchCriteria: "", filteredRows: [],isOpen: false, isFocused: false}))
   }
 
@@ -388,10 +390,11 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         <IonItem key="searchbar">
           <IonIcon icon={searchOutline} />
           <IonInput id="itemsearchbox" aria-label="" class="ion-no-padding" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="text" enterkeyhint="enter"
-              clearInput={true} placeholder="Search" fill="solid"
+              clearInput={true}  placeholder="Search" fill="solid"
               onKeyDown= {(e) => searchKeyPress(e)}
               onIonInput={(e) => updateSearchCriteria(e)}
               onClick={() => enterSearchBox()}
+              onIonBlur={() => { setSearchState(prevState => ({...prevState,isFocused: false}))}}
            >   
            </IonInput>
           {/* <IonButton onClick={()=> clickedSearchCheck()}><IonIcon icon={checkmark} /></IonButton> */}
