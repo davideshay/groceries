@@ -403,17 +403,17 @@ async function restructureListGroupSchema() {
     console.log("STATUS: Upgrading schema to support listGroups. Most data will be lost in this upgrade.");
     // Delete both lists and items because of structure changes and because categories in list are most likely
     // completely replaced with new Category content/system IDs at same time
-    const delq: MangoQuery = { selector: { type : { "$in": ["list","item"]}}, limit: await totalDocCount(todosDBAsAdmin)};
+    const delq: MangoQuery = { selector: { type : { "$in": ["list","item","category"]}}, limit: await totalDocCount(todosDBAsAdmin)};
     let foundDelDocs: MangoResponse<ListDoc | ItemDoc>;
     try { foundDelDocs = (await todosDBAsAdmin.find(delq) as MangoResponse<ListDoc | ItemDoc>)}
-    catch(err) { console.log("ERROR: Could not find items/lists to delete:",err); return false;}
-    console.log("Found items/lists to delete:",foundDelDocs.docs.length);
+    catch(err) { console.log("ERROR: Could not find items/lists/categories to delete:",err); return false;}
+    console.log("Found items/lists/categories to delete:",foundDelDocs.docs.length);
     for (let i = 0; i < foundDelDocs.docs.length; i++) {
         let dbResp=null;
         try { dbResp=await todosDBAsAdmin.destroy(foundDelDocs.docs[i]._id,foundDelDocs.docs[i]._rev)}
         catch(err) {console.log("ERROR deleting list/item:",err);}        
     }
-    console.log("STATUS: Finished deleting lists and items.");
+    console.log("STATUS: Finished deleting lists, items, and categories.");
     console.log("STATUS: Creating default listgroups for all users");
     const userq: MangoQuery = { selector: { type: "user", name: {$exists: true}}, limit: await totalDocCount(usersDBAsAdmin)};
     let foundUserDocs: MangoResponse<UserDoc>;
