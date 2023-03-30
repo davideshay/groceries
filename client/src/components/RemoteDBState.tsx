@@ -255,17 +255,11 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
           return UUIDCheck;
         }
         UUIDCheck.schemaVersion = (UUIDResults.docs[0] as UUIDDoc).schemaVersion;
-        console.log("server based UUID",cloneDeep(UUIDResults.docs[0]),UUIDCheck.schemaVersion);
-        console.log("maxAppSupportedVersion",maxAppSupportedSchemaVersion)
-        if (Number(UUIDCheck.schemaVersion) > maxAppSupportedSchemaVersion) {
-            console.log("failed schema check");
-            UUIDCheck.checkOK = false;
-            UUIDCheck.dbUUIDAction = DBUUIDAction.exit_schema_mismatch;
-            return UUIDCheck;
-        }
+        let remoteSchemaVersion = Number(UUIDCheck.schemaVersion);
         let localDBInfo = null;
         let localHasRecords = false;
         let localDBUUID = null;
+        let localSchemaVersion = 0;
         try { localDBInfo = await db.info();} catch(e) {localHasRecords=false};
         if (localDBInfo != null && localDBInfo.doc_count > 0) { localHasRecords = true}
         if (localHasRecords) {
@@ -286,11 +280,26 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             catch(e) {console.log(e)};
             if ((localDBFindDocs !== null) && localDBFindDocs.docs.length === 1) {
                 localDBUUID = (localDBFindDocs.docs[0] as UUIDDoc).uuid;
+                localSchemaVersion = Number((localDBFindDocs.docs[0] as UUIDDoc).schemaVersion);
             }
-        }      
+        }
+        
+        console.log("server based UUID",cloneDeep(UUIDResults.docs[0]),UUIDCheck.schemaVersion);
+        console.log("maxAppSupportedVersion",maxAppSupportedSchemaVersion)
+        if (Number(UUIDCheck.schemaVersion) > maxAppSupportedSchemaVersion) {
+            console.log("failed schema check");
+            UUIDCheck.checkOK = false;
+            UUIDCheck.dbUUIDAction = DBUUIDAction.exit_schema_mismatch;
+            return UUIDCheck;
+        }
+
         // compare to current DBCreds one.
         if (localDBUUID === UUIDResult) {
-        return UUIDCheck;
+            if (remoteSchemaVersion > localSchemaVersion)
+                console.log("ERROR: Remote Schema greater than local");
+                UUIDCheck.checkOK = false;
+                UUIDCheck.dbUUIDAction = DBUUIDAction.exit_schema_mismatch;
+            return UUIDCheck;
         } 
           // if current DBCreds doesn't have one, set it to the remote one.
         if ((localDBUUID === null || localDBUUID === "" ) && !localHasRecords) {
