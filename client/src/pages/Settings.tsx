@@ -104,8 +104,8 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
           <IonItem>UserID: {remoteDBCreds.dbUsername}</IonItem>
           <IonItem>E-mail: {remoteDBCreds.email}</IonItem>
           <IonItem key="logout">
-            <IonButton slot="start" onClick={() => stopSyncPopup()} key="stopitall">Stop Sync & Logout</IonButton>
-            <IonButton slot="end" onClick={() => destroyDBPopup()} key="deletedb">Delete Local Database</IonButton>
+            <IonButton slot="start" onClick={() => stopSyncPopup()} key="stopitall">Logout</IonButton>
+            <IonButton slot="end" onClick={() => destroyDBPopup()} key="deletedb">Delete Local Data</IonButton>
           </IonItem>
           <IonItemDivider>Add To Other List Options</IonItemDivider> 
           <IonRadioGroup value={localSettings?.addListOption} onIonChange={(e) => changeSetting("addListOption",e.detail.value)}>

@@ -366,19 +366,19 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
   if (remoteDBState.serverAvailable) {
     if (!remoteState.inCreateMode) {
       buttonsElem=<>
-        <IonItem>
-        <IonButton slot="start" onClick={() => submitForm()}>Login</IonButton>
+
+        <IonButton size="small" slot="start" onClick={() => submitForm()}>Login</IonButton>
         {/* <IonButton onClick={() => workOffline()}>Work Offline</IonButton> */}        
-        <IonButton onClick={() => resetPassword()}>Reset Password</IonButton>
-        <IonButton slot="end" onClick={() => setRemoteState(prevState => ({...prevState,inCreateMode: true, formError: ""}))}>Create New User</IonButton>
-        </IonItem>
+        <IonButton size="small" onClick={() => resetPassword()}>Reset Password</IonButton>
+        <IonButton size="small" slot="end" onClick={() => setRemoteState(prevState => ({...prevState,inCreateMode: true, formError: ""}))}>Create Account</IonButton>
+
       </>
     } else {
       buttonsElem=<>
-        <IonItem>
+
         <IonButton fill="outline" onClick={() => setRemoteState(prevState => ({...prevState,inCreateMode: false}))}>Cancel</IonButton>
         <IonButton onClick={() => submitCreateForm()}>Create</IonButton>
-        </IonItem>
+
       </>
     }
   } else {
@@ -399,10 +399,10 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
             <IonContent>
             <IonList>
               {formElem}
-              {buttonsElem}
-                <IonItem>
+              <IonItem>
                   <IonText>{remoteState.formError}</IonText>
-                </IonItem>
+              </IonItem>
+              {buttonsElem}
             </IonList>
             </IonContent>
 

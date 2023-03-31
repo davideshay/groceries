@@ -57,8 +57,8 @@ export function getTokenInfo(JWT: string) {
 }
 
 export async function refreshToken(remoteDBCreds: DBCreds, devID: string) {
-    console.log("refreshing token, device id: ", devID);
-    console.log("apiserverURL:", remoteDBCreds.apiServerURL);
+    console.log("STATUS: refreshing token, device id: ", devID);
+    console.log("STATUS: Using API Server: ", remoteDBCreds.apiServerURL);
     let response: HttpResponse | undefined;
     const options: HttpOptions = {
         url: String(remoteDBCreds.apiServerURL+"/refreshtoken"),

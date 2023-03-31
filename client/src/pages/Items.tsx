@@ -279,7 +279,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   function chooseSearchItem(item: ItemSearch) {
     addExistingItemToList(item);
-    console.log("CSI: unsetting rows, etc. is open/is focused false:", item.itemName);
+//    console.log("CSI: unsetting rows, etc. is open/is focused false:", item.itemName);
     setSearchState(prevState => ({...prevState, searchCriteria: "", filteredRows: [],isOpen: false, isFocused: false}))
   }
 

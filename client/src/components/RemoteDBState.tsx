@@ -171,8 +171,8 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             },
             retry: true,
             live: true,
-            }).on('paused', () => { setSyncStatus(SyncStatus.paused)})
-            .on('active', () => { setSyncStatus(SyncStatus.active)})
+            }).on('paused', () => { /* console.log("sync paused"); */ setSyncStatus(SyncStatus.paused)})
+            .on('active', () => { /* console.log("sync active"); */ setSyncStatus(SyncStatus.active)})
             .on('denied', (err) => { setSyncStatus(SyncStatus.denied); console.log("sync denied: ",{err})})
             .on('error', (err) => { console.log ("db.sync error state",{err}) ; 
                                 globalSync.cancel();
@@ -284,7 +284,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
                 localSchemaVersion = Number((localDBFindDocs.docs[0] as UUIDDoc).schemaVersion);
             }
         }
-        console.log("maxAppSupportedVersion",maxAppSupportedSchemaVersion)
+//        console.log("maxAppSupportedVersion",maxAppSupportedSchemaVersion)
         if (Number(UUIDCheck.schemaVersion) > maxAppSupportedSchemaVersion) {
             UUIDCheck.checkOK = false;
             UUIDCheck.dbUUIDAction = DBUUIDAction.exit_app_schema_mismatch;
@@ -293,7 +293,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
 
         // compare to current DBCreds one.
         if (localDBUUID === UUIDResult) {
-            console.log("Schema: remote:",remoteSchemaVersion," local:",localSchemaVersion);
+            // console.log("Schema: remote:",remoteSchemaVersion," local:",localSchemaVersion);
             if (remoteSchemaVersion > localSchemaVersion) {
                 console.log("ERROR: Remote Schema greater than local");
                 UUIDCheck.checkOK = false;
@@ -409,7 +409,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
 
     useEffect(() => {
         if (!loginAttempted.current && !(remoteDBState.connectionStatus === ConnectionStatus.navToLoginScreen) && !(remoteDBState.connectionStatus === ConnectionStatus.onLoginScreen)) {
-            console.log("STATUS: about to attempt full login...");
+//            console.log("STATUS: about to attempt full login...");
             attemptFullLogin()
             loginAttempted.current = true;
         }
