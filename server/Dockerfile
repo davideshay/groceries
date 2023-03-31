@@ -1,8 +1,9 @@
 FROM node:bullseye-slim as builder
 
-WORKDIR /usr/app
+WORKDIR /usr/app/server
 
-COPY server/. /usr/app
+COPY server/. /usr/app/server
+COPY client/src/components /usr/app/client/src/components
 
 #COPY server/package.json server/package-lock.json server/tsconfig.json /usr/app/
 
