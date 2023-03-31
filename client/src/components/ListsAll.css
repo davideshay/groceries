@@ -1,0 +1,18 @@
+ion-button.indented {
+    margin-left: 1rem;
+    margin-bottom: 0px;
+}
+
+ion-item.menu-item {
+    --min-height: 3px;
+}
+
+ion-button.standard-text-button {
+    color: var(--color-primary); 
+    margin-right: 0px;
+    margin-top: 0px;
+    margin-right: 0px;
+    text-overflow: ellipsis;
+    min-height: 3px;
+}
+

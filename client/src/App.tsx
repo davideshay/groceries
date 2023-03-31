@@ -1,18 +1,19 @@
-import { Redirect, Route, } from 'react-router-dom';
-import {
-  IonApp, IonSplitPane,
-  setupIonicReact, IonContent, 
-} from '@ionic/react';
+import { Redirect, Route, Switch} from 'react-router-dom';
+import { IonApp, IonSplitPane,setupIonicReact, IonRouterOutlet } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
-import { useState, useContext, useEffect } from 'react';
-import Lists from './pages/Lists';
+import { useState, useEffect } from 'react';
 import List from "./pages/List";
+import Lists from './pages/Lists';
 import Items from './pages/Items';
 import Item from './pages/Item';
+import GlobalItems from './pages/GlobalItems';
+import GlobalItem from './pages/GlobalItem';
 import Categories from './pages/Categories';
 import Category from './pages/Category';
+import ListGroups from './pages/ListGroups';
+import ListGroup from './pages/ListGroup';
 import Settings from './pages/Settings';
 import Friends from './pages/Friends';
 import RemoteDBLogin from './pages/RemoteDBLogin';
@@ -20,8 +21,11 @@ import InitialLoad from './pages/InitialLoad';
 import AppMenu from './components/AppMenu';
 import ConflictLog from './pages/ConflictLog';
 import ConflictItem from './pages/ConflictItem';
+import AllItems from './pages/AllItems';
+import ErrorBoundary from './components/ErrorBoundary';
 import { GlobalStateProvider } from './components/GlobalState';
 import { RemoteDBStateProvider } from './components/RemoteDBState';
+import "./App.css"
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -42,14 +46,12 @@ import '@ionic/react/css/display.css';
 /* Theme variables */
 import './theme/variables.css';
 
-
 import { Provider } from 'use-pouchdb';
 import PouchDB from 'pouchdb';
 import find from 'pouchdb-find';
-import AllItems from './pages/AllItems';
+import { GlobalDataProvider } from './components/GlobalDataProvider';
 
 setupIonicReact();
-
 
 const App: React.FC = () => {
 
@@ -68,23 +70,30 @@ const App: React.FC = () => {
 
   useEffect( () => {
     db.setMaxListeners(20);
-  },[]);
+  },[db]);
 
   return (
   <IonApp>
+    <ErrorBoundary>
     <GlobalStateProvider>
     <Provider pouchdb={db}>
     <RemoteDBStateProvider>
+    <GlobalDataProvider>
     <IonReactRouter>
       <IonSplitPane contentId="main">
       <AppMenu />
-        <IonContent id="main">
+        <IonRouterOutlet id="main">
+          <Switch>
           <Route exact path="/lists" component={Lists} />
-          <Route path="/items/:id" component={Items} />
+          <Route path="/items/:mode/:id" component={Items} />
           <Route path="/item/:mode/:itemid?" component={Item} />
           <Route exact path="/allitems" component={AllItems} />
+          <Route exact path="/globalitems" component={GlobalItems} />
+          <Route path="/globalitem/:mode/:id" component={GlobalItem} />
           <Route exact path="/categories" component={Categories} />
           <Route path="/category/:mode/:id?" component={Category} />
+          <Route exact path="/listgroups" component={ListGroups} />
+          <Route path="/listgroup/:mode/:id?" component={ListGroup} />
           <Route exact path="/settings" component={Settings} />
           <Route exact path="/friends" component={Friends} />
           <Route exact path="/">
@@ -95,12 +104,17 @@ const App: React.FC = () => {
           <Route exact path="/initialload" component={InitialLoad}></Route>
           <Route exact path="/conflictlog" component={ConflictLog}></Route>
           <Route path="/conflictitem/:id" component={ConflictItem}></Route>
-        </IonContent>
+          <Route component={InitialLoad}></Route>
+          </Switch>
+          {/* <Route component={InitialLoad}></Route>  */}
+        </IonRouterOutlet>
       </IonSplitPane>
     </IonReactRouter>
+    </GlobalDataProvider>
     </RemoteDBStateProvider>
     </Provider>    
     </GlobalStateProvider>
+    </ErrorBoundary>
   </IonApp>
   )
 };

@@ -30,7 +30,3 @@ where checked:
                                                 if loginComplete, set to initialNavComplete
 
 
-
-
-  db.query(function(doc) {emit(doc.title.toUpperCase(),doc.year);}, function(err, response) {
-    console.log(JSON.stringify(response.rows));

@@ -1,7 +1,11 @@
-import { CapacitorHttp, HttpResponse } from '@capacitor/core';
-import { initUserInfo, initUsersInfo, UserIDList, UsersInfo } from './DataTypes';
+import { CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
+import { initUsersInfo, UserIDList, UsersInfo } from './DataTypes';
+import { ListGroupDoc, ListGroupDocInit } from './DBSchema';
 import { cloneDeep } from 'lodash';
 import { DBCreds} from './RemoteDBState';
+import { PouchResponse, PouchResponseInit } from './DataTypes';
+
+export const apiConnectTimeout = 500;
 
 export function isJsonString(str: string): boolean {
     try {
@@ -34,7 +38,7 @@ export function fullnamePatternValidation(fullname: string) {
 
 export async function checkUserByEmailExists(email: string, remoteDBCreds: DBCreds) {
     let response: HttpResponse | undefined;
-    const options = {
+    const options: HttpOptions = {
         url: String(remoteDBCreds?.apiServerURL+"/checkuserbyemailexists"),
         method: "POST",
         headers: { 'Content-Type': 'application/json',
@@ -42,31 +46,33 @@ export async function checkUserByEmailExists(email: string, remoteDBCreds: DBCre
                    'Authorization': 'Bearer '+remoteDBCreds?.refreshJWT },
         data: {
             email: email,
-        }           
+        },
+        connectTimeout: apiConnectTimeout         
     };
     console.log("about to execute checkuser httpget with options: ", {options})
-    response = await CapacitorHttp.post(options);
+    try { response = await CapacitorHttp.post(options);}
+    catch(err) {console.log("ERROR: http:",err)};
     console.log("got httpget response: ",{response});
-    return response.data;
+    return response?.data;
 }
 
 export async function getUsersInfo(userIDList: UserIDList,apiServerURL: string, accessJWT: string): Promise<UsersInfo> {
     let usersInfo: UsersInfo = cloneDeep(initUsersInfo);
-    if (accessJWT == "") { return(usersInfo); }
+    if (accessJWT === "") { return(usersInfo); }
     const usersUrl = apiServerURL+"/getusersinfo"
     if (!urlPatternValidation(usersUrl)) {return usersInfo}
-    const options = {
+    const options : HttpOptions = {
       url: String(usersUrl),
       data: userIDList,
       method: "POST",
       headers: { 'Content-Type': 'application/json',
                  'Accept': 'application/json',
-                 'Authorization': 'Bearer '+accessJWT }
+                 'Authorization': 'Bearer '+accessJWT },
+      connectTimeout: apiConnectTimeout           
     };
     let response:HttpResponse;
-    let httpError=false;
     try { response = await CapacitorHttp.post(options); }
-    catch(err) {httpError=true; console.log("HTTP Error: ",err); return usersInfo}
+    catch(err) {console.log("HTTP Error: ",err); return usersInfo}
     if (response && response.data) {
         if (response.data.hasOwnProperty("users")) {
             usersInfo = response.data.users
@@ -75,5 +81,25 @@ export async function getUsersInfo(userIDList: UserIDList,apiServerURL: string, 
     return usersInfo;
 }
 
-// export const DEFAULT_API_URL="https://groceries.shaytech.net/api"
+export async function initialSetupActivities(db: PouchDB.Database, username: string) {
+ //  Migration to the new listgroup structure will create for existing users, this is for new users added later, or for offline model
+    const totalDocs = (await db.info()).doc_count
+    const listGroupDocs = await db.find({ selector: { type: "listgroup", listGroupOwner: username, default: true},
+         limit: totalDocs});
+    if (listGroupDocs.docs.length === 0) {
+        console.log("STATUS: No default group found for ",username, "... creating now ...");
+        const defaultListGroupDoc : ListGroupDoc = cloneDeep(ListGroupDocInit);
+        defaultListGroupDoc.default = true;
+        defaultListGroupDoc.name = username+" (default)";
+        defaultListGroupDoc.listGroupOwner = username;
+        let curDateStr=(new Date()).toISOString()
+        defaultListGroupDoc.updatedAt = curDateStr;
+        let response: PouchResponse = cloneDeep(PouchResponseInit);
+        try { response.pouchData = await db.post(defaultListGroupDoc);}
+        catch(err) { response.successful = false; response.fullError = err;}
+        if (!response.pouchData.ok) { response.successful = false;}
+        if (!response.successful) { console.error("Could not create new default listGroup for ",username); return;}
+    }
+}
+
 export const DEFAULT_API_URL=(window as any)._env_.DEFAULT_API_URL

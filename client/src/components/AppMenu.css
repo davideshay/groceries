@@ -1,0 +1,11 @@
+
+.app-menu-item {
+    text-transform: none;
+    font-size: 14px;
+    letter-spacing: normal;
+    font-weight: 500;
+    --min-height: 6px;
+    --padding-top: 10px;
+    --padding-bottom: 10px;
+    
+}

@@ -1,30 +1,45 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
-        IonMenuButton, IonButtons, IonButton, useIonAlert, IonInput,
-        IonRadioGroup,IonLabel, NavContext, IonRadio, IonCheckbox, IonTextarea, isPlatform, getPlatforms} from '@ionic/react';
+import { IonContent, IonPage, IonList, IonItem,
+        IonButton, useIonAlert, IonInput,
+        IonRadioGroup, IonRadio, IonCheckbox, isPlatform, IonItemDivider } from '@ionic/react';
 import { useContext, useEffect, useState } from 'react';        
+import { usePouch } from 'use-pouchdb';
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
 import './Settings.css';
-import SyncIndicator from '../components/SyncIndicator';
 import { GlobalStateContext, initSettings, GlobalSettings, AddListOptions } from '../components/GlobalState';
 import { initialRemoteDBState, RemoteDBStateContext,  } from '../components/RemoteDBState';
 import { HistoryProps } from '../components/DataTypes';
+import { maxAppSupportedSchemaVersion, appVersion } from '../components/DBSchema';
+import PageHeader from '../components/PageHeader';
 
 const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
+  const db = usePouch();
   const [presentAlert] = useIonAlert();
   const {globalState, updateSettingKey} = useContext(GlobalStateContext);
-  const { setRemoteDBState } = useContext(RemoteDBStateContext);
+  const { remoteDBCreds, setRemoteDBState } = useContext(RemoteDBStateContext);
   const [localSettings, setLocalSettings] = useState<GlobalSettings>(initSettings)
   const [localSettingsInitialized,setLocalSettingsInitialized] = useState(false);
 
   useEffect( () => {
     if (!localSettingsInitialized && globalState.settingsLoaded) {
-      setLocalSettings((globalState.settings));
+      setLocalSettings(prevState=>(globalState.settings));
       setLocalSettingsInitialized(true);
     }
-  },[localSettings,globalState.settingsLoaded])
+  },[globalState.settings,localSettingsInitialized,globalState.settingsLoaded])
 
   async function stopSync() {
+    let credsStr=JSON.stringify({});
+    await Preferences.set({key: 'dbcreds', value: credsStr})
+    if (!(isPlatform("desktop") || isPlatform("electron"))) {App.exitApp()}
+    console.log("RESETTING TO INITSTATE");
+    setRemoteDBState(initialRemoteDBState);
+    window.location.replace('/');
+//    navigate('/');
+    return false;
+  }
+
+  async function destroyDB() {
+    await db.destroy();
     let credsStr=JSON.stringify({});
     await Preferences.set({key: 'dbcreds', value: credsStr})
     if (!(isPlatform("desktop") || isPlatform("electron"))) {App.exitApp()}
@@ -40,60 +55,79 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
       header: 'Warning',
       subHeader: '',
       message: 'Do you want to remove your saved credentials? This will cause the application to restart and allow you to sign in again if desired.',
-      buttons: [{
+      buttons: [
+        {
+          text:'Cancel',
+          role: 'cancel',
+          handler: () => {}},
+        {
         text: 'Remove',
         role: 'confirm',
         handler: () => {stopSync()}}
-        ,{
-        text:'Cancel',
-        role: 'cancel',
-        handler: () => {}}]
+        ]
     })
   }
 
-  function changeSetting(key: string, value: any) {
+  function destroyDBPopup() {
+    presentAlert({
+      header: 'Warning',
+      subHeader: '',
+      message: 'Do you want to remove the local database? This will cause the application to restart and allow you to sign in again if desired. It will also re-sync all data from the server.',
+      buttons: [
+        {
+          text:'Cancel',
+          role: 'cancel',
+          handler: () => {}},
+        {
+        text: 'Remove',
+        role: 'confirm',
+        handler: () => {destroyDB()}}
+        ]
+    })
+  }
+
+  function changeSetting(key: string, value: AddListOptions | boolean | number) {
     updateSettingKey(key,value);
     setLocalSettings(prevState => ({...prevState,[key]: value}));
   }
 
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-        <IonButtons slot="start"><IonMenuButton /></IonButtons>
-          <IonTitle>Settings</IonTitle>
-          <SyncIndicator history={props.history}/>
-        </IonToolbar>
-      </IonHeader>
+      <PageHeader title="Settings" />
       <IonContent fullscreen>
         <IonList lines="full">
+          <IonItemDivider>App Info</IonItemDivider>
+          <IonItem>App Version: {appVersion}</IonItem>
+          <IonItem>Database Schema Version: {maxAppSupportedSchemaVersion}</IonItem>
+          <IonItemDivider>User Info</IonItemDivider>
+          <IonItem>Name: {remoteDBCreds.fullName}</IonItem>
+          <IonItem>UserID: {remoteDBCreds.dbUsername}</IonItem>
+          <IonItem>E-mail: {remoteDBCreds.email}</IonItem>
           <IonItem key="logout">
-            <IonButton onClick={() => stopSyncPopup()} key="stopitall">Stop Sync, Logout, and Remove Credentials</IonButton>
+            <IonButton slot="start" onClick={() => stopSyncPopup()} key="stopitall">Logout</IonButton>
+            <IonButton slot="end" onClick={() => destroyDBPopup()} key="deletedb">Delete Local Data</IonButton>
           </IonItem>
+          <IonItemDivider>Add To Other List Options</IonItemDivider> 
           <IonRadioGroup value={localSettings?.addListOption} onIonChange={(e) => changeSetting("addListOption",e.detail.value)}>
-          <IonLabel position="stacked">Add To List Options</IonLabel>
-          <IonItem key="addallauto">
-             <IonLabel>Add Items to All Lists automatically</IonLabel>
-            <IonRadio value={AddListOptions.addToAllListsAutomatically} slot="start"></IonRadio>
+          <IonItem class="myindented" key="addallauto">
+            <IonRadio class="myindented" justify="space-between" labelPlacement="start" value={AddListOptions.addToAllListsAutomatically}>Add in Same Group Automatically</IonRadio>
           </IonItem>
           <IonItem key="addcategoryauto">
-             <IonLabel>Add Items to Lists with matching categories automatically</IonLabel>
-            <IonRadio value={AddListOptions.addToListsWithCategoryAutomatically} slot="start"></IonRadio>
+            <IonRadio justify="space-between" labelPlacement="start" value={AddListOptions.addToListsWithCategoryAutomatically}>Add with same categories automatically</IonRadio>
           </IonItem>
           <IonItem key="dontaddauto">
-             <IonLabel>Don't Add items to other lists automatically</IonLabel>
-            <IonRadio value={AddListOptions.dontAddAutomatically} slot="start"></IonRadio>
+            <IonRadio justify="space-between" labelPlacement="start" value={AddListOptions.dontAddAutomatically}>Don't Add automatically</IonRadio>
           </IonItem>
           </IonRadioGroup>
-          <IonLabel position="stacked">Other Settings</IonLabel>
+          <IonItemDivider>Other Settings</IonItemDivider>
           <IonItem key="removesettings">
-            <IonLabel>Remove items from all lists when completed</IonLabel>
-            <IonCheckbox slot="start" checked={localSettings.removeFromAllLists} onIonChange={(e) => changeSetting("removeFromAllLists",e.detail.checked)}></IonCheckbox>
+            <IonCheckbox justify="space-between" labelPlacement="start" checked={localSettings.removeFromAllLists} onIonChange={(e) => changeSetting("removeFromAllLists",e.detail.checked)}>Remove items from all lists in list group when marked as purchased/completed</IonCheckbox>
           </IonItem>
-          <IonTextarea disabled={true}>NOTE: Adding and removing from all lists is only done with lists that have the same set of shared owners/participants.</IonTextarea>
+          <IonItem key="deletesettings">
+            <IonCheckbox justify="space-between" labelPlacement="start" checked={localSettings.completeFromAllLists} onIonChange={(e) => changeSetting("completeFromAllLists",e.detail.checked)}>Delete From All lists in list group when deleting completed items</IonCheckbox>
+          </IonItem>
           <IonItem key="dayslog">
-            <IonLabel>Days of conflict log to view</IonLabel>
-            <IonInput type="number" min="0" max="25" onIonChange={(e: any) => changeSetting("daysOfConflictLog", e.detail.value)} value={Number(localSettings?.daysOfConflictLog)}></IonInput>
+            <IonInput label="Days of conflict log to view:" labelPlacement="start" type="number" min="0" max="25" onIonInput={(e) => changeSetting("daysOfConflictLog", Number(e.detail.value))} value={Number(localSettings?.daysOfConflictLog)}></IonInput>
           </IonItem>
         </IonList>
       </IonContent>

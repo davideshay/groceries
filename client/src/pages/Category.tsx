@@ -1,21 +1,24 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, 
-  IonButtons, IonMenuButton, IonItem, IonLabel, IonFooter, NavContext, IonIcon,
-  useIonAlert } from '@ionic/react';
+import { IonContent, IonPage, IonButton, IonList, IonInput, 
+ IonItem, IonLabel, NavContext, IonIcon, useIonAlert} from '@ionic/react';
 import { useParams } from 'react-router-dom';
-import { useFind, usePouch } from 'use-pouchdb';
 import { useState, useEffect, useContext, useRef } from 'react';
-import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteCategoryFromItems, useDeleteGenericDocument, useDeleteCategoryFromLists, useGetOneDoc } from '../components/Usehooks';
+import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteCategoryFromItems, useDeleteGenericDocument,
+   useDeleteCategoryFromLists, useGetOneDoc, useItems } from '../components/Usehooks';
 import { cloneDeep } from 'lodash';
 import './Category.css';
-import { PouchResponse, HistoryProps } from '../components/DataTypes';
-import SyncIndicator from '../components/SyncIndicator';
-import { addOutline, closeOutline, navigate, saveOutline, trashOutline } from 'ionicons/icons';
+import { PouchResponse, HistoryProps, ListRow, RowType} from '../components/DataTypes';
+import { ItemDoc, ItemList, CategoryDoc, InitCategoryDoc } from '../components/DBSchema';
+import { addOutline, closeOutline, saveOutline, trashOutline } from 'ionicons/icons';
+import ErrorPage from './ErrorPage';
+import { Loading } from '../components/Loading';
+import { GlobalDataContext } from '../components/GlobalDataProvider';
+import PageHeader from '../components/PageHeader';
 
 const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
   if ( mode === "new" ) { routeID = "<new>"};
   const [needInitCategoryDoc,setNeedInitCategoryDoc] = useState((mode === "new") ? true: false);
-  const [stateCategoryDoc,setStateCategoryDoc] = useState<any>({});
+  const [stateCategoryDoc,setStateCategoryDoc] = useState<CategoryDoc>(InitCategoryDoc);
   const [formError,setFormError] = useState<string>("");
   const [deletingCategory,setDeletingCategory] = useState(false)
   const [presentAlert,dismissAlert] = useIonAlert();
@@ -24,19 +27,11 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   const deleteCategory = useDeleteGenericDocument();
   const deleteCategoryFromItems = useDeleteCategoryFromItems();
   const deleteCategoryFromLists = useDeleteCategoryFromLists();
-//  const [categoryDoc, setCategoryDoc] = useState<any>(null);
-//  const [categoryLoading,setCategoryLoading] = useState(true);
-//  const categoryChanges = useRef<any>();
   const { doc: categoryDoc, loading: categoryLoading} = useGetOneDoc(routeID);
-
-  const { docs: categoryDocs, loading: categoriesLoading, error: categoriesError } = useFind({
-    index: { fields: [ "type","name"] },
-    selector: { type: "category", name: { $exists: true}},
-    sort: [ "type","name"]
-  })
-
+  const { dbError: itemError, itemRowsLoaded, itemRows } = useItems({selectedListGroupID: null, isReady: true, needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const {goBack} = useContext(NavContext);
-  const db = usePouch();
+  const screenLoading = useRef(true);
+  const globalData = useContext(GlobalDataContext);
 
   useEffect( () => {
     let newCategoryDoc = cloneDeep(stateCategoryDoc);
@@ -51,19 +46,26 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   },[categoryLoading,categoryDoc]);
 
-  if ( categoryLoading || categoriesLoading || !stateCategoryDoc || deletingCategory)  {return(
-    <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
-  )};
+  if ( globalData.listError || itemError || globalData.categoryError !== null) { return (
+    <ErrorPage errorText="Error Loading Category Information... Restart."></ErrorPage>
+    )};
+
+  if ( categoryLoading || globalData.categoryLoading || !stateCategoryDoc || deletingCategory || !globalData.listRowsLoaded || !itemRowsLoaded)  {
+    return ( <Loading isOpen={screenLoading.current} message="Loading Category..."     />)
+//    setIsOpen={() => {screenLoading.current = false}} /> )
+  };
   
+  screenLoading.current=false;
+
   async function updateThisCategory() {
     setFormError("");
-    if (stateCategoryDoc.name == undefined || stateCategoryDoc.name == "" || stateCategoryDoc.name == null) {
+    if (stateCategoryDoc.name === undefined || stateCategoryDoc.name === "" || stateCategoryDoc.name === null) {
       setFormError("Must enter a name");
       return false;
     }
     let categoryDup=false;
-    categoryDocs.forEach((doc: any) => {
-      if ((doc._id !== stateCategoryDoc._id) && (doc.name.toUpperCase() == stateCategoryDoc.name.toUpperCase())) {
+    (globalData.categoryDocs as CategoryDoc[]).forEach((doc) => {
+      if ((doc._id !== stateCategoryDoc._id) && (doc.name.toUpperCase() === stateCategoryDoc.name.toUpperCase())) {
         categoryDup = true;
       }
     });
@@ -71,8 +73,8 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
       setFormError("Duplicate Category Name");
       return
     }
-    let result: PouchResponse
-    if (mode === "new") {
+    let result: PouchResponse;
+    if ( mode === "new") {
       result = await createCategory(stateCategoryDoc);
     } else {
       result = await updateCategory(stateCategoryDoc);
@@ -86,52 +88,36 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   
   async function getNumberOfItemsUsingCategory() {
     let numResults = 0;
-    if (stateCategoryDoc == null) return numResults;
-    let itemResults: any;
-    try {
-      itemResults = await db.find({
-        selector: {
-          type: "item",
-          name: { $exists: true },
-          categoryID: stateCategoryDoc._id
+    if (stateCategoryDoc === null) return numResults;
+    itemRows.forEach( (ir: ItemDoc) => {
+      ir.lists.forEach( (list: ItemList) => {
+        if (list.categoryID === stateCategoryDoc._id) {
+          numResults++;
         }
       })
-    }
-    catch(err) {console.log("err: ",err); return numResults}
-    if (itemResults != undefined && itemResults.hasOwnProperty('docs')) {
-      numResults = itemResults.docs.length
-    }
+    })
     return numResults;
   }
 
   async function getNumberOfListsUsingCategory() {
     let numResults = 0;
-    if (stateCategoryDoc == null) return numResults;
-    let listResults: any;
-    try {
-      listResults = await db.find({
-        selector: {
-          type: "list",
-          name: { $exists: true },
-          categories: { $elemMatch : { $eq: stateCategoryDoc._id}
-        }
-      }})
-    }
-    catch(err) {return numResults}
-    if (listResults != undefined && listResults.hasOwnProperty('docs')) {
-      numResults = listResults.docs.length
-    }
+    if (stateCategoryDoc === null) return numResults;
+    globalData.listRows.forEach( (lr: ListRow) => {
+      if (lr.listDoc.categories.includes(String(stateCategoryDoc._id))) {
+        numResults++;
+      }
+    })
     return numResults;
   }
 
   async function deleteCategoryFromDB() {
-    let catItemDelResponse = await deleteCategoryFromItems(stateCategoryDoc._id);
+    let catItemDelResponse = await deleteCategoryFromItems(String(stateCategoryDoc._id));
     if (!catItemDelResponse.successful) {
       setFormError("Unable to remove category from items");
       setDeletingCategory(false);
       return;
     }
-    let catListDelResponse = await deleteCategoryFromLists(stateCategoryDoc._id);
+    let catListDelResponse = await deleteCategoryFromLists(String(stateCategoryDoc._id));
     if (!catListDelResponse.successful) {
       setFormError("Unable to remove category from lists");
       setDeletingCategory(false);
@@ -168,38 +154,29 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
     
     }
 
-  if (stateCategoryDoc.color == undefined) {setStateCategoryDoc((prevState: any) => ({...prevState,color:"#888888"}))};
+  if (stateCategoryDoc.color === undefined) {setStateCategoryDoc((prevState) => ({...prevState,color:"#888888"}))};
 
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-        <IonButtons slot="start"><IonMenuButton /></IonButtons>
-          <IonTitle>Editing Category: {(stateCategoryDoc as any).name}</IonTitle>
-          <SyncIndicator history={props.history}/>
-        </IonToolbar>
-      </IonHeader>
-      <IonContent fullscreen id="main">
+      <PageHeader title={"Editing Category: "+stateCategoryDoc.name} />
+      <IonContent>
           <IonList>
             <IonItem key="name">
-              <IonLabel position="stacked">Name</IonLabel>
-              <IonInput type="text" placeholder="<NEW>" onIonChange={(e: any) => setStateCategoryDoc({...stateCategoryDoc, name: e.detail.value})} value={(stateCategoryDoc as any).name}></IonInput>
+              <IonInput label="Name" labelPlacement="stacked" type="text" placeholder="<NEW>" onIonInput={(e) => setStateCategoryDoc({...stateCategoryDoc, name: String(e.detail.value)})} value={stateCategoryDoc.name}></IonInput>
             </IonItem>
             <IonItem key="color">
               <IonLabel position="stacked">Color</IonLabel>
-              <input type="color" value={stateCategoryDoc.color} onChange={(e: any) => {setStateCategoryDoc((prevState: any) => ({...prevState,color: e.target.value}))}}></input>
+              <input type="color" value={stateCategoryDoc.color} onChange={(e) => {setStateCategoryDoc((prevState) => ({...prevState,color: e.target.value}))}}></input>
             </IonItem>
           </IonList>
-          <IonButton onClick={() => updateThisCategory()}>
+          <IonItem>{formError}</IonItem>
+          <IonButton class="ion-float-left" fill="outline" color="danger" onClick={() => deletePrompt()}><IonIcon slot="start" icon={trashOutline}></IonIcon>Delete</IonButton>
+          <IonButton class="ion-float-right" onClick={() => updateThisCategory()}>
             <IonIcon slot="start" icon={(mode === "new" ? addOutline : saveOutline)}></IonIcon>
-            {(mode === "new") ? "Add" : "Update"}
+            {(mode === "new") ? "Add" : "Save"}
           </IonButton>
-          <IonButton onClick={() => deletePrompt()}><IonIcon slot="start" icon={trashOutline}></IonIcon>Delete</IonButton>
-          <IonButton onClick={() => goBack("/categories")}><IonIcon slot="start" icon={closeOutline}></IonIcon>Cancel</IonButton>
+          <IonButton class="ion-float-right" fill="outline" color="secondary" onClick={() => goBack("/categories")}><IonIcon slot="start" icon={closeOutline}></IonIcon>Cancel</IonButton>
       </IonContent>
-      <IonFooter>
-        <IonLabel>{formError}</IonLabel>
-      </IonFooter>
     </IonPage>
   );
 };

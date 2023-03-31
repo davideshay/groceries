@@ -16,7 +16,7 @@ WORKDIR /usr/app
 COPY server/package*.json ./
 RUN npm install --only=production
 COPY --from=builder /usr/app/. .
-CMD node src/index.js
+CMD node dist/index.js
 
 EXPOSE 80
 

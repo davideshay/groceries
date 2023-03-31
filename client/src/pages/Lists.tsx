@@ -1,32 +1,21 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonMenuButton, IonButtons, IonFab, 
-  IonFabButton, IonIcon } from '@ionic/react';
-import { add } from 'ionicons/icons';
-import './Lists.css';
-import ListsAll from '../components/ListsAll'
-import SyncIndicator from '../components/SyncIndicator';
-import { HistoryProps } from '../components/DataTypes';
+import { IonPage, IonContent, IonList } from "@ionic/react";
+import { HistoryProps } from "../components/DataTypes";
+import ListsAll from "../components/ListsAll";
+import PageHeader from "../components/PageHeader";
 
 const Lists: React.FC<HistoryProps> = (props: HistoryProps) => {
 
-  return (
+return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-        <IonButtons slot="start"><IonMenuButton /></IonButtons>
-          <IonTitle>Shopping Lists</IonTitle>
-          <SyncIndicator history={props.history}/>
-        </IonToolbar>
-      </IonHeader>
-      <IonContent fullscreen>
-        <ListsAll separatePage={true} />
-      </IonContent>
-      <IonFab slot="fixed" vertical="bottom" horizontal="end">
-        <IonFabButton routerLink={"/list/new/new"}>
-          <IonIcon icon={add}></IonIcon>
-        </IonFabButton>
-      </IonFab>
+        <PageHeader title="All Lists" />
+        <IonContent>
+        <IonList>
+            <ListsAll separatePage={true}/>
+        </IonList>
+        </IonContent>
     </IonPage>
-  );
-};
+)
+
+}
 
 export default Lists;

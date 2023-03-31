@@ -1,16 +1,18 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
-  IonButtons, IonMenuButton, IonLabel, IonText, useIonAlert, isPlatform, IonIcon } from '@ionic/react';
+  IonButtons, IonMenuButton, IonText, useIonAlert, isPlatform, IonIcon, useIonLoading, AlertOptions } from '@ionic/react';
 import { useState, useEffect, useContext } from 'react';
-import { eye, eyeOff} from 'ionicons/icons';
-import { CapacitorHttp, HttpResponse } from '@capacitor/core';
+import { eye, eyeOff } from 'ionicons/icons';
+import { CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
 import { usePouch} from 'use-pouchdb';
 import { ConnectionStatus, DBCreds, DBUUIDAction } from '../components/RemoteDBState';
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
-import { createNewUser, getTokenInfo, navigateToFirstListID,  } from '../components/RemoteUtilities';
+import { createNewUser, getTokenInfo, navigateToFirstListID, errorCheckCreds  } from '../components/RemoteUtilities';
 import { cloneDeep } from 'lodash';
 import { RemoteDBStateContext, SyncStatus, initialRemoteDBState } from '../components/RemoteDBState';
 import { HistoryProps } from '../components/DataTypes';
+import { useLists } from '../components/Usehooks';
+import { apiConnectTimeout } from '../components/Utilities';
 
 export type RemoteState = {
   password: string | undefined,
@@ -72,19 +74,52 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     const db=usePouch();
     const [remoteState,setRemoteState]=useState<RemoteState>(initRemoteState);
     const [presentAlert] = useIonAlert();
-    const { remoteDBState, remoteDBCreds, setRemoteDBState, setRemoteDBCreds, errorCheckCreds, assignDB, setDBCredsValue} = useContext(RemoteDBStateContext);
+    const { remoteDBState, remoteDBCreds, setRemoteDBState, setRemoteDBCreds, assignDB, setDBCredsValue} = useContext(RemoteDBStateContext);
+    const { listRowsLoaded, listRows } = useLists();
+    const [ present, dismiss ]= useIonLoading();
+
+    // useEffect for initial page launch
+    useEffect( () => {
+      if (remoteDBState.credsError) {
+        setRemoteState(prevState => ({...prevState,formError: remoteDBState.credsErrorText}))
+      }
+    },[])
 
     // effect for dbuuidaction not none
     useEffect( () => {
+      async function presentAndExit(alertObject: AlertOptions) {
+        await presentAlert(alertObject);
+        setRemoteDBState(({...remoteDBState,dbUUIDAction: DBUUIDAction.none}))
+      };
       if (remoteDBState.dbUUIDAction !== DBUUIDAction.none) {
+        if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_app_schema_mismatch) {
+          console.log("ERROR: Schema too new, not supported with this app version. Upgrade.");
+          presentAndExit({
+            header:"ERROR",
+            message: "This application does not support a detected newer version of the schema. Please upgrade the app and try again.",
+            buttons: [{text:"OK",handler: () => exitApp()}]
+          });
+          return;
+        }
+        if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_local_remote_schema_mismatch) {
+          console.log("ERROR: Local/Remote schema mismatch. Must destroy local Databse.");
+          presentAlert( {
+            header: "WARNING",
+            message: "The Database schema on the server is not the same as the local copy. This is normal when there is a significant application update happening. You should delete your local copy in order to continue. App will exit.",
+            buttons: [
+              {text: "Delete/Exit",handler: () => destroyAndExit()},
+              {text: "Cancel/Exit",handler: () => exitApp()}
+              ]
+          })
+          return;
+        }
         if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_no_uuid_on_server) {
           console.log("ERROR: No database UUID defined in server todos database. Cannot continue");
-          presentAlert({
+          presentAndExit({
             header: "ERROR",
             message: "The server is incorrectly configured with no unique ID. Please ensure server process is running.",
             buttons: ["OK"]
           });
-          exitApp();
           return;
         } else if (remoteDBState.dbUUIDAction === DBUUIDAction.destroy_needed) {
           presentAlert( {
@@ -100,14 +135,15 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     },[remoteDBState.dbUUIDAction])
 
     useEffect( () => {
-      if (remoteDBState.connectionStatus === ConnectionStatus.cannotStart) {
-        console.log("Detected cannot start, setting initRemoteState");
-        setRemoteState(initRemoteState);
-      } else if (remoteDBState.connectionStatus === ConnectionStatus.loginComplete) {
-        navigateToFirstListID(db,props.history,remoteDBCreds);
+      if (listRowsLoaded) {
+        if (remoteDBState.connectionStatus === ConnectionStatus.cannotStart) {
+          console.log("Detected cannot start, setting initRemoteState");
+          setRemoteState(initRemoteState);
+        } else if (remoteDBState.connectionStatus === ConnectionStatus.loginComplete) {
+          navigateToFirstListID(props.history,remoteDBCreds, listRows);
+        }
       }
-
-    },[remoteDBState.connectionStatus])
+    },[remoteDBState.connectionStatus, db, listRows, props.history, remoteDBCreds, listRowsLoaded]);
 
     async function destroyAndExit() {
       await db.destroy();
@@ -115,11 +151,12 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       exitApp();
     }
 
-    function exitApp() {
+    async function exitApp() {
       if (!(isPlatform("desktop") || isPlatform("electron"))) {App.exitApp()}
       console.log("RESETTING TO INITSTATE");
       setRemoteDBState(initialRemoteDBState);
-      window.location.replace('/');
+      window.location.replace('about:blank');
+//      window.location.replace('/');
   
     }
 
@@ -133,30 +170,46 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       return newDBCreds;
     }
     
+  async function showLoading() {
+    await present( {
+      message: "Loading...."
+    })
+  }
+
+
+
   async function submitForm() {
-//    await setPrefsDBCreds();
-    let credsCheck = errorCheckCreds(remoteDBCreds,false,false,remoteState.password);
+    await showLoading();
+    setRemoteState(prevState => ({...prevState,formError: ""}));
+    let credsCheck = errorCheckCreds({credsObj: remoteDBCreds,background:false,creatingNewUser:false,password: remoteState.password});
     if (credsCheck.credsError ) {
       setRemoteState(prevState => ({...prevState,formError: String(credsCheck.errorText)}))
+      await dismiss();
       return;
     }
+    console.log("creds check ok... trying to issue token...");
     let response: HttpResponse;
-    const options = {
+    const options : HttpOptions = {
         url: String(remoteDBCreds.apiServerURL+"/issuetoken"),
         method: "POST",
         headers: { 'Content-Type': 'application/json; charset=UTF-8',
                    'Accept': 'application/json'},
+        connectTimeout: apiConnectTimeout,              
         data: { username: remoteDBCreds.dbUsername,
                 password: remoteState.password,
-                deviceUUID: remoteDBState.deviceUUID},           
+                deviceUUID: remoteDBState.deviceUUID},  
+      
     };
     try {response = await CapacitorHttp.post(options)}
     catch(err) {console.log("Error logging in...",err)
                 setRemoteState(prevState => ({...prevState, formError: "Cannot contact API server"}));
                 setRemoteDBState({...remoteDBState, serverAvailable: false});
+                await dismiss();
                 return}
+    console.log("did API /issuetoken : result: ", cloneDeep(response));            
     if (!((response?.status === 200) && (response?.data?.loginSuccessful))) {
         setRemoteState(prevState => ({...prevState, formError: "Invalid Authentication"}))
+        await dismiss();
         return
     }
     let newCreds=updateDBCredsFromResponse(response);
@@ -164,22 +217,31 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     setRemoteDBCreds(newCreds);
     setRemoteDBState({...remoteDBState, accessJWT: response.data.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate});
     await assignDB(response.data.accessJWT);
+    await dismiss();
   }
   
   async function submitCreateForm() {
-    let createResponse: any;
-    let credsCheck = errorCheckCreds(remoteDBCreds,false,true,remoteState.password,remoteState.verifyPassword);
+    await showLoading();
+    let createResponse: HttpResponse | undefined;
+    let credsCheck = errorCheckCreds({credsObj: remoteDBCreds,background: false,creatingNewUser: true,password: remoteState.password,verifyPassword: remoteState.verifyPassword});
     if (!credsCheck.credsError) {
       createResponse = await createNewUser(remoteDBState,remoteDBCreds,String(remoteState.password));
+      if (createResponse === undefined) { 
+        setRemoteState(prevState => ({...prevState, formError: "Error creating user"}));
+        await dismiss();
+        return;
+      }
       if (!createResponse.data.createdSuccessfully) {
         credsCheck.errorText="";
         if (createResponse.data.invalidData) {credsCheck.errorText = "Invalid Data Entered";} 
         else if (createResponse.data.userAlreadyExists) {credsCheck.errorText = "User Already Exists";}
         setRemoteState(prevState => ({...prevState, formError: credsCheck.errorText}))
+        await dismiss();
         return;
       }
     } else {
       setRemoteState(prevState => ({...prevState, formError: String(credsCheck.errorText)}));
+      await dismiss();
       return;
     }
     let newCreds=updateDBCredsFromResponse(createResponse);
@@ -187,17 +249,20 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     let tokenInfo = getTokenInfo(createResponse.data.accessJWT);
     setRemoteDBState({...remoteDBState,accessJWT: createResponse.data.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate});
     await assignDB(createResponse.data.accessJWT);
+    await dismiss();
   }
   
   async function callResetPasswordAPI() {
-    const options = {
+    const options: HttpOptions = {
         url: String(remoteDBCreds.apiServerURL+"/resetpassword"),
         method: "POST",
         headers: { 'Content-Type': 'application/json',
                    'Accept': 'application/json'},
-        data: { username: remoteDBCreds.dbUsername },           
+        data: { username: remoteDBCreds.dbUsername },   
+        connectTimeout: apiConnectTimeout        
     };
-    await CapacitorHttp.post(options);
+    try {await CapacitorHttp.post(options);}
+    catch(err) {console.log("ERROR: resetting password",err)}
 //    presentAlert({
 //      header: "Password Request Sent",
 //      message: "Please check your email for the link to reset your password",
@@ -207,7 +272,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function resetPassword() {
-    if (remoteDBCreds.dbUsername == "" || remoteDBCreds.dbUsername == null || remoteDBCreds.dbUsername == undefined) {
+    if (remoteDBCreds.dbUsername === "" || remoteDBCreds.dbUsername === null || remoteDBCreds.dbUsername === undefined) {
       setRemoteState(prevState => ({...prevState, formError: "Must enter username to reset password"}))
     } else {
       presentAlert({
@@ -225,10 +290,10 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
   function setWorkingOffline() {
     setRemoteDBState({...remoteDBState,workingOffline: true,connectionStatus: ConnectionStatus.loginComplete, 
         syncStatus: SyncStatus.offline})
-    navigateToFirstListID(db,props.history,remoteDBCreds);    
+    navigateToFirstListID(props.history,remoteDBCreds, listRows);    
   }
 
-  function workOffline() {
+/*   function workOffline() {
     presentAlert({
       header: "Choose to work offline",
       message: "You can choose to work offline with your locally replicated data. Please be aware that your changes will not be synchronized back to the server until you restart the app and login again. The chance for conflicts also increases.",
@@ -237,51 +302,52 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
         { text: "Work Offline", role: "confirm", handler: () => setWorkingOffline()}
       ]})      
   }
+ */
 
-  if (remoteDBState.syncStatus === SyncStatus.active || remoteDBState.syncStatus === SyncStatus.paused) {
-    return (<></>)
-  }
+//  if (remoteDBState.syncStatus === SyncStatus.active || remoteDBState.syncStatus === SyncStatus.paused) {
+//    return (<></>)
+//  }
   
   let formElem;
   if (remoteDBState.serverAvailable) {
     if (!remoteState.inCreateMode) {
-      formElem = <><IonItem><IonLabel position="stacked">API Server URL</IonLabel>
-      <IonInput type="url" inputmode="url" value={remoteDBCreds.apiServerURL} onIonChange={(e) => {setDBCredsValue("apiServerURL",String(e.detail.value))}}>
+      formElem = <><IonItem>
+      <IonInput label="API Server URL" labelPlacement="stacked" type="url" inputmode="url" value={remoteDBCreds.apiServerURL} onIonInput={(e) => {setDBCredsValue("apiServerURL",String(e.detail.value))}}>
       </IonInput>
       </IonItem>
-      <IonItem><IonLabel position="stacked">Username</IonLabel>
-      <IonInput type="text" autocomplete="username" value={remoteDBCreds.dbUsername} onIonChange={(e) => {setDBCredsValue("dbUsername",String(e.detail.value))}}>
+      <IonItem>
+      <IonInput label="Username" labelPlacement="stacked"  type="text" autocomplete="username" value={remoteDBCreds.dbUsername} onIonInput={(e) => {setDBCredsValue("dbUsername",String(e.detail.value))}}>
       </IonInput>
       </IonItem>
-      <IonItem><IonLabel position="stacked">Password</IonLabel>
-      <IonInput autocomplete="current-password" type={remoteState.showMainPassword ? "text" : "password"} value={remoteState.password} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
+      <IonItem>
+      <IonInput label="Password" labelPlacement="stacked" autocomplete="current-password" type={remoteState.showMainPassword ? "text" : "password"} value={remoteState.password} onIonInput={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
       </IonInput><IonIcon slot="end"  icon={remoteState.showMainPassword ? eyeOff : eye} onClick={() => {setRemoteState((prevState) => ({...prevState,showMainPassword: !prevState.showMainPassword}))}}></IonIcon>
       </IonItem>
       </>
     } else {
       formElem = <>
-      <IonItem><IonLabel position="stacked">API Server URL</IonLabel>
-      <IonInput type="url" inputmode="url" value={remoteDBCreds.apiServerURL} onIonChange={(e) => {setDBCredsValue("apiServerURL:",String(e.detail.value))}}>
+      <IonItem>
+      <IonInput label="API Server URL" labelPlacement="stacked"   type="url" inputmode="url" value={remoteDBCreds.apiServerURL} onIonInput={(e) => {setDBCredsValue("apiServerURL:",String(e.detail.value))}}>
       </IonInput>
       </IonItem>
-      <IonItem><IonLabel position="stacked">Username</IonLabel>
-      <IonInput type="text" autocomplete="username" value={remoteDBCreds.dbUsername} onIonChange={(e) => {setDBCredsValue("dbUsername",String(e.detail.value))}}>
+      <IonItem>
+      <IonInput label="Username" labelPlacement="stacked" type="text" autocomplete="username" value={remoteDBCreds.dbUsername} onIonInput={(e) => {setDBCredsValue("dbUsername",String(e.detail.value))}}>
       </IonInput>
       </IonItem>
-      <IonItem><IonLabel position="stacked">E-Mail address</IonLabel>
-      <IonInput type="email" autocomplete="email" value={remoteDBCreds.email} onIonChange={(e) => {setDBCredsValue("email",String(e.detail.value))}}>
+      <IonItem>
+      <IonInput label="E-Mail address" labelPlacement="stacked" type="email" autocomplete="email" value={remoteDBCreds.email} onIonInput={(e) => {setDBCredsValue("email",String(e.detail.value))}}>
       </IonInput>
       </IonItem>
-      <IonItem><IonLabel position="stacked">Full Name</IonLabel>
-      <IonInput type="text" value={remoteDBCreds.fullName} onIonChange={(e) => {setDBCredsValue("fullName",String(e.detail.value))}}>
+      <IonItem>
+      <IonInput label="Full Name" labelPlacement="stacked"  type="text" value={remoteDBCreds.fullName} onIonInput={(e) => {setDBCredsValue("fullName",String(e.detail.value))}}>
       </IonInput>
       </IonItem>
-      <IonItem><IonLabel position="stacked">Password</IonLabel>
-      <IonInput autocomplete="current-password" type={remoteState.showMainPassword ? "text" : "password"} value={remoteState.password} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
+      <IonItem>
+      <IonInput label="Password" labelPlacement="stacked" autocomplete="current-password" type={remoteState.showMainPassword ? "text" : "password"} value={remoteState.password} onIonInput={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
       </IonInput><IonIcon slot="end"  icon={remoteState.showMainPassword ? eyeOff : eye} onClick={() => {setRemoteState((prevState) => ({...prevState,showMainPassword: !prevState.showMainPassword}))}}></IonIcon>
       </IonItem>
-      <IonItem><IonLabel position="stacked">Confirm Password</IonLabel>
-      <IonInput autocomplete="current-password" type={remoteState.showVerifyPassword ? "text" : "password"} value={remoteState.verifyPassword} onIonChange={(e) => {setRemoteState(prevstate => ({...prevstate, verifyPassword: String(e.detail.value)}))}}>
+      <IonItem>
+      <IonInput label="Confirm Password" labelPlacement="stacked" autocomplete="current-password" type={remoteState.showVerifyPassword ? "text" : "password"} value={remoteState.verifyPassword} onIonInput={(e) => {setRemoteState(prevstate => ({...prevstate, verifyPassword: String(e.detail.value)}))}}>
       </IonInput><IonIcon slot="end"  icon={remoteState.showVerifyPassword ? eyeOff : eye} onClick={() => {setRemoteState((prevState) => ({...prevState,showVerifyPassword: !prevState.showVerifyPassword}))}}></IonIcon>
       </IonItem>
       </>
@@ -300,19 +366,19 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
   if (remoteDBState.serverAvailable) {
     if (!remoteState.inCreateMode) {
       buttonsElem=<>
-        <IonItem>
-        <IonButton slot="start" onClick={() => submitForm()}>Login</IonButton>
+
+        <IonButton size="small" slot="start" onClick={() => submitForm()}>Login</IonButton>
         {/* <IonButton onClick={() => workOffline()}>Work Offline</IonButton> */}        
-        <IonButton onClick={() => resetPassword()}>Reset Password</IonButton>
-        <IonButton slot="end" onClick={() => setRemoteState(prevState => ({...prevState,inCreateMode: true, formError: ""}))}>Create New User</IonButton>
-        </IonItem>
+        <IonButton size="small" onClick={() => resetPassword()}>Reset Password</IonButton>
+        <IonButton size="small" slot="end" onClick={() => setRemoteState(prevState => ({...prevState,inCreateMode: true, formError: ""}))}>Create Account</IonButton>
+
       </>
     } else {
       buttonsElem=<>
-        <IonItem>
+
+        <IonButton fill="outline" onClick={() => setRemoteState(prevState => ({...prevState,inCreateMode: false}))}>Cancel</IonButton>
         <IonButton onClick={() => submitCreateForm()}>Create</IonButton>
-        <IonButton onClick={() => setRemoteState(prevState => ({...prevState,inCreateMode: false}))}>Cancel</IonButton>
-        </IonItem>
+
       </>
     }
   } else {
@@ -333,10 +399,10 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
             <IonContent>
             <IonList>
               {formElem}
-              {buttonsElem}
-                <IonItem>
+              <IonItem>
                   <IonText>{remoteState.formError}</IonText>
-                </IonItem>
+              </IonItem>
+              {buttonsElem}
             </IonList>
             </IonContent>
 

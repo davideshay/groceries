@@ -1,24 +1,39 @@
-export interface IToDoList {
-    type: string;
-    name: string;
-    sharedWith: Array<string>;
-}
+import { History } from "history";
+import { FriendDoc, InitFriendDoc, ListDoc, ItemList, ItemListInit } from "./DBSchema";
 
 export interface ItemRow {
     itemID: string,
     itemName: string,
-    categoryID: string,
+    categoryID: string | null,
     categoryName: string,
-    categorySeq: number,
+    categorySeq: number | undefined,
     categoryColor: string,
     quantity: number,
     uomDesc: string,
+    quantityUOMDesc: string,
     completed: boolean | null
   }
+
+export type ItemRows = ItemRow[];
+
+export const initItemRow: ItemRow = {
+    itemID: "", itemName: "",categoryID: "", categoryName: "",
+    categorySeq: 0, categoryColor: "#ffffff", quantity: 0,
+    uomDesc: "", quantityUOMDesc: "", completed: false
+  }
+
+export enum ItemSearchType {
+  Local= "L",
+  Global="G"
+}
 
   export interface ItemSearch {
     itemID: string,
     itemName: string,
+    itemType: ItemSearchType,
+    globalItemID: string | null,
+    globalItemCategoryID: string | null,
+    globalItemUOM: string | null,
     quantity: number,
     boughtCount: number
   }
@@ -27,28 +42,22 @@ export interface ItemRow {
     searchCriteria: string,
     isOpen: boolean,
     isFocused: boolean,
-    event: Event | undefined,
     filteredSearchRows: Array<ItemSearch>,
     dismissEvent: CustomEvent | undefined
   }
 
   export interface PageState {
-    selectedListID: string,
+    selectedListOrGroupID: string,
+    selectedListType: RowType,
+    groupIDforSelectedList: null | string,
     doingUpdate: boolean,
     itemRows: Array<ItemRow>,
+    ignoreCheckOffWarning: boolean,
     showAlert: boolean,
     alertHeader: string,
     alertMessage: string
   }
 
-  export enum FriendStatus {
-    PendingFrom1 = "PENDFROM1",
-    PendingFrom2 = "PENDFROM2",
-    WaitingToRegister = "WAITREGISTER",
-    RegisteredNotConfirmed = "REFNOTCONF", // do we need this, or reverts to pendfrom1 I think!
-    Confirmed = "CONFIRMED",
-    Deleted = "DELETED"
-  }
 
   export enum ResolvedFriendStatus {
     PendingConfirmation = "PENDING",
@@ -58,8 +67,9 @@ export interface ItemRow {
     Deleted = "DELETED"
   }
 
+
   export type FriendRow = {
-    friendDoc: any,
+    friendDoc: FriendDoc,
     targetUserName: string,
     targetEmail: string,
     targetFullName: string,
@@ -67,11 +77,38 @@ export interface ItemRow {
     friendStatusText: string,
   }
 
-  export type ListRow = {
-    listDoc: any,
-    participants: string[]
+  export const InitFriendRow: FriendRow = {
+    friendDoc: InitFriendDoc,
+    targetUserName: "", targetEmail: "", targetFullName: "", 
+    resolvedStatus: ResolvedFriendStatus.Deleted, friendStatusText: ""
   }
 
+  export type ListRow = {
+    listGroupID: string | null,
+    listGroupName: string,
+    listGroupDefault: boolean,
+    listGroupOwner: string | null,
+    listDoc: ListDoc,
+  }
+
+  export enum RowType {
+    listGroup = "G",
+    list = "L"
+  }
+
+  export type ListCombinedRow = {
+    rowType: RowType,
+    rowName: string,
+    rowKey: string,
+    listOrGroupID: string | null,
+    listGroupID: string | null,
+    listGroupName: string,
+    listGroupDefault: boolean,
+    listGroupOwner: string | null,
+    listDoc: ListDoc 
+  }
+
+  export type ListCombinedRows = ListCombinedRow[];
 
   export type PouchResponse = {
     pouchData: any,
@@ -107,4 +144,20 @@ export interface ItemRow {
 
   export const initUsersInfo: UserInfo[] = [];
 
-  export type HistoryProps =  { history: any }
+  export type HistoryProps =  { history: History }
+
+  export type ModalState = {
+    selectedListId: string,
+    selectedListIdx: number,
+    selectedListName: string,
+    isOpen: boolean,
+    itemList: ItemList
+}
+
+export const ModalStateInit : ModalState = {
+    selectedListId: "",
+    selectedListIdx: 0,
+    selectedListName: "",
+    isOpen: false,
+    itemList: ItemListInit
+  }

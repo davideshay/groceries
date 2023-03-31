@@ -1,43 +1,71 @@
-import { IonList, IonItem, IonButton, IonMenuToggle, IonIcon } from '@ionic/react';
+import {  IonItem, IonButton, IonMenuToggle, IonIcon } from '@ionic/react';
 import { useContext } from 'react';
 import { pencilOutline } from 'ionicons/icons';
-import { RemoteDBStateContext } from './RemoteDBState';
-import { useLists } from './Usehooks';
 import './ListsAll.css';
+import './common.css';
+import { RowType } from './DataTypes';
+import { GlobalDataContext } from './GlobalDataProvider';
 
 interface ListsAllProps {
   separatePage: boolean
 }
 
-const ListsAll: React.FC<ListsAllProps> = ({separatePage}) => {
-  const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
-  const { listDocs, listsLoading } = useLists(String(remoteDBCreds.dbUsername));
+const ListsAll: React.FC<ListsAllProps> = (props: ListsAllProps) => {
+  const { listRowsLoaded, listCombinedRows} = useContext(GlobalDataContext)
 
-  if (listsLoading) { return (<></>) }
+  if (!listRowsLoaded) { return (<></>) }
   
-  if (separatePage) { return (
-    <IonList lines="full">
-    {listDocs.map((doc: any) => (
-       <IonItem key={(doc as any)._id} >
-         <IonButton slot="start" class="textButton" fill="clear" routerLink={("/items/" + (doc as any)._id)}>{(doc as any).name}</IonButton>
-         <IonButton routerLink={"/list/edit/" + (doc as any)._id} slot="end">
-           Edit
-         </IonButton>
-       </IonItem>  ))}
-    </IonList> )
-   } else { return (
-    <IonList lines="full">
-    {listDocs.map((doc: any) => (
-     <IonMenuToggle key={(doc as any)._id} autoHide={false}>
-       <IonItem key={(doc as any)._id} >
-         <IonButton slot="start" class="textButton" fill="clear" routerLink={("/items/" + (doc as any)._id)}>{(doc as any).name}</IonButton>
-         <IonButton fill="clear" routerLink={"/list/edit/" + (doc as any)._id} slot="end">
-          <IonIcon slot="end" icon={pencilOutline}></IonIcon>
-         </IonButton>
-       </IonItem>  
-     </IonMenuToggle> ))}
-    </IonList>
-   )}
+  function addRow({separatePage, showLinkID, editLinkID, rowKey, rowName, extraClass }: 
+      { separatePage: boolean, showLinkID: string, editLinkID: string, rowKey: string, rowName: string, extraClass: string}) {
+    const isUngroupedHeader = (rowKey.startsWith("G-null"));
+    let baseRow;
+    if (isUngroupedHeader) {
+      baseRow = (<IonItem key={rowKey}>{rowName}</IonItem>)
+    } else {
+      baseRow = (
+      <IonItem className="menu-item ion-no-padding" key={rowKey} >
+        <IonButton slot="start" size="default" className={"ion-no-margin standard-text-button "+extraClass} fill="clear" routerLink={(showLinkID)}>{rowName}</IonButton>
+        <IonButton fill="clear" className="ion-no-margin standard-text-button" routerLink={editLinkID} slot="end">
+        <IonIcon slot="end" icon={pencilOutline}></IonIcon>
+        </IonButton>
+      </IonItem>)
+    }
+    if (separatePage) {return baseRow}
+    else {
+      return (<IonMenuToggle key={rowKey} auto-hide={false}>
+        {baseRow}
+      </IonMenuToggle>)
+    }
+  }
+
+  let listsElem: JSX.Element[] = [];
+  
+  listCombinedRows.forEach(combinedRow => {
+    if (combinedRow.rowType === RowType.listGroup ) {
+      listsElem.push(
+          addRow({separatePage: props.separatePage, showLinkID:"/items/group/"+combinedRow.listGroupID,
+              editLinkID: "/listgroup/edit/"+combinedRow.listGroupID,
+              rowKey: combinedRow.rowKey,
+              rowName: combinedRow.rowName,
+              extraClass: ""
+            }) )
+    } else {
+      listsElem.push(
+        addRow({separatePage: props.separatePage, showLinkID:"/items/list/"+combinedRow.listDoc._id,
+              editLinkID: "/list/edit/"+combinedRow.listDoc._id,
+              rowKey: combinedRow.rowKey,
+              rowName: combinedRow.rowName,
+              extraClass: "indented"
+            })
+      )      
+    }   
+  })
+  
+  return (
+      <>
+        {listsElem}
+      </>
+  )
 
 };
 

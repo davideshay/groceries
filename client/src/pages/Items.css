@@ -1,3 +1,31 @@
-.textButton {
-    text-transform: none;
+
+ion-item.select-interface-option.indented,ion-item.select-interface-option.indented:hover {
+    margin-left: 1rem;
+}
+
+ion-item.item-outer {
+    --min-height: 6px;
+    --padding-top: 8px;
+    --padding-bottom: 8px;
+}
+
+ion-item.item-inner::part(native) {
+    background: none;
+    --background-hover: none;
+    border: none;
+    min-height: auto;
+    --padding-start: 0;
+    
+}
+
+ion-grid.grid-no-pad {
+    --ion-grid-padding: 0px;
+}
+
+ion-col.col-no-pad {
+    --ion-grid-column-padding: 0px;
+}
+
+ion-item-divider.category-divider {
+    --color: var(--ion-color-step-800)
 }

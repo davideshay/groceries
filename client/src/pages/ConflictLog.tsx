@@ -1,19 +1,30 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonButtons, 
   IonMenuButton, IonButton } from '@ionic/react';
-import { useContext } from 'react';
+import { useContext, useRef } from 'react';
 import SyncIndicator from '../components/SyncIndicator';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
 import { HistoryProps } from '../components/DataTypes';
 import './Categories.css';
 import { useConflicts } from '../components/Usehooks';
+import ErrorPage from './ErrorPage';
+import { Loading } from '../components/Loading';
+import { ConflictDocs } from '../components/DBSchema';
 
 const ConflictLog: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { setDBCredsValue } = useContext(RemoteDBStateContext);
-  const { conflictDocs, conflictsLoading } = useConflicts();
+  const { conflictsError, conflictDocs, conflictsLoading } = useConflicts();
+  const screenLoading = useRef(true);
+
+  if (conflictsError) { return (
+    <ErrorPage errorText="Error Loading Conflict Log... Restart."></ErrorPage>
+    )}
+
+  if (conflictsLoading) { 
+    return ( <Loading isOpen={screenLoading.current} message="Loading Conflict Log..." /> )
+//    setIsOpen={() => {screenLoading.current = false}} /> )
+  }
   
-  if (conflictsLoading) { return (
-    <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
-  )}
+    screenLoading.current=false;
 
   function setConflictsAsViewed() {
     const curDateStr = (new Date()).toISOString();
@@ -26,17 +37,16 @@ const ConflictLog: React.FC<HistoryProps> = (props: HistoryProps) => {
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start"><IonMenuButton /></IonButtons>
-          <IonTitle>Conflict Log</IonTitle>
-          <IonButton slot="end" onClick={() => {setConflictsAsViewed()}}>Set As Viewed</IonButton>
-          <SyncIndicator history={props.history}/>
+          <IonTitle class="ion-no-padding">Conflict Log</IonTitle>
+          <IonButton size="small" slot="end" onClick={() => {setConflictsAsViewed()}}>Set As Viewed</IonButton>
+          <SyncIndicator/>
         </IonToolbar>
       </IonHeader>
-      <IonContent fullscreen id="main">
+      <IonContent>
         <IonList lines="full">
-               {conflictDocs.map((doc: any) => (
-                  <IonItem key={doc._id} >
-                    <IonButton slot="start" class="textButton" fill="clear" routerLink={("/conflictitem/" + doc._id)}>{doc.docType} {doc.updatedAt}</IonButton>
-                  </IonItem>  
+            {(conflictDocs.length === 0) ? (<IonItem>No Items In Conflict Log</IonItem>) : <></>}
+               {(conflictDocs as ConflictDocs).map((doc) => (
+                  <IonItem class="list-button" button key={doc._id} routerLink={("/conflictitem/" + doc._id)} >{doc.docType} {doc.updatedAt} </IonItem>
             ))}
         </IonList>
       </IonContent>

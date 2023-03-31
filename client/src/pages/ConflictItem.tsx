@@ -1,24 +1,34 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, 
-  IonButtons, IonMenuButton, IonItem, IonLabel, IonFooter, IonTextarea, NavContext } from '@ionic/react';
+import { IonContent,IonPage, IonButton, IonList,
+  IonItem, IonLabel, IonFooter, IonTextarea, NavContext } from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useGetOneDoc} from '../components/Usehooks';
-import { useContext } from 'react';
+import { useContext, useRef } from 'react';
 import { isEqual, pull } from 'lodash';
 import { HistoryProps } from '../components/DataTypes';
+import { ConflictDoc } from '../components/DBSchema';
 import './Category.css';
-import SyncIndicator from '../components/SyncIndicator';
+import ErrorPage from './ErrorPage';
+import { Loading } from '../components/Loading';
+import PageHeader from '../components/PageHeader';
 
 const ConflictItem: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { id: routeID } = useParams<{ id: string}>();
 
-  const { doc: conflictDoc, loading: conflictLoading } = useGetOneDoc(routeID);
+  const { doc: conflictDoc, loading: conflictLoading, dbError: conflictError } = useGetOneDoc(routeID);
 
   const {goBack} = useContext(NavContext);
+  const screenLoading = useRef(true);
 
-  if ( conflictLoading  )  {return(
-    <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
-  )};
+  if (conflictError) { return (
+    <ErrorPage errorText="Error Loading Conflict Information... Restart."></ErrorPage>
+    )}
+
+  if ( conflictLoading  )  {
+    return ( <Loading isOpen={screenLoading.current} message="Loading Conflict Item..." /> )
+//    setIsOpen={() => {screenLoading.current = false}} /> )
+  };
   
+  screenLoading.current=false;
   const localDate = (new Date(conflictDoc.updatedAt)).toLocaleString();
   const winnerText = JSON.stringify(conflictDoc.winner,null,4);
   const losersText = JSON.stringify(conflictDoc.losers,null,4);
@@ -38,7 +48,7 @@ const ConflictItem: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   const mainPropsDifferent= new Set();
-  conflictDoc.losers.forEach((loser:any) => {
+  (conflictDoc as ConflictDoc).losers.forEach((loser) => {
     let initDiffs=getObjectDiff(conflictDoc.winner,loser);
     pull(initDiffs,'_rev','updatedAt','_conflicts');
     initDiffs.forEach(element => {
@@ -52,14 +62,8 @@ const ConflictItem: React.FC<HistoryProps> = (props: HistoryProps) => {
   
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-        <IonButtons slot="start"><IonMenuButton /></IonButtons>
-          <IonTitle>Conflict Item: {(conflictDoc as any).docType} from {localDate}</IonTitle>
-          <SyncIndicator history={props.history}/>
-        </IonToolbar>
-      </IonHeader>
-      <IonContent fullscreen id="main"> 
+      <PageHeader title={"Conflict Item: "+(conflictDoc as ConflictDoc).docType +" from "+localDate} />
+      <IonContent> 
           <IonList>
             <IonItem key="maindiffs">
               <IonLabel position="stacked">Main differences</IonLabel>

@@ -1,19 +1,21 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonLabel,
-        IonMenuButton, IonButtons, IonButton, useIonToast,
+import { IonContent, IonPage, IonList, IonItem, IonLabel,
+        IonButton, useIonToast, 
         IonFab, IonFabButton, IonIcon, IonInput, IonAlert } from '@ionic/react';
-import { useState, useContext, Fragment } from 'react';
+import { useState, useContext, Fragment, useRef } from 'react';
 import { Clipboard } from '@capacitor/clipboard';
-import { CapacitorHttp } from '@capacitor/core';
+import { CapacitorHttp, HttpOptions } from '@capacitor/core';
 import { v4 as uuidv4 } from 'uuid';
 import { cloneDeep } from 'lodash';
 import { useCreateGenericDocument, useFriends, UseFriendState, useUpdateGenericDocument} from '../components/Usehooks';
 import { add } from 'ionicons/icons';
 import './Friends.css';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
-import { FriendRow, FriendStatus, ResolvedFriendStatus, HistoryProps } from '../components/DataTypes';
-import { checkUserByEmailExists, emailPatternValidation } from '../components/Utilities';
-import SyncIndicator from '../components/SyncIndicator';
-
+import { FriendRow, ResolvedFriendStatus, HistoryProps } from '../components/DataTypes';
+import { FriendStatus } from '../components/DBSchema';
+import { checkUserByEmailExists, emailPatternValidation, apiConnectTimeout } from '../components/Utilities';
+import ErrorPage from './ErrorPage';
+import { Loading } from '../components/Loading';
+import PageHeader from '../components/PageHeader';
 
 /* 
 
@@ -58,12 +60,11 @@ interface PageState {
               
 const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { remoteDBCreds, remoteDB } = useContext(RemoteDBStateContext);
-  const uname = (remoteDBCreds as any).dbUsername;
-  const {useFriendState,friendRows} = useFriends(uname);
+  const uname = remoteDBCreds.dbUsername;
+  const {useFriendState,friendRows} = useFriends(String(uname));
   const updateDoc = useUpdateGenericDocument();
   const createDoc = useCreateGenericDocument();
-//  const [friendsElem,setFriendsElem] = useState<any[]>([]);
-  let friendsElem: any = [];
+
   const [pageState,setPageState] = useState<PageState>({
     newFriendEmail: "",
     newFriendName: "",
@@ -75,7 +76,18 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
     registrationAlertSubheader: ""
   });
   const [presentToast] = useIonToast();
-//  const [presentAlert,hideAlert] = useIonAlert();
+  const screenLoading = useRef(true);
+
+  if (useFriendState === UseFriendState.error) { return (
+    <ErrorPage errorText="Error Loading Friend Information... Restart."></ErrorPage>
+    )};
+
+  if (useFriendState !== UseFriendState.rowsLoaded) {
+    return ( <Loading isOpen={screenLoading.current} message="Loading Friends..."   /> )
+//    setIsOpen={() => {screenLoading.current = false}} /> )
+  }
+
+  screenLoading.current=false;
 
   async function confirmFriend(friendRow: FriendRow) {
     let updatedDoc = cloneDeep(friendRow.friendDoc);
@@ -114,12 +126,14 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   }
 
+  let friendsElem;
+
   function updateFriendsElem() {
     friendsElem=[];
     if (friendRows.length > 0) {
       friendRows.forEach((friendRow: FriendRow) => {
-        const itemKey = (friendRow.targetUserName == "" || friendRow.targetUserName == null) ? friendRow.targetEmail : friendRow.targetUserName;
-        let elem: any =<IonItem key={itemKey}>{URLButtonElem(friendRow)}{statusItem(friendRow)}<IonLabel>{friendRow.targetEmail}</IonLabel><IonLabel>{friendRow.targetFullName}</IonLabel></IonItem>
+        const itemKey = (friendRow.targetUserName === "" || friendRow.targetUserName === null) ? friendRow.targetEmail : friendRow.targetUserName;
+        let elem=<IonItem key={itemKey}>{URLButtonElem(friendRow)}{statusItem(friendRow)}<IonLabel>{friendRow.targetEmail}</IonLabel><IonLabel>{friendRow.targetFullName}</IonLabel></IonItem>
         friendsElem.push(elem);
       });
     }
@@ -143,17 +157,18 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
     let createFriendSuccessful=true;
     let createResults;
-    try { createResults = await (remoteDB as any).post(newFriendDoc) } 
+    try { createResults = await (remoteDB as PouchDB.Database).post(newFriendDoc) } 
     catch(e) {createFriendSuccessful=false; console.log(e)}
     if (!createFriendSuccessful) { console.log("ERROR: Creating friend"); return false;}
 
-    const options = {
+    const options: HttpOptions = {
       url: String(remoteDBCreds.apiServerURL+"/triggerregemail"),
       method: "POST",
       headers: { 'Content-Type': 'application/json',
                  'Accept': 'application/json',
                  'Authorization': 'Bearer '+remoteDBCreds?.refreshJWT },
-      data: { "uuid": invuid }           
+      data: { "uuid": invuid },
+      connectTimeout: apiConnectTimeout     
       };
       
     try {await CapacitorHttp.post(options)}
@@ -177,17 +192,13 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
     let friendExists=false;
     friendRows.forEach((friendRow: FriendRow) => {
-      console.log("evaluating friendrow: ", friendRow, " email: ", friendRow.targetEmail)
       if (friendRow.targetEmail === pageState.newFriendEmail) { friendExists = true}
     })
-    console.log("friendExists:",friendExists);
     if (friendExists) {
       setPageState(prevState => ({...prevState, formError: "Friend already exists with this email"}));
       return;
     }
-    console.log("... add friend here ...");
     const response = await checkUserByEmailExists(pageState.newFriendEmail,remoteDBCreds);
-    console.log("response to check user", response);
     if (response.userExists) {
       let friend1 = ""; let friend2 = ""; let pendfrom1: boolean = false;
       if (response.username > String(remoteDBCreds.dbUsername)) {
@@ -222,13 +233,13 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   updateFriendsElem();
 
-  let formElem: any[] = [];
+  let formElem = [];
   if (pageState.inAddMode) {
     formElem.push(
      <Fragment key="addfriendform">
       <IonItem key="addfriendheader">Adding a new Friend</IonItem>
       <IonItem key="addfriendemail"><IonLabel key="labelfriendemail" position="stacked">E-Mail address for friend to add</IonLabel>
-        <IonInput key="inputfriendemail" type="email" autocomplete="email" value={pageState.newFriendEmail} onIonChange={(e) => {setPageState(prevstate => ({...prevstate, newFriendEmail: String(e.detail.value)}))}}>
+        <IonInput key="inputfriendemail" type="email" autocomplete="email" value={pageState.newFriendEmail} onIonInput={(e) => {setPageState(prevstate => ({...prevstate, newFriendEmail: String(e.detail.value)}))}}>
         </IonInput>
       </IonItem>
       <IonItem key="blankspace"></IonItem>
@@ -241,20 +252,10 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
       )
   }
 
-  if (useFriendState !== UseFriendState.rowsLoaded) {
-    return(<IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>)
-  }
-
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-        <IonButtons key="buttonsinmenu" slot="start"><IonMenuButton key="menuhamburger" /></IonButtons>
-          <IonTitle>Friends</IonTitle>
-          <SyncIndicator history={props.history}/>
-        </IonToolbar>
-      </IonHeader>
-      <IonContent fullscreen id="main">
+      <PageHeader title="Friends" />
+      <IonContent>
         <IonAlert isOpen={pageState.showNewUserAlert}
                   header="User not found, send registration request?"
                   subHeader={pageState.newUserAlertSubheader}
