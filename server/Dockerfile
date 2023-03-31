@@ -2,7 +2,7 @@ FROM node:bullseye-slim as builder
 
 WORKDIR /usr/app
 
-COPY server/package.json server/package-lock.json /usr/app/
+COPY server/package.json server/package-lock.json server/tsconfig.json /usr/app/
 
 RUN npm install
 

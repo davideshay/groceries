@@ -7,8 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "startold": "nodemon -r dotenv/config src/index.js",
     "start": "nodemon -r dotenv/config dist/index.js",
-    "build": "tsc -p",
-    "tsc": "tsc",
+    "build": "tsc -p ./tsconfig.json",
+    "tsc": "tsc -p ./tsconfig.json",
     "postinstall": "npm run tsc",
     "dev": "ts-node-dev --respawn --pretty --transpile-only -r dotenv/config src/index.ts"
   },
