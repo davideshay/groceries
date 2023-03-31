@@ -4,7 +4,7 @@ WORKDIR /usr/app
 
 COPY server/package.json server/package-lock.json /usr/app/
 
-RUN NODE_ENV=production npm ci
+RUN NODE_ENV=production npm install
 
 COPY server/. ./
 
