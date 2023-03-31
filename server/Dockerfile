@@ -4,18 +4,22 @@ WORKDIR /usr/app
 
 COPY server/package.json server/package-lock.json /usr/app/
 
-RUN NODE_ENV=production npm ci --include=dev
+RUN NODE_ENV=production npm ci
 
 COPY server/. ./
 
 RUN ls -lat
 
+RUN npm run build
+
 FROM node:bullseye-slim
 
 WORKDIR /usr/app
-COPY server/package*.json ./
+COPY --from=builder /usr/app/dist ./dist
+COPY server/package*.json server/package-lock.json ./
+
 RUN npm install --only=production
-COPY --from=builder /usr/app/. .
+
 CMD node dist/index.js
 
 EXPOSE 80
