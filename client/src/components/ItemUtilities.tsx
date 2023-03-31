@@ -176,7 +176,7 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
                     uomDesc = uomDoc.pluralDescription;
                 }
             }
-        }    
+        }
         itemRow.uomDesc = uomDesc;
         let quantityUOMDesc = "";
         if (! (itemRow.quantity === 1 && itemRow.uomDesc === "")) {

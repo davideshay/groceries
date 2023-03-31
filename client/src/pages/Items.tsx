@@ -44,9 +44,9 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       isReady: (pageState.groupIDforSelectedList !== null && pageState.selectedListOrGroupID !== null),
       needListGroupID: true, activeOnly: false, selectedListID: pageState.selectedListOrGroupID,
       selectedListType: pageState.selectedListType});
-
   const { listError , listDocs, listCombinedRows,listRows, listRowsLoaded, uomDocs, uomLoading, uomError, categoryDocs, categoryLoading, categoryError, itemDocs } = useContext(GlobalDataContext);
   const { globalState,setStateInfo: setGlobalStateInfo} = useContext(GlobalStateContext);
+  const testRef = useRef(false);
 
   function getGroupIDForList(listID: string): string | null {
     if (routeMode === "group") { return pageState.selectedListOrGroupID};
@@ -278,9 +278,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function chooseSearchItem(item: ItemSearch) {
-    console.log("CSI: Executing for ",cloneDeep(item));
     addExistingItemToList(item);
-//    console.log("CSI: unsetting rows, etc. is open/is focused false:", item.itemName);
     setSearchState(prevState => ({...prevState, searchCriteria: "", filteredRows: [],isOpen: false, isFocused: false}))
   }
 
@@ -359,7 +357,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     <IonPopover side="bottom" trigger="itemsearchbox" isOpen={searchState.isOpen} keyboardClose={false} onDidDismiss={(e) => {leaveSearchBox()}}>
     <IonContent><IonList key="popoverItemList">
       {(searchState.filteredSearchRows as ItemSearch[]).map((item: ItemSearch) => (
-        <IonItem button key={pageState.selectedListOrGroupID+"-poilist-"+item.itemID} onClick={(e) => {console.log("CSI click:",e); chooseSearchItem(item)}}>{item.itemName}</IonItem>
+        <IonItem button key={pageState.selectedListOrGroupID+"-poilist-"+item.itemID} onClick={(e) => {chooseSearchItem(item)}}>{item.itemName}</IonItem>
       ))}
     </IonList></IonContent>
     </IonPopover>
@@ -395,14 +393,18 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
               onKeyDown= {(e) => searchKeyPress(e)}
               onIonInput={(e) => updateSearchCriteria(e)}
               onClick={() => enterSearchBox()}
-              onIonBlur={() => { setSearchState(prevState => ({...prevState,isFocused: false}))}}
-           >   
+/*                Not sure why, but when you have this specific setsearchstate, it captures the click on the item in the popover and nothing works /*
+/*               onIonBlur={(e) => { setSearchState(prevState => ({...prevState,isFocused: false}))}} */           >   
            </IonInput>
           {/* <IonButton onClick={()=> clickedSearchCheck()}><IonIcon icon={checkmark} /></IonButton> */}
         </IonItem>
         {popOverElem}
         {alertElem}
     </IonTitle></IonToolbar></IonHeader>)
+
+  if (globalData.listRows.length <=0) {return(
+    <IonPage>{headerElem}<IonContent><IonItem key="nonefound"><IonLabel key="nothinghere">Please create at least one list before adding items</IonLabel></IonItem></IonContent></IonPage>
+  )};
 
   if (pageState.itemRows.length <=0 )  {return(
     <IonPage>{headerElem}<IonContent><IonItem key="nonefound"><IonLabel key="nothinghere">No Items On List</IonLabel></IonItem></IonContent></IonPage>
