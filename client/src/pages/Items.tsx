@@ -278,6 +278,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function chooseSearchItem(item: ItemSearch) {
+    console.log("CSI: Executing for ",cloneDeep(item));
     addExistingItemToList(item);
 //    console.log("CSI: unsetting rows, etc. is open/is focused false:", item.itemName);
     setSearchState(prevState => ({...prevState, searchCriteria: "", filteredRows: [],isOpen: false, isFocused: false}))
@@ -358,7 +359,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     <IonPopover side="bottom" trigger="itemsearchbox" isOpen={searchState.isOpen} keyboardClose={false} onDidDismiss={(e) => {leaveSearchBox()}}>
     <IonContent><IonList key="popoverItemList">
       {(searchState.filteredSearchRows as ItemSearch[]).map((item: ItemSearch) => (
-        <IonItem button key={pageState.selectedListOrGroupID+"-poilist-"+item.itemID} onClick={(e) => {chooseSearchItem(item)}}>{item.itemName}</IonItem>
+        <IonItem button key={pageState.selectedListOrGroupID+"-poilist-"+item.itemID} onClick={(e) => {console.log("CSI click:",e); chooseSearchItem(item)}}>{item.itemName}</IonItem>
       ))}
     </IonList></IonContent>
     </IonPopover>
