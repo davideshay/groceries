@@ -19,7 +19,7 @@ WORKDIR /usr/app
 COPY --from=builder /usr/app/server/dist ./dist
 COPY server/package*.json server/package-lock.json ./
 
-RUN NODE_ENV=production npm install --only=production
+RUN NODE_ENV=production npm install --omit=dev
 
 CMD node dist/index.js
 
