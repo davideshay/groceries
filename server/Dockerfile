@@ -20,6 +20,7 @@ COPY --from=builder /usr/app/server/dist ./dist
 COPY --from=builder /usr/app/server/data ./data
 COPY server/package*.json server/package-lock.json ./
 
+RUN ls -laRt
 
 RUN NODE_ENV=production npm install --omit=dev
 
