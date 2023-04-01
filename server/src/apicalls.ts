@@ -1,4 +1,5 @@
 export const couchdbUrl = (process.env.COUCHDB_URL == undefined) ? "" : process.env.COUCHDB_URL.endsWith("/") ? process.env.COUCHDB_URL.slice(0,-1): process.env.COUCHDB_URL;
+export const couchdbInternalUrl = (process.env.COUCHDB_INTERNAL_URL == undefined) ? couchdbUrl : process.env.COUCHDB_INTERAL_URL?.endsWith("/") ? process.env.COUCHDB_INTERNAL_URL.slice(0,-1): process.env.COUCHDB_INTERNAL_URL;
 export const couchDatabase = (process.env.COUCHDB_DATABASE == undefined) ? "" : process.env.COUCHDB_DATABASE;
 export const couchKey = process.env.COUCHDB_HMAC_KEY;
 export const couchAdminUser = process.env.COUCHDB_ADMIN_USER;
@@ -30,7 +31,7 @@ const smtpOptions: SMTPTransport.Options= {
 import nodemailer from 'nodemailer';
 import nanoAdmin, { DocumentListResponse,  MangoResponse, MaybeDocument } from 'nano';
 const nanoAdminOpts = {
-    url: couchdbUrl,
+    url: couchdbInternalUrl,
     requestDefaults: {
         headers: { Authorization: "Basic "+ Buffer.from(couchAdminUser+":"+couchAdminPassword).toString('base64') }
     }
@@ -102,8 +103,8 @@ export async function issueToken(req: Request, res: Response) {
         loginRoles: [],
         refreshJWT: "",
         accessJWT: "",
-        couchdbUrl: process.env.COUCHDB_URL,
-        couchdbDatabase: process.env.COUCHDB_DATABASE
+        couchdbUrl: couchdbUrl,
+        couchdbDatabase: couchDatabase
     }
     let loginResponse = await couchLogin(username,password);
     if (!loginResponse.loginSuccessful) {
@@ -199,8 +200,8 @@ export async function registerNewUser(req: CustomRequest<NewUserReqBody>, res: R
         idCreated: "",
         refreshJWT: "",
         accessJWT: "",
-        couchdbUrl: process.env.COUCHDB_URL,
-        couchdbDatabase: process.env.COUCHDB_DATABASE,
+        couchdbUrl: couchdbUrl,
+        couchdbDatabase: couchDatabase,
         email: email,
         fullname: fullname
     }

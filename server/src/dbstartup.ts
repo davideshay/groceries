@@ -1,4 +1,4 @@
-import { todosNanoAsAdmin, usersNanoAsAdmin, couchDatabase, couchAdminPassword, couchAdminUser, couchdbUrl, couchStandardRole,
+import { todosNanoAsAdmin, usersNanoAsAdmin, couchDatabase, couchAdminPassword, couchAdminUser, couchdbUrl, couchdbInternalUrl, couchStandardRole,
 couchAdminRole, conflictsViewID, conflictsViewName, utilitiesViewID, refreshTokenExpires, accessTokenExpires,
 enableScheduling, resolveConflictsFrequencyMinutes,expireJWTFrequencyMinutes } from "./apicalls";
 import { resolveConflicts } from "./apicalls";
@@ -31,7 +31,7 @@ export async function couchLogin(username: string, password: string) {
     }
     const config: AxiosRequestConfig = {
         method: 'get',
-        url: couchdbUrl+"/_session",
+        url: couchdbInternalUrl+"/_session",
         auth: { username: username, password: password},
         responseType: 'json'
     }
@@ -91,7 +91,7 @@ async function setDBSecurity() {
     let errorSettingSecurity = false;
     let config: AxiosRequestConfig = {
         method: 'get',
-        url: couchdbUrl+"/"+couchDatabase+"/_security",
+        url: couchdbInternalUrl+"/"+couchDatabase+"/_security",
         auth: {username: String(couchAdminUser), password: String(couchAdminPassword)},
         responseType: 'json'
     }
@@ -125,7 +125,7 @@ async function setDBSecurity() {
     }
     let configSec: any = {
         method: 'put',
-        url: couchdbUrl+"/"+couchDatabase+"/_security",
+        url: couchdbInternalUrl+"/"+couchDatabase+"/_security",
         auth: {username: couchAdminUser, password: couchAdminPassword},
         responseType: 'json',
         data: newSecurity
@@ -531,7 +531,9 @@ export async function dbStartup() {
     console.log("STATUS: App Version: ",appVersion);
     console.log("STATUS: Database Schema Version:",maxAppSupportedSchemaVersion);
     if (couchdbUrl == "") {console.log("ERROR: No environment variable for CouchDB URL"); return false;}
+    if (couchdbInternalUrl == "") {console.log("ERROR: No environment variable for internal CouchDB URL"); return false;}
     console.log("STATUS: Database URL: ",couchdbUrl);
+    console.log("STATUS: Internal Database URL: ",couchdbInternalUrl);
     if (couchDatabase == "") { console.log("ERROR: No CouchDatabase environment variable."); return false;}
     console.log("STATUS: Using database: ",couchDatabase);
     console.log("STATUS: Refresh token expires in ",refreshTokenExpires);
