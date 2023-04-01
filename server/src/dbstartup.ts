@@ -36,10 +36,8 @@ export async function couchLogin(username: string, password: string) {
         responseType: 'json'
     }
     let res: AxiosResponse| null;
-    console.log("DEBUG: config: ",JSON.stringify(config));
     try  {res = await axios(config)}
-    catch(err) {console.log("DEBUG","res:",JSON.stringify(err)); loginResponse.loginSuccessful = false; return loginResponse};
-    console.log("DEBUG:",JSON.stringify(res));
+    catch(err) {loginResponse.loginSuccessful = false; return loginResponse};
     if (res == null) {loginResponse.loginSuccessful = false; return loginResponse}
     if (loginResponse.loginSuccessful) {
         if (res.status != 200) {
