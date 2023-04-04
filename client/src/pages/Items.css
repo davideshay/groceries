@@ -3,10 +3,38 @@ ion-item.select-interface-option.indented,ion-item.select-interface-option.inden
     margin-left: 1rem;
 }
 
-ion-item.item-outer {
-    --min-height: 6px;
+
+ion-item.item-list-selector::part(native) {
+    min-height: auto;
+}
+
+#itemlistselector {
+    --min-height: auto;
+    min-height: auto;
+}
+
+ion-item.item-search::part(native) {
+    min-height: auto;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    
+}
+
+#itemsearchbox {
+    --min-height: auto;
+    min-height: auto;
+}
+
+.item-inner {
+    min-height: 0px;
     --padding-top: 8px;
     --padding-bottom: 8px;
+}
+
+ion-item.item-outer {
+    --min-height: 6px;
+    --padding-top: 9px;
+    --padding-bottom: 9px;
 }
 
 ion-item.item-inner::part(native) {

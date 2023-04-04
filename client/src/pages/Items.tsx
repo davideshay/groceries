@@ -374,10 +374,10 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   )
 
   let headerElem=(
-    <IonHeader><IonToolbar><IonButtons slot="start"><IonMenuButton /></IonButtons>
-    <IonTitle class="ion-no-padding">
-        <IonItem key="listselector">
-        <IonSelect label="Items On" aria-label="Items On List:" interface="popover" onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListOrGroupID}  >
+    <IonHeader><IonToolbar><IonButtons slot="start"><IonMenuButton class={"ion-no-padding small-menu-button"} /></IonButtons>
+    <IonTitle class="ion-no-padding item-outer">
+        <IonItem id="itemlistselector" class="item-list-selector" key="listselector">
+        <IonSelect label="Items On" aria-label="Items On" interface="popover" onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListOrGroupID}  >
             {listCombinedRows.map((listCombinedRow: ListCombinedRow) => (
                 <IonSelectOption disabled={listCombinedRow.rowKey==="G-null"} className={listCombinedRow.rowType === RowType.list ? "indented" : ""} key={listCombinedRow.listOrGroupID} value={listCombinedRow.listOrGroupID}>
                   {listCombinedRow.rowName}
@@ -386,9 +386,9 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
           </IonSelect>
         <SyncIndicator />
         </IonItem>
-        <IonItem key="searchbar">
-          <IonIcon icon={searchOutline} />
-          <IonInput id="itemsearchbox" aria-label="" class="ion-no-padding" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="text" enterkeyhint="enter"
+        <IonItem key="searchbar" class="item-search">
+           <IonIcon icon={searchOutline} />
+           <IonInput id="itemsearchbox" aria-label="" class="ion-no-padding input-search" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="text" enterkeyhint="enter"
               clearInput={true}  placeholder="Search" fill="solid"
               onKeyDown= {(e) => searchKeyPress(e)}
               onIonInput={(e) => updateSearchCriteria(e)}
