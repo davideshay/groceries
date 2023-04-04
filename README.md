@@ -13,6 +13,11 @@ Groceries is an open source and self hosted grocery shopping app, with support f
 * List Group support includes the ability to add items to a group of stores automatically, and then if the first store doesn't have an item, it remains on the list for the next store.
 * Supports a sorted view of every store by category (aisle), so you don't have to double back in the store
 
+## APPLICATION SAMPLE FLOW
+
+
+
+
 ## KEY CONCEPTS FOR USERS
 
 * Normal usage of the Groceries app involves a backend running on a server with access to a CouchDB database. This is used to sync across devices and between shared users.
@@ -20,6 +25,9 @@ Groceries is an open source and self hosted grocery shopping app, with support f
 * List Groups - Every user has a default list group created automatically, and every list is assigned to one (and only one) list group.
 * Lists are equivalent to a grocery store, and always exist within a given list group (which cannot be changed at this point). Lists (stores) also have a given set of categories (aisles) that are active within the list. For instance, you might have a produce category/aisle at your grocery store, but not in your hardware store.  The sequence of categories/aisles is associated with the list as well, and can be changed to match the layout of each store/list.
 * Items are individual things on a shopping list, and are associated with a list group. When you are on the Items page, you can choose whether to add items just to a given list, or to add them to all available lists in the listgroup if a group is selected.
+* The application ships with a set of about 250 items and 30 categories. You can add these to the lists or create new items as you go.
+* Items are tagged to categories to aid in sorting the list. You can edit and add new categories as well.
+* Items also have a "unit of measure" like bag, box, gallon, pound, etc. You can add new units of measure as well.
 * List Groups can be shared with friends. You can send a friend request to users not already registered on the app, and they will get an email asking them to sign up. Once the friendship is confirmed by the other user, you can share a list group with them. All lists within the list group are then shared.
 
 ## KEY CONCEPTS FOR SYSTEM ADMINISTRATORS

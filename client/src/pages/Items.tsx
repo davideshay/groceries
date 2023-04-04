@@ -354,7 +354,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   let popOverElem = (
-    <IonPopover side="bottom" trigger="itemsearchbox" isOpen={searchState.isOpen} keyboardClose={false} onDidDismiss={(e) => {leaveSearchBox()}}>
+    <IonPopover side="bottom" trigger="item-search-box-id" isOpen={searchState.isOpen} keyboardClose={false} onDidDismiss={(e) => {leaveSearchBox()}}>
     <IonContent><IonList key="popoverItemList">
       {(searchState.filteredSearchRows as ItemSearch[]).map((item: ItemSearch) => (
         <IonItem button key={pageState.selectedListOrGroupID+"-poilist-"+item.itemID} onClick={(e) => {chooseSearchItem(item)}}>{item.itemName}</IonItem>
