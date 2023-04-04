@@ -376,8 +376,8 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   let headerElem=(
     <IonHeader><IonToolbar><IonButtons slot="start"><IonMenuButton class={"ion-no-padding small-menu-button"} /></IonButtons>
     <IonTitle class="ion-no-padding item-outer">
-        <IonItem id="itemlistselector" class="item-list-selector" key="listselector">
-        <IonSelect label="Items On" aria-label="Items On" interface="popover" onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListOrGroupID}  >
+        <IonItem id="item-list-selector-id" class="item-list-selector" key="listselector">
+        <IonSelect id="select-list-selector-id" class="select-list-selector" label="Items On" aria-label="Items On" interface="popover" onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListOrGroupID}  >
             {listCombinedRows.map((listCombinedRow: ListCombinedRow) => (
                 <IonSelectOption disabled={listCombinedRow.rowKey==="G-null"} className={listCombinedRow.rowType === RowType.list ? "indented" : ""} key={listCombinedRow.listOrGroupID} value={listCombinedRow.listOrGroupID}>
                   {listCombinedRow.rowName}
@@ -388,7 +388,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         </IonItem>
         <IonItem key="searchbar" class="item-search">
            <IonIcon icon={searchOutline} />
-           <IonInput id="itemsearchbox" aria-label="" class="ion-no-padding input-search" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="text" enterkeyhint="enter"
+           <IonInput id="item-search-box-id" aria-label="" class="ion-no-padding input-search" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="text" enterkeyhint="enter"
               clearInput={true}  placeholder="Search" fill="solid"
               onKeyDown= {(e) => searchKeyPress(e)}
               onIonInput={(e) => updateSearchCriteria(e)}
@@ -443,7 +443,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       lastCategoryFinished=item.completed;
     }
     currentRows.push(
-      <IonItem class="item-outer" key={pageState.itemRows[i].itemID} >
+      <IonItem class="itemrow-outer" key={pageState.itemRows[i].itemID} >
         <IonGrid class="grid-no-pad"><IonRow>
         <IonCol class="col-no-pad" size="1">
         <IonCheckbox aria-label=""
@@ -451,7 +451,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
             checked={Boolean(pageState.itemRows[i].completed)}></IonCheckbox>
         </IonCol>
         <IonCol class="col-no-pad" size="11">
-          <IonItem class="item-inner" routerLink={"/item/edit/"+item.itemID} key={pageState.itemRows[i].itemID+"mynewbutton"}>{item.itemName + (item.quantityUOMDesc === "" ? "" : " ("+ item.quantityUOMDesc+")")}</IonItem>
+          <IonItem class="itemrow-inner" routerLink={"/item/edit/"+item.itemID} key={pageState.itemRows[i].itemID+"mynewbutton"}>{item.itemName + (item.quantityUOMDesc === "" ? "" : " ("+ item.quantityUOMDesc+")")}</IonItem>
         </IonCol>
         </IonRow></IonGrid>
       </IonItem>);

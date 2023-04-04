@@ -358,7 +358,7 @@ function deletePrompt() {
             {deleteButton}
           </IonButtons>
           <IonButtons slot="secondary">
-            <IonButton key="back" fill="outline"  color="primary" onClick={() => props.history.goBack()}>Cancel<IonIcon slot="start" icon={closeCircleOutline}></IonIcon></IonButton>  
+            <IonButton key="back" fill="outline"  color="secondary" onClick={() => props.history.goBack()}>Cancel<IonIcon slot="start" icon={closeCircleOutline}></IonIcon></IonButton>  
           </IonButtons>
           <IonButtons slot="end">  
             {updateButton}

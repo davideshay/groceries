@@ -1,5 +1,5 @@
 import { IonContent, IonPage, IonButton, IonList, IonInput, 
- IonItem, IonLabel, NavContext, IonIcon, useIonAlert} from '@ionic/react';
+ IonItem, IonLabel, NavContext, IonIcon, useIonAlert, IonToolbar, IonButtons} from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteCategoryFromItems, useDeleteGenericDocument,
@@ -170,12 +170,20 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
             </IonItem>
           </IonList>
           <IonItem>{formError}</IonItem>
-          <IonButton class="ion-float-left" fill="outline" color="danger" onClick={() => deletePrompt()}><IonIcon slot="start" icon={trashOutline}></IonIcon>Delete</IonButton>
-          <IonButton class="ion-float-right" onClick={() => updateThisCategory()}>
-            <IonIcon slot="start" icon={(mode === "new" ? addOutline : saveOutline)}></IonIcon>
-            {(mode === "new") ? "Add" : "Save"}
-          </IonButton>
-          <IonButton class="ion-float-right" fill="outline" color="secondary" onClick={() => goBack("/categories")}><IonIcon slot="start" icon={closeOutline}></IonIcon>Cancel</IonButton>
+          <IonToolbar>
+            <IonButtons slot="start">
+              <IonButton fill="outline" color="danger" onClick={() => deletePrompt()}><IonIcon slot="start" icon={trashOutline}></IonIcon>Delete</IonButton>
+           </IonButtons>
+           <IonButtons slot="secondary">
+           <IonButton fill="outline" color="secondary" onClick={() => goBack("/categories")}><IonIcon slot="start" icon={closeOutline}></IonIcon>Cancel</IonButton>
+          </IonButtons>
+          <IonButtons slot="end">
+          <IonButton fill="solid" color="primary" onClick={() => updateThisCategory()}>
+              <IonIcon slot="start" icon={(mode === "new" ? addOutline : saveOutline)}></IonIcon>
+              {(mode === "new") ? "Add" : "Save"}
+            </IonButton>
+          </IonButtons>
+          </IonToolbar>
       </IonContent>
     </IonPage>
   );

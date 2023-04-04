@@ -3,12 +3,32 @@ ion-item.select-interface-option.indented,ion-item.select-interface-option.inden
     margin-left: 1rem;
 }
 
+ion-item.item-list-selector {
+    --padding-top: 8px;
+    --padding-bottom: 8px;
+    --min-height: auto;
+    background: none;
+    border: none;
+    --background-hover: none;
+}
 
 ion-item.item-list-selector::part(native) {
+    --min-height: 0px;
+    min-height: 0px;
+}
+
+ion-item.item-list-selector::part(native) input-wrapper {
+    --min-height: auto;
     min-height: auto;
 }
 
-#itemlistselector {
+#item-list-selector-id item-inner {
+    --min-height: auto;
+    min-height: auto;
+}
+
+
+#select-list-selector-id {
     --min-height: auto;
     min-height: auto;
 }
@@ -20,29 +40,27 @@ ion-item.item-search::part(native) {
     
 }
 
-#itemsearchbox {
+#item-search-box-id {
     --min-height: auto;
     min-height: auto;
 }
 
-.item-inner {
-    min-height: 0px;
-    --padding-top: 8px;
-    --padding-bottom: 8px;
-}
-
-ion-item.item-outer {
+ion-item.itemrow-outer {
     --min-height: 6px;
     --padding-top: 9px;
     --padding-bottom: 9px;
 }
 
-ion-item.item-inner::part(native) {
+ion-item.itemrow-outer::part(native) {
+    min-height: auto;    
+}
+
+ion-item.itemrow-inner::part(native) {
     background: none;
     --background-hover: none;
     border: none;
     min-height: auto;
-    --padding-start: 0;
+    --padding-start: 0px;
     
 }
 
