@@ -313,14 +313,14 @@ function deletePrompt() {
 
   let updateButton=[];
   if (mode === "new") {
-    updateButton.push(<IonButton class="ion-float-right" key="add" onClick={() => updateThisItem()}>Add<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
+    updateButton.push(<IonButton color="primary" slot="end" fill="solid" key="add" onClick={() => updateThisItem()}>Add<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
   } else {
-    updateButton.push(<IonButton class="ion-float-right" key="save" onClick={() => updateThisItem()}>Save<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
+    updateButton.push(<IonButton color="primary" slot="end" fill="solid" key="save" onClick={() => updateThisItem()}>Save<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
   }
 
   let deleteButton=[];
   if (pageState.listGroupOwner===remoteDBCreds.dbUsername) {
-    deleteButton.push(<IonButton class="ion-float-left" fill="outline" color="danger" key="delete" onClick={() => deletePrompt()}>Delete<IonIcon slot="start" icon={trashOutline}></IonIcon></IonButton>)
+    deleteButton.push(<IonButton fill="outline" color="danger"  key="delete" onClick={() => deletePrompt()}>Delete<IonIcon slot="start" icon={trashOutline}></IonIcon></IonButton>)
   }
 
   return (
@@ -351,11 +351,19 @@ function deletePrompt() {
             {categoryElem}
             </IonItemGroup>
           </IonList>
-          {deleteButton}
-          {updateButton}
-          <IonButton class="ion-float-right" key="back" fill="outline"  onClick={() => props.history.goBack()}>Cancel<IonIcon slot="start" icon={closeCircleOutline}></IonIcon></IonButton>  
       </IonContent>
       <IonFooter>
+        <IonToolbar>
+          <IonButtons slot="start">
+            {deleteButton}
+          </IonButtons>
+          <IonButtons slot="secondary">
+            <IonButton key="back" fill="outline"  color="secondary" onClick={() => props.history.goBack()}>Cancel<IonIcon slot="start" icon={closeCircleOutline}></IonIcon></IonButton>  
+          </IonButtons>
+          <IonButtons slot="end">  
+            {updateButton}
+          </IonButtons>
+        </IonToolbar>
         <IonLabel>{pageState.formError}</IonLabel>
       </IonFooter>
     </IonPage>
