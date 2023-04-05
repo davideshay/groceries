@@ -446,7 +446,7 @@ export function useFriends(username: string) : { useFriendState: UseFriendState,
             if ((remoteDBCreds.dbUsername === friendDoc.friendID1 && friendDoc.friendStatus === FriendStatus.PendingFrom2) || 
                 (remoteDBCreds.dbUsername === friendDoc.friendID2 && friendDoc.friendStatus === FriendStatus.PendingFrom1))
             {
-              friendRow.friendStatusText = "Confirm?"
+              friendRow.friendStatusText = "Needs Confirmed"
               friendRow.resolvedStatus = ResolvedFriendStatus.PendingConfirmation;
             } else {
               friendRow.friendStatusText = "Requested";
@@ -456,7 +456,7 @@ export function useFriends(username: string) : { useFriendState: UseFriendState,
             friendRow.friendStatusText = "Confirmed";
             friendRow.resolvedStatus = ResolvedFriendStatus.Confirmed;
           } else if (friendDoc.friendStatus === FriendStatus.WaitingToRegister) {
-            friendRow.friendStatusText = "Needs to Register";
+            friendRow.friendStatusText = "Needs Registering";
             friendRow.resolvedStatus = ResolvedFriendStatus.WaitingToRegister
           }
           setFriendRows(prevArray => [...prevArray, friendRow])

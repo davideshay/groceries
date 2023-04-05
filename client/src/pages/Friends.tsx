@@ -1,6 +1,6 @@
 import { IonContent, IonPage, IonList, IonItem, IonLabel,
         IonButton, useIonToast, 
-        IonFab, IonFabButton, IonIcon, IonInput, IonAlert } from '@ionic/react';
+        IonFab, IonFabButton, IonIcon, IonInput, IonAlert, IonGrid, IonRow, IonCol } from '@ionic/react';
 import { useState, useContext, Fragment, useRef } from 'react';
 import { Clipboard } from '@capacitor/clipboard';
 import { CapacitorHttp, HttpOptions } from '@capacitor/core';
@@ -98,15 +98,6 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   }
 
-  function statusItem(friendRow: FriendRow) {
-    if (friendRow.resolvedStatus === ResolvedFriendStatus.PendingConfirmation)
-    {
-      return (<IonButton onClick={() => confirmFriend(friendRow)}>Confirm Friend</IonButton>)
-    } else {
-      return (<IonLabel>{friendRow.friendStatusText}</IonLabel>)
-    }
-  }
-
   function showURL(friendRow: FriendRow) {
     let confURL = remoteDBCreds.apiServerURL + "/createaccountui?uuid="+friendRow.friendDoc.inviteUUID;
     Clipboard.write({string: confURL});
@@ -115,28 +106,38 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
             registrationAlertSubheader: "An email has been sent to "+pageState.newFriendEmail+" to confirm and create their account. The URL is here: " + confURL+ " . This has also been copied to the clipboard."}))
     }
 
-  function URLButtonElem(friendRow: FriendRow) {
+  function ButtonElem(friendRow: FriendRow) {
     if (friendRow.resolvedStatus === ResolvedFriendStatus.WaitingToRegister) {
       return(
-        <IonButton onClick={() => showURL(friendRow)}>Show URL</IonButton> 
+        <IonButton size="small" class="extra-small-button" onClick={() => showURL(friendRow)}>URL</IonButton> 
       )
     }
-    else {
-      return([]);
+    else if (friendRow.resolvedStatus === ResolvedFriendStatus.PendingConfirmation)
+    {
+      return(<IonButton size="small" class="extra-small-button" onClick={() => confirmFriend(friendRow)}>Confirm</IonButton>);
     }
   }
 
-  let friendsElem;
+  let friendsElem: JSX.Element[] = [];
 
   function updateFriendsElem() {
-    friendsElem=[];
+    let friendRowsElem: JSX.Element[] = [];
     if (friendRows.length > 0) {
       friendRows.forEach((friendRow: FriendRow) => {
         const itemKey = (friendRow.targetUserName === "" || friendRow.targetUserName === null) ? friendRow.targetEmail : friendRow.targetUserName;
-        let elem=<IonItem key={itemKey}>{URLButtonElem(friendRow)}{statusItem(friendRow)}<IonLabel>{friendRow.targetEmail}</IonLabel><IonLabel>{friendRow.targetFullName}</IonLabel></IonItem>
-        friendsElem.push(elem);
+        let elem=(<IonRow  key={itemKey}>
+              <IonCol class="col-minimal-padding ion-align-items-center" size="3">{ButtonElem(friendRow)}</IonCol>
+              <IonCol class="col-minimal-padding ion-align-items-center" size="4"><IonLabel class="friend-label">{friendRow.friendStatusText}</IonLabel></IonCol>
+              <IonCol class="col-minimal-padding ion-align-items-center" size="5">{friendRow.targetFullName == "" ? friendRow.targetEmail : friendRow.targetFullName}</IonCol>
+            </IonRow>)
+        friendRowsElem.push(elem);
       });
     }
+    friendsElem.push(
+      <IonGrid key="friendsgrid">
+        {friendRowsElem}
+      </IonGrid>
+    )
   }
    
   function addNewFriend() {

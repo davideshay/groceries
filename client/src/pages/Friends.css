@@ -1,0 +1,17 @@
+ion-col.col-minimal-padding {
+    --ion-grid-column-padding: 6px;
+}
+
+ion-label.friend-label {
+    vertical-align: middle;
+}
+
+ion-button.extra-small-button {
+    margin: 0px;
+    padding: 0px;
+}
+
+ion-button.extra-small-button::part(native) {
+    height: 18px;
+    margin: 0px;
+}
