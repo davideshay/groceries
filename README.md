@@ -173,10 +173,14 @@ Other Settings:
     * Sync the sources with `npx capacitor sync` or `ionic capacitor sync`
     * Build the application, with, for example for Android: `ionic capacitor build android`
     * You can test in a simulator, or move the bundle/APK to your Android device with Google Drive or any other sideloading mechanism of your choice.
-* Installation instructions for backend - Docker
-    * Deploy couchDB to a production server, and note the admin user/password (these will be needed for the node backend)
+* Installation instructions for backend - Docker / Kubernetes
+    * Deploy couchDB to a production server, and note the admin user/password (these will be needed for the node backend). For couchDB you will also have to enable JWT authentication and set an HMAC key.  See example YAML for Kubernetes deployment (similar concepts could be used for Docker using the same concepts to create a compose file. Unfortunately I have moved to Kubernetes instead of docker compose files, so I don't have a working example). [couchdb.yaml](https://raw.githubusercontent.com/davideshay/groceries/master/docs/couchdb.yaml)  .  Be sure to change any admin users, passwords, and secrets in that file as appropriate.
+        * The first piece is setting the admin password in pbkdf2 format. You can use various online sites to do this, or set the password in plain text in the password.ini file and then let couchDB hash it for you automatically. You can then record the hashed value (updated in the file) and use that going forward.
+        * The next challenge is setting up the HMAC key. In the jwt.ini file, you need to set the HMAC key. Come up with a random key, and in this file set it to the base64 encoded value. Later, in the deployment of the groceries auth server, you will use the un-encoded/raw value of this secret key.
+        * The yaml file sets up 3 separate instances of couchdb so they can run as a cluster.  I wanted this for high-availablity of couchDB, but this is not necessary.
+        * The yaml file shown above also has some setup scripts that run -- these are mostly for convenience so that at first run it will automatically create the _users database and _replicator database, both of which are required for standard couchDB replication and authentication functionality to work. You could create those manually and ignore the scripts. If you are using any of these scripts be sure to change the username and password specified in them to the admin username / password specified above.
     * Build the image from the Dockerfile in server/Dockerfile
-    * Deploy to your container server.
+    * Deploy to your container server.  Here is a sample yaml deployment file for Kubernetes that can be leveraged to create a docker compose file if required : [groceries.yaml](https://raw.githubusercontent.com/davideshay/groceries/master/docs/groceries.yaml). Make sure to change your couchDB admin user names and passwords to what you have established in the CouchDB deployment above. Also, set the HMAC key to the unencoded/raw HMAC secret linked to the one in the CouchDB setup.
     * Run from your container server (docker, kubernetes, etc.) and ensure the backend is configured with the following environment variables:
     
 ```
