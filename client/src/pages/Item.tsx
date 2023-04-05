@@ -1,7 +1,7 @@
 import { IonContent, IonPage, IonButton, IonList, IonInput, IonItem,
   IonSelect, IonIcon, 
   IonSelectOption, useIonAlert,useIonToast, IonTextarea, IonGrid, IonRow, IonCol, IonText, IonCard,
-  IonCardSubtitle, NavContext, IonButtons, IonToolbar } from '@ionic/react';
+  IonCardSubtitle, NavContext, IonButtons, IonToolbar, IonImg } from '@ionic/react';
 import { addOutline, closeCircleOutline, trashOutline, saveOutline } from 'ionicons/icons';
 import { usePhotoGallery } from '../components/Usehooks';
 import { useParams } from 'react-router-dom';
@@ -36,7 +36,7 @@ const Item: React.FC = (props) => {
   const db = usePouch();
   const screenLoading = useRef(true);
   const {goBack} = useContext(NavContext);
-  const { takePhoto } = usePhotoGallery();
+  const { photo, takePhoto } = usePhotoGallery();
   const { dbError: itemsError, itemRowsLoaded, itemRows } = useItems({selectedListGroupID: stateItemDoc.listGroupID, isReady: !itemLoading, needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const { globalState, setStateInfo} = useContext(GlobalStateContext);
   const globalData  = useContext(GlobalDataContext);
@@ -259,6 +259,13 @@ const Item: React.FC = (props) => {
     })
   }
   
+  async function getNewPhoto() {
+    await takePhoto();
+  }
+
+  console.log(photo);
+  const itemPhoto="data:image/jpeg;base64"+(photo as any).base64String;
+
   let thisListGroup = globalData.listCombinedRows.find(el => el.listGroupID === stateItemDoc.listGroupID);
   
   return (
@@ -273,7 +280,8 @@ const Item: React.FC = (props) => {
               <IonText >List Group: {thisListGroup?.listGroupName}</IonText>
             </IonItem>
             <IonItem key="photo">
-              <IonButton onClick={() => takePhoto()}>Take Photo</IonButton>
+              <IonButton onClick={() => getNewPhoto()}>Take Photo</IonButton>
+              <IonImg src={itemPhoto}/>
             </IonItem>
             <IonCard>
               <IonCardSubtitle>Change values here to change on all lists below</IonCardSubtitle>

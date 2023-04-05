@@ -532,15 +532,23 @@ export function useAddListToAllItems() {
 }
 
 export function usePhotoGallery() {
+  const [photo, setPhoto] = useState();
   const takePhoto = async () => {
-    const photo = await Camera.getPhoto({
-      resultType: CameraResultType.Uri,
-      source: CameraSource.Camera,
-      quality: 100,
+    let newPhoto = await Camera.getPhoto({
+      resultType: CameraResultType.Base64,
+      source: CameraSource.Prompt,
+      quality: 80,
+      width: 200,
+      height: 200,
+      allowEditing: true,
+      promptLabelHeader: "Take a picture for your item",
+
     });
+    setPhoto(newPhoto as any);
   };
 
   return {
     takePhoto,
+    photo
   };
 }
