@@ -1,4 +1,5 @@
 import { useCallback, useState, useEffect, useContext, useRef } from 'react'
+import { Camera, CameraResultType, CameraSource, Photo } from '@capacitor/camera';
 import { usePouch, useFind } from 'use-pouchdb'
 import { cloneDeep, pull } from 'lodash';
 import { RemoteDBStateContext, SyncStatus } from './RemoteDBState';
@@ -528,4 +529,18 @@ export function useAddListToAllItems() {
           }
       return updateSuccess;
     },[db])
+}
+
+export function usePhotoGallery() {
+  const takePhoto = async () => {
+    const photo = await Camera.getPhoto({
+      resultType: CameraResultType.Uri,
+      source: CameraSource.Camera,
+      quality: 100,
+    });
+  };
+
+  return {
+    takePhoto,
+  };
 }

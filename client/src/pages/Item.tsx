@@ -3,6 +3,7 @@ import { IonContent, IonPage, IonButton, IonList, IonInput, IonItem,
   IonSelectOption, useIonAlert,useIonToast, IonTextarea, IonGrid, IonRow, IonCol, IonText, IonCard,
   IonCardSubtitle, NavContext, IonButtons, IonToolbar } from '@ionic/react';
 import { addOutline, closeCircleOutline, trashOutline, saveOutline } from 'ionicons/icons';
+import { usePhotoGallery } from '../components/Usehooks';
 import { useParams } from 'react-router-dom';
 import { usePouch } from 'use-pouchdb';
 import { useState, useEffect, useContext, useRef } from 'react';
@@ -35,7 +36,7 @@ const Item: React.FC = (props) => {
   const db = usePouch();
   const screenLoading = useRef(true);
   const {goBack} = useContext(NavContext);
-
+  const { takePhoto } = usePhotoGallery();
   const { dbError: itemsError, itemRowsLoaded, itemRows } = useItems({selectedListGroupID: stateItemDoc.listGroupID, isReady: !itemLoading, needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const { globalState, setStateInfo} = useContext(GlobalStateContext);
   const globalData  = useContext(GlobalDataContext);
@@ -270,6 +271,9 @@ const Item: React.FC = (props) => {
             </IonItem>
             <IonItem key="listgroup">
               <IonText >List Group: {thisListGroup?.listGroupName}</IonText>
+            </IonItem>
+            <IonItem key="photo">
+              <IonButton onClick={() => takePhoto()}>Take Photo</IonButton>
             </IonItem>
             <IonCard>
               <IonCardSubtitle>Change values here to change on all lists below</IonCardSubtitle>
