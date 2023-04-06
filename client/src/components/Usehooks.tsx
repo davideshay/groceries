@@ -10,7 +10,7 @@ import { getUsersInfo } from './Utilities';
 import { getCommonKey } from './ItemUtilities';
 import { GlobalDataContext } from './GlobalDataProvider';
 
-export function useGetOneDoc(docID: string | null) {
+export function useGetOneDoc(docID: string | null, attachments: boolean = false) {
   const db = usePouch();
   const changesRef = useRef<PouchDB.Core.Changes<any>>();
   const [doc,setDoc] = useState<any>(null);
@@ -20,11 +20,11 @@ export function useGetOneDoc(docID: string | null) {
   async function getDoc(id: string | null) {
       if (id == null) { loadingRef.current = false; return};
       loadingRef.current = true;
-      changesRef.current = db.changes({since: 'now', live: true, include_docs: true, doc_ids: [id]})
+      changesRef.current = db.changes({since: 'now', live: true, include_docs: true, attachments: attachments,doc_ids: [id]})
       .on('change', function(change) { setDoc(change.doc); })
       let success=true; setDBError(false);
       let docRet = null;
-      try  {docRet = await db.get(id);}
+      try  {docRet = await db.get(id,{attachments: attachments});}
       catch(err) {success=false; setDBError(true);}
       loadingRef.current = false;
       if (success) {setDoc(docRet)};
@@ -35,33 +35,8 @@ export function useGetOneDoc(docID: string | null) {
       return ( () => { if (changesRef.current) {changesRef.current.cancel()};})  
   },[docID])  
 
-  return {dbError, loading: loadingRef.current, doc};
+  return {dbError, loading: loadingRef.current, doc };
 }
-
-export function useGetAttachment(docID: string | null) {
-  const db = usePouch();
-  const [blob,setBlob] = useState<any>(null);
-  const [dbError, setDBError] = useState(false);
-  const loadingRef = useRef(true);
-
-  async function getAttachment(id: string | null) {
-      if (id == null) { loadingRef.current = false; return};
-      loadingRef.current = true;
-      let success=true; setDBError(false);
-      let docRet: Blob;
-      try  {docRet = (await db.getAttachment(id,pictureName)) as Blob;}
-      catch(err) {success=false; setDBError(true);}
-      loadingRef.current = false;
-      if (success) {setBlob(docRet!)};
-    }
-    
-  useEffect( () => {
-      getAttachment(docID)  
-  },[docID])  
-
-  return {dbError, loading: loadingRef.current, blob};
-}
-
 
 export function useUpdateGenericDocument() {
   const db = usePouch();
@@ -563,12 +538,14 @@ export function usePhotoGallery() {
       resultType: CameraResultType.Base64,
       source: CameraSource.Prompt,
       quality: 80,
-      width: 200,
-      height: 200,
+      width: 300,
+      height: 300,
       allowEditing: true,
+      saveToGallery: false,
       promptLabelHeader: "Take a picture for your item",
     });
     setPhoto(rPhoto);
+    return rPhoto;
   };
 
   return {
