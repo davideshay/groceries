@@ -1,5 +1,8 @@
+/// <reference types='pouchdb' />
 export const maxAppSupportedSchemaVersion = 3;
 export const appVersion = "0.3.2";
+export const pictureName = "item.png";
+export const pictureType = "image/png";
 
 export interface UUIDDoc {
   _id?: string,
@@ -74,9 +77,22 @@ export const ItemListInit:ItemList = {
     uomName: null
   }
   
+type AttachmentData = string | Blob | Buffer;
+ 
+ export interface FullAttachment {
+    content_type: string;
+   digest?: string | undefined;
+    data: AttachmentData;
+}
+
+interface Attachments {
+  [attachmentId: string]: FullAttachment;
+}
+
 export interface ItemDoc {
     _id?: string,
     _rev?: string,
+    _attachments? : Attachments,
     type: string,
     listGroupID: string | null,
     name: string,

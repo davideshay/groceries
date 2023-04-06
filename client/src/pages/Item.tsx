@@ -1,7 +1,7 @@
 import { IonContent, IonPage, IonButton, IonList, IonInput, IonItem,
   IonSelect, IonIcon, 
   IonSelectOption, useIonAlert,useIonToast, IonTextarea, IonGrid, IonRow, IonCol, IonText, IonCard,
-  IonCardSubtitle, NavContext, IonButtons, IonToolbar, IonImg } from '@ionic/react';
+  IonCardSubtitle, NavContext, IonButtons, IonToolbar, IonImg, IonFooter } from '@ionic/react';
 import { addOutline, closeCircleOutline, trashOutline, saveOutline } from 'ionicons/icons';
 import { usePhotoGallery } from '../components/Usehooks';
 import { useParams } from 'react-router-dom';
@@ -37,6 +37,7 @@ const Item: React.FC = (props) => {
   const screenLoading = useRef(true);
   const {goBack} = useContext(NavContext);
   const { photo, takePhoto } = usePhotoGallery();
+  const [photoBase64String, setPhotoBase64String] = useState<string>();
   const { dbError: itemsError, itemRowsLoaded, itemRows } = useItems({selectedListGroupID: stateItemDoc.listGroupID, isReady: !itemLoading, needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const { globalState, setStateInfo} = useContext(GlobalStateContext);
   const globalData  = useContext(GlobalDataContext);
@@ -96,11 +97,15 @@ const Item: React.FC = (props) => {
     }
   },[itemLoading,itemDoc,globalData.listsLoading,globalData.listDocs,globalData.listRowsLoaded, globalData.listRows,globalState.itemMode,globalState.newItemName, globalState.callingListID, needInitItemDoc]);
 
+  useEffect( () => {
+    if (photo != undefined) {
+      setPhotoBase64String(String("data:image/jpeg;base64,"+photo.base64String))
+    }
+  },[photo])
+
   if (itemError || globalData.listError || globalData.categoryError || globalData.uomError || itemsError) { console.log("ERROR");return (
     <ErrorPage errorText="Error Loading Item Information... Restart."></ErrorPage>
   )}
-
-
 
   if ((itemLoading && routeItemID !== null) || globalData.listsLoading || !globalData.listRowsLoaded || globalData.categoryLoading || globalData.uomLoading || !itemRowsLoaded || isEmpty(stateItemDoc))  {
     return ( <Loading isOpen={screenLoading.current} message="Loading Item..."    /> )
@@ -263,8 +268,7 @@ const Item: React.FC = (props) => {
     await takePhoto();
   }
 
-  console.log(photo);
-  const itemPhoto="data:image/jpeg;base64"+(photo as any).base64String;
+  console.log(photoBase64String);
 
   let thisListGroup = globalData.listCombinedRows.find(el => el.listGroupID === stateItemDoc.listGroupID);
   
@@ -280,8 +284,11 @@ const Item: React.FC = (props) => {
               <IonText >List Group: {thisListGroup?.listGroupName}</IonText>
             </IonItem>
             <IonItem key="photo">
+              <IonImg src={photoBase64String}/>
+            </IonItem>
+            <IonItem key="photobuttons">
               <IonButton onClick={() => getNewPhoto()}>Take Photo</IonButton>
-              <IonImg src={itemPhoto}/>
+              <IonButton onClick={() => {}}>Delete Photo</IonButton>
             </IonItem>
             <IonCard>
               <IonCardSubtitle>Change values here to change on all lists below</IonCardSubtitle>
@@ -323,7 +330,9 @@ const Item: React.FC = (props) => {
                       addCategoryPopup={addCategoryPopup} addUOMPopup={addUOMPopup} />
             <IonItem key="formErrors">{formError}</IonItem>
           </IonList>
-          <IonToolbar>
+      </IonContent>
+      <IonFooter>
+      <IonToolbar>
           <IonButtons slot="start">
             {mode !== "new" ? 
               (<IonButton fill="outline" color="danger" onClick={() => deleteItem()}><IonIcon slot="start" icon={trashOutline}></IonIcon>Delete</IonButton>)
@@ -336,7 +345,7 @@ const Item: React.FC = (props) => {
           <IonButton fill="solid" color="primary" onClick={() => updateThisItem()}>{mode === "new" ? "Add": "Save"}<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>
           </IonButtons>
           </IonToolbar>
-      </IonContent>
+      </IonFooter>
     </IonPage>
   );
 };

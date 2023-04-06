@@ -332,3 +332,18 @@ export async function checkNameInGlobal(db: PouchDB.Database, name: string) {
     }
     return nameExists;
 }
+
+export async function getAttachment(id: string | null) {
+  let resp = {
+    dbError: false,
+    blob: new Blob,
+  }
+  if (id == null) { loadingRef.current = false; return};
+  loadingRef.current = true;
+  let success=true; setDBError(false);
+  let docRet: Blob;
+  try  {docRet = (await db.getAttachment(id,pictureName)) as Blob;}
+  catch(err) {success=false; setDBError(true);}
+  loadingRef.current = false;
+  if (success) {setBlob(docRet!)};
+}

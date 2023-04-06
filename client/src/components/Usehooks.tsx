@@ -4,7 +4,7 @@ import { usePouch, useFind } from 'use-pouchdb'
 import { cloneDeep, pull } from 'lodash';
 import { RemoteDBStateContext, SyncStatus } from './RemoteDBState';
 import { FriendRow,InitFriendRow, ResolvedFriendStatus, ListRow, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType, UsersInfo } from './DataTypes';
-import { FriendDocs,FriendStatus, ListGroupDoc, ListDoc, ListDocs, ListGroupDocs, ListDocInit, ItemDocs, ItemDoc, ItemList, ItemListInit, ConflictDocs} from './DBSchema';
+import { FriendDocs,FriendStatus, ListGroupDoc, ListDoc, ListDocs, ListGroupDocs, ListDocInit, ItemDocs, ItemDoc, ItemList, ItemListInit, ConflictDocs, pictureName} from './DBSchema';
 import { GlobalStateContext } from './GlobalState';
 import { getUsersInfo } from './Utilities';
 import { getCommonKey } from './ItemUtilities';
@@ -37,6 +37,31 @@ export function useGetOneDoc(docID: string | null) {
 
   return {dbError, loading: loadingRef.current, doc};
 }
+
+export function useGetAttachment(docID: string | null) {
+  const db = usePouch();
+  const [blob,setBlob] = useState<any>(null);
+  const [dbError, setDBError] = useState(false);
+  const loadingRef = useRef(true);
+
+  async function getAttachment(id: string | null) {
+      if (id == null) { loadingRef.current = false; return};
+      loadingRef.current = true;
+      let success=true; setDBError(false);
+      let docRet: Blob;
+      try  {docRet = (await db.getAttachment(id,pictureName)) as Blob;}
+      catch(err) {success=false; setDBError(true);}
+      loadingRef.current = false;
+      if (success) {setBlob(docRet!)};
+    }
+    
+  useEffect( () => {
+      getAttachment(docID)  
+  },[docID])  
+
+  return {dbError, loading: loadingRef.current, blob};
+}
+
 
 export function useUpdateGenericDocument() {
   const db = usePouch();
@@ -532,9 +557,9 @@ export function useAddListToAllItems() {
 }
 
 export function usePhotoGallery() {
-  const [photo, setPhoto] = useState();
+  const [photo, setPhoto]= useState<Photo>();
   const takePhoto = async () => {
-    let newPhoto = await Camera.getPhoto({
+    let rPhoto = await Camera.getPhoto({
       resultType: CameraResultType.Base64,
       source: CameraSource.Prompt,
       quality: 80,
@@ -542,9 +567,8 @@ export function usePhotoGallery() {
       height: 200,
       allowEditing: true,
       promptLabelHeader: "Take a picture for your item",
-
     });
-    setPhoto(newPhoto as any);
+    setPhoto(rPhoto);
   };
 
   return {
