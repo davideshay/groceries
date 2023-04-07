@@ -14,6 +14,7 @@ export function useGetOneDoc(docID: string | null, attachments: boolean = false)
   const db = usePouch();
   const changesRef = useRef<PouchDB.Core.Changes<any>>();
   const [doc,setDoc] = useState<any>(null);
+  const [attachBlob,setAttachBlob] = useState<Blob|null>(null);
   const [dbError, setDBError] = useState(false);
   const loadingRef = useRef(true);
 
@@ -26,8 +27,13 @@ export function useGetOneDoc(docID: string | null, attachments: boolean = false)
       let docRet = null;
       try  {docRet = await db.get(id,{attachments: attachments});}
       catch(err) {success=false; setDBError(true);}
+      let docAtt: Blob| null = null;
+      let attSuccess=true;
+      try {docAtt = (await db.getAttachment(id,"item.jpg") as Blob)}
+      catch(err) {attSuccess=false;}
       loadingRef.current = false;
       if (success) {setDoc(docRet)};
+      if (attSuccess) {setAttachBlob(docAtt as Blob);}
     }
     
   useEffect( () => {
@@ -35,7 +41,7 @@ export function useGetOneDoc(docID: string | null, attachments: boolean = false)
       return ( () => { if (changesRef.current) {changesRef.current.cancel()};})  
   },[docID])  
 
-  return {dbError, loading: loadingRef.current, doc };
+  return {dbError, loading: loadingRef.current, doc, attachBlob };
 }
 
 export function useUpdateGenericDocument() {
@@ -538,8 +544,10 @@ export function usePhotoGallery() {
       resultType: CameraResultType.Base64,
       source: CameraSource.Prompt,
       quality: 80,
-      width: 300,
-      height: 300,
+      width: 20,
+      height: 20,
+      // width: 300,
+      // height: 300,
       allowEditing: true,
       saveToGallery: false,
       promptLabelHeader: "Take a picture for your item",

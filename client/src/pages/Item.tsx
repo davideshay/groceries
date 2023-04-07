@@ -31,7 +31,7 @@ const Item: React.FC = (props) => {
   const addCategoryDoc = useCreateGenericDocument();
   const addUOMDoc = useCreateGenericDocument();
   const delItem = useDeleteGenericDocument();
-  const { doc: itemDoc, loading: itemLoading, dbError: itemError } = useGetOneDoc(routeItemID,true);
+  const { doc: itemDoc, loading: itemLoading, dbError: itemError, attachBlob: itemAttachBlob } = useGetOneDoc(routeItemID,true);
   const db = usePouch();
   const screenLoading = useRef(true);
   const {goBack} = useContext(NavContext);
@@ -278,13 +278,17 @@ const Item: React.FC = (props) => {
       stateItemDoc._attachments!.hasOwnProperty("item.jpg") &&
       stateItemDoc._attachments!["item.jpg"].hasOwnProperty("data");
   let photoBase64: string = "";    
+  let imgURL;
   if (photoExists) {
     let base64Img : any;
-    let base64Str = new Blob((stateItemDoc._attachments!["item.jpg"].data as Blob));
-    base64Img = new ArrayBuffer()
-    base64Img = new Buffer.from(base64Str).toString('base64');
+//    let base64Str = new Blob((stateItemDoc._attachments!["item.jpg"].data as Blob));
+//    base64Img = new ArrayBuffer()
+//    base64Img = new Buffer.from(base64Str).toString('base64');
     photoBase64=pictureSrcPrefix + (stateItemDoc._attachments!["item.jpg"].data as string)
-    console.log("first 32 chars of image: ",photoBase64?.slice(0,32))
+    console.log("first 32 chars of image: ",photoBase64?.slice(0,64));
+    if (itemAttachBlob != null) {
+      imgURL = URL.createObjectURL(itemAttachBlob as Blob);
+    }  
   }
   console.log("image data:",JSON.stringify({photoExists,photoBase64}))
 
@@ -301,6 +305,7 @@ const Item: React.FC = (props) => {
             </IonItem>
             <IonItem key="photo">
               {photoExists ? <IonImg class="item-image" src={photoBase64}/> : <></>}
+              {photoExists ? <IonImg class="item-image" src={imgURL}/> : <></>}
             </IonItem>
             <IonItem key="photobuttons">
               <IonButton onClick={() => getNewPhoto()}>Take Photo</IonButton>
