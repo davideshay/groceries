@@ -282,6 +282,7 @@ export function getCommonKey(stateItemDoc: ItemDoc, key: string, listDocs: ListD
       name: String(globalState.newItemName),
       globalItemID: globalState.newItemGlobalItemID,
       listGroupID: String(listGroupID),
+      imageID: null,
       lists: newItemLists
     }
     return(newItemDoc);

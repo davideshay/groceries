@@ -4,11 +4,15 @@ import { usePouch, useFind } from 'use-pouchdb'
 import { cloneDeep, pull } from 'lodash';
 import { RemoteDBStateContext, SyncStatus } from './RemoteDBState';
 import { FriendRow,InitFriendRow, ResolvedFriendStatus, ListRow, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType, UsersInfo } from './DataTypes';
-import { FriendDocs,FriendStatus, ListGroupDoc, ListDoc, ListDocs, ListGroupDocs, ListDocInit, ItemDocs, ItemDoc, ItemList, ItemListInit, ConflictDocs, pictureName} from './DBSchema';
+import { FriendDocs,FriendStatus, ListGroupDoc, ListDoc, ListDocs, ListGroupDocs, ListDocInit, ItemDocs, ItemDoc, ItemList, ItemListInit, ConflictDocs} from './DBSchema';
 import { GlobalStateContext } from './GlobalState';
 import { getUsersInfo } from './Utilities';
 import { getCommonKey } from './ItemUtilities';
 import { GlobalDataContext } from './GlobalDataProvider';
+
+const imageQuality = 80;
+export const imageWidth = 200;
+export const imageHeight = 200;
 
 export function useGetOneDoc(docID: string | null, attachments: boolean = false) {
   const db = usePouch();
@@ -543,12 +547,10 @@ export function usePhotoGallery() {
     let rPhoto = await Camera.getPhoto({
       resultType: CameraResultType.Base64,
       source: CameraSource.Prompt,
-      quality: 80,
-      width: 20,
-      height: 20,
-      // width: 300,
-      // height: 300,
-      allowEditing: true,
+      quality: imageQuality,
+      width: imageWidth,
+      height: imageHeight,
+      allowEditing: false,
       saveToGallery: false,
       promptLabelHeader: "Take a picture for your item",
     });

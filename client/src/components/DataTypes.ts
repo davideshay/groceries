@@ -111,7 +111,7 @@ export enum ItemSearchType {
   export type ListCombinedRows = ListCombinedRow[];
 
   export type PouchResponse = {
-    pouchData: any,
+    pouchData: {ok?: boolean, id?: string, rev?: string},
     successful: boolean,
     errorCode: number,
     errorText: string,
