@@ -53,8 +53,8 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
 
      - name: Build and push
-        uses: docker/build-push-action@v4
-        with:
+       uses: docker/build-push-action@v4
+       with:
 #          context: "{{defaultContext}}:client"
           file: client/Dockerfile
           platforms: linux/amd64,linux/arm64
