@@ -6,13 +6,16 @@ import { RemoteDBStateContext, SyncStatus } from './RemoteDBState';
 import { FriendRow,InitFriendRow, ResolvedFriendStatus, ListRow, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType, UsersInfo } from './DataTypes';
 import { FriendDocs,FriendStatus, ListGroupDoc, ListDoc, ListDocs, ListGroupDocs, ListDocInit, ItemDocs, ItemDoc, ItemList, ItemListInit, ConflictDocs} from './DBSchema';
 import { GlobalStateContext } from './GlobalState';
-import { getUsersInfo } from './Utilities';
+import { adaptResultToBase64, getUsersInfo } from './Utilities';
 import { getCommonKey } from './ItemUtilities';
 import { GlobalDataContext } from './GlobalDataProvider';
+import { isPlatform } from '@ionic/core';
+import { fromBlob, fromURL } from 'image-resize-compress';
 
 const imageQuality = 80;
 export const imageWidth = 200;
 export const imageHeight = 200;
+export const pictureSrcPrefix = "data:image/jpeg;base64,"
 
 export function useGetOneDoc(docID: string | null, attachments: boolean = false) {
   const db = usePouch();
@@ -541,8 +544,8 @@ export function useAddListToAllItems() {
     },[db])
 }
 
+
 export function usePhotoGallery() {
-  const [photo, setPhoto]= useState<Photo>();
   const takePhoto = async () => {
     let rPhoto = await Camera.getPhoto({
       resultType: CameraResultType.Base64,
@@ -554,12 +557,19 @@ export function usePhotoGallery() {
       saveToGallery: false,
       promptLabelHeader: "Take a picture for your item",
     });
-    setPhoto(rPhoto);
-    return rPhoto;
+    let photoString = rPhoto.base64String;
+    if (photoString != undefined && (isPlatform("desktop") || isPlatform("electron"))) {
+      //image needs resizing -- desktop doesn't obey size constraints
+      let base64Resp = await fetch(pictureSrcPrefix+photoString);
+      const blob = await base64Resp.blob();
+      let newBlob = await fromBlob(blob,imageQuality,imageWidth,"auto");
+      photoString = await adaptResultToBase64(newBlob);
+      photoString = (photoString as string).substring(pictureSrcPrefix.length);
+    }
+    return photoString;
   };
 
   return {
     takePhoto,
-    photo
   };
 }

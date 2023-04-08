@@ -102,4 +102,19 @@ export async function initialSetupActivities(db: PouchDB.Database, username: str
     }
 }
 
+export async function adaptResultToBase64(res: Blob): Promise<string> {
+    let reader: FileReader = new FileReader();
+
+    return new Promise((resolve, reject) => {
+        reader.onloadend = () => {
+            resolve(reader.result as string);
+        }
+        reader.onerror = () => {
+            reject("Error reading file.");
+        }
+        reader.readAsDataURL(res);
+    })
+}
+
+
 export const DEFAULT_API_URL=(window as any)._env_.DEFAULT_API_URL

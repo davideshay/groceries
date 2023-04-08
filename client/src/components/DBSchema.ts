@@ -1,7 +1,6 @@
 /// <reference types='pouchdb' />
 export const maxAppSupportedSchemaVersion = 3;
 export const appVersion = "0.4.0";
-export const pictureSrcPrefix = "data:image/jpeg;charset=utf-8;base64, "
 
 export interface UUIDDoc {
   _id?: string,

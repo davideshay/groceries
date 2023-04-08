@@ -7,14 +7,14 @@ import { usePhotoGallery } from '../components/Usehooks';
 import { useParams } from 'react-router-dom';
 import { usePouch } from 'use-pouchdb';
 import { useState, useEffect, useContext, useRef } from 'react';
-import { useCreateGenericDocument, useUpdateGenericDocument, useDeleteGenericDocument, useGetOneDoc, useItems } from '../components/Usehooks';
+import { useCreateGenericDocument, useUpdateGenericDocument, useDeleteGenericDocument, useGetOneDoc, useItems, pictureSrcPrefix } from '../components/Usehooks';
 import { GlobalStateContext } from '../components/GlobalState';
 import { cloneDeep, isEmpty, remove } from 'lodash';
 import './Item.css';
 import ItemLists from '../components/ItemLists';
 import { getCommonKey, createEmptyItemDoc, checkNameInGlobal  } from '../components/ItemUtilities';
 import { PouchResponse, ListRow, RowType, PouchResponseInit } from '../components/DataTypes';
-import { UomDoc, ItemDoc, ItemDocInit, ItemList, ItemListInit, CategoryDoc, pictureSrcPrefix, ImageDoc, ImageDocInit } from '../components/DBSchema';
+import { UomDoc, ItemDoc, ItemDocInit, ItemList, ItemListInit, CategoryDoc, ImageDoc, ImageDocInit } from '../components/DBSchema';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
@@ -40,7 +40,7 @@ const Item: React.FC = (props) => {
   const db = usePouch();
   const screenLoading = useRef(true);
   const {goBack} = useContext(NavContext);
-  const { photo, takePhoto } = usePhotoGallery();
+  const { takePhoto } = usePhotoGallery();
   const { dbError: itemsError, itemRowsLoaded, itemRows } = useItems({selectedListGroupID: stateItemDoc.listGroupID, isReady: !itemLoading, needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const { globalState, setStateInfo} = useContext(GlobalStateContext);
   const globalData  = useContext(GlobalDataContext);
@@ -158,7 +158,6 @@ const Item: React.FC = (props) => {
     }  
     else {
       result = await updateItem(newItemDoc);
-      console.log(result);
     }
     if (result.successful) {
       goBack();
@@ -285,9 +284,8 @@ const Item: React.FC = (props) => {
   
   async function getNewPhoto() {
     let newPhoto = await takePhoto();
-    console.log(newPhoto);
-    if (newPhoto.base64String != undefined) {
-      setStateImageDoc(prevState => ({...prevState, imageBase64: (newPhoto.base64String as string)}))
+    if (newPhoto != undefined) {
+      setStateImageDoc(prevState => ({...prevState, imageBase64: (newPhoto as string)}))
     }
     else { console.log("photo undefined....")};
   }
