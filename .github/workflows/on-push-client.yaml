@@ -15,9 +15,9 @@ jobs:
   build-it:
     runs-on: ubuntu-latest
     steps:
-     - name: Get latest tag
-       id: vars
-       run: echo ::set-output name=tag::${GITHUB_REF:10}
+#     - name: Get latest tag
+#       id: vars
+#       run: echo ::set-output name=tag::${GITHUB_REF:10}
 
      - name: Clone repository
        uses: actions/checkout@v2
