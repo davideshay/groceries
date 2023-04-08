@@ -1,32 +1,46 @@
 import { useCallback, useState, useEffect, useContext, useRef } from 'react'
+import { Camera, CameraResultType, CameraSource, Photo } from '@capacitor/camera';
 import { usePouch, useFind } from 'use-pouchdb'
 import { cloneDeep, pull } from 'lodash';
 import { RemoteDBStateContext, SyncStatus } from './RemoteDBState';
 import { FriendRow,InitFriendRow, ResolvedFriendStatus, ListRow, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType, UsersInfo } from './DataTypes';
 import { FriendDocs,FriendStatus, ListGroupDoc, ListDoc, ListDocs, ListGroupDocs, ListDocInit, ItemDocs, ItemDoc, ItemList, ItemListInit, ConflictDocs} from './DBSchema';
 import { GlobalStateContext } from './GlobalState';
-import { getUsersInfo } from './Utilities';
+import { adaptResultToBase64, getUsersInfo } from './Utilities';
 import { getCommonKey } from './ItemUtilities';
 import { GlobalDataContext } from './GlobalDataProvider';
+import { isPlatform } from '@ionic/core';
+import { fromBlob, fromURL } from 'image-resize-compress';
 
-export function useGetOneDoc(docID: string | null) {
+const imageQuality = 80;
+export const imageWidth = 200;
+export const imageHeight = 200;
+export const pictureSrcPrefix = "data:image/jpeg;base64,"
+
+export function useGetOneDoc(docID: string | null, attachments: boolean = false) {
   const db = usePouch();
   const changesRef = useRef<PouchDB.Core.Changes<any>>();
   const [doc,setDoc] = useState<any>(null);
+  const [attachBlob,setAttachBlob] = useState<Blob|null>(null);
   const [dbError, setDBError] = useState(false);
   const loadingRef = useRef(true);
 
   async function getDoc(id: string | null) {
       if (id == null) { loadingRef.current = false; return};
       loadingRef.current = true;
-      changesRef.current = db.changes({since: 'now', live: true, include_docs: true, doc_ids: [id]})
+      changesRef.current = db.changes({since: 'now', live: true, include_docs: true, attachments: attachments,doc_ids: [id]})
       .on('change', function(change) { setDoc(change.doc); })
       let success=true; setDBError(false);
       let docRet = null;
-      try  {docRet = await db.get(id);}
+      try  {docRet = await db.get(id,{attachments: attachments});}
       catch(err) {success=false; setDBError(true);}
+      let docAtt: Blob| null = null;
+      let attSuccess=true;
+      try {docAtt = (await db.getAttachment(id,"item.jpg") as Blob)}
+      catch(err) {attSuccess=false;}
       loadingRef.current = false;
       if (success) {setDoc(docRet)};
+      if (attSuccess) {setAttachBlob(docAtt as Blob);}
     }
     
   useEffect( () => {
@@ -34,7 +48,7 @@ export function useGetOneDoc(docID: string | null) {
       return ( () => { if (changesRef.current) {changesRef.current.cancel()};})  
   },[docID])  
 
-  return {dbError, loading: loadingRef.current, doc};
+  return {dbError, loading: loadingRef.current, doc, attachBlob };
 }
 
 export function useUpdateGenericDocument() {
@@ -528,4 +542,34 @@ export function useAddListToAllItems() {
           }
       return updateSuccess;
     },[db])
+}
+
+
+export function usePhotoGallery() {
+  const takePhoto = async () => {
+    let rPhoto = await Camera.getPhoto({
+      resultType: CameraResultType.Base64,
+      source: CameraSource.Prompt,
+      quality: imageQuality,
+      width: imageWidth,
+      height: imageHeight,
+      allowEditing: false,
+      saveToGallery: false,
+      promptLabelHeader: "Take a picture for your item",
+    });
+    let photoString = rPhoto.base64String;
+    if (photoString != undefined && (isPlatform("desktop") || isPlatform("electron"))) {
+      //image needs resizing -- desktop doesn't obey size constraints
+      let base64Resp = await fetch(pictureSrcPrefix+photoString);
+      const blob = await base64Resp.blob();
+      let newBlob = await fromBlob(blob,imageQuality,imageWidth,"auto");
+      photoString = await adaptResultToBase64(newBlob);
+      photoString = (photoString as string).substring(pictureSrcPrefix.length);
+    }
+    return photoString;
+  };
+
+  return {
+    takePhoto,
+  };
 }

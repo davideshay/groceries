@@ -1,41 +1,46 @@
 import { IonContent, IonPage, IonButton, IonList, IonInput, IonItem,
   IonSelect, IonIcon, 
   IonSelectOption, useIonAlert,useIonToast, IonTextarea, IonGrid, IonRow, IonCol, IonText, IonCard,
-  IonCardSubtitle, NavContext, IonButtons, IonToolbar } from '@ionic/react';
+  IonCardSubtitle, NavContext, IonButtons, IonToolbar, IonImg, IonFooter } from '@ionic/react';
 import { addOutline, closeCircleOutline, trashOutline, saveOutline } from 'ionicons/icons';
+import { usePhotoGallery } from '../components/Usehooks';
 import { useParams } from 'react-router-dom';
 import { usePouch } from 'use-pouchdb';
 import { useState, useEffect, useContext, useRef } from 'react';
-import { useCreateGenericDocument, useUpdateGenericDocument, useDeleteGenericDocument, useGetOneDoc, useItems } from '../components/Usehooks';
+import { useCreateGenericDocument, useUpdateGenericDocument, useDeleteGenericDocument, useGetOneDoc, useItems, pictureSrcPrefix } from '../components/Usehooks';
 import { GlobalStateContext } from '../components/GlobalState';
 import { cloneDeep, isEmpty, remove } from 'lodash';
 import './Item.css';
 import ItemLists from '../components/ItemLists';
 import { getCommonKey, createEmptyItemDoc, checkNameInGlobal  } from '../components/ItemUtilities';
-import { PouchResponse, ListRow, RowType } from '../components/DataTypes';
-import { UomDoc, ItemDoc, ItemDocInit, ItemList, ItemListInit, CategoryDoc } from '../components/DBSchema';
+import { PouchResponse, ListRow, RowType, PouchResponseInit } from '../components/DataTypes';
+import { UomDoc, ItemDoc, ItemDocInit, ItemList, ItemListInit, CategoryDoc, ImageDoc, ImageDocInit } from '../components/DBSchema';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
 import PageHeader from '../components/PageHeader';
-
 
 const Item: React.FC = (props) => {
   let { mode, itemid } = useParams<{mode: string, itemid: string}>();
   const routeItemID = (mode === "new" ? null : itemid)
   const [needInitItemDoc,setNeedInitItemDoc] = useState((mode === "new") ? true: false);
   const [stateItemDoc,setStateItemDoc] = useState<ItemDoc>(ItemDocInit);
+  const [stateImageDoc,setStateImageDoc] = useState<ImageDoc>(ImageDocInit);
   const [formError,setFormError] = useState("");
   const updateItem  = useUpdateGenericDocument();
+  const updateImage = useUpdateGenericDocument();
   const addItem = useCreateGenericDocument();
+  const addImage = useCreateGenericDocument();
   const addCategoryDoc = useCreateGenericDocument();
   const addUOMDoc = useCreateGenericDocument();
   const delItem = useDeleteGenericDocument();
+  const delImage = useDeleteGenericDocument();
   const { doc: itemDoc, loading: itemLoading, dbError: itemError } = useGetOneDoc(routeItemID);
+  const { doc: imageDoc, loading: imageLoading, dbError: imageError} = useGetOneDoc(stateItemDoc.imageID)
   const db = usePouch();
   const screenLoading = useRef(true);
   const {goBack} = useContext(NavContext);
-
+  const { takePhoto } = usePhotoGallery();
   const { dbError: itemsError, itemRowsLoaded, itemRows } = useItems({selectedListGroupID: stateItemDoc.listGroupID, isReady: !itemLoading, needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const { globalState, setStateInfo} = useContext(GlobalStateContext);
   const globalData  = useContext(GlobalDataContext);
@@ -80,11 +85,19 @@ const Item: React.FC = (props) => {
   useEffect( () => {
     if (!itemLoading && mode !== "new" && itemDoc && globalData.listRowsLoaded) {
       let newItemDoc: ItemDoc = cloneDeep(itemDoc);
-      newItemDoc = addDeleteLists(itemDoc);
+      if (!newItemDoc.hasOwnProperty('imageID')) {
+        newItemDoc.imageID = null;
+      }
+      newItemDoc = addDeleteLists(newItemDoc);
       setStateItemDoc(cloneDeep(newItemDoc));
     }
   },[itemLoading,mode,itemDoc,globalData.listRowsLoaded])
 
+  useEffect( () => {
+    if (!imageLoading && mode !== "new" && imageDoc) {
+      setStateImageDoc(imageDoc);
+    }
+  },[imageLoading,mode,imageDoc])
 
   useEffect( () => {
     if (!itemLoading && mode === "new" && !globalData.listsLoading && globalData.listRowsLoaded && needInitItemDoc) {
@@ -99,8 +112,6 @@ const Item: React.FC = (props) => {
     <ErrorPage errorText="Error Loading Item Information... Restart."></ErrorPage>
   )}
 
-
-
   if ((itemLoading && routeItemID !== null) || globalData.listsLoading || !globalData.listRowsLoaded || globalData.categoryLoading || globalData.uomLoading || !itemRowsLoaded || isEmpty(stateItemDoc))  {
     return ( <Loading isOpen={screenLoading.current} message="Loading Item..."    /> )
 //    setIsOpen={() => {screenLoading.current = false}} /> )
@@ -110,7 +121,8 @@ const Item: React.FC = (props) => {
   
   async function updateThisItem() {
     setFormError(prevState => (""));
-    let result: PouchResponse;
+    let result: PouchResponse = cloneDeep(PouchResponseInit);
+    let imgResult: PouchResponse = cloneDeep(PouchResponseInit);
     if (stateItemDoc.name === undefined || stateItemDoc.name==="" || stateItemDoc.name === null) {
       setFormError(prevState => ("Name is required"));
       return false;
@@ -129,11 +141,23 @@ const Item: React.FC = (props) => {
       setFormError(prevState => ("Cannot use name of existing item in global item list"));
       return false;
     }
+    let newItemDoc = cloneDeep(stateItemDoc);
+    if ((mode === "new" && stateImageDoc.imageBase64 !== null) ||
+         (mode !== "new" && stateImageDoc.imageBase64 !== null && (newItemDoc.imageID === null))) {
+          imgResult = await addImage(stateImageDoc);
+          newItemDoc.imageID = imgResult.pouchData.id as string;
+    } else if (mode !== "new" && stateImageDoc.imageBase64 !== null && newItemDoc.imageID !== null && newItemDoc.imageID !== undefined) { 
+        imgResult = await updateImage(stateImageDoc);
+        newItemDoc.imageID = imgResult.pouchData.id as string;
+    } else if (mode !== "new" && stateImageDoc._id !== null && stateImageDoc._id !== undefined && stateItemDoc.imageID === null){
+        imgResult = await delImage(stateImageDoc);
+    }
+
     if (mode === "new") {
-      result = await addItem(stateItemDoc);
+      result = await addItem(newItemDoc);
     }  
     else {
-      result = await updateItem(stateItemDoc);
+      result = await updateItem(newItemDoc);
     }
     if (result.successful) {
       goBack();
@@ -159,7 +183,7 @@ const Item: React.FC = (props) => {
     if (!alreadyFound) {
       let result = await addCategoryDoc({"type": "category", "name": category, "color": "#ffffff"})
       if (result.successful) {
-          updateAllKey("categoryID",result.pouchData.id);
+          updateAllKey("categoryID",result.pouchData.id as string);
       } else {
         presentToast({message: "Error adding category. Please retry.",
               duration: 1500, position: "middle"})
@@ -258,8 +282,27 @@ const Item: React.FC = (props) => {
     })
   }
   
+  async function getNewPhoto() {
+    let newPhoto = await takePhoto();
+    if (newPhoto != undefined) {
+      setStateImageDoc(prevState => ({...prevState, imageBase64: (newPhoto as string)}))
+    }
+    else { console.log("photo undefined....")};
+  }
+
+  function deletePhoto() {
+    setStateItemDoc(prevState => ({...prevState,imageID: null}));
+    setStateImageDoc(prevState => ({...prevState,imageBase64: null}));
+  }
+
   let thisListGroup = globalData.listCombinedRows.find(el => el.listGroupID === stateItemDoc.listGroupID);
+  let photoExists = stateImageDoc.imageBase64 !== null;
   
+  let photoBase64: string = "";    
+  if (photoExists) {
+    photoBase64=pictureSrcPrefix + stateImageDoc.imageBase64;
+  }
+
   return (
     <IonPage>
       <PageHeader title={"Editing Item: "+stateItemDoc.name} />
@@ -270,6 +313,13 @@ const Item: React.FC = (props) => {
             </IonItem>
             <IonItem key="listgroup">
               <IonText >List Group: {thisListGroup?.listGroupName}</IonText>
+            </IonItem>
+            <IonItem key="photo">
+              {photoExists ? <IonImg class="item-image" src={photoBase64}/> : <></>}
+            </IonItem>
+            <IonItem key="photobuttons">
+              <IonButton onClick={() => getNewPhoto()}>Take Photo</IonButton>
+              <IonButton onClick={() => {deletePhoto()}}>Delete Photo</IonButton>
             </IonItem>
             <IonCard>
               <IonCardSubtitle>Change values here to change on all lists below</IonCardSubtitle>
@@ -311,7 +361,9 @@ const Item: React.FC = (props) => {
                       addCategoryPopup={addCategoryPopup} addUOMPopup={addUOMPopup} />
             <IonItem key="formErrors">{formError}</IonItem>
           </IonList>
-          <IonToolbar>
+      </IonContent>
+      <IonFooter>
+      <IonToolbar>
           <IonButtons slot="start">
             {mode !== "new" ? 
               (<IonButton fill="outline" color="danger" onClick={() => deleteItem()}><IonIcon slot="start" icon={trashOutline}></IonIcon>Delete</IonButton>)
@@ -324,7 +376,7 @@ const Item: React.FC = (props) => {
           <IonButton fill="solid" color="primary" onClick={() => updateThisItem()}>{mode === "new" ? "Add": "Save"}<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>
           </IonButtons>
           </IonToolbar>
-      </IonContent>
+      </IonFooter>
     </IonPage>
   );
 };

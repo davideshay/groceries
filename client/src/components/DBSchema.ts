@@ -1,5 +1,6 @@
+/// <reference types='pouchdb' />
 export const maxAppSupportedSchemaVersion = 3;
-export const appVersion = "0.3.2";
+export const appVersion = "0.4.0";
 
 export interface UUIDDoc {
   _id?: string,
@@ -74,10 +75,24 @@ export const ItemListInit:ItemList = {
     uomName: null
   }
   
+type AttachmentData = string | Blob | Buffer;
+ 
+ export interface FullAttachment {
+    content_type: string;
+   digest?: string | undefined;
+    data: AttachmentData;
+}
+
+interface Attachments {
+  [attachmentId: string]: FullAttachment;
+}
+
 export interface ItemDoc {
     _id?: string,
     _rev?: string,
+//    _attachments? : Attachments,
     type: string,
+    imageID: string | null,
     listGroupID: string | null,
     name: string,
     globalItemID: string | null,
@@ -87,15 +102,27 @@ export interface ItemDoc {
   
 export type ItemDocs = ItemDoc[];
   
-  export const ItemDocInit:ItemDoc = {
-    type: "item",
-    listGroupID: null,
-    name: "",
-    globalItemID: null,
-    lists: [],
-    updatedAt: ""
-  }
+export const ItemDocInit:ItemDoc = {
+  type: "item",
+  listGroupID: null,
+  imageID: null,
+  name: "",
+  globalItemID: null,
+  lists: [],
+  updatedAt: ""
+}
 
+export interface ImageDoc {
+  _id? : string,
+  _rev?: string,
+  type: string,
+  imageBase64: string | null
+}
+
+export const ImageDocInit: ImageDoc = {
+  type: "image",
+  imageBase64: null
+}
 
 export interface GlobalItemDoc {
   _id?: string,

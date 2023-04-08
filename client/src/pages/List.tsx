@@ -126,7 +126,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
     if (mode === "new") {
       response = await createList(pageState.listDoc);
       if (response.successful) {
-        let addedToItems = addListToAllItems({listGroupID: String(pageState.listGroupID) ,listID: response.pouchData.id, listDocs: listDocs})
+        let addedToItems = addListToAllItems({listGroupID: String(pageState.listGroupID) ,listID: response.pouchData.id as string, listDocs: listDocs})
         if (!addedToItems) {response.successful = false;}
       }
     }
