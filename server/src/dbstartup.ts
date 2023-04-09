@@ -7,7 +7,7 @@ import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { cloneDeep } from "lodash";
 import { v4 as uuidv4} from 'uuid';
 import { uomContent, categories, globalItems, totalDocCount } from "./utilities";
-import { ServerScope, DocumentScope, MangoResponse, MangoQuery, MaybeDocument, ViewDocument } from "nano";
+import { DocumentScope, MangoResponse, MangoQuery } from "nano";
 import { CategoryDoc, GlobalItemDoc, ItemDoc, ListDoc, ListGroupDoc, UUIDDoc, UomDoc, UserDoc, appVersion, maxAppSupportedSchemaVersion } from "./DBSchema";
 
 

@@ -18,6 +18,7 @@ FROM node:bullseye-slim
 WORKDIR /usr/app
 COPY --from=builder /usr/app/server/dist ./dist
 COPY --from=builder /usr/app/server/data ./data
+COPY --from=builder /usr/app/server/views ./views
 COPY server/package*.json server/package-lock.json ./
 
 RUN ls -laRt

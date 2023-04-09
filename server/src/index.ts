@@ -6,7 +6,7 @@ import {
  issueToken, refreshToken, checkUserExists, registerNewUser, getUsersInfo, 
         checkUserByEmailExists, createAccountUIGet, createAccountUIPost,
         triggerRegEmail, resetPassword, resetPasswordUIGet, resetPasswordUIPost,
-        triggerResolveConflicts, triggerDBCompact, authenticateJWT, logout } from './apicalls';
+        triggerResolveConflicts, triggerDBCompact, authenticateJWT, logout, groceryAPIPort } from './apicalls';
 
 import { dbStartup } from './dbstartup'
 import { CheckUserExistsReqBody, NewUserReqBody, CustomRequest, CheckUseEmailReqBody } from './datatypes';
@@ -42,4 +42,4 @@ app.post('/triggerdbcompact', authenticateJWT, async (req: Request,res: Response
 
 dbStartup();
 
-app.listen(process.env.GROCERY_API_PORT);
+app.listen(groceryAPIPort);
