@@ -18,10 +18,6 @@ jobs:
   build-it:
     runs-on: ubuntu-latest
     steps:
-#     - name: Get latest tag
-#       id: vars
-#       run: echo ::set-output name=tag::${GITHUB_REF:10}
-
      - name: Clone repository
        uses: actions/checkout@v2
        with:
@@ -58,12 +54,9 @@ jobs:
      - name: Build and push
        uses: docker/build-push-action@v4
        with:
-#          context: "{{defaultContext}}:client"
           file: client/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-#          tags: ghcr.io/${{ GITHUB.REPOSITORY }}client:latest
-#          tags: ${{ steps.meta.outputs.tags }}-client
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
