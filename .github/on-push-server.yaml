@@ -1,4 +1,4 @@
-name: build-publish-client
+name: build-publish-server
 on:
    workflow_dispatch:
    push:
