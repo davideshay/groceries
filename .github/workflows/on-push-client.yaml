@@ -41,6 +41,7 @@ jobs:
     #       password: ${{ secrets.GITHUB_TOKEN }}
 
      - name: 'Login to GitHub Container Registry'
+       uses: docker/login
        run: |
           echo $GHCR_TOKEN | docker login ghcr.io -u davideshay --password-stdin          
 
