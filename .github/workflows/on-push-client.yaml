@@ -11,6 +11,9 @@ on:
 defaults:
   run:
     working-directory: client
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}-client    
 jobs:
   build-it:
     runs-on: ubuntu-latest
@@ -45,7 +48,7 @@ jobs:
        uses: docker/metadata-action@v4
        with:
           images: |
-            name/app
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -61,7 +64,7 @@ jobs:
           push: true
 #          tags: ghcr.io/${{ GITHUB.REPOSITORY }}client:latest
 #          tags: ${{ steps.meta.outputs.tags }}-client
-          tags: ghcr.io/${{ steps.meta.outputs.tags }}-client
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
