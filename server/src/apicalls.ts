@@ -58,6 +58,7 @@ export async function checkUserExists(req: CustomRequest<CheckUserExistsReqBody>
     }
     let userResponse = await getUserDoc(username);
     response.userExists = !userResponse.error;
+    console.log("STATUS: Checking if user exists: ", response.username, " : ", response.userExists)
     return (response);
 }
 
@@ -194,6 +195,7 @@ export async function logout(req: Request, res: Response) {
 
 export async function registerNewUser(req: CustomRequest<NewUserReqBody>, res: Response) {
     const {username, password, email, fullname, deviceUUID} = req.body;
+    console.log("STATUS: Registering New User: ",username);
     const registerResponse = {
         invalidData: false,
         userAlreadyExists: false,

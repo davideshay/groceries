@@ -2,7 +2,7 @@ import React, { createContext, useState, useEffect, useRef} from "react";
 import { usePouch} from 'use-pouchdb';
 import { Preferences } from '@capacitor/preferences';
 import { cloneDeep, pick, keys, isEqual } from 'lodash';
-import { isJsonString,  DEFAULT_API_URL, apiConnectTimeout } from '../components/Utilities'; 
+import { isJsonString,  DEFAULT_API_URL, apiConnectTimeout, initialSetupActivities } from '../components/Utilities'; 
 import { CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
 import { Device } from '@capacitor/device';
 import PouchDB from 'pouchdb';
@@ -342,6 +342,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             console.log("not check ok, action:",DBUUIDCheck.dbUUIDAction);
             setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: "Invalid DBUUID", dbUUIDAction: DBUUIDCheck.dbUUIDAction, connectionStatus: ConnectionStatus.navToLoginScreen}))
         } else {
+            await initialSetupActivities(db as PouchDB.Database,remoteDBCreds.current.dbUsername as string)
             startSync();
         }
     }

@@ -1,5 +1,5 @@
 export const maxAppSupportedSchemaVersion = 3;
-export const appVersion = "0.4.1";
+export const appVersion = "0.4.2";
 
 export interface UUIDDoc {
   _id?: string,

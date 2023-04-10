@@ -83,6 +83,7 @@ export async function getUsersInfo(userIDList: UserIDList,apiServerURL: string, 
 
 export async function initialSetupActivities(db: PouchDB.Database, username: string) {
  //  Migration to the new listgroup structure will create for existing users, this is for new users added later, or for offline model
+    console.log("SETUP: Running Initial Setup Activities for :",username);
     const totalDocs = (await db.info()).doc_count
     const listGroupDocs = await db.find({ selector: { type: "listgroup", listGroupOwner: username, default: true},
          limit: totalDocs});

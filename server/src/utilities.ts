@@ -51,7 +51,7 @@ export async function getUserDoc(username: string) {
     
     let res: UserDoc | null = null;
     try { res = (await usersDBAsAdmin.get(couchUserPrefix+":"+username) as UserDoc | null)}
-    catch(err) { console.log("ERROR GETTING USER:",err); userResponse.error= true }
+    catch(err) { console.log("ERROR GETTING USER:",username); userResponse.error= true }
     if (!userResponse.error) {
         userResponse.email = String(res?.email);
         userResponse.fullname = String(res?.fullname);

@@ -67,6 +67,8 @@ export async function generateJWT ({ username, deviceUUID, timeString, includeRo
 
 export async function JWTMatchesUserDB(refreshJWT: string, deviceUUID: string, username: string) {
     let userDoc: any = await getUserDoc(username);
+    console.log("DEBUG: response doc: ",JSON.stringify(userDoc));
+    if (userDoc.fullDoc === null) { userDoc.error=true; return false };
     if (userDoc.fullDoc.hasOwnProperty('refreshJWTs')) {
         console.log("STATUS: Refresh JWT matches the database:",userDoc.fullDoc.refreshJWTs[deviceUUID] == refreshJWT);    
     }
