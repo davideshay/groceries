@@ -18,4 +18,6 @@ Use the docker-compose.yaml file from the docs directory to start with. This is 
 
 ## Create a user
 
-* Navigate to http://localhost:8100
+* Navigate to http://localhost:8100.
+* Choose the "CREATE ACCOUNT" button.
+* Enter in all relevant details. If you wish to be able to reset your password with the UI, make sure you enter a valid email and make sure you have the email setup in the environment variables for the groceries server (SMTP_*)
