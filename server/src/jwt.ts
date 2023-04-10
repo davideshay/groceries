@@ -70,6 +70,7 @@ export async function JWTMatchesUserDB(refreshJWT: string, deviceUUID: string, u
     if (userDoc.fullDoc.hasOwnProperty('refreshJWTs')) {
         console.log("STATUS: Refresh JWT matches the database:",userDoc.fullDoc.refreshJWTs[deviceUUID] == refreshJWT);    
     }
+    console.log("DEBUG: userDoc returned is: ",JSON.stringify(userDoc));
     if (userDoc.error) { return false;}
     if (userDoc.fullDoc.name !== username) { return false;}
     if (!userDoc.fullDoc.hasOwnProperty("refreshJWTs")) { return false;}
