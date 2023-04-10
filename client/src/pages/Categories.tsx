@@ -16,7 +16,6 @@ const Categories: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   if (globalData.categoryError !== null) { return (
     <ErrorPage errorText="Error Loading Category Information... Restart."></ErrorPage>
-
   )}
 
   if (globalData.categoryLoading) { 

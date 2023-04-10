@@ -85,7 +85,6 @@
     "@capacitor/cli": "^4.5.0",
     "@types/lodash": "^4.14.191",
     "@types/uuid": "^9.0.0",
-    "@welldone-software/why-did-you-render": "^7.0.1",
     "pouchdb-browser": "^8.0.1",
     "pouchdb-find": "^8.0.1"
   },

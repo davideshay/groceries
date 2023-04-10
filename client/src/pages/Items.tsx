@@ -46,7 +46,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       selectedListType: pageState.selectedListType});
   const { listError , listDocs, listCombinedRows,listRows, listRowsLoaded, uomDocs, uomLoading, uomError, categoryDocs, categoryLoading, categoryError, itemDocs } = useContext(GlobalDataContext);
   const { globalState,setStateInfo: setGlobalStateInfo} = useContext(GlobalStateContext);
-  const testRef = useRef(false);
 
   function getGroupIDForList(listID: string): string | null {
     if (routeMode === "group") { return pageState.selectedListOrGroupID};

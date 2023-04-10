@@ -1,13 +1,10 @@
 import React, { createContext, useState, useEffect, useRef} from "react";
 import { usePouch} from 'use-pouchdb';
 import { Preferences } from '@capacitor/preferences';
-import { cloneDeep, pick, keys, isEqual } from 'lodash';
-import { isJsonString,  DEFAULT_API_URL, apiConnectTimeout, initialSetupActivities } from '../components/Utilities'; 
-import { CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
+import { initialSetupActivities } from '../components/Utilities'; 
 import { Device } from '@capacitor/device';
 import PouchDB from 'pouchdb';
-import { getTokenInfo, refreshToken, errorCheckCreds } from "./RemoteUtilities";
-import { maxAppSupportedSchemaVersion, UUIDDoc } from "./DBSchema";
+import { getTokenInfo, refreshToken, errorCheckCreds , checkJWT, checkDBUUID, getPrefsDBCreds } from "./RemoteUtilities";
 
 const secondsBeforeAccessRefresh = 180;
 
@@ -35,7 +32,6 @@ export interface RemoteDBStateContextType {
     setRemoteDBState: React.Dispatch<React.SetStateAction<RemoteDBState>>,
     setRemoteDBCreds: (newCreds: DBCreds) => void,
     startSync: () => void,
-    checkDBUUID: () => Promise<DBUUIDCheck>,
     assignDB: (accessJWT: string) => Promise<boolean>,
     setDBCredsValue: (key: string, value: string|null) => void,
     setConnectionStatus: (value: ConnectionStatus) => void
@@ -62,12 +58,6 @@ export type DBUUIDCheck = {
     checkOK: boolean,
     schemaVersion: Number,
     dbUUIDAction: DBUUIDAction
-}
-  
-const DBUUIDCheckInit: DBUUIDCheck = {
-    checkOK: true,
-    schemaVersion: 0,
-    dbUUIDAction: DBUUIDAction.none
 }
 
 export type CredsCheck = {
@@ -122,7 +112,6 @@ const initialContext = {
     setRemoteDBState: (state: RemoteDBState ) => {},
     setRemoteDBCreds: (dbCreds: DBCreds) => {},
     startSync: () => {},
-    checkDBUUID: async (remoteDB: PouchDB.Database,credsObj: DBCreds): Promise<DBUUIDCheck> => {return DBUUIDCheckInit },
     assignDB: async (accessJWT: string): Promise<boolean> => {return false},
     setDBCredsValue: (key: string, value: string | null) => {},
     setConnectionStatus: (value: ConnectionStatus) => {},
@@ -180,134 +169,6 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
                                 })
     }
 
-    async function  getPrefsDBCreds()  {
-        let { value: credsStr } = await Preferences.get({ key: 'dbcreds'});
-        let credsObj: DBCreds = cloneDeep(DBCredsInit);
-        const credsOrigKeys = keys(credsObj);
-        if (isJsonString(String(credsStr))) {
-          credsObj=JSON.parse(String(credsStr));
-          let credsObjFiltered=pick(credsObj,['apiServerURL','couchBaseURL','database','dbUsername','email','fullName','JWT','refreshJWT','lastConflictsViewed'])
-          remoteDBCreds.current = credsObjFiltered;
-        }
-        const credKeys = keys(remoteDBCreds.current);
-        if (remoteDBCreds.current === null || remoteDBCreds.current.apiServerURL === undefined || (!isEqual(credsOrigKeys.sort(),credKeys.sort()))) {
-            credsObj = { apiServerURL: DEFAULT_API_URL,
-                couchBaseURL: "",
-                database: "",
-                dbUsername:"",
-                refreshJWT: "",
-                email: "",
-                fullName: "",
-                lastConflictsViewed: (new Date()).toISOString()
-                };
-            remoteDBCreds.current = credsObj;
-        }
-        return remoteDBCreds.current;
-      }
-        
-    async function checkJWT(accessJWT: string) {
-        let checkResponse = {
-            JWTValid: false,
-            DBServerAvailable: true,
-            JWTExpireDate: 0
-        }
-        let response: HttpResponse | undefined;
-        checkResponse.DBServerAvailable = true;
-        const options: HttpOptions = {
-            url: String(remoteDBCreds.current.couchBaseURL+"/_session"),
-            method: "GET",
-            headers: { 'Content-Type': 'application/json',
-                       'Accept': 'application/json',
-                       'Authorization': 'Bearer '+ accessJWT },
-            connectTimeout: apiConnectTimeout          
-              };
-        try { response = await CapacitorHttp.get(options); }
-        catch(err) {console.log("Got error:",err); checkResponse.DBServerAvailable=false}
-        if (checkResponse.DBServerAvailable) {
-            if ((response?.status === 200) && (response.data?.userCtx?.name !== null)) {
-                let tokenInfo = getTokenInfo(accessJWT);
-                if (tokenInfo.valid) {
-                    checkResponse.JWTValid = true;
-                    checkResponse.JWTExpireDate = tokenInfo.expireDate;
-                }
-            } else {
-                setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: "Invalid JWT credentials"}));
-            }
-        } else {
-            setRemoteDBState(prevState => ({...prevState,serverAvailable: false, credsError: true, credsErrorText: "Database offline"}));
-        }
-        return checkResponse;
-    } 
-
-    async function checkDBUUID() {
-        let UUIDCheck: DBUUIDCheck = {
-            checkOK: true,
-            schemaVersion: 0,
-            dbUUIDAction: DBUUIDAction.none
-        }
-        let UUIDResults = await (globalRemoteDB as PouchDB.Database).find({
-            selector: { "type": { "$eq": "dbuuid"} } })
-        let UUIDResult : null|string = null;
-        if (UUIDResults.docs.length > 0) {
-          UUIDResult = (UUIDResults.docs[0] as UUIDDoc).uuid;
-        }
-        if (UUIDResult == null) {
-          UUIDCheck.checkOK = false; UUIDCheck.dbUUIDAction = DBUUIDAction.exit_no_uuid_on_server;
-          return UUIDCheck;
-        }
-        UUIDCheck.schemaVersion = (UUIDResults.docs[0] as UUIDDoc).schemaVersion;
-        let remoteSchemaVersion = Number(UUIDCheck.schemaVersion);
-        let localDBInfo = null;
-        let localHasRecords = false;
-        let localDBUUID = null;
-        let localSchemaVersion = 0;
-        try { localDBInfo = await db.info();} catch(e) {localHasRecords=false};
-        if (localDBInfo != null && localDBInfo.doc_count > 0) { localHasRecords = true}
-        if (localHasRecords) {
-          let localDBAllDocs = null;
-          try { localDBAllDocs = await db.allDocs({include_docs: true});} catch(e) {console.log(e)};
-          localHasRecords = false;
-          if (localDBAllDocs != null) {
-            localDBAllDocs.rows.forEach(row => {
-              if ((row.doc as any).language !== "query") {
-                    localHasRecords=true;
-                }
-            });
-          }
-        }
-        if (localHasRecords) {
-            let localDBFindDocs = null;
-            try { localDBFindDocs = await db.find({selector: { "type": { "$eq": "dbuuid"} }}) }
-            catch(e) {console.log(e)};
-            if ((localDBFindDocs !== null) && localDBFindDocs.docs.length === 1) {
-                localDBUUID = (localDBFindDocs.docs[0] as UUIDDoc).uuid;
-                localSchemaVersion = Number((localDBFindDocs.docs[0] as UUIDDoc).schemaVersion);
-            }
-        }
-//        console.log("maxAppSupportedVersion",maxAppSupportedSchemaVersion)
-        if (Number(UUIDCheck.schemaVersion) > maxAppSupportedSchemaVersion) {
-            UUIDCheck.checkOK = false;
-            UUIDCheck.dbUUIDAction = DBUUIDAction.exit_app_schema_mismatch;
-            return UUIDCheck;
-        }
-
-        // compare to current DBCreds one.
-        if (localDBUUID === UUIDResult) {
-            // console.log("Schema: remote:",remoteSchemaVersion," local:",localSchemaVersion);
-            if (remoteSchemaVersion > localSchemaVersion) {
-                console.log("ERROR: Remote Schema greater than local");
-                UUIDCheck.checkOK = false;
-                UUIDCheck.dbUUIDAction = DBUUIDAction.exit_local_remote_schema_mismatch;
-            }   
-            return UUIDCheck;
-        } 
-          // if current DBCreds doesn't have one, set it to the remote one.
-        if ((localDBUUID === null || localDBUUID === "" ) && !localHasRecords) {
-          return UUIDCheck;
-        }
-        UUIDCheck.checkOK = false; UUIDCheck.dbUUIDAction = DBUUIDAction.destroy_needed;
-        return UUIDCheck;
-      }
   
     async function setPrefsDBCreds() {
         let credsStr = JSON.stringify(remoteDBCreds.current);
@@ -337,12 +198,12 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     }
 
     async function CheckDBUUIDAndStartSync() {
-        let DBUUIDCheck = await checkDBUUID();
+        let DBUUIDCheck = await checkDBUUID(db as PouchDB.Database,globalRemoteDB as PouchDB.Database);
         if (!DBUUIDCheck.checkOK) {
             console.log("not check ok, action:",DBUUIDCheck.dbUUIDAction);
             setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: "Invalid DBUUID", dbUUIDAction: DBUUIDCheck.dbUUIDAction, connectionStatus: ConnectionStatus.navToLoginScreen}))
         } else {
-            await initialSetupActivities(db as PouchDB.Database,remoteDBCreds.current.dbUsername as string)
+            await initialSetupActivities(globalRemoteDB as PouchDB.Database,remoteDBCreds.current.dbUsername as string)
             startSync();
         }
     }
@@ -354,7 +215,8 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             devID = devIDInfo.uuid;
         }
         setRemoteDBState(prevState => ({...prevState,deviceUUID: devID}));
-        let credsObj = await getPrefsDBCreds();
+        let credsObj = await getPrefsDBCreds(remoteDBCreds.current);
+        remoteDBCreds.current = credsObj;
         let credsCheck =  errorCheckCreds({credsObj: credsObj, background: true});
         if (credsCheck.credsError) {
             setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: credsCheck.errorText, connectionStatus: ConnectionStatus.navToLoginScreen}))
@@ -374,7 +236,10 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         }
         remoteDBCreds.current = credsObj;
         remoteDBCreds.current.refreshJWT = refreshResponse.data.refreshJWT;
-        let JWTCheck = await checkJWT(refreshResponse.data.accessJWT);
+        let JWTCheck = await checkJWT(refreshResponse.data.accessJWT,credsObj as DBCreds);
+        if (!JWTCheck.DBServerAvailable) {
+            setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: "DB Server Not Available", connectionStatus: ConnectionStatus.navToLoginScreen}))
+        }
         await setPrefsDBCreds();
         if (!JWTCheck.JWTValid) {
             remoteDBCreds.current.refreshJWT = "";
@@ -443,7 +308,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         return () => clearTimeout(refreshTimer);
     },[remoteDBState.accessJWTExpirationTime])
 
-    let value: RemoteDBStateContextType = {remoteDBState, remoteDBCreds: remoteDBCreds.current, remoteDB: globalRemoteDB as PouchDB.Database<{}> , setRemoteDBState, setRemoteDBCreds, startSync, checkDBUUID, assignDB, setDBCredsValue, setConnectionStatus};
+    let value: RemoteDBStateContextType = {remoteDBState, remoteDBCreds: remoteDBCreds.current, remoteDB: globalRemoteDB as PouchDB.Database<{}> , setRemoteDBState, setRemoteDBCreds, startSync, assignDB, setDBCredsValue, setConnectionStatus};
     return (
         <RemoteDBStateContext.Provider value={value}>{props.children}</RemoteDBStateContext.Provider>
       );
