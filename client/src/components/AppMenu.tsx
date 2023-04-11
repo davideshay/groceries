@@ -5,12 +5,16 @@ import { useConflicts, useFriends, UseFriendState } from './Usehooks';
 import ListsAll from './ListsAll';
 import { RemoteDBStateContext } from './RemoteDBState';
 import { ResolvedFriendStatus } from './DataTypes';
+import { useTranslation } from 'react-i18next';
 import './AppMenu.css';
 
 const AppMenu: React.FC = () => {
   const { remoteDBCreds } = useContext(RemoteDBStateContext);
   const {useFriendState,friendRows} = useFriends(String(remoteDBCreds.dbUsername));
   const { conflictDocs, conflictsLoading } = useConflicts();
+  const { t, i18n } = useTranslation();
+
+  console.log('lang:', i18n.language, i18n.languages, i18n.resolvedLanguage)
  
   const listHeader = (headerName: string) => {
     return (<IonItemDivider class="category-divider">{headerName}</IonItemDivider>)
@@ -32,7 +36,7 @@ const AppMenu: React.FC = () => {
     return (<IonMenuToggle key="Friends" autoHide={false}>
               <IonItem class="app-menu-item" key={"item-Friends"} routerLink="/friends">
               {(pendingCount > 0) ? <IonBadge slot="start">{pendingCount}</IonBadge> : <></>}
-              Friends
+              {t('general.friends')}
               </IonItem></IonMenuToggle>) 
   }
    const conflictItem = () => {
@@ -41,7 +45,7 @@ const AppMenu: React.FC = () => {
     return (<IonMenuToggle key="ConflictLog" autoHide={false}>
               <IonItem class="app-menu-item" key={"item-ConflictLog"} routerLink="/conflictlog">
               {(pendingCount > 0) ? <IonBadge slot="start">{pendingCount}</IonBadge> : <></>}
-              Conflict Log
+              {t('general.conflict_log')}
               </IonItem></IonMenuToggle>) 
   }
 
@@ -53,20 +57,20 @@ const AppMenu: React.FC = () => {
   <IonMenu contentId="main" type="overlay">
     <IonContent className="ion-padding">
       <IonList>
-        <IonListHeader>Groceries Menu</IonListHeader>
+        <IonListHeader>{t('general.groceries_menu')}</IonListHeader>
         <IonList>
-          {listHeader("Lists")}
+          {listHeader(t('general.lists'))}
           <ListsAll separatePage={false}/>
         </IonList>
-        {listItem("Create New List","/list/new/new")}
-        {listItem("Manage All Listgroups","/listgroups")}
-        {listHeader("Other Actions")}
-        {listItem("Manage Categories","/categories")}
-        {listItem("Manage All Items","/allitems")}
-        {listItem("View Global Items","/globalitems")}
+        {listItem(t('general.create_new_list'),"/list/new/new")}
+        {listItem(t('general.manage_all_listgroups'),"/listgroups")}
+        {listHeader(t('other_actions'))}
+        {listItem(t('manage_categories'),"/categories")}
+        {listItem(t('manage_all_items'),"/allitems")}
+        {listItem(t('view_global_items'),"/globalitems")}
         {friendItem()}
         {conflictItem()}
-        {listItem("Settings","/settings")}
+        {listItem(t('settings'),"/settings")}
       </IonList>
     </IonContent>
   </IonMenu>

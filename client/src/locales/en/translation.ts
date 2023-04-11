@@ -1,0 +1,82 @@
+export const en_translations = 
+{
+    "general": {
+        "friends": "Friends",
+        "conflict_log": "Conflict Log",
+        "groceries_menu": "Groceries Menu",
+        "lists": "Lists",
+        "create_new_list": "Create New List",
+        "manage_all_listgroups": "Manage All Listgroups",
+        "other_actions": "Other Actions",
+        "manage_categories": "Manage Categories",
+        "manage_all_items": "Manage All Items",
+        "view_global_items": "View Global Items",
+        "settings": "Settings",
+        "edit": "Edit",
+        "editing": "Editing",
+        "active": "Active",
+        "completed": "Completed",
+        "stocked_here": "Stocked Here",
+        "category": "Category",
+        "uncategorized": "Uncategorized",
+        "quantity": "Quantity",
+        "uom_abbrev": "UoM",  // Unit of Measure Abbreviation
+        "no_uom": "No UoM", // No specified unit of measure
+        "times": "times",
+        "reset": "Reset",
+        "note": "Note",
+        "cancel": "Cancel",
+        "save": "Save"
+        
+     },
+    "itemtext": {
+        "item_is_on_these_lists": "Item is on these lists:",
+        "highlighted_lists_diff_values": "Highlighted lists have different values at the item-list level",
+        "list_values": "List Values",
+        "item_was_purchased_from_here": "Item was Purchased From Here"
+    },
+    "categories": {
+        "bakery": "Bakery",
+        "deli": "Deli",
+        "dairy": "Dairy",
+        "baking": "Baking",
+        "cannedmeat": "Canned Meat",
+        "chips": "Snacks-Chips",
+        "pretzels": "Snacks-Pretzels",
+        "cookies": "Snacks-Cookies",
+        "crackers": "Snacks-Crackers",
+        "nuts": "Snacks-Nuts",
+        "cannedvegetables": "Canned Vegetables",
+        "cannedsoup": "Canned Soup",
+        "paperproducts": "Paper Products",
+        "juice": "Juice",
+        "soda": "Soda",
+        "pharmacy": "Pharmacy",
+        "beverages": "Beverages",
+        "frozentreats": "Frozen Treats/Ice Cream",
+        "frozendinners": "Frozen Dinners",
+        "frozenvegetables": "Frozen Vegetables",
+        "frozenother": "Frozen Other",
+        "laundry": "Laundry",
+        "meat": "Meat",
+        "seafood": "Seafood",
+        "produce": "Produce",
+        "condiments": "Condiments",
+        "mexican": "Mexican",
+        "asian": "Asian",
+        "italian": "Italian",
+        "cereal": "Cereal",
+        "bread" : "Bread",
+        "alcohol" : "Alcohol",
+        "floral": "Floral",
+        "petfood": "Pet Food",
+        "cleaning": "Cleaning",
+        "hair": "Hair Products-Shampoo/Conditioner",
+        "auto": "Automotive",
+        "office": "Office Supplies",
+        "beauty": "Beauty Products"
+    },
+    "uom": {
+        "EA": "Each"
+    }
+}
