@@ -381,6 +381,4 @@ const Item: React.FC = (props) => {
   );
 };
 
-Item.whyDidYouRender = true;
-
 export default Item;

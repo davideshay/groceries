@@ -11,7 +11,6 @@ import PageHeader from '../components/PageHeader';
 // Each item has a name, along with data about each list the item is on (list ID, quantity, count of number of times bought,
 // and status for active (on the list), and complete (on the list and checked off) )
 
-
 const AllItems: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { dbError: itemError,  itemRowsLoaded, itemRows} = useItems({selectedListGroupID: null, isReady :true, needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const screenLoading = useRef(true);

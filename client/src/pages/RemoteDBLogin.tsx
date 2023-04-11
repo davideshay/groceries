@@ -12,7 +12,7 @@ import { cloneDeep } from 'lodash';
 import { RemoteDBStateContext, SyncStatus, initialRemoteDBState } from '../components/RemoteDBState';
 import { HistoryProps } from '../components/DataTypes';
 import { useLists } from '../components/Usehooks';
-import { apiConnectTimeout, initialSetupActivities } from '../components/Utilities';
+import { apiConnectTimeout } from '../components/Utilities';
 
 export type RemoteState = {
   password: string | undefined,
