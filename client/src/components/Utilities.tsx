@@ -49,10 +49,8 @@ export async function checkUserByEmailExists(email: string, remoteDBCreds: DBCre
         },
         connectTimeout: apiConnectTimeout         
     };
-    console.log("about to execute checkuser httpget with options: ", {options})
     try { response = await CapacitorHttp.post(options);}
     catch(err) {console.log("ERROR: http:",err)};
-    console.log("got httpget response: ",{response});
     return response?.data;
 }
 

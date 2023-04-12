@@ -6,6 +6,8 @@ import './AllItems.css';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import PageHeader from '../components/PageHeader';
+import { useTranslation } from 'react-i18next';
+import { translatedItemName } from '../components/translationUtilities';
 
 // The AllItems component is a master editor of all of the known items in the database.
 // Each item has a name, along with data about each list the item is on (list ID, quantity, count of number of times bought,
@@ -14,16 +16,17 @@ import PageHeader from '../components/PageHeader';
 const AllItems: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { dbError: itemError,  itemRowsLoaded, itemRows} = useItems({selectedListGroupID: null, isReady :true, needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const screenLoading = useRef(true);
+  const { t } = useTranslation();
 
   if  (itemError) { return (
-    <ErrorPage errorText="Error Loading Item Information... Restart."></ErrorPage>
+    <ErrorPage errorText={t("error.loading_item_info_restart") as string} ></ErrorPage>
     )}
 
   if (itemRowsLoaded ) {
     screenLoading.current = false;
   } else {
     screenLoading.current = true;
-    return ( <Loading isOpen={screenLoading.current} message="Loading All Items" />
+    return ( <Loading isOpen={screenLoading.current} message={t("general.loading_all_items")} />
 //    setIsOpen={() => {screenLoading.current = false}} />
   )}
   
@@ -31,11 +34,11 @@ const AllItems: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   return (
     <IonPage>
-      <PageHeader title="All Items" />
+      <PageHeader title={t("general.all_items")} />
       <IonContent>
-        {itemRows.length === 0 ? (<IonList><IonItem>No Items Available</IonItem></IonList>) : <></> }
+        {itemRows.length === 0 ? (<IonList><IonItem>{t("error.no_items_available")}</IonItem></IonList>) : <></> }
         {itemRows.map(ir => (
-          <IonItem button key={ir._id} class="list-button" routerLink={("/item/edit/" + ir._id)}>{ir.name}</IonItem>
+          <IonItem button key={ir._id} class="list-button" routerLink={("/item/edit/" + ir._id)}>{translatedItemName(ir.globalItemID,ir.name)}</IonItem>
         ))}
       </IonContent>
     </IonPage>

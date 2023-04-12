@@ -11,6 +11,7 @@ import { getCommonKey } from './ItemUtilities';
 import { GlobalDataContext } from './GlobalDataProvider';
 import { isPlatform } from '@ionic/core';
 import { fromBlob, fromURL } from 'image-resize-compress';
+import { useTranslation } from 'react-i18next';
 
 const imageQuality = 80;
 export const imageWidth = 200;
@@ -143,6 +144,7 @@ export function useDeleteListFromItems() {
 
 export function useDeleteCategoryFromItems() {
   const db=usePouch()
+  const {t}=useTranslation();
   return useCallback(
     async (catID: string) => {
       let response: PouchResponse = cloneDeep(PouchResponseInit);
@@ -155,7 +157,7 @@ export function useDeleteCategoryFromItems() {
             categoryID: catID
           }
           })
-      } catch(err) {response.successful=false; response.fullError="Could not find items"; return response}
+      } catch(err) {response.successful=false; response.fullError=t("error.could_not_find_items"); return response}
       if (itemResults !== undefined && itemResults.hasOwnProperty('docs')) {
         for (let i = 0; i < itemResults.docs.length; i++) {
           const itemDoc: ItemDoc = cloneDeep(itemResults.docs[i]);
@@ -172,6 +174,7 @@ export function useDeleteCategoryFromItems() {
 
 export function useDeleteCategoryFromLists() {
   const db=usePouch()
+  const {t}=useTranslation();
   return useCallback(
     async (catID: string) => {
       let response: PouchResponse = cloneDeep(PouchResponseInit);
@@ -184,7 +187,7 @@ export function useDeleteCategoryFromLists() {
             categories: { $elemMatch : { $eq: catID} }
           }
           })
-      } catch(err) {response.successful=false; response.fullError="Could not find items"; return response}
+      } catch(err) {response.successful=false; response.fullError=t("error.could_not_find_items"); return response}
       if (listResults !== undefined && listResults.hasOwnProperty('docs')) {
         for (let i = 0; i < listResults.docs.length; i++) {
           const listDoc: ListDoc = cloneDeep(listResults.docs[i]);
@@ -401,6 +404,7 @@ export function useFriends(username: string) : { useFriendState: UseFriendState,
   const [friendRows,setFriendRows] = useState<FriendRow[]>([]);
   const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
   const [useFriendState,setUseFriendState] = useState(UseFriendState.init);
+  const { t }= useTranslation();
   const { docs: friendDocs, state: friendState } = useFind({
     index: { fields: ["type","friendID1","friendID2"]},
     selector: { "$and": [ {
@@ -460,17 +464,17 @@ export function useFriends(username: string) : { useFriendState: UseFriendState,
             if ((remoteDBCreds.dbUsername === friendDoc.friendID1 && friendDoc.friendStatus === FriendStatus.PendingFrom2) || 
                 (remoteDBCreds.dbUsername === friendDoc.friendID2 && friendDoc.friendStatus === FriendStatus.PendingFrom1))
             {
-              friendRow.friendStatusText = "Needs Confirmed"
+              friendRow.friendStatusText = t("general.needs_confirmed");
               friendRow.resolvedStatus = ResolvedFriendStatus.PendingConfirmation;
             } else {
-              friendRow.friendStatusText = "Requested";
+              friendRow.friendStatusText = t("general.requested");
               friendRow.resolvedStatus = ResolvedFriendStatus.Requested;
             }
           } else if (friendDoc.friendStatus === FriendStatus.Confirmed) {
-            friendRow.friendStatusText = "Confirmed";
+            friendRow.friendStatusText = t("general.confirmed");
             friendRow.resolvedStatus = ResolvedFriendStatus.Confirmed;
           } else if (friendDoc.friendStatus === FriendStatus.WaitingToRegister) {
-            friendRow.friendStatusText = "Needs Registering";
+            friendRow.friendStatusText = t("general.needs_registering");
             friendRow.resolvedStatus = ResolvedFriendStatus.WaitingToRegister
           }
           setFriendRows(prevArray => [...prevArray, friendRow])
@@ -546,6 +550,7 @@ export function useAddListToAllItems() {
 
 
 export function usePhotoGallery() {
+  const { t } = useTranslation();
   const takePhoto = async () => {
     let rPhoto = await Camera.getPhoto({
       resultType: CameraResultType.Base64,
@@ -555,7 +560,7 @@ export function usePhotoGallery() {
       height: imageHeight,
       allowEditing: false,
       saveToGallery: false,
-      promptLabelHeader: "Take a picture for your item",
+      promptLabelHeader: t("general.take_picture_for_item") as string
     });
     let photoString = rPhoto.base64String;
     if (photoString != undefined && (isPlatform("desktop") || isPlatform("electron"))) {

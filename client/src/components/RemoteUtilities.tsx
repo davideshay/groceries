@@ -9,7 +9,7 @@ import { History } from "history";
 import { urlPatternValidation, usernamePatternValidation, emailPatternValidation,
         fullnamePatternValidation, apiConnectTimeout, isJsonString, DEFAULT_API_URL } from "./Utilities";
 import { cloneDeep, pick, keys, isEqual } from 'lodash';
-
+import { t } from "i18next";
 
 export async function navigateToFirstListID(phistory: History,remoteDBCreds: DBCreds, listRows: ListRow[]) {
     let firstListID = null;
@@ -92,41 +92,41 @@ export function errorCheckCreds({credsObj,background, creatingNewUser = false, p
         credsCheck.credsError = true; credsCheck.errorText=err;
     }
     if (background && (credsObj.refreshJWT === null || credsObj.refreshJWT === "")) {
-        setError("No existing credentials found (refresh)"); return credsCheck;}
+        setError(t("error.no_existing_credentials_found")); return credsCheck;}
     if (credsObj.apiServerURL === null || credsObj.apiServerURL === "") {
-        setError("No API Server URL entered"); return credsCheck;}    
+        setError(t("error.no_api_server_url_entered")); return credsCheck;}    
     if ((background) && (credsObj.couchBaseURL === null || credsObj.couchBaseURL === "")) {
-        setError("No CouchDB URL found"); return credsCheck;}
+        setError(t("error.no_couchdb_url_found")); return credsCheck;}
     if (!urlPatternValidation(credsObj.apiServerURL)) {
-        setError("Invalid API URL"); return credsCheck;}
+        setError(t("error.invalid_api_url")); return credsCheck;}
     if ((background) && (!urlPatternValidation(String(credsObj.couchBaseURL)))) {
-        setError("Invalid CouchDB URL"); return credsCheck;}
+        setError(t("error.invalid_couchdb_url")); return credsCheck;}
     if (credsObj.apiServerURL.endsWith("/")) {
         credsObj.apiServerURL = String(credsObj.apiServerURL?.slice(0,-1))}
     if (String(credsObj.couchBaseURL).endsWith("/")) {
         credsObj.couchBaseURL = String(credsObj.couchBaseURL?.slice(0,-1))}
     if ((background) && (credsObj.database === null || credsObj.database === "")) {
-        setError("No database name found"); return credsCheck;}
+        setError(t("error.no_database_name_found")); return credsCheck;}
     if (credsObj.dbUsername === null || credsObj.dbUsername === "") {
-        setError("No database user name entered"); return credsCheck;}
+        setError(t("error.no_database_username_entered")); return credsCheck;}
     if ((creatingNewUser) && credsObj.dbUsername.length < 5) {
-        setError("Please enter username of 6 characters or more");
+        setError(t("error.username_6_chars_or_more"));
         return credsCheck; }    
     if ((creatingNewUser) && !usernamePatternValidation(credsObj.dbUsername)) {
-        setError("Invalid username format"); return credsCheck; }
+        setError(t("error.invalid_username_format")); return credsCheck; }
     if ((creatingNewUser) && !fullnamePatternValidation(String(credsObj.fullName))) {
-        setError("Invalid full name format"); return credsCheck; }
+        setError(t("error.invalid_fullname_format")); return credsCheck; }
     if ((creatingNewUser) && (credsObj.email === null || credsObj.email === "")) {
-        setError("No email entered"); return credsCheck;}
+        setError(t("error.no_email_entered")); return credsCheck;}
     if ((creatingNewUser) && (!emailPatternValidation(String(credsObj.email)))) {
-        setError("Invalid email format"); return credsCheck;}
+        setError(t("error.invalid_email_format")); return credsCheck;}
     if ((!background && !creatingNewUser) && (password === undefined || password === "")) {
-        setError("No password entered"); return credsCheck;}
+        setError(t("error.no_password_entered")); return credsCheck;}
     if ((creatingNewUser) && password.length < 5) {
-        setError("Password not long enough. Please have 6 character or longer password");
+        setError(t("error.password_not_long_enough"));
         return credsCheck;}
     if ((creatingNewUser) && (password !== verifyPassword)) {
-        setError("Passwords do not match"); return credsCheck;}
+        setError(t("error.passwords_no_match")); return credsCheck;}
     return credsCheck;
 }
 

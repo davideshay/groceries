@@ -333,4 +333,3 @@ export async function checkNameInGlobal(db: PouchDB.Database, name: string) {
     }
     return nameExists;
 }
-

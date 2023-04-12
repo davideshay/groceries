@@ -7,6 +7,7 @@ import {  ItemDoc, ItemList} from '../components/DBSchema';
 import { cloneDeep } from 'lodash';
 import { GlobalDataContext } from './GlobalDataProvider';
 import { useTranslation } from 'react-i18next';
+import { translatedCategoryName, translatedUOMName } from './translationUtilities';
 
 type ModalProps = {
     stateItemDoc: ItemDoc,
@@ -57,7 +58,7 @@ const ItemListsModal: React.FC<ModalProps> = (props: ModalProps) => {
                   <IonSelectOption key="cat-undefined" value={null}>{t('general.uncategorized')}</IonSelectOption>
                   {globalData.categoryDocs.map((cat) => { console.log(cat); return (
                       <IonSelectOption key={cat._id} value={cat._id}>
-                        {cat._id?.startsWith('system:cat') ? t("categories."+cat._id.substring("system:cat".length+1)) : cat.name}
+                        {translatedCategoryName(cat._id as string,cat.name)}
                       </IonSelectOption>
                   )})}
           </IonSelect>
@@ -71,7 +72,7 @@ const ItemListsModal: React.FC<ModalProps> = (props: ModalProps) => {
                     <IonSelectOption key="uom-undefined" value={null}>{t('general.no_uom')}</IonSelectOption>
                     {globalData.uomDocs.map((uom) => (
                       <IonSelectOption key={uom.name} value={uom.name}>
-                        {uom._id?.startsWith('system:uom') ? t("uom."+uom._id.substring("system:uom".length+1)) : uom.description}
+                        {translatedUOMName(uom._id as string,uom.description)}
                       </IonSelectOption>
                     ))}
           </IonSelect>

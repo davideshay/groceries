@@ -64,13 +64,13 @@ const AppMenu: React.FC = () => {
         </IonList>
         {listItem(t('general.create_new_list'),"/list/new/new")}
         {listItem(t('general.manage_all_listgroups'),"/listgroups")}
-        {listHeader(t('other_actions'))}
-        {listItem(t('manage_categories'),"/categories")}
-        {listItem(t('manage_all_items'),"/allitems")}
-        {listItem(t('view_global_items'),"/globalitems")}
+        {listHeader(t('general.other_actions'))}
+        {listItem(t('general.manage_categories'),"/categories")}
+        {listItem(t('general.manage_all_items'),"/allitems")}
+        {listItem(t('general.view_global_items'),"/globalitems")}
         {friendItem()}
         {conflictItem()}
-        {listItem(t('settings'),"/settings")}
+        {listItem(t('general.settings'),"/settings")}
       </IonList>
     </IonContent>
   </IonMenu>
