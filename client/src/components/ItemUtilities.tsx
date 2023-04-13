@@ -3,6 +3,8 @@ import {initItemRow, ItemRow, ItemSearch, ListCombinedRow, ListCombinedRows,
 import { AddListOptions, GlobalState } from "./GlobalState";
 import { UomDoc, ItemDoc, ItemDocs, ItemList, ListDocs, ListDoc, CategoryDoc, GlobalItemDocs } from './DBSchema';
 import { cloneDeep } from 'lodash';
+import { t } from 'i18next';
+import { translatedCategoryName, translatedItemName } from './translationUtilities';
 
 export function getGroupIDForList(listID: string, listDocs: ListDocs): string | null {
     let retGID = null;
@@ -17,7 +19,7 @@ export function getAllSearchRows(allItemDocs: ItemDocs, listID: string,listType:
     allItemDocs.forEach((itemDoc) => {
       let searchRow: ItemSearch = {
         itemID: String(itemDoc._id),
-        itemName: itemDoc.name,
+        itemName: translatedItemName(itemDoc.globalItemID,itemDoc.name),
         itemType: ItemSearchType.Local,
         globalItemID: itemDoc.globalItemID,
         globalItemCategoryID: null,
@@ -66,7 +68,7 @@ export function getAllSearchRows(allItemDocs: ItemDocs, listID: string,listType:
       if (itemExistsInSearchIdx === -1 && !itemExistsInItem) {
         let searchRow: ItemSearch = {
             itemID: String(globalItem._id),
-            itemName: globalItem.name,
+            itemName: translatedItemName(globalItem._id!,globalItem.name),
             itemType: ItemSearchType.Global,
             globalItemID: String(globalItem._id),
             globalItemCategoryID: globalItem.defaultCategoryID,
@@ -90,9 +92,9 @@ export function filterSearchRows(searchRows: ItemSearch[] | undefined, searchCri
             }    
         });
         filteredSearchRows.sort((a,b) => (
-            (Number(b.itemName.toUpperCase().startsWith(searchCriteria.toUpperCase())) - Number(a.itemName.toUpperCase().startsWith(searchCriteria.toUpperCase()))) 
+            (Number(b.itemName.toLocaleUpperCase().startsWith(searchCriteria.toLocaleUpperCase())) - Number(a.itemName.toLocaleUpperCase().startsWith(searchCriteria.toLocaleUpperCase()))) 
             || (b.boughtCount - a.boughtCount) ||
-            (a.itemName.toUpperCase().localeCompare(b.itemName.toUpperCase()))
+            (a.itemName.toLocaleUpperCase().localeCompare(b.itemName.toLocaleUpperCase()))
             ))        
     }
     return filteredSearchRows;
@@ -138,23 +140,24 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
     sortedItemDocs.forEach((itemDoc: ItemDoc) => {
         let itemRow: ItemRow = cloneDeep(initItemRow);
         itemRow.itemID = String(itemDoc._id);
-        itemRow.itemName = itemDoc.name;
+        itemRow.globalItemID = itemDoc.globalItemID;
+        itemRow.itemName =  translatedItemName(itemDoc.globalItemID,itemDoc.name);
         let list = findRightList(itemDoc,listType,listOrGroupID,(listRow as ListCombinedRow), listCombinedRows);
         if (list === undefined) {return itemRows};
         itemRow.categoryID = list.categoryID;
         if (itemRow.categoryID === null) {
-            itemRow.categoryName = "Uncategorized";
+            itemRow.categoryName = t("general.uncategorized");
             itemRow.categorySeq = -1;
             itemRow.categoryColor = "primary"
         } else {
             let thisCat = (categoryDocs.find((element: CategoryDoc) => (element._id === itemRow.categoryID)) as CategoryDoc);
             if (thisCat !== undefined) {
-                itemRow.categoryName = thisCat.name;
+                itemRow.categoryName =  translatedCategoryName(itemRow.categoryID,thisCat.name);
                 if (thisCat.color === undefined) {
                     itemRow.categoryColor = "primary"
                 } else { itemRow.categoryColor = thisCat.color; };    
             } else {
-                itemRow.categoryName = "UNDEFINED";
+                itemRow.categoryName = t("general.undefined");
                 itemRow.categoryColor = "primary"
             }
             if (listType === RowType.list) {
@@ -170,11 +173,7 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
         if (uomName != null) {
             const uomDoc = uomDocs.find((el: UomDoc) => (el.name === uomName));
             if (uomDoc !== undefined) {
-                if (Number(itemRow.quantity) === 1) {
-                    uomDesc = uomDoc.description;
-                } else {
-                    uomDesc = uomDoc.pluralDescription;
-                }
+                uomDesc = t("uom."+uomName,{ count: itemRow.quantity});
             }
         }
         itemRow.uomDesc = uomDesc;
@@ -199,8 +198,8 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
     })
     itemRows.sort((a,b) => (
     (Number(a.completed) - Number(b.completed)) || (Number(a.categorySeq) - Number(b.categorySeq)) || 
-    (a.categoryName.toUpperCase().localeCompare(b.categoryName.toUpperCase())) ||
-    (a.itemName.toUpperCase().localeCompare(b.itemName.toUpperCase()))
+    (a.categoryName.toLocaleUpperCase().localeCompare(b.categoryName.toLocaleUpperCase())) ||
+    (a.itemName.toLocaleUpperCase().localeCompare(b.itemName.toLocaleUpperCase()))
     ))
     return (itemRows)
 }

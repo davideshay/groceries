@@ -3,6 +3,7 @@ import { FriendDoc, InitFriendDoc, ListDoc, ItemList, ItemListInit } from "./DBS
 
 export interface ItemRow {
     itemID: string,
+    globalItemID: string | null,
     itemName: string,
     categoryID: string | null,
     categoryName: string,
@@ -17,7 +18,7 @@ export interface ItemRow {
 export type ItemRows = ItemRow[];
 
 export const initItemRow: ItemRow = {
-    itemID: "", itemName: "",categoryID: "", categoryName: "",
+    itemID: "", globalItemID: null, itemName: "",categoryID: "", categoryName: "",
     categorySeq: 0, categoryColor: "#ffffff", quantity: 0,
     uomDesc: "", quantityUOMDesc: "", completed: false
   }
