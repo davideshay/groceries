@@ -19,6 +19,8 @@ import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
 import PageHeader from '../components/PageHeader';
+import { useTranslation } from 'react-i18next';
+import { translatedCategoryName, translatedCategoryNameNoDescription, translatedItemName, translatedUOMName, translatedUOMShortName } from '../components/translationUtilities';
 
 const Item: React.FC = (props) => {
   let { mode, itemid } = useParams<{mode: string, itemid: string}>();
@@ -46,6 +48,7 @@ const Item: React.FC = (props) => {
   const globalData  = useContext(GlobalDataContext);
   const [presentAlert, dismissAlert] = useIonAlert();
   const [presentToast] = useIonToast();
+  const { t } = useTranslation();
   
   function groupIDForList(listID: string): string {
     let retGID="";
@@ -109,11 +112,11 @@ const Item: React.FC = (props) => {
   },[itemLoading,itemDoc,globalData.listsLoading,globalData.listDocs,globalData.listRowsLoaded, globalData.listRows,globalState.itemMode,globalState.newItemName, globalState.callingListID, needInitItemDoc]);
 
   if (itemError || globalData.listError || globalData.categoryError || globalData.uomError || itemsError) { console.log("ERROR");return (
-    <ErrorPage errorText="Error Loading Item Information... Restart."></ErrorPage>
+    <ErrorPage errorText={t("error.loading_item_info_restart") as string}></ErrorPage>
   )}
 
   if ((itemLoading && routeItemID !== null) || globalData.listsLoading || !globalData.listRowsLoaded || globalData.categoryLoading || globalData.uomLoading || !itemRowsLoaded || isEmpty(stateItemDoc))  {
-    return ( <Loading isOpen={screenLoading.current} message="Loading Item..."    /> )
+    return ( <Loading isOpen={screenLoading.current} message={t("general.loading_item")}  /> )
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   };
 
@@ -124,7 +127,7 @@ const Item: React.FC = (props) => {
     let result: PouchResponse = cloneDeep(PouchResponseInit);
     let imgResult: PouchResponse = cloneDeep(PouchResponseInit);
     if (stateItemDoc.name === undefined || stateItemDoc.name==="" || stateItemDoc.name === null) {
-      setFormError(prevState => ("Name is required"));
+      setFormError(prevState => (t("error.must_enter_a_name")));
       return false;
     }
     let alreadyExists = false;
@@ -134,11 +137,11 @@ const Item: React.FC = (props) => {
       }
     })
     if (alreadyExists) {
-      setFormError(prevState => ("Cannot use name of existing item in list group"));
+      setFormError(prevState => (t("error.cannot_use_name_existing_item")));
       return false;
     }
     if ( stateItemDoc.globalItemID == null && await checkNameInGlobal(db as PouchDB.Database,stateItemDoc.name.toUpperCase())) {
-      setFormError(prevState => ("Cannot use name of existing item in global item list"));
+      setFormError(prevState => (t("error.cannot_use_name_existing_globalitem")));
       return false;
     }
     let newItemDoc = cloneDeep(stateItemDoc);
@@ -162,7 +165,7 @@ const Item: React.FC = (props) => {
     if (result.successful) {
       goBack();
     } else {
-      setFormError("Error updating item. Please retry.");
+      setFormError(t("error.updating_item") as string);
     }
   }
 
@@ -185,7 +188,7 @@ const Item: React.FC = (props) => {
       if (result.successful) {
           updateAllKey("categoryID",result.pouchData.id as string);
       } else {
-        presentToast({message: "Error adding category. Please retry.",
+        presentToast({message: t("error.adding_category"),
               duration: 1500, position: "middle"})
       }  
     }  
@@ -197,16 +200,16 @@ const Item: React.FC = (props) => {
       if (uom.name.toUpperCase() === uomData.name.toUpperCase()) {alreadyFound=true;}
     });
     if (alreadyFound) {
-      presentToast({message: "Requested UOM Already exists. Please retry.", duration: 1500, position: "middle"});
+      presentToast({message: t("error.uom_exists"), duration: 1500, position: "middle"});
       return false;
     }
     if (uomData.name.length > 2) {
-      presentToast({message: "Units of measure must be 2 characters. Please retry.", duration: 1500, position: "middle"});
+      presentToast({message: t("error.uom_length_error"), duration: 1500, position: "middle"});
       return false;
     }
     uomData.name = uomData.name.toUpperCase();
     if (uomData.description === "") {
-      presentToast({message: "No UOM Description entered. Please retry.", duration: 1500, position: "middle"});
+      presentToast({message: t("error.no_uom_description"), duration: 1500, position: "middle"});
       return false;
     }
     alreadyFound = false;
@@ -214,11 +217,11 @@ const Item: React.FC = (props) => {
       if (uom.description.toUpperCase() === uomData.description.toUpperCase()) {alreadyFound=true;}
     });
     if (alreadyFound) {
-      presentToast({message: "Requested UOM Description Already exists. Please retry.", duration: 1500, position: "middle"});
+      presentToast({message: t("error.uom_description_exists"), duration: 1500, position: "middle"});
       return false;
     }
     if (uomData.pluralDescription === "") {
-      presentToast({message: "No UOM Plural description entered. Please retry.", duration: 1500, position: "middle"});
+      presentToast({message: t("error.no_uom_plural_description"), duration: 1500, position: "middle"});
       return false;
     }
     alreadyFound = false;
@@ -226,24 +229,24 @@ const Item: React.FC = (props) => {
       if (uom.pluralDescription.toUpperCase() === uomData.pluralDescription.toUpperCase()) {alreadyFound=true;}
     });
     if (alreadyFound) {
-      presentToast({message: "Requested UOM Plural Description Already exists. Please retry.", duration: 1500, position: "middle"});
+      presentToast({message: t("error.uom_plural_description_exists"), duration: 1500, position: "middle"});
       return false;
     }
     let result = await addUOMDoc({"type": "uom", "name": uomData.name, "description": uomData.description, "pluralDescription": uomData.pluralDescription});
     if (result.successful) {
         updateAllKey("uomName",uomData.name);
     } else {
-      presentToast({message: "Error adding unit of measure. Please retry.",
+      presentToast({message: t("error.adding_uom"),
             duration: 1500, position: "middle"})
     }  
   }
 
   function addCategoryPopup() {
     presentAlert({
-      header: "Add new category",
+      header: t("general.add_new_category"),
       inputs: [ {name: "category", type: "text"}],
-      buttons: [ { text: 'Cancel', role: 'cancel'},
-                { text: "Add", role: 'confirm',
+      buttons: [ { text: t("general.cancel"), role: 'cancel'},
+                { text: t("general.add"), role: 'confirm',
                 handler: (alertData) => {addNewCategory(alertData.category)}}
                 ]    
     })
@@ -251,12 +254,12 @@ const Item: React.FC = (props) => {
 
   function addUOMPopup() {
     presentAlert({
-      header: "Add new Unit of Measure",
-      inputs: [ {name: "name", placeholder: "Name", max: "2", type: "text"},
-                {name:"description", placeholder: "Description", type:"text"},
-                {name:"pluralDescription", placeholder: "Plural Description",type:"text"}],
-      buttons: [ {text: "Cancel", role: "cancel"},
-                 {text: "Add", role: "confirm", handler: (alertData) => {addNewUOM(alertData)}}
+      header: t("general.add_new_uom"),
+      inputs: [ {name: "name", placeholder: t("general.name"), max: "2", type: "text"},
+                {name:"description", placeholder: t("general.description"), type:"text"},
+                {name:"pluralDescription", placeholder: t("general.plural_description"),type:"text"}],
+      buttons: [ {text: t("general.cancel"), role: "cancel"},
+                 {text: t("general.add"), role: "confirm", handler: (alertData) => {addNewUOM(alertData)}}
     ]
     })
   }
@@ -268,16 +271,16 @@ const Item: React.FC = (props) => {
       if (result.successful) {
         goBack();
       } else {
-        setFormError("Error updating item. Please retry.");
+        setFormError(t("error.updating_item") as string);
       }
   }
 
   function deleteItem() {
     presentAlert({
-      header: "Delete this item?",
-      subHeader: "Do you really want to delete this item?",
-      buttons: [ { text: "Cancel", role: "Cancel"},
-                 { text: "Delete", role: "confirm",
+      header: t("general.delete_this_item"),
+      subHeader: t("general.really_delete_this_item"),
+      buttons: [ { text: t("general.cancel"), role: "Cancel"},
+                 { text: t("general.delete"), role: "confirm",
                   handler: () => deleteItemFromDB()}]
     })
   }
@@ -305,33 +308,33 @@ const Item: React.FC = (props) => {
 
   return (
     <IonPage>
-      <PageHeader title={"Editing Item: "+stateItemDoc.name} />
+      <PageHeader title={t("general.editing_item")+" "+ translatedItemName(stateItemDoc.globalItemID,stateItemDoc.name)} />
       <IonContent>
           <IonList>
             <IonItem key="name">
-              <IonInput disabled={stateItemDoc.globalItemID != null} label="Name" labelPlacement="stacked" type="text" onIonInput={(e) => setStateItemDoc({...stateItemDoc, name: String(e.detail.value)})} value={stateItemDoc.name}></IonInput>
+              <IonInput disabled={stateItemDoc.globalItemID != null} label={t("general.name") as string} labelPlacement="stacked" type="text" onIonInput={(e) => setStateItemDoc({...stateItemDoc, name: String(e.detail.value)})} value={translatedItemName(stateItemDoc.globalItemID,stateItemDoc.name)}></IonInput>
             </IonItem>
             <IonItem key="listgroup">
-              <IonText >List Group: {thisListGroup?.listGroupName}</IonText>
+              <IonText >{t("general.list_group") + ": "}  {thisListGroup?.listGroupName}</IonText>
             </IonItem>
             <IonItem key="photo">
               {photoExists ? <IonImg class="item-image" src={photoBase64}/> : <></>}
             </IonItem>
             <IonItem key="photobuttons">
-              <IonButton onClick={() => getNewPhoto()}>Take Photo</IonButton>
-              <IonButton onClick={() => {deletePhoto()}}>Delete Photo</IonButton>
+              <IonButton onClick={() => getNewPhoto()}>{t("general.take_photo")}</IonButton>
+              <IonButton onClick={() => {deletePhoto()}}>{t("general.delete_photo")}</IonButton>
             </IonItem>
             <IonCard>
-              <IonCardSubtitle>Change values here to change on all lists below</IonCardSubtitle>
+              <IonCardSubtitle>{t("general.change_here_change_all_below")}</IonCardSubtitle>
               <IonItem key="quantity">
                 <IonGrid class="ion-no-padding">
                 <IonRow>
-                  <IonCol class="ion-no-padding" size="3"><IonInput label="Quantity" labelPlacement="stacked" type="number" min="0" max="9999" onIonInput={(e) => updateAllKey("quantity",Number(e.detail.value))} value={getCommonKey(stateItemDoc,"quantity",globalData.listDocs)}></IonInput></IonCol>
+                  <IonCol class="ion-no-padding" size="3"><IonInput label={t("general.quantity") as string} labelPlacement="stacked" type="number" min="0" max="9999" onIonInput={(e) => updateAllKey("quantity",Number(e.detail.value))} value={getCommonKey(stateItemDoc,"quantity",globalData.listDocs)}></IonInput></IonCol>
                   <IonCol class="ion-no-padding" size="8">
-                    <IonSelect label="UoM" labelPlacement='stacked' interface="popover" onIonChange={(ev) => updateAllKey("uomName", ev.detail.value)} value={getCommonKey(stateItemDoc,"uomName",globalData.listDocs)}>
-                    <IonSelectOption key="uom-undefined" value={null}>No UOM</IonSelectOption>
+                    <IonSelect label={t("general.uom_abbrev") as string} labelPlacement='stacked' interface="popover" onIonChange={(ev) => updateAllKey("uomName", ev.detail.value)} value={getCommonKey(stateItemDoc,"uomName",globalData.listDocs)}>
+                    <IonSelectOption key="uom-undefined" value={null}>{t("general.no_uom")}</IonSelectOption>
                     {(globalData.uomDocs as UomDoc[]).map((uom) => (
-                      <IonSelectOption key={uom.name} value={uom.name}>{uom.description}</IonSelectOption>
+                      <IonSelectOption key={uom.name} value={uom.name}>{translatedUOMName(uom._id!,uom.description)}</IonSelectOption>
                     ))}
                     </IonSelect>
                   </IonCol>
@@ -340,11 +343,11 @@ const Item: React.FC = (props) => {
                 </IonGrid>
               </IonItem>
               <IonItem key="category">
-                <IonSelect label="Category" labelPlacement="stacked" interface="popover" onIonChange={(ev) => updateAllKey("categoryID",ev.detail.value)} value={getCommonKey(stateItemDoc,"categoryID",globalData.listDocs)}>
-                  <IonSelectOption key="cat-undefined" value={null}>Uncategorized</IonSelectOption>
+                <IonSelect label={t("general.category") as string} labelPlacement="stacked" interface="popover" onIonChange={(ev) => updateAllKey("categoryID",ev.detail.value)} value={getCommonKey(stateItemDoc,"categoryID",globalData.listDocs)}>
+                  <IonSelectOption key="cat-undefined" value={null}>{t("general.uncategorized")}</IonSelectOption>
                   {(globalData.categoryDocs as CategoryDoc[]).map((cat) => (
                       <IonSelectOption key={cat._id} value={cat._id}>
-                        {cat.name}
+                        {translatedCategoryName(cat._id,cat.name)}
                       </IonSelectOption>
                   ))}
                 </IonSelect>
@@ -353,7 +356,7 @@ const Item: React.FC = (props) => {
                 </IonButton>  
               </IonItem>
               <IonItem key="note">
-                <IonTextarea label="Note" labelPlacement="stacked" placeholder="Item Note" inputMode='text' debounce={100} rows={4} onIonInput={(ev) => updateAllKey("note",String(ev.detail.value))} value={getCommonKey(stateItemDoc,"note",globalData.listDocs)}>   
+                <IonTextarea label={t("general.note") as string} labelPlacement="stacked" placeholder={t("general.item_note") as string} inputMode='text' debounce={100} rows={4} onIonInput={(ev) => updateAllKey("note",String(ev.detail.value))} value={getCommonKey(stateItemDoc,"note",globalData.listDocs)}>   
                 </IonTextarea>
               </IonItem>
             </IonCard>
@@ -366,14 +369,14 @@ const Item: React.FC = (props) => {
       <IonToolbar>
           <IonButtons slot="start">
             {mode !== "new" ? 
-              (<IonButton fill="outline" color="danger" onClick={() => deleteItem()}><IonIcon slot="start" icon={trashOutline}></IonIcon>Delete</IonButton>)
+              (<IonButton fill="outline" color="danger" onClick={() => deleteItem()}><IonIcon slot="start" icon={trashOutline}></IonIcon>{t("general.delete")}</IonButton>)
               : <></>}
           </IonButtons>  
           <IonButtons slot="secondary">  
-          <IonButton fill="outline" color="secondary" onClick={() => goBack()}><IonIcon slot="start" icon={closeCircleOutline}></IonIcon>Cancel</IonButton>
+          <IonButton fill="outline" color="secondary" onClick={() => goBack()}><IonIcon slot="start" icon={closeCircleOutline}></IonIcon>{t("general.cancel")}</IonButton>
           </IonButtons>
           <IonButtons slot="end">
-          <IonButton fill="solid" color="primary" onClick={() => updateThisItem()}>{mode === "new" ? "Add": "Save"}<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>
+          <IonButton fill="solid" color="primary" onClick={() => updateThisItem()}>{mode === "new" ? t("general.add") : t("general.save")}<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>
           </IonButtons>
           </IonToolbar>
       </IonFooter>

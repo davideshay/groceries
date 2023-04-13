@@ -7,7 +7,7 @@ import {  ItemDoc, ItemList} from '../components/DBSchema';
 import { cloneDeep } from 'lodash';
 import { GlobalDataContext } from './GlobalDataProvider';
 import { useTranslation } from 'react-i18next';
-import { translatedCategoryName, translatedUOMName } from './translationUtilities';
+import { translatedCategoryName, translatedUOMName, translatedUOMShortName } from './translationUtilities';
 
 type ModalProps = {
     stateItemDoc: ItemDoc,
@@ -56,7 +56,7 @@ const ItemListsModal: React.FC<ModalProps> = (props: ModalProps) => {
         <IonItem>
           <IonSelect label={t('general.category') as string} labelPlacement="stacked" interface="popover" onIonChange={(ev) => props.setModalState(prevState => ({...prevState, itemList: {...prevState.itemList, categoryID: ev.detail.value}}))} value={props.modalState.itemList.categoryID}>
                   <IonSelectOption key="cat-undefined" value={null}>{t('general.uncategorized')}</IonSelectOption>
-                  {globalData.categoryDocs.map((cat) => { console.log(cat); return (
+                  {globalData.categoryDocs.map((cat) => { return (
                       <IonSelectOption key={cat._id} value={cat._id}>
                         {translatedCategoryName(cat._id as string,cat.name)}
                       </IonSelectOption>

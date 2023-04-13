@@ -1,4 +1,5 @@
 import { IonHeader, IonPage, IonTitle, IonToolbar, IonContent,IonItem } from '@ionic/react';
+import { t } from 'i18next';
 
 interface ErrorRequiredProps {
 
@@ -12,8 +13,8 @@ interface ErrorOptionalProps  {
 interface ErrorProps extends ErrorRequiredProps, ErrorOptionalProps {};
 
 const defaultProps: ErrorOptionalProps = {
-    errorTitle: "Error...",
-    errorText: "Error in Application. Restart."
+    errorTitle: t("error.error"),
+    errorText: t("error.error_in_application")
 }
 
 const ErrorPage = (props: ErrorProps) => {

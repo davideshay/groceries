@@ -7,7 +7,7 @@ import { initialSetupActivities } from '../components/Utilities';
 import ErrorPage from './ErrorPage';
 import { History } from 'history';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
-
+import { useTranslation } from 'react-i18next';
 
 type InitialLoadProps = {
   history : History
@@ -18,6 +18,7 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
     const { listError ,listRowsLoaded, listRows } = useContext(GlobalDataContext)
     const db=usePouch();
     const screenLoading = useRef(true);
+    const { t } = useTranslation();
   
     useEffect(() => {
         async function initialStartup() {
@@ -45,16 +46,16 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
     },[remoteDBState.connectionStatus])
 
     if (listError) {return (
-        <ErrorPage errorText="Error Loading List Information... Restart."></ErrorPage>
+        <ErrorPage errorText={t("error.loading_list_info") as string}></ErrorPage>
     )}
 
     return (
     <IonPage>
         <IonHeader>
             <IonToolbar>
-                <IonTitle id="initialloadtitle">Loading...</IonTitle>
+                <IonTitle id="initialloadtitle">{t("general.loading")}</IonTitle>
                 <IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false;}} 
-                            message="Logging In..." />
+                            message={t("general.logging_in") as string} />
             </IonToolbar>
         </IonHeader>
     </IonPage>
