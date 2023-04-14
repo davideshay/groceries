@@ -8,19 +8,20 @@ import ErrorPage from './ErrorPage';
 import Loading  from '../components/Loading';
 import PageHeader from '../components/PageHeader';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
+import { useTranslation } from 'react-i18next';
 
 const ListGroups: React.FC = () => {
-
   const { listRowsLoaded, listCombinedRows, listError} = useContext(GlobalDataContext);
   const screenLoading = useRef(false);
+  const { t } = useTranslation();
 
   if (listError) { return(
-    <ErrorPage errorText="Error Loading List Groups Information... Restart."></ErrorPage>
+    <ErrorPage errorText={t("error.loading_listgroups") as string}></ErrorPage>
   )}
 
   if (!listRowsLoaded) { 
     screenLoading.current = true;
-    return ( <Loading isOpen={screenLoading.current} message="Loading List Groups"  />
+    return ( <Loading isOpen={screenLoading.current} message={t("general.loading_listgroups")}  />
 //    setIsOpen={() => {screenLoading.current = false}} />
   )}
 
@@ -28,7 +29,7 @@ const ListGroups: React.FC = () => {
 
   return (
     <IonPage>
-      <PageHeader title="List Groups" />
+      <PageHeader title={t('general.listgroups')} />
       <IonContent>
         <IonList lines="full">
                {listCombinedRows.map((row: ListCombinedRow) => { 

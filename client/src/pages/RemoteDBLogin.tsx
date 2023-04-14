@@ -13,6 +13,7 @@ import { RemoteDBStateContext, SyncStatus, initialRemoteDBState } from '../compo
 import { HistoryProps } from '../components/DataTypes';
 import { useLists } from '../components/Usehooks';
 import { apiConnectTimeout } from '../components/Utilities';
+import { useTranslation } from 'react-i18next';
 
 export type RemoteState = {
   password: string | undefined,
@@ -70,13 +71,13 @@ states to support:
  */
 
 const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
-
     const db=usePouch();
     const [remoteState,setRemoteState]=useState<RemoteState>(initRemoteState);
     const [presentAlert] = useIonAlert();
     const { remoteDBState, remoteDBCreds, setRemoteDBState, setRemoteDBCreds, assignDB, setDBCredsValue} = useContext(RemoteDBStateContext);
     const { listRowsLoaded, listRows } = useLists();
     const [ present, dismiss ]= useIonLoading();
+    const { t } = useTranslation();
 
     // useEffect for initial page launch
     useEffect( () => {
@@ -95,20 +96,20 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
         if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_app_schema_mismatch) {
           console.log("ERROR: Schema too new, not supported with this app version. Upgrade.");
           presentAndExit({
-            header:"ERROR",
-            message: "This application does not support a detected newer version of the schema. Please upgrade the app and try again.",
-            buttons: [{text:"OK",handler: () => exitApp()}]
+            header: t("error.error") as string,
+            message: t("error.app_not_support_newer_schema") as string,
+            buttons: [{text:t("general.ok"),handler: () => exitApp()}]
           });
           return;
         }
         if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_local_remote_schema_mismatch) {
           console.log("ERROR: Local/Remote schema mismatch. Must destroy local Databse.");
           presentAlert( {
-            header: "WARNING",
-            message: "The Database schema on the server is not the same as the local copy. This is normal when there is a significant application update happening. You should delete your local copy in order to continue. App will exit.",
+            header: t("error.warning"),
+            message: t("error.different_database_schema"),
             buttons: [
-              {text: "Delete/Exit",handler: () => destroyAndExit()},
-              {text: "Cancel/Exit",handler: () => exitApp()}
+              {text: t("general.delete_exit"),handler: () => destroyAndExit()},
+              {text: t("general.cancel_exit"),handler: () => exitApp()}
               ]
           })
           return;

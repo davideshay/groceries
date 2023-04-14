@@ -17,6 +17,7 @@ import { closeCircleOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
+import { useTranslation } from 'react-i18next';
 
 interface PageState {
   needInitListGroupDoc: boolean,
@@ -30,7 +31,6 @@ interface PageState {
 }  
 
 const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
-
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
   if ( mode === "new" ) { routeID = "<new>"};
   const [pageState,setPageState] = useState<PageState>({
@@ -60,6 +60,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { loading: listGroupLoading, doc: listGroupDoc, dbError: listGroupError } = useGetOneDoc(pageState.selectedListGroupID);
   const [presentAlert,dismissAlert] = useIonAlert();
   const screenLoading = useRef(true);
+  const { t } = useTranslation();
 
   useEffect( () => {
     setPageState(prevState => ({...prevState,
@@ -107,11 +108,11 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   },[listGroupLoading, listGroupDoc, listRowsLoaded, mode, useFriendState,friendRows, categoryLoading,categoryDocs,pageState.selectedListGroupID, remoteDBState.accessJWT]);
 
   if (listError || listGroupError  || useFriendState === UseFriendState.error || categoryError) {
-    <ErrorPage errorText="Error Loading List Group Information... Restart."></ErrorPage>
+    <ErrorPage errorText={t('error.loading_list_group') as string}></ErrorPage>
   }
 
   if (!listRowsLoaded || (listGroupLoading && pageState.selectedListGroupID !== null) ||(useFriendState !== UseFriendState.rowsLoaded) || categoryLoading || isEmpty(pageState.listGroupDoc) || !pageState.usersLoaded || pageState.deletingDoc)  {
-    return ( <Loading isOpen={screenLoading.current} message="Loading List Group..."  /> )
+    return ( <Loading isOpen={screenLoading.current} message={t('general.loading_list_group')}  /> )
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   };
   
@@ -119,7 +120,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   async function updateThisItem() {
     if (pageState.listGroupDoc.name === "" || pageState.listGroupDoc.name === undefined || pageState.listGroupDoc.name === null) {
-      setPageState(prevState => ({...prevState,formError: "Must enter name for list group"}));
+      setPageState(prevState => ({...prevState,formError: t("error.must_enter_a_name")}));
       return false;
     }
     let response: PouchResponse;
@@ -132,7 +133,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
     if (response.successful) {
       props.history.goBack();  // back("lists")
     } else {
-      presentToast({message: "Error Creating/Updating List Group", duration: 1500, position: "middle"});
+      presentToast({message: t("error.creating_updating_listgroup"), duration: 1500, position: "middle"});
     }
   }
 
@@ -166,7 +167,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   let assignedListsElem=[];
-  assignedListsElem.push(<IonItemDivider key="assigneddivider">Lists assigned to this group:</IonItemDivider>)
+  assignedListsElem.push(<IonItemDivider key="assigneddivider">{t("general.lists_assigned_to_group")}</IonItemDivider>)
   listCombinedRows.forEach((lcr: ListCombinedRow)  => {
     if (lcr.rowType === RowType.list && lcr.listGroupID === pageState.selectedListGroupID) {
       assignedListsElem.push(<IonItem key={lcr.rowKey}>{lcr.rowName}</IonItem>)
@@ -177,15 +178,15 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   let ownerText="";
   let iAmListOwner=false;
   if (pageState.listGroupDoc.listGroupOwner === remoteDBCreds.dbUsername) {
-    ownerText = "You are the list group owner";
+    ownerText = t("general.you_are_listgroup_owner");
     iAmListOwner=true;
   } else {
     let ownerRow=friendRows.find(el => (el.targetUserName === pageState.listGroupDoc.listGroupOwner));
-    ownerText = ownerRow?.targetFullName + " is the list group owner";
+    ownerText = ownerRow?.targetFullName + " " +t("general.is_listgroup_owner");
   }
 
   usersElem.push(<IonItemDivider key="listuserdivider">{ownerText}</IonItemDivider>)
-  usersElem.push(<IonItemDivider key="listdivider">List group is shared with these other users:</IonItemDivider>)
+  usersElem.push(<IonItemDivider key="listdivider">{t("general.listgroup_shared_with_users")}</IonItemDivider>)
 
   if (iAmListOwner) {
     for (let i = 0; i < friendRows.length; i++) {
@@ -206,7 +207,6 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   } else { // not the list owner
     console.log("pagestate: ", cloneDeep(pageState));
     pageState.usersInfo.forEach(user => {
-      console.log("getting data for userinfo user:",cloneDeep(user));
       if (user.name !== remoteDBCreds.dbUsername && user.name !== pageState.listGroupDoc.listGroupOwner) {
         usersElem.push(
           <IonItem key={pageState.selectedListGroupID+"-"+user.name}>
@@ -243,11 +243,11 @@ async function deleteListGroupFromDB() {
       props.history.goBack(); // back to "list"
     } else {
       dismissAlert()
-      setPageState(prevState => ({...prevState,formError: "Could not delete list group", deletingDoc: false}));
+      setPageState(prevState => ({...prevState,formError: t("error.could_not_delete_listgroup"), deletingDoc: false}));
     }
   } else {
     dismissAlert();
-    setPageState(prevState => ({...prevState,formError: "Unable to remove list group from all items", deletingDoc: false}));
+    setPageState(prevState => ({...prevState,formError: t("error.unable_remove_listgroup_items"), deletingDoc: false}));
   }
   return delSuccess;
 }
@@ -263,19 +263,19 @@ function deletePrompt() {
   }
   if (ownListGroupsCount <= 1) {
     presentAlert({
-      header: "Cannot Delete List Group",
-      subHeader: "You cannot delete the last remaining list group where you are owner.",
-      buttons: [ { text: "OK", role: "confirm", 
+      header: t("error.deleting_listgroup"),
+      subHeader: t("error.deleting_listgroup_detail"),
+      buttons: [ { text: t("general.ok"), role: "confirm", 
         handler: () => setPageState(prevState => ({...prevState,deletingDoc: false}))
         }]
     })
   } else {
     presentAlert({
-      header: "Delete this list group?",
-      subHeader: "Do you really want to delete this list group?  All information on this list group will be lost (lists and items).",
-      buttons: [ { text: "Cancel", role: "Cancel" ,
+      header: t("general.delete_this_listgroup"),
+      subHeader: t("general.delete_this_listgroup_detail"),
+      buttons: [ { text: t("general.cancel"), role: "Cancel" ,
                   handler: () => setPageState(prevState => ({...prevState,deletingDoc: false}))},
-                { text: "Delete", role: "confirm",
+                { text: t("general.delete"), role: "confirm",
                   handler: () => deleteListGroupFromDB()}]
     })
   }              
@@ -292,11 +292,11 @@ function deletePrompt() {
   let selectElem=[];
   if (pageState.changesMade) {
     let alertOptions={
-      header: "Changing Selected List Group",
-      message: "List group has been updated and not saved. Do you still want to change list groups?"
+      header: t("general.changing_selected_listgroup"),
+      message: t("general.changing_selected_listgroup_detail")
     }
     selectElem.push(
-      <IonSelect label="Editing List Group:" aria-label="Editing List Group:" key="list-changed" interface="alert" interfaceOptions={alertOptions}
+      <IonSelect label={t("general.editing_list_group") as string} aria-label={t("general.editing_list_group") as string} key="list-changed" interface="alert" interfaceOptions={alertOptions}
         onIonChange={(ev) => changeListUpdateState(ev.detail.value)} value={pageState.selectedListGroupID}>
         {selectOptionListElem}
       </IonSelect>
@@ -304,7 +304,7 @@ function deletePrompt() {
   } else {
     let iopts={};
     selectElem.push(
-      <IonSelect label="Editing:" aria-label="Editing:" key="list-notchanged" interface="popover" interfaceOptions={iopts} onIonChange={(ev) => changeListUpdateState(ev.detail.value)} value={pageState.selectedListGroupID}>
+      <IonSelect label={t("general.editing")+":"} aria-label={t("general.editing")+":"} key="list-notchanged" interface="popover" interfaceOptions={iopts} onIonChange={(ev) => changeListUpdateState(ev.detail.value)} value={pageState.selectedListGroupID}>
         {selectOptionListElem}
       </IonSelect>
     ) 
@@ -312,7 +312,7 @@ function deletePrompt() {
   
   let selectDropDown=[];
     if (mode === "new") {
-      selectDropDown.push(<IonTitle class="ion-no-padding" key="createnew">Creating new list group</IonTitle>)
+      selectDropDown.push(<IonTitle class="ion-no-padding" key="createnew">{t("general.creating_listgroup")}</IonTitle>)
     } else {  
       selectDropDown.push(
         <IonTitle class="ion-no-padding" key="editexisting">
@@ -325,16 +325,15 @@ function deletePrompt() {
 
   let updateButton=[];
   if (mode === "new") {
-    updateButton.push(<IonButton color="primary" fill="solid" key="add" onClick={() => updateThisItem()}>Add<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
+    updateButton.push(<IonButton color="primary" fill="solid" key="add" onClick={() => updateThisItem()}>{t("general.add")}<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
   } else {
-    updateButton.push(<IonButton color="primary" fill="solid" key="update" onClick={() => updateThisItem()}>Save<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
+    updateButton.push(<IonButton color="primary" fill="solid" key="update" onClick={() => updateThisItem()}>{t("general.save")}<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
   }
 
   let deleteButton=[];
   if (iAmListOwner) {
-    deleteButton.push(<IonButton key="delete" fill="outline" color="danger"  onClick={() => deletePrompt()}>Delete<IonIcon slot="start" icon={trashOutline}></IonIcon></IonButton>)
+    deleteButton.push(<IonButton key="delete" fill="outline" color="danger"  onClick={() => deletePrompt()}>{t("general.delete")}<IonIcon slot="start" icon={trashOutline}></IonIcon></IonButton>)
   }
-
 
   return (
     <IonPage>
@@ -357,7 +356,7 @@ function deletePrompt() {
               <IonCheckbox labelPlacement="end" justify='start'
                   onIonChange={(evt) => {setPageState(prevState => ({...prevState,listGroupDoc: {...pageState.listGroupDoc, default: evt.detail.checked}}))}}
                   checked={pageState.listGroupDoc.default}>
-                  Is default list group for this user</IonCheckbox>
+                  {t("general.is_default_listgroup_for_user")}</IonCheckbox>
             </IonItem>
             <IonItemGroup key="assignedlists">
               {assignedListsElem}
@@ -372,7 +371,7 @@ function deletePrompt() {
             {deleteButton}
           </IonButtons>
           <IonButtons slot="secondary">
-            <IonButton color="secondary" key="back" fill="outline" onClick={() => props.history.goBack()}>Cancel<IonIcon slot="start" icon={closeCircleOutline}></IonIcon></IonButton>  
+            <IonButton color="secondary" key="back" fill="outline" onClick={() => props.history.goBack()}>{t("general.cancel")}<IonIcon slot="start" icon={closeCircleOutline}></IonIcon></IonButton>  
           </IonButtons>
           <IonButtons slot="end">
             {updateButton}

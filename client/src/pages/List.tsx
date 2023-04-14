@@ -17,6 +17,8 @@ import { closeCircleOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
+import { useTranslation } from 'react-i18next';
+import { translatedCategoryName } from '../components/translationUtilities';
 
 interface PageState {
   needInitListDoc: boolean,
@@ -30,7 +32,6 @@ interface PageState {
 }  
 
 const List: React.FC<HistoryProps> = (props: HistoryProps) => {
-
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
   if ( mode === "new" ) { routeID = "<new>"};
   const [pageState,setPageState] = useState<PageState>({
@@ -59,6 +60,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { loading: listGroupLoading, doc: listGroupDoc, dbError: listGroupError} = useGetOneDoc(pageState.listGroupID);
   const [presentAlert,dismissAlert] = useIonAlert();
   const screenLoading = useRef(true);
+  const { t } = useTranslation();
 
   useEffect( () => {
     setPageState(prevState => ({...prevState,selectedListID: routeID}))
@@ -96,11 +98,11 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   if (listError || listGroupError || categoryError) {
     screenLoading.current=false;
     return (
-    <ErrorPage errorText="Error Loading List Information... Restart."></ErrorPage>
+    <ErrorPage errorText={t("error.loading_list_info") as string}></ErrorPage>
   )}
 
   if (listsLoading || !listRowsLoaded || categoryLoading || isEmpty(pageState.listDoc) || (listGroupLoading && pageState.listGroupID !== null) || pageState.deletingDoc)  {
-    return ( <Loading isOpen={screenLoading.current} message="Loading List..."   /> )
+    return ( <Loading isOpen={screenLoading.current} message={t("general.loading_list")} /> )
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   };
   
@@ -115,11 +117,11 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   async function updateThisItem() {
     if (pageState.listDoc.name === "" || pageState.listDoc.name === undefined || pageState.listDoc.name === null) {
-      setPageState(prevState => ({...prevState,formError: "Must enter name for list"}));
+      setPageState(prevState => ({...prevState,formError: t("error.must_enter_a_name")}));
       return false;
     }
     if (pageState.listGroupID === null) {
-      setPageState(prevState => ({...prevState,formError: "Must select a valid group ID"}));
+      setPageState(prevState => ({...prevState,formError: t("error.must_select_valid_listgroup_id")}));
       return false;
     }
     let response: PouchResponse;
@@ -136,7 +138,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
     if (response.successful) {
       props.history.goBack();  // back("lists")
     } else {
-      presentToast({message: "Error Creating/Updating List", duration: 1500, position: "middle"});
+      presentToast({message: t("error.creating_updating_list"), duration: 1500, position: "middle"});
     }
   }
 
@@ -197,22 +199,22 @@ async function deleteListFromDB() {
       setPageState(prevState => ({...prevState,deletingDoc: false}));
       props.history.goBack(); // back to "list"
     } else {
-      setPageState(prevState => ({...prevState,formError: "Could not delete list"}));
+      setPageState(prevState => ({...prevState,formError: t("error.could_not_delete_list")}));
     }
 
   } else {
-    setPageState(prevState => ({...prevState,formError: "Unable to remove list from all items"}));
+    setPageState(prevState => ({...prevState,formError: t("error.unable_remove_list_all_items")}));
   }
 }
 
 function deletePrompt() {
   setPageState(prevState => ({...prevState,deletingDoc: true}));
   presentAlert({
-    header: "Delete this list?",
-    subHeader: "Do you really want to delete this list?  All information on this list will be lost.",
-    buttons: [ { text: "Cancel", role: "Cancel" ,
+    header: t("general.delete_this_list"),
+    subHeader: t("general.really_delete_list_extended"),
+    buttons: [ { text: t("general.cancel"), role: "Cancel" ,
                 handler: () => setPageState(prevState => ({...prevState,deletingDoc: false}))},
-               { text: "Delete", role: "confirm",
+               { text: t("general.delete"), role: "confirm",
                 handler: () => deleteListFromDB()}]
   })
 }
@@ -224,7 +226,7 @@ function deletePrompt() {
     const actname=active ? "active" : "inactive"
     const catDoc : CategoryDoc | undefined = (categoryDocs as CategoryDoc[]).find(element => (element._id === id))
     if (catDoc !== undefined) {
-      let name = catDoc.name;
+      let name = translatedCategoryName((catDoc as CategoryDoc)._id,(catDoc as CategoryDoc).name);
       return (
         <IonItem key={pageState.selectedListID+"-"+actname+"-"+id}>
             <IonCheckbox labelPlacement="end" justify="start" key={pageState.selectedListID+"-"+actname+"-"+id} onIonChange={(e) => updateCat(id,Boolean(e.detail.checked))} checked={active}>{name}</IonCheckbox>
@@ -234,14 +236,14 @@ function deletePrompt() {
       console.log("cat doc not defined: id:",id);
       return(
       <IonItem key={pageState.selectedListID+"-"+actname+"-"+id}>
-          <IonButton fill="clear" class="textButton">UNDEFINED CATEGORY</IonButton>
+          <IonButton fill="clear" class="textButton">{t("general.undefined")}</IonButton>
           <IonReorder slot="end"></IonReorder>
       </IonItem>)
     }
   }
 
   function catItemDivider(active: boolean, lines: JSX.Element[]) {
-    const actname=active ? "Active" : "Inactive"
+    const actname=active ? t("general.active") : t("general.inactive")
     return (
       <div key={actname+"-div"}>
       <IonItemDivider key={actname}><IonLabel>{actname}</IonLabel></IonItemDivider>
@@ -280,11 +282,11 @@ function deletePrompt() {
   let selectElem=[];
   if (pageState.changesMade) {
     let alertOptions={
-      header: "Changing Selected List",
-      message: "List has been updated and not saved. Do you still want to change lists?"
+      header: t("general.changing_selected_list"),
+      message: t("general.list_updated_not_saved_still_change")
     }
     selectElem.push(
-      <IonSelect label="Editing List:" key="list-changed" interface="alert" interfaceOptions={alertOptions}
+      <IonSelect label={t("general.editing_list")+":"} key="list-changed" interface="alert" interfaceOptions={alertOptions}
         onIonChange={(ev) => changeListUpdateState(ev.detail.value)} value={pageState.selectedListID}>
         {selectOptionListElem}
       </IonSelect>
@@ -292,7 +294,7 @@ function deletePrompt() {
   } else {
     let iopts={};
     selectElem.push(
-      <IonSelect label="Editing List:" key="list-notchanged" interface="popover" interfaceOptions={iopts} onIonChange={(ev) => changeListUpdateState(ev.detail.value)} value={pageState.selectedListID}>
+      <IonSelect label={t("general.editing_list")+":"} key="list-notchanged" interface="popover" interfaceOptions={iopts} onIonChange={(ev) => changeListUpdateState(ev.detail.value)} value={pageState.selectedListID}>
         {selectOptionListElem}
       </IonSelect>
     ) 
@@ -300,7 +302,7 @@ function deletePrompt() {
   
   let selectDropDown = [];
     if (mode === "new") {
-      selectDropDown.push(<IonTitle class="ion-no-padding" key="createnew">Creating new list</IonTitle>)
+      selectDropDown.push(<IonTitle class="ion-no-padding" key="createnew">{t("general.creating_new_list")}</IonTitle>)
     } else {  
       selectDropDown.push(
         <IonTitle class="ion-no-padding" key="editexisting">
@@ -313,14 +315,14 @@ function deletePrompt() {
 
   let updateButton=[];
   if (mode === "new") {
-    updateButton.push(<IonButton color="primary" slot="end" fill="solid" key="add" onClick={() => updateThisItem()}>Add<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
+    updateButton.push(<IonButton color="primary" slot="end" fill="solid" key="add" onClick={() => updateThisItem()}>{t("general.add")}<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
   } else {
-    updateButton.push(<IonButton color="primary" slot="end" fill="solid" key="save" onClick={() => updateThisItem()}>Save<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
+    updateButton.push(<IonButton color="primary" slot="end" fill="solid" key="save" onClick={() => updateThisItem()}>{t("general.save")}<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
   }
 
   let deleteButton=[];
   if (pageState.listGroupOwner===remoteDBCreds.dbUsername) {
-    deleteButton.push(<IonButton fill="outline" color="danger"  key="delete" onClick={() => deletePrompt()}>Delete<IonIcon slot="start" icon={trashOutline}></IonIcon></IonButton>)
+    deleteButton.push(<IonButton fill="outline" color="danger"  key="delete" onClick={() => deletePrompt()}>{t("general.delete")}<IonIcon slot="start" icon={trashOutline}></IonIcon></IonButton>)
   }
 
   return (
@@ -335,13 +337,13 @@ function deletePrompt() {
       <IonContent fullscreen>
           <IonList>
             <IonItem key="name">
-              <IonInput label="Name" labelPlacement="stacked" type="text" placeholder="<New>"
+              <IonInput label={t("general.name") as string} labelPlacement="stacked" type="text" placeholder={t("general.new_placeholder") as string}
                   onIonInput={(e) => updateName(String(e.detail.value))}
                   value={pageState.listDoc.name}>
               </IonInput>
             </IonItem>
             <IonItem key="listgroup">
-              <IonSelect disabled={mode!=="new"} key="listgroupsel" label="List Group" labelPlacement='stacked' interface="popover" onIonChange={(e) => updateListGroup(e.detail.value)} value={pageState.listDoc.listGroupID}>
+              <IonSelect disabled={mode!=="new"} key="listgroupsel" label={t("general.list_group") as string} labelPlacement='stacked' interface="popover" onIonChange={(e) => updateListGroup(e.detail.value)} value={pageState.listDoc.listGroupID}>
                 {listCombinedRows.map((lr) => {
                   if (lr.rowType === RowType.listGroup) return ( <IonSelectOption key={lr.rowKey} value={lr.listGroupID}>{lr.listGroupName}</IonSelectOption> )
                 })}
@@ -358,7 +360,7 @@ function deletePrompt() {
             {deleteButton}
           </IonButtons>
           <IonButtons slot="secondary">
-            <IonButton key="back" fill="outline"  color="secondary" onClick={() => props.history.goBack()}>Cancel<IonIcon slot="start" icon={closeCircleOutline}></IonIcon></IonButton>  
+            <IonButton key="back" fill="outline"  color="secondary" onClick={() => props.history.goBack()}>{t("general.cancel")}<IonIcon slot="start" icon={closeCircleOutline}></IonIcon></IonButton>  
           </IonButtons>
           <IonButtons slot="end">  
             {updateButton}
