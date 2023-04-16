@@ -1,6 +1,6 @@
 import { IonContent, IonPage, IonList, IonItem,
         IonButton, useIonAlert, IonInput,
-        IonRadioGroup, IonRadio, IonCheckbox, isPlatform, IonItemDivider } from '@ionic/react';
+        IonRadioGroup, IonRadio, IonCheckbox, isPlatform, IonItemDivider, IonSelect, IonSelectOption } from '@ionic/react';
 import { useContext, useEffect, useState } from 'react';        
 import { usePouch } from 'use-pouchdb';
 import { Preferences } from '@capacitor/preferences';
@@ -12,6 +12,7 @@ import { HistoryProps } from '../components/DataTypes';
 import { maxAppSupportedSchemaVersion, appVersion } from '../components/DBSchema';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
+import { languageDescriptions } from '../i18n';
 
 const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
   const db = usePouch();
@@ -20,7 +21,7 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { remoteDBCreds, setRemoteDBState } = useContext(RemoteDBStateContext);
   const [localSettings, setLocalSettings] = useState<GlobalSettings>(initSettings)
   const [localSettingsInitialized,setLocalSettingsInitialized] = useState(false);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   useEffect( () => {
     if (!localSettingsInitialized && globalState.settingsLoaded) {
@@ -93,6 +94,8 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
     setLocalSettings(prevState => ({...prevState,[key]: value}));
   }
 
+  const curLanguage = i18n.resolvedLanguage;
+
   return (
     <IonPage>
       <PageHeader title={t("general.settings")} />
@@ -122,6 +125,15 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
           </IonItem>
           </IonRadioGroup>
           <IonItemDivider>{t("general.other_settings")}</IonItemDivider>
+          <IonItem key="language">
+            <IonSelect label={t("general.language") as string} interface="popover" onIonChange={(e) => i18n.changeLanguage(e.detail.value)} value={curLanguage}>
+                {languageDescriptions.map((lng: any) => (
+                    <IonSelectOption key={"language-"+lng.key} value={lng.key}>
+                      {lng.name}
+                    </IonSelectOption>
+                ))}
+            </IonSelect>
+          </IonItem>
           <IonItem key="removesettings">
             <IonCheckbox justify="space-between" labelPlacement="start" checked={localSettings.removeFromAllLists} onIonChange={(e) => changeSetting("removeFromAllLists",e.detail.checked)}>{t("general.remove_items_all_lists_purchased")}</IonCheckbox>
           </IonItem>

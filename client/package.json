@@ -89,8 +89,7 @@
     "@types/lodash": "^4.14.191",
     "@types/uuid": "^9.0.0",
     "pouchdb-browser": "^8.0.1",
-    "pouchdb-find": "^8.0.1",
-    "translation-check": "^1.0.2"
+    "pouchdb-find": "^8.0.1"
   },
   "description": "An Ionic project"
 }

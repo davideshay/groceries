@@ -1,5 +1,5 @@
 import { useCallback, useState, useEffect, useContext, useRef } from 'react'
-import { Camera, CameraResultType, CameraSource, Photo } from '@capacitor/camera';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { usePouch, useFind } from 'use-pouchdb'
 import { cloneDeep, pull } from 'lodash';
 import { RemoteDBStateContext, SyncStatus } from './RemoteDBState';
@@ -10,7 +10,7 @@ import { adaptResultToBase64, getUsersInfo } from './Utilities';
 import { getCommonKey } from './ItemUtilities';
 import { GlobalDataContext } from './GlobalDataProvider';
 import { isPlatform } from '@ionic/core';
-import { fromBlob, fromURL } from 'image-resize-compress';
+import { fromBlob } from 'image-resize-compress';
 import { useTranslation } from 'react-i18next';
 
 const imageQuality = 80;

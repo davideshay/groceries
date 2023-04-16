@@ -7,7 +7,7 @@ import {  ItemDoc, ItemList} from '../components/DBSchema';
 import { cloneDeep } from 'lodash';
 import { GlobalDataContext } from './GlobalDataProvider';
 import { useTranslation } from 'react-i18next';
-import { translatedCategoryName, translatedUOMName, translatedUOMShortName } from './translationUtilities';
+import { translatedCategoryName, translatedUOMName } from './translationUtilities';
 
 type ModalProps = {
     stateItemDoc: ItemDoc,

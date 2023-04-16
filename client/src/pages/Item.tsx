@@ -20,7 +20,7 @@ import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
-import { translatedCategoryName, translatedCategoryNameNoDescription, translatedItemName, translatedUOMName, translatedUOMShortName } from '../components/translationUtilities';
+import { translatedCategoryName, translatedItemName, translatedUOMName } from '../components/translationUtilities';
 
 const Item: React.FC = (props) => {
   let { mode, itemid } = useParams<{mode: string, itemid: string}>();

@@ -152,7 +152,8 @@ export const en_translations =
         "other_settings":"Other Settings",
         "remove_items_all_lists_purchased":"Remove items from all lists in list group when marked as purchased/completed",
         "delete_all_lists_when_deleting_completed":"Delete From All lists in list group when deleting completed items",
-        "days_conflict_log_to_view":"Days of conflict log to view:"        
+        "days_conflict_log_to_view":"Days of conflict log to view:",
+        "language": "Language"       
      },
      "error" : {
         "invalid_dbuuid" : "Invalid Database Unique Identifier",
@@ -240,7 +241,6 @@ export const en_translations =
         "user_already_exists": "User Already Exists",
         "must_enter_username_reset_password":"Must enter username to reset password",
         "database_server_not_available_choose_work_offline":"The database server is not available. You can choose to work offline and your changes will sync when you start the app again and the server is available. The risk for conflicts increases when working offline.",
-    
     },
     "itemtext": {
         "item_is_on_these_lists": "Item is on these lists:",
