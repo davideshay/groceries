@@ -153,7 +153,8 @@ export const en_translations =
         "remove_items_all_lists_purchased":"Remove items from all lists in list group when marked as purchased/completed",
         "delete_all_lists_when_deleting_completed":"Delete From All lists in list group when deleting completed items",
         "days_conflict_log_to_view":"Days of conflict log to view:",
-        "language": "Language"       
+        "language": "Language",
+        "remove": "Remove"
      },
      "error" : {
         "invalid_dbuuid" : "Invalid Database Unique Identifier",

@@ -11,7 +11,6 @@ export function translatedItemName(id: string | null, name: string) {
   }
 
 export function translatedCategoryName(id: string | undefined | null, name: string) {
-    console.log("TCN: ",id,name);
     const sysCatKey = "system:cat";
     if (id === undefined || id === null) { return name}
     if (id.startsWith(sysCatKey)) {
@@ -24,7 +23,7 @@ export function translatedCategoryName(id: string | undefined | null, name: stri
 export function translatedUOMName(id: string, name: string) {
     const sysUOMKey = "system:uom";
     if (id.startsWith(sysUOMKey)) {
-        return t("uom."+id.substring(sysUOMKey.length+1));
+        return t("uom."+id.substring(sysUOMKey.length+1),{count: 1});
     } else {
         return name;
     }

@@ -152,7 +152,8 @@ export const de_translations =
         "other_settings":"Weitere Einstellungen",
         "remove_items_all_lists_purchased":"Elemente aus allen Listen in der Listengruppe entfernen, wenn sie als gekauft/abgeschlossen markiert sind",
         "delete_all_lists_when_deleting_completed":"Aus allen Listen in der Listengruppe löschen, wenn abgeschlossene Elemente gelöscht werden",
-        "days_conflict_log_to_view":"Tage des Konfliktprotokolls, die angezeigt werden sollen:"
+        "days_conflict_log_to_view":"Tage des Konfliktprotokolls, die angezeigt werden sollen:",
+        "remove": "Entfernen"
     },
     "error": {
         "invalid_dbuuid" : "Identifiant unique de base de données invalide",

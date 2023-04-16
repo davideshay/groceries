@@ -377,7 +377,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   let headerElem=(
     <IonHeader><IonToolbar><IonButtons slot="start"><IonMenuButton class={"ion-no-padding small-menu-button"} /></IonButtons>
-    <IonTitle class="ion-no-padding item-outer">
+    <IonTitle class="ion-no-padding item-outer"></IonTitle>
         <IonItem id="item-list-selector-id" class="item-list-selector" key="listselector">
         <IonSelect id="select-list-selector-id" class="select-list-selector" label={t("general.items_on") as string} aria-label={t("general.items_on") as string} interface="popover" onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListOrGroupID}  >
             {listCombinedRows.map((listCombinedRow: ListCombinedRow) => (
@@ -402,7 +402,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         </IonItem>
         {popOverElem}
         {alertElem}
-    </IonTitle></IonToolbar></IonHeader>)
+    </IonToolbar></IonHeader>)
 
   if (globalData.listRows.length <=0) {return(
     <IonPage>{headerElem}<IonContent><IonItem key="nonefound"><IonLabel key="nothinghere">{t("error.please_create_list_before_adding_items")}</IonLabel></IonItem></IonContent></IonPage>

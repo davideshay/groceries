@@ -1,4 +1,5 @@
-import { IonHeader, IonPage, IonTitle, IonToolbar, IonLoading } from '@ionic/react';
+import { IonHeader, IonPage, IonTitle, IonToolbar, IonLoading, IonContent, IonText } from '@ionic/react';
+import { isPlatform } from '@ionic/core';
 import { useContext, useEffect, useRef} from 'react';
 import { usePouch } from 'use-pouchdb';
 import { ConnectionStatus, RemoteDBStateContext } from '../components/RemoteDBState';
@@ -54,10 +55,15 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
         <IonHeader>
             <IonToolbar>
                 <IonTitle id="initialloadtitle">{t("general.loading")}</IonTitle>
+                {(isPlatform('ipad') || isPlatform('iphone') || isPlatform('ios')) ? 
+                    <IonText>t("general.logging_in)</IonText> :
                 <IonLoading isOpen={screenLoading.current} onDidDismiss={() => {screenLoading.current=false;}} 
-                            message={t("general.logging_in") as string} />
+                            message={t("general.logging_in") as string} /> }
             </IonToolbar>
         </IonHeader>
+        <IonContent>
+
+        </IonContent>
     </IonPage>
 
     )
