@@ -154,7 +154,8 @@ export const es_translations =
         "other_settings":"Otras configuraciones",
         "remove_items_all_lists_purchased":"Eliminar elementos de todas las listas del grupo de listas cuando se marquen como comprados/completados",
         "delete_all_lists_when_deleting_completed":"Eliminar de todas las listas del grupo de listas cuando se eliminen elementos completados",
-        "days_conflict_log_to_view":"Días de registro de conflictos para ver:"        
+        "days_conflict_log_to_view":"Días de registro de conflictos para ver:",
+        "remove": "Eliminar"        
      },
      "itemtext": {
         "item_is_on_these_lists": "El artículo está en estas listas:",
