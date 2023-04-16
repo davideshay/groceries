@@ -16,6 +16,7 @@ import { checkUserByEmailExists, emailPatternValidation, apiConnectTimeout } fro
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import PageHeader from '../components/PageHeader';
+import { useTranslation } from 'react-i18next';
 
 /* 
 
@@ -64,7 +65,6 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
   const {useFriendState,friendRows} = useFriends(String(uname));
   const updateDoc = useUpdateGenericDocument();
   const createDoc = useCreateGenericDocument();
-
   const [pageState,setPageState] = useState<PageState>({
     newFriendEmail: "",
     newFriendName: "",
@@ -77,13 +77,14 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
   });
   const [presentToast] = useIonToast();
   const screenLoading = useRef(true);
+  const { t } = useTranslation();
 
   if (useFriendState === UseFriendState.error) { return (
-    <ErrorPage errorText="Error Loading Friend Information... Restart."></ErrorPage>
+    <ErrorPage errorText={t("error.loading_friend_info") as string}></ErrorPage>
     )};
 
   if (useFriendState !== UseFriendState.rowsLoaded) {
-    return ( <Loading isOpen={screenLoading.current} message="Loading Friends..."   /> )
+    return ( <Loading isOpen={screenLoading.current} message={t("general.loading_friends")}  /> )
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   }
 
@@ -94,7 +95,7 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
     updatedDoc.friendStatus = FriendStatus.Confirmed;
     let result = await updateDoc(updatedDoc);
     if (!result.successful) {
-      presentToast({"message": "Error confirming friend. Please retry."})
+      presentToast({"message": t("error.confirming_friend")})
     }
   }
 
@@ -103,18 +104,19 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
     Clipboard.write({string: confURL});
     setPageState(prevState => ({...prevState,formError: "", inAddMode: false, newFriendEmail: "",
             showRegistrationURL: true,
-            registrationAlertSubheader: "An email has been sent to "+pageState.newFriendEmail+" to confirm and create their account. The URL is here: " + confURL+ " . This has also been copied to the clipboard."}))
+            registrationAlertSubheader: t("general.email_sent",{ email: pageState.newFriendEmail, url: confURL})
+            }))
     }
 
   function ButtonElem(friendRow: FriendRow) {
     if (friendRow.resolvedStatus === ResolvedFriendStatus.WaitingToRegister) {
       return(
-        <IonButton size="small" class="extra-small-button" onClick={() => showURL(friendRow)}>URL</IonButton> 
+        <IonButton size="small" class="extra-small-button" onClick={() => showURL(friendRow)}>{t("general.URL")}</IonButton> 
       )
     }
     else if (friendRow.resolvedStatus === ResolvedFriendStatus.PendingConfirmation)
     {
-      return(<IonButton size="small" class="extra-small-button" onClick={() => confirmFriend(friendRow)}>Confirm</IonButton>);
+      return(<IonButton size="small" class="extra-small-button" onClick={() => confirmFriend(friendRow)}>{t("general.confirm")}</IonButton>);
     }
   }
 
@@ -179,16 +181,17 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
     Clipboard.write({string: confURL});
     setPageState(prevState => ({...prevState,formError: "", inAddMode: false, newFriendEmail: "",
             showRegistrationURL: true,
-            registrationAlertSubheader: "An email has been sent to "+pageState.newFriendEmail+" to confirm and create their account. The URL is here: " + confURL+ " . This has also been copied to the clipboard."}))
+            registrationAlertSubheader: t("general.email_sent",{email: pageState.newFriendEmail, url: confURL})
+      }))
   }
 
   async function submitForm() {
     if (pageState.newFriendEmail === "") {
-      setPageState(prevState => ({...prevState, formError: "Please enter an email address"}));
+      setPageState(prevState => ({...prevState, formError: t("error.no_email_entered")}));
       return
     }
     if (!emailPatternValidation(pageState.newFriendEmail)) {
-      setPageState(prevState => ({...prevState, formError: "Invalid email address"}));
+      setPageState(prevState => ({...prevState, formError: t("error.invalid_email_format")}));
       return;
     }
     let friendExists=false;
@@ -196,7 +199,7 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
       if (friendRow.targetEmail === pageState.newFriendEmail) { friendExists = true}
     })
     if (friendExists) {
-      setPageState(prevState => ({...prevState, formError: "Friend already exists with this email"}));
+      setPageState(prevState => ({...prevState, formError: t("error.friend_already_exists")}));
       return;
     }
     const response = await checkUserByEmailExists(pageState.newFriendEmail,remoteDBCreds);
@@ -223,12 +226,12 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
       if (result.successful) {
           setPageState(prevState => ({...prevState,formError: "",inAddMode: false, newFriendEmail: ""}))
       } else {
-          setPageState(prevState => ({...prevState,formError: "Error creating friend. Please retry."}))
+          setPageState(prevState => ({...prevState,formError: t("error.creating_friend")}))
       }    
       return
     }
     // user does not exist in _users, prompt to register
-    setPageState(prevState => ({...prevState,showNewUserAlert: true ,newUserAlertSubheader: "There is no user with email "+pageState.newFriendEmail+" currently registered. Do you want to ask them to register?"}))
+    setPageState(prevState => ({...prevState,showNewUserAlert: true ,newUserAlertSubheader: t("general.prompt_register_friend",{email: pageState.newFriendEmail})    }))
 
   }
 
@@ -238,15 +241,15 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
   if (pageState.inAddMode) {
     formElem.push(
      <Fragment key="addfriendform">
-      <IonItem key="addfriendheader">Adding a new Friend</IonItem>
-      <IonItem key="addfriendemail"><IonLabel key="labelfriendemail" position="stacked">E-Mail address for friend to add</IonLabel>
+      <IonItem key="addfriendheader">{t("general.adding_friend")}</IonItem>
+      <IonItem key="addfriendemail"><IonLabel key="labelfriendemail" position="stacked">{t("general.email_address_friend")}</IonLabel>
         <IonInput key="inputfriendemail" type="email" autocomplete="email" value={pageState.newFriendEmail} onIonInput={(e) => {setPageState(prevstate => ({...prevstate, newFriendEmail: String(e.detail.value)}))}}>
         </IonInput>
       </IonItem>
       <IonItem key="blankspace"></IonItem>
       <IonItem key="formbuttons">
-        <IonButton key="addbutton" slot="start" onClick={() => submitForm()}>Add</IonButton>
-        <IonButton key="cancelbutton" slot="end" onClick={() => setPageState(prevState => ({...prevState,formError: "",  inAddMode: false, newFriendEmail: "", newFriendName: ""}))}>Cancel</IonButton>
+        <IonButton key="addbutton" slot="start" onClick={() => submitForm()}>{t("general.add")}</IonButton>
+        <IonButton key="cancelbutton" slot="end" onClick={() => setPageState(prevState => ({...prevState,formError: "",  inAddMode: false, newFriendEmail: "", newFriendName: ""}))}>{t("general.cancel")}</IonButton>
       </IonItem>
       <IonItem key="formerrors">{pageState.formError}</IonItem>
       </Fragment>
@@ -255,23 +258,23 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   return (
     <IonPage>
-      <PageHeader title="Friends" />
+      <PageHeader title={t("general.friends")} />
       <IonContent>
         <IonAlert isOpen={pageState.showNewUserAlert}
-                  header="User not found, send registration request?"
+                  header={t("general.user_not_found_send_registration") as string}
                   subHeader={pageState.newUserAlertSubheader}
                   onDidDismiss={() => setPageState(prevState => ({...prevState,showNewUserAlert: false}))} 
                   buttons={[
-                    { text: "Cancel", role: "cancel"},
-                    { text: "Send Registration", role: "confirm",
+                    { text: t("general.cancel"), role: "cancel"},
+                    { text: t("general.send_registration"), role: "confirm",
                       handler: () => {sendFriendRequest();} }
                   ]}
                   />
         <IonAlert isOpen={pageState.showRegistrationURL}
-                  header="URL for Registration Confirmation"
+                  header={t("general.url_registration_confirmation") as string}
                   subHeader={pageState.registrationAlertSubheader}
                   onDidDismiss={() => setPageState(prevState => ({...prevState,showRegistrationURL: false}))} 
-                  buttons={["OK"]}
+                  buttons={[t("general.ok") as string]}
                   />
         <IonList id="friendslist" lines="full">
           {friendsElem}

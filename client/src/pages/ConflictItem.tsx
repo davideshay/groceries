@@ -10,9 +10,11 @@ import './Category.css';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import PageHeader from '../components/PageHeader';
+import { useTranslation } from 'react-i18next';
 
 const ConflictItem: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { id: routeID } = useParams<{ id: string}>();
+  const { t } = useTranslation()
 
   const { doc: conflictDoc, loading: conflictLoading, dbError: conflictError } = useGetOneDoc(routeID);
 
@@ -20,11 +22,11 @@ const ConflictItem: React.FC<HistoryProps> = (props: HistoryProps) => {
   const screenLoading = useRef(true);
 
   if (conflictError) { return (
-    <ErrorPage errorText="Error Loading Conflict Information... Restart."></ErrorPage>
+    <ErrorPage errorText={t("error.loading_conflict_info") as string}></ErrorPage>
     )}
 
   if ( conflictLoading  )  {
-    return ( <Loading isOpen={screenLoading.current} message="Loading Conflict Item..." /> )
+    return ( <Loading isOpen={screenLoading.current} message={t("general.loading_conflict_item")} /> )
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   };
   
@@ -62,23 +64,23 @@ const ConflictItem: React.FC<HistoryProps> = (props: HistoryProps) => {
   
   return (
     <IonPage>
-      <PageHeader title={"Conflict Item: "+(conflictDoc as ConflictDoc).docType +" from "+localDate} />
+      <PageHeader title={t("general.conflict_item")+" "+(conflictDoc as ConflictDoc).docType +" " + t("general.from") + " " +localDate} />
       <IonContent> 
           <IonList>
             <IonItem key="maindiffs">
-              <IonLabel position="stacked">Main differences</IonLabel>
+              <IonLabel position="stacked">{t("general.main_differences")}</IonLabel>
               <IonTextarea>{mainDiffsText}</IonTextarea>
             </IonItem>
             <IonItem key="winner">
-              <IonLabel position="stacked">Winner</IonLabel>
+              <IonLabel position="stacked">{t("general.winner")}</IonLabel>
               <IonTextarea>{winnerText}</IonTextarea>
             </IonItem>
             <IonItem key="losers">
-              <IonLabel position="stacked">Losers</IonLabel>
+              <IonLabel position="stacked">{t("general.losers")}</IonLabel>
               <IonTextarea>{losersText}</IonTextarea>
             </IonItem>
           </IonList>
-          <IonButton onClick={() => goBack("/conflictlog")}>Return</IonButton>
+          <IonButton onClick={() => goBack("/conflictlog")}>{t("general.return")}</IonButton>
       </IonContent>
       <IonFooter>
       </IonFooter>

@@ -13,6 +13,8 @@ import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
 import PageHeader from '../components/PageHeader';
+import { useTranslation } from 'react-i18next';
+import { translatedCategoryName } from '../components/translationUtilities';
 
 const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
@@ -32,6 +34,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   const {goBack} = useContext(NavContext);
   const screenLoading = useRef(true);
   const globalData = useContext(GlobalDataContext);
+  const { t } = useTranslation();
 
   useEffect( () => {
     let newCategoryDoc = cloneDeep(stateCategoryDoc);
@@ -47,11 +50,11 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   },[categoryLoading,categoryDoc]);
 
   if ( globalData.listError || itemError || globalData.categoryError !== null) { return (
-    <ErrorPage errorText="Error Loading Category Information... Restart."></ErrorPage>
+    <ErrorPage errorText={t("error.loading_category_info") as string}></ErrorPage>
     )};
 
   if ( categoryLoading || globalData.categoryLoading || !stateCategoryDoc || deletingCategory || !globalData.listRowsLoaded || !itemRowsLoaded)  {
-    return ( <Loading isOpen={screenLoading.current} message="Loading Category..."     />)
+    return ( <Loading isOpen={screenLoading.current} message={t("general.loading_category")} />)
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   };
   
@@ -60,7 +63,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   async function updateThisCategory() {
     setFormError("");
     if (stateCategoryDoc.name === undefined || stateCategoryDoc.name === "" || stateCategoryDoc.name === null) {
-      setFormError("Must enter a name");
+      setFormError(t("error.must_enter_a_name") as string);
       return false;
     }
     let categoryDup=false;
@@ -70,7 +73,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
       }
     });
     if (categoryDup) {
-      setFormError("Duplicate Category Name");
+      setFormError(t("error.duplicate_category_name") as string);
       return
     }
     let result: PouchResponse;
@@ -82,7 +85,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
     if (result.successful) {
         goBack("/categories");
     } else {
-        setFormError("Error updating category: " + result.errorCode + " : " + result.errorText + ". Please retry.");
+        setFormError((t("error.updating_category") as string) + " " + result.errorCode + " : " + result.errorText + ". " + (t("error.please_retry") as string));
     } 
   }
   
@@ -113,19 +116,19 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   async function deleteCategoryFromDB() {
     let catItemDelResponse = await deleteCategoryFromItems(String(stateCategoryDoc._id));
     if (!catItemDelResponse.successful) {
-      setFormError("Unable to remove category from items");
+      setFormError(t("error.unable_remove_category_items") as string);
       setDeletingCategory(false);
       return;
     }
     let catListDelResponse = await deleteCategoryFromLists(String(stateCategoryDoc._id));
     if (!catListDelResponse.successful) {
-      setFormError("Unable to remove category from lists");
+      setFormError(t("error.unable_remove_category_lists") as string);
       setDeletingCategory(false);
       return;
     }
    let catDelResponse = await deleteCategory(stateCategoryDoc);
    if (!catDelResponse.successful) {
-     setFormError("Unable to delete category");
+     setFormError(t("error.unable_delete_category") as string);
      setDeletingCategory(false);
      return;
    }
@@ -136,19 +139,15 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   async function deletePrompt() {
     const numItemsUsed = await getNumberOfItemsUsingCategory();
     const numListsUsed = await getNumberOfListsUsingCategory();
-    const subItemText = (numItemsUsed > 0) ? 
-      ((numItemsUsed > 1) ? "There are "+numItemsUsed+" items using this category." : "There is 1 item using this category.")
-       : "There are no items using this category."
-    const subListText = (numListsUsed > 0) ? 
-      ((numListsUsed > 1) ? "There are "+numListsUsed+" lists using this category." : "There is 1 list using this category.")
-       : "There are no lists using this category."
+    const subItemText = t("general.items_using_category",{count: numItemsUsed});
+    const subListText = t("general.lists_using_category",{count: numListsUsed});
     setDeletingCategory(true);
     presentAlert({
-      header: "Delete this list?",
-      subHeader: "Do you really want to delete this list? "+subItemText+ " " + subListText + "  All information on this list will be lost.",
-      buttons: [ { text: "Cancel", role: "Cancel" ,
+      header: t("general.delete_this_list"),
+      subHeader: t("general.really_delete_list") +subItemText+ " " + subListText + " " + t("general.all_list_info_lost"),
+      buttons: [ { text: t("general.cancel"), role: "Cancel" ,
                   handler: () => setDeletingCategory(false)},
-                  { text: "Delete", role: "confirm",
+                  { text: t("general.delete"), role: "confirm",
                   handler: () => deleteCategoryFromDB()}]
     })
     
@@ -158,29 +157,29 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   return (
     <IonPage>
-      <PageHeader title={"Editing Category: "+stateCategoryDoc.name} />
+      <PageHeader title={t("general.editing_category")+ translatedCategoryName(stateCategoryDoc._id,stateCategoryDoc.name)  } />
       <IonContent>
           <IonList>
             <IonItem key="name">
-              <IonInput label="Name" labelPlacement="stacked" type="text" placeholder="<NEW>" onIonInput={(e) => setStateCategoryDoc({...stateCategoryDoc, name: String(e.detail.value)})} value={stateCategoryDoc.name}></IonInput>
+              <IonInput label={t("general.name") as string} disabled={stateCategoryDoc._id?.startsWith("system:cat")} labelPlacement="stacked" type="text" placeholder="<NEW>" onIonInput={(e) => setStateCategoryDoc({...stateCategoryDoc, name: String(e.detail.value)})} value={translatedCategoryName(stateCategoryDoc._id,stateCategoryDoc.name)}></IonInput>
             </IonItem>
             <IonItem key="color">
-              <IonLabel position="stacked">Color</IonLabel>
+              <IonLabel position="stacked">{t("general.color")}</IonLabel>
               <input type="color" value={stateCategoryDoc.color} onChange={(e) => {setStateCategoryDoc((prevState) => ({...prevState,color: e.target.value}))}}></input>
             </IonItem>
           </IonList>
           <IonItem>{formError}</IonItem>
           <IonToolbar>
             <IonButtons slot="start">
-              <IonButton fill="outline" color="danger" onClick={() => deletePrompt()}><IonIcon slot="start" icon={trashOutline}></IonIcon>Delete</IonButton>
+              <IonButton fill="outline" color="danger" onClick={() => deletePrompt()}><IonIcon slot="start" icon={trashOutline}></IonIcon>{t("general.delete")}</IonButton>
            </IonButtons>
            <IonButtons slot="secondary">
-           <IonButton fill="outline" color="secondary" onClick={() => goBack("/categories")}><IonIcon slot="start" icon={closeOutline}></IonIcon>Cancel</IonButton>
+           <IonButton fill="outline" color="secondary" onClick={() => goBack("/categories")}><IonIcon slot="start" icon={closeOutline}></IonIcon>{t("general.cancel")}</IonButton>
           </IonButtons>
           <IonButtons slot="end">
           <IonButton fill="solid" color="primary" onClick={() => updateThisCategory()}>
               <IonIcon slot="start" icon={(mode === "new" ? addOutline : saveOutline)}></IonIcon>
-              {(mode === "new") ? "Add" : "Save"}
+              {(mode === "new") ? t("general.add") : t("general.save")}
             </IonButton>
           </IonButtons>
           </IonToolbar>

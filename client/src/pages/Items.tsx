@@ -17,6 +17,8 @@ import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
 import { isEqual } from 'lodash';
+import { useTranslation } from 'react-i18next';
+import { translatedItemName } from '../components/translationUtilities';
 
 const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode: routeMode, id: routeListID  } = useParams<{mode: string, id: string}>();
@@ -46,6 +48,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       selectedListType: pageState.selectedListType});
   const { listError , listDocs, listCombinedRows,listRows, listRowsLoaded, uomDocs, uomLoading, uomError, categoryDocs, categoryLoading, categoryError, itemDocs } = useContext(GlobalDataContext);
   const { globalState,setStateInfo: setGlobalStateInfo} = useContext(GlobalStateContext);
+  const {t} = useTranslation();
 
   function getGroupIDForList(listID: string): string | null {
     if (routeMode === "group") { return pageState.selectedListOrGroupID};
@@ -99,11 +102,11 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   },[searchRows,searchState.isFocused])
 
   if (baseItemError || baseSearchError || listError || categoryError  || uomError || globalData.globalItemError) {return (
-    <ErrorPage errorText="Error Loading Items Information... Restart."></ErrorPage>
+    <ErrorPage errorText={t("general.loading_item_info_restart") as string}></ErrorPage>
   )}
 
   if (!baseItemRowsLoaded || !baseSearchItemRowsLoaded || !listRowsLoaded || categoryLoading || globalData.globalItemsLoading || uomLoading || pageState.doingUpdate )  {
-    return ( <Loading isOpen={screenLoading.current} message="Loading Items..."    /> )
+    return ( <Loading isOpen={screenLoading.current} message={t("general.loading_items")} /> )
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   };
 
@@ -124,7 +127,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   function addNewItemToList(itemName: string) {
     if (isItemAlreadyInList(itemName)) {
-      setPageState(prevState => ({...prevState, showAlert: true, alertHeader: "Error adding to list", alertMessage: "Item already exists in the current list"}))
+      setPageState(prevState => ({...prevState, showAlert: true, alertHeader: t("error.adding_to_list") , alertMessage: t("error.item_exists_current_list")}))
     } else {
       setGlobalStateInfo("itemMode","new");
       setGlobalStateInfo("callingListID",pageState.selectedListOrGroupID);
@@ -218,7 +221,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
     if (!addingNewItem) {
       if (testItemDoc!.lists.filter(il => il.active).length === testItemDoc!.lists.length) {
-        presentToast({message: "Trying to add duplicate item... Error.", duration: 1500, position: "middle"});
+        presentToast({message: t("error.item_exists_current_list"), duration: 1500, position: "middle"});
         return;
       }
     }
@@ -257,7 +260,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       }  
       let itemAdded = await addNewItem(newItem);
       if (!itemAdded.successful) {
-        presentToast({message: "Error adding item, please retry.",duration: 1500, position: "middle"});
+        presentToast({message: t("error.adding_item"),duration: 1500, position: "middle"});
       }
       return;
     }
@@ -271,7 +274,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     if (!isEqual(origLists,testItemDoc!.lists)) {
       let result = await updateItemInList(testItemDoc);
       if (!result.successful) {
-        presentToast({message: "Error updating item, please retry.",duration: 1500, position: "middle"});
+        presentToast({message: t("error.updating_item"),duration: 1500, position: "middle"});
       }
     }
   }
@@ -284,11 +287,11 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   async function completeItemRow(id: String, newStatus: boolean | null) {
     if (pageState.selectedListType === RowType.listGroup && !pageState.ignoreCheckOffWarning) {
        await presentAlert({
-        header: "Checking Items in List Group",
-        subHeader: "Warning: You are checking off/on items while in List Group mode. Normally you would change to the shopping list first to make these changes. Continue? ",
-        buttons: [ { text: "Cancel", role: "Cancel" ,
+        header: t("error.checking_items_list_group_header"),
+        subHeader: t("error.checking_items_list_group_detail"),
+        buttons: [ { text: t("general.cancel"), role: "Cancel" ,
                     handler: () => dismissAlert()},
-                    { text: "Continue/Ignore", role: "confirm",
+                    { text: t("general.continue_ignore"), role: "confirm",
                     handler: () => {setPageState(prevState => ({...prevState,ignoreCheckOffWarning: true})); dismissAlert()}}]
       })
     }
@@ -314,7 +317,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     if (listChanged) {
       let response = await updateItemInList(itemDoc);
       if (!response.successful) {
-        presentToast({message: "Error updating completed status. Please retry", duration: 1500, position: "middle"})
+        presentToast({message: t("error.updating_item_completed"), duration: 1500, position: "middle"})
       }
     }
   }
@@ -345,7 +348,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         if (itemUpdated) {
           let result = await updateItemInList(updatedItem);
           if (!result.successful) {
-            presentToast({message: "Error deleting items from list. Please retry.",
+            presentToast({message: t("error.deleting_items_list"),
               duration: 1500, position: "middle"})
           }          
         }
@@ -376,7 +379,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     <IonHeader><IonToolbar><IonButtons slot="start"><IonMenuButton class={"ion-no-padding small-menu-button"} /></IonButtons>
     <IonTitle class="ion-no-padding item-outer">
         <IonItem id="item-list-selector-id" class="item-list-selector" key="listselector">
-        <IonSelect id="select-list-selector-id" class="select-list-selector" label="Items On" aria-label="Items On" interface="popover" onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListOrGroupID}  >
+        <IonSelect id="select-list-selector-id" class="select-list-selector" label={t("general.items_on") as string} aria-label={t("general.items_on") as string} interface="popover" onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListOrGroupID}  >
             {listCombinedRows.map((listCombinedRow: ListCombinedRow) => (
                 <IonSelectOption disabled={listCombinedRow.rowKey==="G-null"} className={listCombinedRow.rowType === RowType.list ? "indented" : ""} key={listCombinedRow.listOrGroupID} value={listCombinedRow.listOrGroupID}>
                   {listCombinedRow.rowName}
@@ -388,7 +391,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         <IonItem key="searchbar" class="item-search">
            <IonIcon icon={searchOutline} />
            <IonInput id="item-search-box-id" aria-label="" class="ion-no-padding input-search" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="text" enterkeyhint="enter"
-              clearInput={true}  placeholder="Search" fill="solid"
+              clearInput={true}  placeholder={t("general.search") as string} fill="solid"
               onKeyDown= {(e) => searchKeyPress(e)}
               onIonInput={(e) => updateSearchCriteria(e)}
               onClick={() => enterSearchBox()}
@@ -402,11 +405,11 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     </IonTitle></IonToolbar></IonHeader>)
 
   if (globalData.listRows.length <=0) {return(
-    <IonPage>{headerElem}<IonContent><IonItem key="nonefound"><IonLabel key="nothinghere">Please create at least one list before adding items</IonLabel></IonItem></IonContent></IonPage>
+    <IonPage>{headerElem}<IonContent><IonItem key="nonefound"><IonLabel key="nothinghere">{t("error.please_create_list_before_adding_items")}</IonLabel></IonItem></IonContent></IonPage>
   )};
 
   if (pageState.itemRows.length <=0 )  {return(
-    <IonPage>{headerElem}<IonContent><IonItem key="nonefound"><IonLabel key="nothinghere">No Items On List</IonLabel></IonItem></IonContent></IonPage>
+    <IonPage>{headerElem}<IonContent><IonItem key="nonefound"><IonLabel key="nothinghere">{t("error.no_items_on_list")}</IonLabel></IonItem></IonContent></IonPage>
   )};
 
   let listContent=[];
@@ -427,8 +430,8 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   let createdFinished=false;
   const completedDivider=(
         <IonItemGroup key="completeddividergroup"><IonItemDivider key="Completed">
-        <IonLabel key="completed-divider-label">Completed</IonLabel>
-        <IonButton slot="end" onClick={() => deleteCompletedItems(baseItemDocs as ItemDocs,pageState.selectedListOrGroupID)}>DELETE COMPLETED ITEMS</IonButton>
+        <IonLabel key="completed-divider-label">{t("general.completed")}</IonLabel>
+        <IonButton slot="end" onClick={() => deleteCompletedItems(baseItemDocs as ItemDocs,pageState.selectedListOrGroupID)}>{t("general.delete_completed_items")}</IonButton>
         </IonItemDivider></IonItemGroup>);
   for (let i = 0; i < pageState.itemRows.length; i++) {
     const item = pageState.itemRows[i];

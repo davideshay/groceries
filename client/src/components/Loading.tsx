@@ -1,8 +1,6 @@
 import { IonHeader, IonPage, IonTitle, IonToolbar, IonButtons, 
     IonMenuButton} from '@ionic/react';
 
-    
-
 export type LoadingProps = {
     isOpen: boolean,
     message: string

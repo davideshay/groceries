@@ -5,6 +5,7 @@ import { initialSetupActivities } from '../components/Utilities';
 import { Device } from '@capacitor/device';
 import PouchDB from 'pouchdb';
 import { getTokenInfo, refreshToken, errorCheckCreds , checkJWT, checkDBUUID, getPrefsDBCreds } from "./RemoteUtilities";
+import { useTranslation } from 'react-i18next';    
 
 const secondsBeforeAccessRefresh = 180;
 
@@ -130,6 +131,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     const [, forceUpdateState] = React.useState<{}>();
     const forceUpdate = React.useCallback(() => forceUpdateState({}), []);
     const db=usePouch();
+    const { t } = useTranslation();
 
     function setSyncStatus(status: number) {
         setRemoteDBState(prevState => ({...prevState,syncStatus: status}))
@@ -200,8 +202,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     async function CheckDBUUIDAndStartSync() {
         let DBUUIDCheck = await checkDBUUID(db as PouchDB.Database,globalRemoteDB as PouchDB.Database);
         if (!DBUUIDCheck.checkOK) {
-            console.log("not check ok, action:",DBUUIDCheck.dbUUIDAction);
-            setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: "Invalid DBUUID", dbUUIDAction: DBUUIDCheck.dbUUIDAction, connectionStatus: ConnectionStatus.navToLoginScreen}))
+            setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.invalid_dbuuid") , dbUUIDAction: DBUUIDCheck.dbUUIDAction, connectionStatus: ConnectionStatus.navToLoginScreen}))
         } else {
             await initialSetupActivities(globalRemoteDB as PouchDB.Database,remoteDBCreds.current.dbUsername as string)
             startSync();
@@ -224,27 +225,27 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         } 
         let refreshResponse = await refreshToken(credsObj as DBCreds,devID);
         if (refreshResponse === undefined) {
-            setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: "Could not contact API server", connectionStatus: ConnectionStatus.navToLoginScreen}));
+            setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.could_not_contact_api_server") , connectionStatus: ConnectionStatus.navToLoginScreen}));
             return;
         }
         if (!refreshResponse.data.valid) {
             credsObj.refreshJWT = "";
             remoteDBCreds.current = credsObj;
             await setPrefsDBCreds();
-            setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: "Invalid JWT Token", connectionStatus: ConnectionStatus.navToLoginScreen}));
+            setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.invalid_jwt_token") , connectionStatus: ConnectionStatus.navToLoginScreen}));
             return;
         }
         remoteDBCreds.current = credsObj;
         remoteDBCreds.current.refreshJWT = refreshResponse.data.refreshJWT;
         let JWTCheck = await checkJWT(refreshResponse.data.accessJWT,credsObj as DBCreds);
         if (!JWTCheck.DBServerAvailable) {
-            setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: "DB Server Not Available", connectionStatus: ConnectionStatus.navToLoginScreen}))
+            setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.db_server_not_available") , connectionStatus: ConnectionStatus.navToLoginScreen}))
         }
         await setPrefsDBCreds();
         if (!JWTCheck.JWTValid) {
             remoteDBCreds.current.refreshJWT = "";
             setPrefsDBCreds();
-            setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: "Invalid JWT Token", connectionStatus: ConnectionStatus.navToLoginScreen}))
+            setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error,invalid_jwt_token"), connectionStatus: ConnectionStatus.navToLoginScreen}))
              return;
         }
         setRemoteDBState(prevState => ({...prevState, accessJWT: refreshResponse?.data.accessJWT, accessJWTExpirationTime: JWTCheck.JWTExpireDate}));
@@ -259,7 +260,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         if (remoteDBCreds.current.refreshJWT !== "") {
             let refreshResponse = await refreshToken(remoteDBCreds.current,String(remoteDBState.deviceUUID));
             if (refreshResponse === undefined) {
-                setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: "Error contacting API server", connectionStatus: ConnectionStatus.navToLoginScreen}));
+                setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.could_not_contact_api_server"), connectionStatus: ConnectionStatus.navToLoginScreen}));
                 return;
             }
             if (refreshResponse.data.valid) {

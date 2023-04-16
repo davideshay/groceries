@@ -1,7 +1,7 @@
 import {  IonButton,  IonItem, IonLabel, IonCheckbox, IonIcon, 
     IonGrid, IonRow, IonCol, IonText, CheckboxCustomEvent,  } from '@ionic/react';
 import { pencilOutline } from 'ionicons/icons';
-import { Fragment, useContext, useState, SetStateAction } from 'react';
+import { Fragment, useContext, useState, SetStateAction, useTransition } from 'react';
 import { sortedItemLists, listIsDifferentThanCommon } from './ItemUtilities';
 import { ItemDoc,  ListDoc } from './DBSchema';
 import ItemListsModal from '../components/ItemListsModal';
@@ -9,6 +9,7 @@ import { cloneDeep } from 'lodash';
 import { ModalState, ModalStateInit } from '../components/DataTypes';
 import './ItemLists.css';
 import { GlobalDataContext } from './GlobalDataProvider';
+import { useTranslation } from 'react-i18next';
 
 export type ItemListsProps = { 
     stateItemDoc: ItemDoc,
@@ -20,6 +21,7 @@ export type ItemListsProps = {
 const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
     const [modalState, setModalState] = useState<ModalState>(ModalStateInit)
     const globalData = useContext(GlobalDataContext)
+    const { t } = useTranslation()
     
     function selectList(listID: string, updateVal: boolean) {
         let newItemDoc=cloneDeep(props.stateItemDoc);
@@ -57,8 +59,8 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
     let listsElem=[];
     let listsInnerElem=[];
     listsInnerElem.push(<IonRow key="listlabelrow">
-        <IonCol size="10"><IonLabel key="listlabel" position='stacked'>Item is on these lists:</IonLabel></IonCol>
-        <IonCol size="2"><IonLabel key="resetlabel" position="stacked">Edit</IonLabel></IonCol></IonRow>
+        <IonCol size="10"><IonLabel key="listlabel" position='stacked'>{t('itemtext.item_is_on_these_lists')}</IonLabel></IonCol>
+        <IonCol size="2"><IonLabel key="resetlabel" position="stacked">{t('general.edit')}</IonLabel></IonCol></IonRow>
     )
     let sortedLists = sortedItemLists(props.stateItemDoc.lists,globalData.listDocs);
     
@@ -78,7 +80,7 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
       }
     }
     listsElem.push(<IonItem key="listlist"><IonGrid>{listsInnerElem}</IonGrid></IonItem>)
-    listsElem.push(<IonItem key="diffNote"><IonText class="small-note-text">Highlighted lists have different values at the item-list level</IonText></IonItem>)
+    listsElem.push(<IonItem key="diffNote"><IonText class="small-note-text">{t('itemtext.highlighted_lists_diff_values')}</IonText></IonItem>)
   
     return (
         <Fragment key="itemlists">
