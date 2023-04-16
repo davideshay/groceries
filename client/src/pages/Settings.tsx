@@ -11,6 +11,7 @@ import { initialRemoteDBState, RemoteDBStateContext,  } from '../components/Remo
 import { HistoryProps } from '../components/DataTypes';
 import { maxAppSupportedSchemaVersion, appVersion } from '../components/DBSchema';
 import PageHeader from '../components/PageHeader';
+import { useTranslation } from 'react-i18next';
 
 const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
   const db = usePouch();
@@ -19,6 +20,7 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { remoteDBCreds, setRemoteDBState } = useContext(RemoteDBStateContext);
   const [localSettings, setLocalSettings] = useState<GlobalSettings>(initSettings)
   const [localSettingsInitialized,setLocalSettingsInitialized] = useState(false);
+  const { t } = useTranslation();
 
   useEffect( () => {
     if (!localSettingsInitialized && globalState.settingsLoaded) {
@@ -52,16 +54,16 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   function stopSyncPopup() {
     presentAlert({
-      header: 'Warning',
+      header: t("error.warning"),
       subHeader: '',
-      message: 'Do you want to remove your saved credentials? This will cause the application to restart and allow you to sign in again if desired.',
+      message: t("general.remove_saved_credentials"),
       buttons: [
         {
-          text:'Cancel',
+          text: t("general.cancel"),
           role: 'cancel',
           handler: () => {}},
         {
-        text: 'Remove',
+        text: t("general.remove"),
         role: 'confirm',
         handler: () => {stopSync()}}
         ]
@@ -70,16 +72,16 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   function destroyDBPopup() {
     presentAlert({
-      header: 'Warning',
+      header: t("error.warning"),
       subHeader: '',
-      message: 'Do you want to remove the local database? This will cause the application to restart and allow you to sign in again if desired. It will also re-sync all data from the server.',
+      message: t("general.want_remove_local_database"),
       buttons: [
         {
-          text:'Cancel',
+          text:t("general.cancel"),
           role: 'cancel',
           handler: () => {}},
         {
-        text: 'Remove',
+        text: t("general.remove"),
         role: 'confirm',
         handler: () => {destroyDB()}}
         ]
@@ -93,41 +95,41 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   return (
     <IonPage>
-      <PageHeader title="Settings" />
+      <PageHeader title={t("general.settings")} />
       <IonContent fullscreen>
         <IonList lines="full">
-          <IonItemDivider>App Info</IonItemDivider>
-          <IonItem>App Version: {appVersion}</IonItem>
-          <IonItem>Database Schema Version: {maxAppSupportedSchemaVersion}</IonItem>
-          <IonItemDivider>User Info</IonItemDivider>
-          <IonItem>Name: {remoteDBCreds.fullName}</IonItem>
-          <IonItem>UserID: {remoteDBCreds.dbUsername}</IonItem>
-          <IonItem>E-mail: {remoteDBCreds.email}</IonItem>
+          <IonItemDivider>{t("general.app_info")}</IonItemDivider>
+          <IonItem>{t("general.app_version")} : {appVersion}</IonItem>
+          <IonItem>{t("general.database_schema_version")}: {maxAppSupportedSchemaVersion}</IonItem>
+          <IonItemDivider>{t("general.user_info")}</IonItemDivider>
+          <IonItem>{t("general.name")}: {remoteDBCreds.fullName}</IonItem>
+          <IonItem>{t("general.user_id")}: {remoteDBCreds.dbUsername}</IonItem>
+          <IonItem>{t("general.email")}: {remoteDBCreds.email}</IonItem>
           <IonItem key="logout">
-            <IonButton slot="start" onClick={() => stopSyncPopup()} key="stopitall">Logout</IonButton>
-            <IonButton slot="end" onClick={() => destroyDBPopup()} key="deletedb">Delete Local Data</IonButton>
+            <IonButton slot="start" onClick={() => stopSyncPopup()} key="stopitall">{t("general.logout")}</IonButton>
+            <IonButton slot="end" onClick={() => destroyDBPopup()} key="deletedb">{t("general.delete_local_data")}</IonButton>
           </IonItem>
-          <IonItemDivider>Add To Other List Options</IonItemDivider> 
+          <IonItemDivider>{t("general.add_other_list_options")}</IonItemDivider> 
           <IonRadioGroup value={localSettings?.addListOption} onIonChange={(e) => changeSetting("addListOption",e.detail.value)}>
           <IonItem class="myindented" key="addallauto">
-            <IonRadio class="myindented" justify="space-between" labelPlacement="start" value={AddListOptions.addToAllListsAutomatically}>Add in Same Group Automatically</IonRadio>
+            <IonRadio class="myindented" justify="space-between" labelPlacement="start" value={AddListOptions.addToAllListsAutomatically}>{t("general.add_same_group_auto")}</IonRadio>
           </IonItem>
           <IonItem key="addcategoryauto">
-            <IonRadio justify="space-between" labelPlacement="start" value={AddListOptions.addToListsWithCategoryAutomatically}>Add with same categories automatically</IonRadio>
+            <IonRadio justify="space-between" labelPlacement="start" value={AddListOptions.addToListsWithCategoryAutomatically}>{t("general.add_same_categories_auto")}</IonRadio>
           </IonItem>
           <IonItem key="dontaddauto">
-            <IonRadio justify="space-between" labelPlacement="start" value={AddListOptions.dontAddAutomatically}>Don't Add automatically</IonRadio>
+            <IonRadio justify="space-between" labelPlacement="start" value={AddListOptions.dontAddAutomatically}>{t("general.dont_add_auto")}</IonRadio>
           </IonItem>
           </IonRadioGroup>
-          <IonItemDivider>Other Settings</IonItemDivider>
+          <IonItemDivider>{t("general.other_settings")}</IonItemDivider>
           <IonItem key="removesettings">
-            <IonCheckbox justify="space-between" labelPlacement="start" checked={localSettings.removeFromAllLists} onIonChange={(e) => changeSetting("removeFromAllLists",e.detail.checked)}>Remove items from all lists in list group when marked as purchased/completed</IonCheckbox>
+            <IonCheckbox justify="space-between" labelPlacement="start" checked={localSettings.removeFromAllLists} onIonChange={(e) => changeSetting("removeFromAllLists",e.detail.checked)}>{t("general.remove_items_all_lists_purchased")}</IonCheckbox>
           </IonItem>
           <IonItem key="deletesettings">
-            <IonCheckbox justify="space-between" labelPlacement="start" checked={localSettings.completeFromAllLists} onIonChange={(e) => changeSetting("completeFromAllLists",e.detail.checked)}>Delete From All lists in list group when deleting completed items</IonCheckbox>
+            <IonCheckbox justify="space-between" labelPlacement="start" checked={localSettings.completeFromAllLists} onIonChange={(e) => changeSetting("completeFromAllLists",e.detail.checked)}>{t("general.delete_all_lists_when_deleting_completed")}</IonCheckbox>
           </IonItem>
           <IonItem key="dayslog">
-            <IonInput label="Days of conflict log to view:" labelPlacement="start" type="number" min="0" max="25" onIonInput={(e) => changeSetting("daysOfConflictLog", Number(e.detail.value))} value={Number(localSettings?.daysOfConflictLog)}></IonInput>
+            <IonInput label={t("general.days_conflict_log_to_view") as string} labelPlacement="start" type="number" min="0" max="25" onIonInput={(e) => changeSetting("daysOfConflictLog", Number(e.detail.value))} value={Number(localSettings?.daysOfConflictLog)}></IonInput>
           </IonItem>
         </IonList>
       </IonContent>
