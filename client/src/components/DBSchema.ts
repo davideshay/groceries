@@ -230,8 +230,10 @@ export const InitFriendDoc : FriendDoc = {
 export type RecipeItem = {
   globalItemID: string | null,
   name: string,
-  uomName: string,
-  quantity: number,
+  recipeUOMName: string,
+  recipeQuantity: number,
+  shoppingUOMName: string,
+  shoppingQuantity: number,
   addToList: boolean
 }
 

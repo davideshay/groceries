@@ -162,3 +162,8 @@ export const ModalStateInit : ModalState = {
     isOpen: false,
     itemList: ItemListInit
   }
+
+export enum RecipeFormat {
+  tandoor = "Tandoor",
+  json_ld = "JSON-LD"
+}

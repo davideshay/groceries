@@ -5,7 +5,7 @@ import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteGenericDocument,
    useGetOneDoc, useItems, useRecipes } from '../components/Usehooks';
 import { cloneDeep } from 'lodash';
-import { PouchResponse, HistoryProps, ListRow, RowType} from '../components/DataTypes';
+import { PouchResponse, HistoryProps, ListRow, RowType, RecipeFormat} from '../components/DataTypes';
 import { ItemDoc, ItemList, CategoryDoc, InitCategoryDoc, RecipeDoc, InitRecipeDoc, RecipeItem } from '../components/DBSchema';
 import { addOutline, closeOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
@@ -17,44 +17,25 @@ import { translatedItemName } from '../components/translationUtilities';
 
 type PageState = {
   recipeDoc: RecipeDoc,
-  needInitDoc: boolean,
+  recipeFormat: RecipeFormat,
   formError: string,
-  deletingRecipe: boolean,
   selectedListOrGroupID: string | null
 }
 
-const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
-  let { mode, id: routeID } = useParams<{mode: string, id: string}>();
-  if ( mode === "new" ) { routeID = "<new>"};
+const RecipeImport: React.FC<HistoryProps> = (props: HistoryProps) => {
   const [pageState, setPageState] = useState<PageState>({
-      recipeDoc: InitRecipeDoc,needInitDoc: (mode === "new") ? true: false,
-      formError: "",deletingRecipe: false, selectedListOrGroupID: null
+      recipeDoc: InitRecipeDoc,recipeFormat: RecipeFormat.tandoor,
+      formError: "", selectedListOrGroupID: null
   })
   const [presentAlert,dismissAlert] = useIonAlert();
-  const updateRecipe  = useUpdateGenericDocument();
   const createRecipe = useCreateGenericDocument();
-  const deleteRecipe = useDeleteGenericDocument();
-  const { doc: recipeDoc, loading: recipeLoading, dbError: recipeError} = useGetOneDoc(routeID);
   const { recipeDocs, recipesLoading, recipesError } = useRecipes();
   const { dbError: itemError, itemRowsLoaded, itemRows } = useItems({selectedListGroupID: null, isReady: true, 
         needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
-  const {goBack} = useContext(NavContext);
+  const {goBack, navigate} = useContext(NavContext);
   const screenLoading = useRef(true);
   const globalData = useContext(GlobalDataContext);
   const { t } = useTranslation();
-
-  useEffect( () => {
-    let newRecipeDoc = cloneDeep(pageState.recipeDoc);
-    if (!recipeLoading) {
-      if (mode === "new" && pageState.needInitDoc) {
-        newRecipeDoc = InitRecipeDoc;
-        setPageState(prevState => ({...prevState,needInitDoc: false}));
-      } else {
-        newRecipeDoc = recipeDoc;
-      }
-      setPageState(prevState => ({...prevState, recipeDoc: newRecipeDoc}))
-    }
-  },[recipeLoading,recipeDoc]);
 
   useEffect( () => {
     if (pageState.selectedListOrGroupID === null && globalData.listRowsLoaded && globalData.listCombinedRows.length > 0) {
@@ -62,12 +43,12 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   },[globalData.listRowsLoaded,globalData.listCombinedRows])
 
-  if ( globalData.listError || itemError || recipeError) { return (
-    <ErrorPage errorText={t("error.loading_recipe") as string}></ErrorPage>
+  if ( globalData.listError || itemError ){ return (
+    <ErrorPage errorText={t("error.loading_recipe_import") as string}></ErrorPage>
     )};
 
-  if ( recipeLoading || globalData.categoryLoading || !pageState.recipeDoc || pageState.deletingRecipe || !globalData.listRowsLoaded || !itemRowsLoaded)  {
-    return ( <Loading isOpen={screenLoading.current} message={t("general.loading_recipe")} />)
+  if (  globalData.categoryLoading || !pageState.recipeDoc || !globalData.listRowsLoaded || !itemRowsLoaded)  {
+    return ( <Loading isOpen={screenLoading.current} message={t("general.loading_recipe_import")} />)
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   };
   
@@ -90,80 +71,37 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
       return
     }
     let result: PouchResponse;
-    if ( mode === "new") {
-      result = await createRecipe(pageState.recipeDoc);
-    } else {
-      result = await updateRecipe(pageState.recipeDoc);
-    }
+    result = await createRecipe(pageState.recipeDoc);
     if (result.successful) {
         goBack("/recipes");
     } else {
         setPageState(prevState=>({...prevState,formError:(t("error.updating_recipe") as string) + " " + result.errorCode + " : " + result.errorText + ". " + (t("error.please_retry") as string)}))
     } 
   }
-  
-  async function deleteRecipeFromDB() {
-   let catDelResponse = await deleteRecipe(pageState.recipeDoc);
-   if (!catDelResponse.successful) {
-    setPageState(prevState=>({...prevState,formError:t("error.unable_delete_recipe") as string, deletingRecipe: false}))
-     return;
-   }
-    goBack("/recipes");
-    setPageState(prevState=>({...prevState,deletingRecipe: false}))
-  }
 
-  async function deletePrompt() {
-    setPageState(prevState=>({...prevState,deletingRecipe: true}));
-    presentAlert({
-      header: t("general.delete_this_recipe"),
-      subHeader: t("general.really_delete_recipe"),
-      buttons: [ { text: t("general.cancel"), role: "Cancel" ,
-                  handler: () => setPageState(prevState=>({...prevState,deletingRecipe:false}))},
-                  { text: t("general.delete"), role: "confirm",
-                  handler: () => deleteRecipeFromDB()}]
-    })
-    }
+  let jsonFormatOptions: JSX.Element[] = [];
+  Object.entries(RecipeFormat).forEach(([key,value]) => {
+    jsonFormatOptions.push(
+      <IonSelectOption key={key} value={key}>{value}</IonSelectOption>
+    )
+  })
   
-  function checkItemOnList(checked: boolean,index: number) {
-    let itemsToUpdate=cloneDeep(pageState.recipeDoc.items) as RecipeItem[];
-    itemsToUpdate[index].addToList = checked;
-    setPageState(prevState => ({...prevState,recipeDoc: {...prevState.recipeDoc,items: itemsToUpdate}}))
-  }  
-
   return (
     <IonPage>
-      <PageHeader title={t("general.editing_recipe")+ pageState.recipeDoc.name } />
+      <PageHeader title={t("general.importing_recipe")+ pageState.recipeDoc.name } />
       <IonContent>
           <IonList>
             <IonItem key="name">
               <IonInput label={t("general.name") as string} labelPlacement="stacked" type="text" placeholder={t("general.new_placeholder") as string} onIonInput={(e) => setPageState(prevState=>({...prevState, recipeDoc: {...prevState.recipeDoc,name: String(e.detail.value)}}))} value={pageState.recipeDoc.name}></IonInput>
             </IonItem>
-            <IonItemDivider>{t("general.items_in_recipe")}</IonItemDivider>
-            <IonItem key="items-in-recipe">
-              <IonGrid>
-                <IonRow key="item-header">
-                  <IonCol size="2">{t("general.add_question")}</IonCol>
-                  <IonCol size="10">{t('general.item')}</IonCol>
-                </IonRow>
-                { pageState.recipeDoc.items.map((item,index) => (
-                  <IonRow key={"item="+index}>
-                    <IonCol size="2"><IonCheckbox aria-label="" checked={item.addToList} onIonChange={(ev) => checkItemOnList(ev.detail.checked,index)}></IonCheckbox></IonCol>
-                    <IonCol size="10">{translatedItemName(item.globalItemID,item.name)}</IonCol>
-                  </IonRow>
-                  ))
-                }
-              </IonGrid>
+            <IonItem key="filetype">
+              <IonSelect label={t("general.recipe_import_type") as string} interface="popover" onIonChange={(ev) => {setPageState(prevState=>({...prevState,recipeFormat:ev.detail.value}))}} value={pageState.recipeFormat}>
+                  {jsonFormatOptions}
+              </IonSelect>
             </IonItem>
-            <IonItemDivider>{t("general.recipe_steps")}</IonItemDivider>
-            <IonItem key="recipesteps">
-              <IonGrid>
-                { pageState.recipeDoc.instructions.map((step,index) => (
-                  <IonRow key={"step-"+index}>
-                    <IonCol>{step.stepText}</IonCol>
-                  </IonRow>
-                  ))
-                }
-              </IonGrid>
+            <IonItem key="fileimport">
+              <IonButton>{t('general.import_file')}</IonButton>
+              <input type="file" />
             </IonItem>
             <IonItem key="addtolist">
                 <IonButton>{t("general.add_items_to")}</IonButton>
@@ -179,16 +117,13 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
           </IonList>
           <IonItem>{pageState.formError}</IonItem>
           <IonToolbar>
-            <IonButtons slot="start">
-              <IonButton fill="outline" color="danger" onClick={() => deletePrompt()}><IonIcon slot="start" icon={trashOutline}></IonIcon>{t("general.delete")}</IonButton>
-           </IonButtons>
            <IonButtons slot="secondary">
            <IonButton fill="outline" color="secondary" onClick={() => goBack("/recipes")}><IonIcon slot="start" icon={closeOutline}></IonIcon>{t("general.cancel")}</IonButton>
           </IonButtons>
           <IonButtons slot="end">
           <IonButton fill="solid" color="primary" onClick={() => updateThisRecipe()}>
-              <IonIcon slot="start" icon={(mode === "new" ? addOutline : saveOutline)}></IonIcon>
-              {(mode === "new") ? t("general.add") : t("general.save")}
+              <IonIcon slot="start" icon={(addOutline)}></IonIcon>
+              {t("general.add")}
             </IonButton>
           </IonButtons>
           </IonToolbar>
@@ -197,4 +132,4 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
   );
 };
 
-export default Recipe;
+export default RecipeImport;

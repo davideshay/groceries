@@ -165,8 +165,14 @@ export const en_translations =
         "add_question": "Add?",
         "item": "Item",
         "recipe_steps": "Recipe Steps",
-        "add_items_to": "Add Items to"
-
+        "add_items_to": "Add Items to",
+        "loading_recipe_import": "Loading Recipe Import Page...",
+        "import_new": "Import New",
+        "importing_recipe": "Importing Recipe",
+        "import_file": "Import File",
+        "recipe_import_type": "Recipe Import File Type",
+        "recipe_import_type_tandoor": "Tandoor",
+        "recipe_import_type_json_ld": "JSON-LD"
 
      },
      "error" : {
@@ -261,6 +267,7 @@ export const en_translations =
         "duplicate_recipe_name": "Recipe name already exists.",
         "updating_recipe": "Error updating recipe.",
         "unable_delete_recipe": "Unable to delete recipe, retry.",
+        "loading_recipe_import": "Error Loading Recipe Import Page... Restart.",
     },
     "itemtext": {
         "item_is_on_these_lists": "Item is on these lists:",

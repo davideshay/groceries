@@ -23,6 +23,7 @@ import ConflictLog from './pages/ConflictLog';
 import ConflictItem from './pages/ConflictItem';
 import AllItems from './pages/AllItems';
 import Recipes from './pages/Recipes';
+import RecipeImport from './pages/RecipeImport';
 import ErrorBoundary from './components/ErrorBoundary';
 import { GlobalStateProvider } from './components/GlobalState';
 import { RemoteDBStateProvider } from './components/RemoteDBState';
@@ -108,6 +109,7 @@ const App: React.FC = () => {
           <Route path="/conflictitem/:id" component={ConflictItem}></Route>
           <Route exact path="/recipes" component={Recipes}></Route>
           <Route path="/recipe/:mode/:id" component={Recipe}></Route>
+          <Route exact path="/recipeimport" component={RecipeImport}></Route>
           <Route component={InitialLoad}></Route>
           </Switch>
           {/* <Route component={InitialLoad}></Route>  */}
