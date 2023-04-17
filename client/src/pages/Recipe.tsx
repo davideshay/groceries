@@ -6,7 +6,7 @@ import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteGenericDoc
    useGetOneDoc, useItems, useRecipes } from '../components/Usehooks';
 import { cloneDeep } from 'lodash';
 import { PouchResponse, HistoryProps, ListRow, RowType} from '../components/DataTypes';
-import { ItemDoc, ItemList, CategoryDoc, InitCategoryDoc, RecipeDoc, InitRecipeDoc } from '../components/DBSchema';
+import { ItemDoc, ItemList, CategoryDoc, InitCategoryDoc, RecipeDoc, InitRecipeDoc, RecipeItem } from '../components/DBSchema';
 import { addOutline, closeOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
@@ -122,8 +122,13 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
                   { text: t("general.delete"), role: "confirm",
                   handler: () => deleteRecipeFromDB()}]
     })
-    
     }
+  
+  function checkItemOnList(checked: boolean,index: number) {
+    let itemsToUpdate=cloneDeep(pageState.recipeDoc.items) as RecipeItem[];
+    itemsToUpdate[index].addToList = checked;
+    setPageState(prevState => ({...prevState,recipeDoc: {...prevState.recipeDoc,items: itemsToUpdate}}))
+  }  
 
   return (
     <IonPage>
@@ -142,7 +147,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
                 </IonRow>
                 { pageState.recipeDoc.items.map((item,index) => (
                   <IonRow key={"item="+index}>
-                    <IonCol size="2"><IonCheckbox aria-label="" value={item.addToList}></IonCheckbox></IonCol>
+                    <IonCol size="2"><IonCheckbox aria-label="" checked={item.addToList} onIonChange={(ev) => checkItemOnList(ev.detail.checked,index)}></IonCheckbox></IonCol>
                     <IonCol size="10">{translatedItemName(item.globalItemID,item.name)}</IonCol>
                   </IonRow>
                   ))
