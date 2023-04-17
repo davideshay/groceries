@@ -226,3 +226,31 @@ export const InitFriendDoc : FriendDoc = {
     type: "friend", friendID1: "", friendID2: "",
     inviteEmail: "", inviteUUID: "", friendStatus: FriendStatus.Deleted, updatedAt: ""
   }
+
+export type RecipeItem = {
+  globalItemID: string | null,
+  name: string,
+  uomName: string,
+  quantity: number,
+  addToList: boolean
+}
+
+export type RecipeInstruction = {
+  stepText: string
+}
+
+export type RecipeDoc = {
+  _id?: string,
+  _rev?: string,
+  type: string,
+  name: string,
+  items: RecipeItem[],
+  instructions: RecipeInstruction[]
+}
+
+export const InitRecipeDoc : RecipeDoc = {
+  type: "recipe",
+  name: "",
+  items: [],
+  instructions: []
+}

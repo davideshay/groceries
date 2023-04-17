@@ -22,6 +22,7 @@ import AppMenu from './components/AppMenu';
 import ConflictLog from './pages/ConflictLog';
 import ConflictItem from './pages/ConflictItem';
 import AllItems from './pages/AllItems';
+import Recipes from './pages/Recipes';
 import ErrorBoundary from './components/ErrorBoundary';
 import { GlobalStateProvider } from './components/GlobalState';
 import { RemoteDBStateProvider } from './components/RemoteDBState';
@@ -50,6 +51,7 @@ import { Provider } from 'use-pouchdb';
 import PouchDB from 'pouchdb';
 import find from 'pouchdb-find';
 import { GlobalDataProvider } from './components/GlobalDataProvider';
+import Recipe from './pages/Recipe';
 
 setupIonicReact();
 
@@ -104,6 +106,8 @@ const App: React.FC = () => {
           <Route exact path="/initialload" component={InitialLoad}></Route>
           <Route exact path="/conflictlog" component={ConflictLog}></Route>
           <Route path="/conflictitem/:id" component={ConflictItem}></Route>
+          <Route exact path="/recipes" component={Recipes}></Route>
+          <Route path="/recipe/:mode/:id" component={Recipe}></Route>
           <Route component={InitialLoad}></Route>
           </Switch>
           {/* <Route component={InitialLoad}></Route>  */}

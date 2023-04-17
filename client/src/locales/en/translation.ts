@@ -154,7 +154,20 @@ export const en_translations =
         "delete_all_lists_when_deleting_completed":"Delete From All lists in list group when deleting completed items",
         "days_conflict_log_to_view":"Days of conflict log to view:",
         "language": "Language",
-        "remove": "Remove"
+        "remove": "Remove",
+        "loading_recipes": "Loading Recipes...",
+        "recipes": "Recipes",
+        "loading_recipe": "Loading Recipe...",
+        "delete_this_recipe": "Delete Recipe",
+        "really_delete_recipe": "Are you sure you want to delete this recipe?",
+        "editing_recipe": "Editing Recipe:",
+        "items_in_recipe": "Items In Recipe",
+        "add_question": "Add?",
+        "item": "Item",
+        "recipe_steps": "Recipe Steps",
+        "add_items_to": "Add Items to"
+
+
      },
      "error" : {
         "invalid_dbuuid" : "Invalid Database Unique Identifier",
@@ -242,6 +255,12 @@ export const en_translations =
         "user_already_exists": "User Already Exists",
         "must_enter_username_reset_password":"Must enter username to reset password",
         "database_server_not_available_choose_work_offline":"The database server is not available. You can choose to work offline and your changes will sync when you start the app again and the server is available. The risk for conflicts increases when working offline.",
+        "loading_recipes": "Error Loading Recipes... Restart.",
+        "no_recipes_exist": "No Recipes Exist Yet",
+        "loading_recipe": "Error Loading Recipe... Restart.",
+        "duplicate_recipe_name": "Recipe name already exists.",
+        "updating_recipe": "Error updating recipe.",
+        "unable_delete_recipe": "Unable to delete recipe, retry.",
     },
     "itemtext": {
         "item_is_on_these_lists": "Item is on these lists:",
