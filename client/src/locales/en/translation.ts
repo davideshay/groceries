@@ -374,7 +374,13 @@ export const en_translations =
         "PT_one": "Pint",
         "PT_other": "Pints",
         "RL_one": "Roll",
-        "RL_other": "Rolls"
+        "RL_other": "Rolls",
+        "Z-CL_one": "Clove",
+        "Z-CL_other": "Cloves",
+        "Y2_one": "Tablespoon",
+        "Y2_other": "Tablespoons",
+        "Y3_one": "Teaspoon",
+        "Y3_other": "Teaspoons"
     },
     "globalitem": {
         "bananas": "Bananas",
