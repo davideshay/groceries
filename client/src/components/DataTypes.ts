@@ -182,7 +182,7 @@ export type TandoorIngredient = {
   no_amount: boolean,
   note: string,
   order: number,
-  unit: {
+  unit: null | {
     description: null | string,
     name: string | null,
     plural_name: string | null

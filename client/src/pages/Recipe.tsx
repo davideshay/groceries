@@ -6,7 +6,7 @@ import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteGenericDoc
    useGetOneDoc, useItems, useRecipes } from '../components/Usehooks';
 import { cloneDeep } from 'lodash';
 import { PouchResponse, HistoryProps, ListRow, RowType} from '../components/DataTypes';
-import { ItemDoc, ItemList, CategoryDoc, InitCategoryDoc, RecipeDoc, InitRecipeDoc, RecipeItem } from '../components/DBSchema';
+import { ItemDoc, ItemList, CategoryDoc, InitCategoryDoc, RecipeDoc, InitRecipeDoc, RecipeItem, UomDoc } from '../components/DBSchema';
 import { addOutline, closeOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
@@ -130,6 +130,34 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
     setPageState(prevState => ({...prevState,recipeDoc: {...prevState.recipeDoc,items: itemsToUpdate}}))
   }  
 
+  let recipeRows: JSX.Element[] = [];
+  pageState.recipeDoc.items.forEach((item,index) => {
+    let itemChecked = item.addToList;
+    let itemName = translatedItemName(item.globalItemID,item.name)
+    let uomDesc = "";
+    if (item.recipeUOMName != null && item.recipeUOMName != "") {
+        const uomDoc = globalData.uomDocs.find((el: UomDoc) => (el.name === item.recipeUOMName));
+        if (uomDoc !== undefined) {
+            uomDesc = t("uom."+item.recipeUOMName,{ count: item.recipeQuantity});
+        }
+    }
+    let quantityUOMDesc = "";
+    if (! ((item.recipeQuantity === 1 || item.recipeQuantity === 0) && uomDesc === "")) {
+        quantityUOMDesc = item.recipeQuantity.toString() + ((uomDesc === "" ? "" : " " + uomDesc));
+    }
+    let fullItemName = itemName;
+    if (quantityUOMDesc !== "") { fullItemName = fullItemName + " (" + quantityUOMDesc +")"}
+    recipeRows.push(
+      <IonRow key={"item-"+index}>
+        <IonCol size="2"><IonCheckbox aria-label="" checked={item.addToList} onIonChange={(ev) => checkItemOnList(ev.detail.checked,index)}></IonCheckbox></IonCol>
+        <IonCol size="10">{fullItemName}</IonCol>
+      </IonRow>
+    )
+
+
+  })
+
+
   return (
     <IonPage>
       <PageHeader title={t("general.editing_recipe")+ pageState.recipeDoc.name } />
@@ -145,13 +173,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
                   <IonCol size="2">{t("general.add_question")}</IonCol>
                   <IonCol size="10">{t('general.item')}</IonCol>
                 </IonRow>
-                { pageState.recipeDoc.items.map((item,index) => (
-                  <IonRow key={"item="+index}>
-                    <IonCol size="2"><IonCheckbox aria-label="" checked={item.addToList} onIonChange={(ev) => checkItemOnList(ev.detail.checked,index)}></IonCheckbox></IonCol>
-                    <IonCol size="10">{translatedItemName(item.globalItemID,item.name)}</IonCol>
-                  </IonRow>
-                  ))
-                }
+                {recipeRows}
               </IonGrid>
             </IonItem>
             <IonItemDivider>{t("general.recipe_steps")}</IonItemDivider>

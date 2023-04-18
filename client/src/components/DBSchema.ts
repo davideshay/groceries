@@ -48,6 +48,8 @@ export interface UomDoc {
     name: string,
     description: string,
     pluralDescription: string,
+    alternates?: string[],
+    updatedAt: string
   }
 
 export interface ItemList {
@@ -115,12 +117,14 @@ export interface ImageDoc {
   _id? : string,
   _rev?: string,
   type: string,
-  imageBase64: string | null
+  imageBase64: string | null,
+  updatedAt?: string;
 }
 
 export const ImageDocInit: ImageDoc = {
   type: "image",
-  imageBase64: null
+  imageBase64: null,
+  updatedAt: ""
 }
 
 export interface GlobalItemDoc {
@@ -129,7 +133,8 @@ export interface GlobalItemDoc {
   type: string,
   name: string,
   defaultUOM: string | null,
-  defaultCategoryID: string | null
+  defaultCategoryID: string | null,
+  updatedAt?: string
 }
 
 export type GlobalItemDocs = GlobalItemDoc[];
@@ -234,7 +239,8 @@ export type RecipeItem = {
   recipeQuantity: number,
   shoppingUOMName: string,
   shoppingQuantity: number,
-  addToList: boolean
+  addToList: boolean,
+  note: string
 }
 
 export const RecipeItemInit: RecipeItem = {
@@ -244,7 +250,8 @@ export const RecipeItemInit: RecipeItem = {
   recipeQuantity: 1,
   shoppingUOMName: "",
   shoppingQuantity: 1,
-  addToList: true
+  addToList: true,
+  note: ""
 }
 
 export type RecipeInstruction = {
