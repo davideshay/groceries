@@ -5,7 +5,7 @@ import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteGenericDocument,
    useGetOneDoc, useItems, useRecipes } from '../components/Usehooks';
 import { cloneDeep } from 'lodash';
-import { PouchResponse, HistoryProps, ListRow, RowType, RecipeFormat} from '../components/DataTypes';
+import { PouchResponse, HistoryProps, ListRow, RowType, RecipeFileTypes } from '../components/DataTypes';
 import { ItemDoc, ItemList, CategoryDoc, InitCategoryDoc, RecipeDoc, InitRecipeDoc, RecipeItem } from '../components/DBSchema';
 import { addOutline, closeOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
@@ -14,17 +14,21 @@ import { GlobalDataContext } from '../components/GlobalDataProvider';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
 import { translatedItemName } from '../components/translationUtilities';
+import { FilePicker, PickFilesResult } from '@capawesome/capacitor-file-picker'
+import { processInputFile } from '../components/importUtiliites';
+import { usePouch } from 'use-pouchdb';
+
 
 type PageState = {
   recipeDoc: RecipeDoc,
-  recipeFormat: RecipeFormat,
+  recipeFormat: string,
   formError: string,
   selectedListOrGroupID: string | null
 }
 
 const RecipeImport: React.FC<HistoryProps> = (props: HistoryProps) => {
   const [pageState, setPageState] = useState<PageState>({
-      recipeDoc: InitRecipeDoc,recipeFormat: RecipeFormat.tandoor,
+      recipeDoc: cloneDeep(InitRecipeDoc),recipeFormat:"tandoor",
       formError: "", selectedListOrGroupID: null
   })
   const [presentAlert,dismissAlert] = useIonAlert();
@@ -36,6 +40,7 @@ const RecipeImport: React.FC<HistoryProps> = (props: HistoryProps) => {
   const screenLoading = useRef(true);
   const globalData = useContext(GlobalDataContext);
   const { t } = useTranslation();
+  const db = usePouch();
 
   useEffect( () => {
     if (pageState.selectedListOrGroupID === null && globalData.listRowsLoaded && globalData.listCombinedRows.length > 0) {
@@ -79,10 +84,38 @@ const RecipeImport: React.FC<HistoryProps> = (props: HistoryProps) => {
     } 
   }
 
+  async function pickImportFile() {
+    setPageState(prevState => ({...prevState,formError:""}));
+    const fileType = RecipeFileTypes.find((ft) =>(ft.type === pageState.recipeFormat));
+    if (fileType === undefined) return;
+    let pickResults: PickFilesResult|undefined = undefined;
+    let pickSuccessful = true;
+    try {pickResults = await FilePicker.pickFiles({
+      types: [ fileType.type ],
+      multiple: false,
+      readData: true
+      }) }
+    catch(err) {pickSuccessful = false;}
+    if (!pickSuccessful || pickResults === undefined) {
+      setPageState(prevState => ({...prevState,formError:"Error picking import file"}))
+      return;
+    }  
+    console.log(pickResults!);
+    if (pickResults!.files.length < 1 || pickResults!.files.length > 1) {
+      setPageState(prevState => ({...prevState,formError:"No files selected to import."}))
+      return;
+    }
+    console.log("filetype:",fileType);
+    const [success,errorMessage] = await processInputFile(fileType,pickResults,db, globalData);
+    if (!success) {
+      setPageState(prevState => ({...prevState,formError:errorMessage}))
+    }
+  }
+
   let jsonFormatOptions: JSX.Element[] = [];
-  Object.entries(RecipeFormat).forEach(([key,value]) => {
+  RecipeFileTypes.forEach((it) => {
     jsonFormatOptions.push(
-      <IonSelectOption key={key} value={key}>{value}</IonSelectOption>
+      <IonSelectOption key={it.type} value={it.type}>{it.name}</IonSelectOption>
     )
   })
   
@@ -100,8 +133,7 @@ const RecipeImport: React.FC<HistoryProps> = (props: HistoryProps) => {
               </IonSelect>
             </IonItem>
             <IonItem key="fileimport">
-              <IonButton>{t('general.import_file')}</IonButton>
-              <input type="file" />
+              <IonButton onClick={() => pickImportFile()}>{t('general.import_file')}</IonButton>
             </IonItem>
             <IonItem key="addtolist">
                 <IonButton>{t("general.add_items_to")}</IonButton>

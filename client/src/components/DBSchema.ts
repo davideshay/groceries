@@ -237,6 +237,16 @@ export type RecipeItem = {
   addToList: boolean
 }
 
+export const RecipeItemInit: RecipeItem = {
+  globalItemID: null,
+  name: "",
+  recipeUOMName: "",
+  recipeQuantity: 1,
+  shoppingUOMName: "",
+  shoppingQuantity: 1,
+  addToList: true
+}
+
 export type RecipeInstruction = {
   stepText: string
 }
@@ -247,12 +257,14 @@ export type RecipeDoc = {
   type: string,
   name: string,
   items: RecipeItem[],
-  instructions: RecipeInstruction[]
+  instructions: RecipeInstruction[],
+  updatedAt: string
 }
 
 export const InitRecipeDoc : RecipeDoc = {
   type: "recipe",
   name: "",
   items: [],
-  instructions: []
+  instructions: [],
+  updatedAt:""
 }

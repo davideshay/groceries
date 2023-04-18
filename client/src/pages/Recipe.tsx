@@ -27,7 +27,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
   if ( mode === "new" ) { routeID = "<new>"};
   const [pageState, setPageState] = useState<PageState>({
-      recipeDoc: InitRecipeDoc,needInitDoc: (mode === "new") ? true: false,
+      recipeDoc: cloneDeep(InitRecipeDoc),needInitDoc: (mode === "new") ? true: false,
       formError: "",deletingRecipe: false, selectedListOrGroupID: null
   })
   const [presentAlert,dismissAlert] = useIonAlert();
@@ -47,7 +47,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
     let newRecipeDoc = cloneDeep(pageState.recipeDoc);
     if (!recipeLoading) {
       if (mode === "new" && pageState.needInitDoc) {
-        newRecipeDoc = InitRecipeDoc;
+        newRecipeDoc = cloneDeep(InitRecipeDoc);
         setPageState(prevState => ({...prevState,needInitDoc: false}));
       } else {
         newRecipeDoc = recipeDoc;

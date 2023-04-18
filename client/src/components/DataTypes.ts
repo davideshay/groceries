@@ -163,7 +163,59 @@ export const ModalStateInit : ModalState = {
     itemList: ItemListInit
   }
 
-export enum RecipeFormat {
-  tandoor = "Tandoor",
-  json_ld = "JSON-LD"
+export type RecipeFileType = {
+  type: string,
+  name: string,
+  fileType: string
 }
+
+export const RecipeFileTypes : RecipeFileType[]= [
+  {type: "tandoor", name: "Tandoor", fileType: "application/zip"},
+  {type: "json_ld", name: "JSON-LD", fileType: "application/json"}
+];
+
+export type TandoorIngredient = {
+  always_use_plural_food: boolean,
+  always_use_plural_unit: boolean,
+  amount: number,
+  is_header: boolean,
+  no_amount: boolean,
+  note: string,
+  order: number,
+  unit: {
+    description: null | string,
+    name: string | null,
+    plural_name: string | null
+  },
+  food: {
+    ignore_shopping: boolean,
+    name: string | null,
+    plural_name: string | null,
+    supermarket_category: string | null
+  }
+
+}
+
+export type TandoorRecipeStep = {
+  name: string,
+  instruction: string,
+  order: number,
+  show_as_header: boolean,
+  time: number,
+  ingredients: TandoorIngredient[]
+}
+
+export type TandoorRecipe = {
+  name: string,
+  description: string,
+  internal: boolean,
+  nutrition: any,
+  servings: number,
+  servings_text: string,
+  waiting_time: number,
+  working_time: number,
+  keywords: string[],
+  steps: TandoorRecipeStep[]
+
+}
+
