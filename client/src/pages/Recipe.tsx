@@ -1,22 +1,24 @@
 import { IonContent, IonPage, IonButton, IonList, IonInput, 
- IonItem, IonLabel, NavContext, IonIcon, useIonAlert, IonToolbar, IonButtons, IonItemDivider, IonGrid, IonRow, IonCol, IonCheckbox, IonSelect, IonSelectOption, IonFooter, IonModal, IonTitle, IonTextarea} from '@ionic/react';
+ IonItem, NavContext, IonIcon, useIonAlert, IonToolbar, IonButtons, IonItemDivider, IonGrid, IonRow, IonCol, IonCheckbox, IonSelect, IonSelectOption, IonFooter, IonModal, IonTitle, IonTextarea} from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteGenericDocument,
    useGetOneDoc, useItems, useRecipes } from '../components/Usehooks';
 import { cloneDeep } from 'lodash';
-import { PouchResponse, HistoryProps, ListRow, RowType} from '../components/DataTypes';
-import { ItemDoc, ItemList, CategoryDoc, InitCategoryDoc, RecipeDoc, InitRecipeDoc, RecipeItem, UomDoc } from '../components/DBSchema';
-import { addOutline, arrowBackOutline, closeOutline, pencilOutline, returnDownBackOutline, saveOutline, trashOutline } from 'ionicons/icons';
+import { PouchResponse, HistoryProps, RowType} from '../components/DataTypes';
+import { RecipeDoc, InitRecipeDoc, RecipeItem, UomDoc, ItemDoc, ItemDocInit } from '../components/DBSchema';
+import { addOutline, closeOutline, pencilOutline, returnDownBackOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
+import { GlobalStateContext } from '../components/GlobalState';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
 import { translatedItemName, translatedUOMName } from '../components/translationUtilities';
 import './Recipe.css';
-import { clone } from 'lodash';
 import { findMatchingGlobalItem } from '../components/importUtiliites';
+import { createNewItemFromRecipeItem, isRecipeItemOnList, updateItemFromRecipeItem } from '../components/recipeUtilities';
+import { usePouch } from 'use-pouchdb';
 
 type PageState = {
   recipeDoc: RecipeDoc,
@@ -36,6 +38,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
       formError: "",deletingRecipe: false, selectedListOrGroupID: null, selectedItemIdx: 0,
       modalOpen: false
   })
+  const db = usePouch();
   const [presentAlert,dismissAlert] = useIonAlert();
   const updateRecipe  = useUpdateGenericDocument();
   const createRecipe = useCreateGenericDocument();
@@ -47,7 +50,9 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
   const {goBack} = useContext(NavContext);
   const screenLoading = useRef(true);
   const globalData = useContext(GlobalDataContext);
+  const { globalState } =useContext(GlobalStateContext);
   const { t } = useTranslation();
+  const [ present, dismiss] = useIonAlert();
 
   useEffect( () => {
     let newRecipeDoc = cloneDeep(pageState.recipeDoc);
@@ -151,6 +156,45 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
     updRecipeDoc.items[pageState.selectedItemIdx].name = newRecipeName;
     updRecipeDoc.items[pageState.selectedItemIdx].globalItemID = globalItemID;
     setPageState(prevState=>({...prevState,recipeDoc: updRecipeDoc}));
+  }
+
+  async function addItemsToList() {
+    await present({
+      header: "Add Recipe To List",
+      subHeader: "Proceed to add items in recipe "+pageState.recipeDoc.name+" to the list",
+      buttons: [
+          { text: t("general.cancel"), role: "cancel", handler: () => {}},
+          { text: t("general.ok"), role: "confirm", handler: () => {addItemsToListDB()}},
+          ],
+    })
+  }
+
+  async function addItemsToListDB() {
+    let statusComplete = "Status of adding recipe to list:";
+    for (let i = 0; i < pageState.recipeDoc.items.length; i++) {
+      const item = pageState.recipeDoc.items[i];
+      let newListItem: ItemDoc = cloneDeep(ItemDocInit);
+      newListItem.globalItemID = item.globalItemID;
+      newListItem.name = item.name;
+      const [inList, itemID] = isRecipeItemOnList({recipeItem: item, listOrGroupID: pageState.selectedListOrGroupID,
+          globalData});
+      if (inList && itemID !== null) {
+        let status=await updateItemFromRecipeItem({itemID: itemID, listOrGroupID: pageState.selectedListOrGroupID,
+              recipeItem: item, globalData: globalData, settings: globalState.settings, db: db})
+        if (status != "") {statusComplete = statusComplete + "\n" + status};   
+      } else {
+        let status=await createNewItemFromRecipeItem({listOrGroupID: pageState.selectedListOrGroupID,
+              recipeItem: item, globalData: globalData, settings: globalState.settings, db: db})
+        if (status != "") {statusComplete = statusComplete + "\n" + status};     
+      }
+    }
+    await present({
+      header: "Recipe Items added to list",
+      message: statusComplete,
+      buttons: [
+        {text: t("general.ok")}
+      ]
+    })
   }
 
   let recipeRows: JSX.Element[] = [];
@@ -274,7 +318,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
               </IonGrid>
             </IonItem>
             <IonItem key="addtolist">
-                <IonButton>{t("general.add_items_to")}</IonButton>
+                <IonButton onClick={() => addItemsToList()}>{t("general.add_items_to")}</IonButton>
                 <IonSelect class="select-list-selector" aria-label="" interface="popover" onIonChange={(ev) => (setPageState(prevState=>({...prevState,selectedListOrGroupID: ev.detail.value})))} value={pageState.selectedListOrGroupID}>
                   { globalData.listCombinedRows.map(lcr => (
                   <IonSelectOption disabled={lcr.rowKey==="G-null"} className={lcr.rowType === RowType.list ? "indented" : ""} key={lcr.listOrGroupID} value={lcr.listOrGroupID}>

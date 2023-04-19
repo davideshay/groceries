@@ -538,6 +538,7 @@ export function useAddListToAllItems() {
                         listGroupID: listGroupID},
             sort: [ "type","name"]
           }) as PouchDB.Find.FindResponse<ItemDoc>;
+          console.log("add list to all items..,",cloneDeep(itemRecords.docs),listGroupID,listID)
           for (let i = 0; i < itemRecords.docs.length; i++) {
             const item = itemRecords.docs[i];
             let itemUpdated=false;
