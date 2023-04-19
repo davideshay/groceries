@@ -1,5 +1,5 @@
 import { IonContent, IonPage, IonButton, IonList, IonInput, 
- IonItem, IonLabel, NavContext, IonIcon, useIonAlert, IonToolbar, IonButtons, IonItemDivider, IonGrid, IonRow, IonCol, IonCheckbox, IonSelect, IonSelectOption} from '@ionic/react';
+ IonItem, IonLabel, NavContext, IonIcon, useIonAlert, IonToolbar, IonButtons, IonItemDivider, IonGrid, IonRow, IonCol, IonCheckbox, IonSelect, IonSelectOption, IonFooter, IonModal, IonTitle, IonTextarea} from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteGenericDocument,
@@ -7,13 +7,16 @@ import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteGenericDoc
 import { cloneDeep } from 'lodash';
 import { PouchResponse, HistoryProps, ListRow, RowType} from '../components/DataTypes';
 import { ItemDoc, ItemList, CategoryDoc, InitCategoryDoc, RecipeDoc, InitRecipeDoc, RecipeItem, UomDoc } from '../components/DBSchema';
-import { addOutline, closeOutline, saveOutline, trashOutline } from 'ionicons/icons';
+import { addOutline, arrowBackOutline, closeOutline, pencilOutline, returnDownBackOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
-import { translatedItemName } from '../components/translationUtilities';
+import { translatedItemName, translatedUOMName } from '../components/translationUtilities';
+import './Recipe.css';
+import { clone } from 'lodash';
+import { findMatchingGlobalItem } from '../components/importUtiliites';
 
 type PageState = {
   recipeDoc: RecipeDoc,
@@ -21,6 +24,8 @@ type PageState = {
   formError: string,
   deletingRecipe: boolean,
   selectedListOrGroupID: string | null
+  selectedItemIdx: number,
+  modalOpen: boolean
 }
 
 const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
@@ -28,7 +33,8 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
   if ( mode === "new" ) { routeID = "<new>"};
   const [pageState, setPageState] = useState<PageState>({
       recipeDoc: cloneDeep(InitRecipeDoc),needInitDoc: (mode === "new") ? true: false,
-      formError: "",deletingRecipe: false, selectedListOrGroupID: null
+      formError: "",deletingRecipe: false, selectedListOrGroupID: null, selectedItemIdx: 0,
+      modalOpen: false
   })
   const [presentAlert,dismissAlert] = useIonAlert();
   const updateRecipe  = useUpdateGenericDocument();
@@ -128,7 +134,24 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
     let itemsToUpdate=cloneDeep(pageState.recipeDoc.items) as RecipeItem[];
     itemsToUpdate[index].addToList = checked;
     setPageState(prevState => ({...prevState,recipeDoc: {...prevState.recipeDoc,items: itemsToUpdate}}))
-  }  
+  }
+
+  function editItemModal(index: number) {
+    setPageState(prevState=>({...prevState,modalOpen: true,selectedItemIdx: index}))
+  }
+
+  function updateRecipeName(name: string) {
+    let updRecipeDoc: RecipeDoc = cloneDeep(pageState.recipeDoc);
+    let globalItemID: null | string = null;
+    let newRecipeName: string = "";
+    [globalItemID,newRecipeName] = findMatchingGlobalItem(name,globalData);  
+    if (globalItemID == null) {
+        newRecipeName= name;
+    }
+    updRecipeDoc.items[pageState.selectedItemIdx].name = newRecipeName;
+    updRecipeDoc.items[pageState.selectedItemIdx].globalItemID = globalItemID;
+    setPageState(prevState=>({...prevState,recipeDoc: updRecipeDoc}));
+  }
 
   let recipeRows: JSX.Element[] = [];
   pageState.recipeDoc.items.forEach((item,index) => {
@@ -142,26 +165,89 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
         }
     }
     let quantityUOMDesc = "";
-    if (! ((item.recipeQuantity === 1 || item.recipeQuantity === 0) && uomDesc === "")) {
+    if ((item.recipeQuantity !== 0) && ((item.recipeQuantity > 1) || uomDesc !== "")) {
         quantityUOMDesc = item.recipeQuantity.toString() + ((uomDesc === "" ? "" : " " + uomDesc));
     }
     let fullItemName = itemName;
     if (quantityUOMDesc !== "") { fullItemName = fullItemName + " (" + quantityUOMDesc +")"}
     recipeRows.push(
       <IonRow key={"item-"+index}>
-        <IonCol size="2"><IonCheckbox aria-label="" checked={item.addToList} onIonChange={(ev) => checkItemOnList(ev.detail.checked,index)}></IonCheckbox></IonCol>
-        <IonCol size="10">{fullItemName}</IonCol>
+        <IonCol size="2"><IonCheckbox aria-label="" checked={itemChecked} onIonChange={(ev) => checkItemOnList(ev.detail.checked,index)}></IonCheckbox></IonCol>
+        <IonCol size="9">{fullItemName}</IonCol>
+        <IonCol size="1"><IonButton fill="clear" onClick={() => editItemModal(index)}><IonIcon icon={pencilOutline}/></IonButton></IonCol>
       </IonRow>
     )
-
-
   })
 
+  let recipeItem = pageState.selectedItemIdx <= (pageState.recipeDoc.items.length + 1) ? 
+      pageState.recipeDoc.items[pageState.selectedItemIdx] : null;
+
+  let modalRecipeItem =  recipeItem !== null && recipeItem !== undefined ? (
+    <IonModal id="recipe-item" isOpen={pageState.modalOpen} onDidDismiss={(ev)=>{setPageState(prevState => ({...prevState,modalOpen: false}))}}>
+      <IonTitle class="modal-title">Item On Recipe: {recipeItem.name}</IonTitle>
+      <IonList>
+        <IonItem key="name">
+          <IonInput type="text" label="Name" labelPlacement="stacked" value={recipeItem.name} onIonInput={(ev)=>{updateRecipeName(ev.detail.value as string)}}></IonInput>
+        </IonItem>
+        <IonItem key="r-qty">
+          <IonInput type="number" label="Recipe Quantity" labelPlacement="stacked" value={recipeItem.recipeQuantity} onIonInput={(ev) => {
+            let updRecipeDoc: RecipeDoc=cloneDeep(pageState.recipeDoc);
+            updRecipeDoc.items[pageState.selectedItemIdx].recipeQuantity = Number(ev.detail.value);
+            setPageState(prevState=>({...prevState,recipeDoc: updRecipeDoc}));
+          }}></IonInput>
+        </IonItem>
+        <IonItem key="r-uom">
+          <IonSelect label="Recipe UOM" labelPlacement="stacked" interface="popover" value={recipeItem.recipeUOMName} onIonChange={(ev) => {
+            let updRecipeDoc: RecipeDoc=cloneDeep(pageState.recipeDoc);
+            updRecipeDoc.items[pageState.selectedItemIdx].recipeUOMName = ev.detail.value;
+            setPageState(prevState=>({...prevState,recipeDoc: updRecipeDoc}))   }}>
+              <IonSelectOption key="uom-undefined" value={null}>{t('general.no_uom')}</IonSelectOption>
+              {globalData.uomDocs.map((uom) => (
+                      <IonSelectOption key={uom.name} value={uom.name}>
+                        {translatedUOMName(uom._id as string,uom.description)}
+                      </IonSelectOption>
+                    ))}
+          </IonSelect>
+        </IonItem>
+        <IonItem key="s-qty">
+          <IonInput type="number" label="Shopping Quantity" labelPlacement="stacked" value={recipeItem.shoppingQuantity} onIonInput={(ev) => {
+              let updRecipeDoc: RecipeDoc=cloneDeep(pageState.recipeDoc);
+              updRecipeDoc.items[pageState.selectedItemIdx].shoppingQuantity = Number(ev.detail.value);
+              setPageState(prevState=>({...prevState,recipeDoc: updRecipeDoc}));
+            }}></IonInput>
+        </IonItem>  
+        <IonItem key="s-uom">
+          <IonSelect label="Shopping UOM" labelPlacement="stacked" interface="popover" value={recipeItem.shoppingUOMName} onIonChange={(ev) => {
+            let updRecipeDoc: RecipeDoc=cloneDeep(pageState.recipeDoc);
+            updRecipeDoc.items[pageState.selectedItemIdx].shoppingUOMName = ev.detail.value;
+            setPageState(prevState=>({...prevState,recipeDoc: updRecipeDoc}))   }}>
+              <IonSelectOption key="uom-undefined" value={null}>{t('general.no_uom')}</IonSelectOption>
+              {globalData.uomDocs.map((uom) => (
+                      <IonSelectOption key={uom.name} value={uom.name}>
+                        {translatedUOMName(uom._id as string,uom.description)}
+                      </IonSelectOption>
+                    ))}
+          </IonSelect>
+        </IonItem>
+        <IonItem key="note">
+            <IonTextarea label="Note" labelPlacement="stacked" value={recipeItem.note} onIonInput={(ev) => {
+            let updRecipeDoc: RecipeDoc=cloneDeep(pageState.recipeDoc);
+            updRecipeDoc.items[pageState.selectedItemIdx].note = String(ev.detail.value);
+            setPageState(prevState=>({...prevState,recipeDoc: updRecipeDoc}))   }}>
+            </IonTextarea>
+        </IonItem>
+        <IonItem key="button">
+          <IonButton fill="solid" onClick={()=>{setPageState(prevState=>({...prevState,modalOpen: false}))}}><IonIcon icon={returnDownBackOutline}></IonIcon>Go Back</IonButton>
+        </IonItem>
+      </IonList>
+    </IonModal>
+  ) : <></>
 
   return (
     <IonPage>
       <PageHeader title={t("general.editing_recipe")+ pageState.recipeDoc.name } />
       <IonContent>
+      {modalRecipeItem}
           <IonList>
             <IonItem key="name">
               <IonInput label={t("general.name") as string} labelPlacement="stacked" type="text" placeholder={t("general.new_placeholder") as string} onIonInput={(e) => setPageState(prevState=>({...prevState, recipeDoc: {...prevState.recipeDoc,name: String(e.detail.value)}}))} value={pageState.recipeDoc.name}></IonInput>
@@ -200,6 +286,8 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
             </IonItem>
           </IonList>
           <IonItem>{pageState.formError}</IonItem>
+          </IonContent>
+          <IonFooter>
           <IonToolbar>
             <IonButtons slot="start">
               <IonButton fill="outline" color="danger" onClick={() => deletePrompt()}><IonIcon slot="start" icon={trashOutline}></IonIcon>{t("general.delete")}</IonButton>
@@ -214,7 +302,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
             </IonButton>
           </IonButtons>
           </IonToolbar>
-      </IonContent>
+          </IonFooter>
     </IonPage>
   );
 };

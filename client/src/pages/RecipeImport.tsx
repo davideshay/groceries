@@ -1,23 +1,17 @@
-import { IonContent, IonPage, IonButton, IonList, IonInput, 
- IonItem, IonLabel, NavContext, IonIcon, useIonAlert, IonToolbar, IonButtons, IonItemDivider, IonGrid, IonRow, IonCol, IonCheckbox, IonSelect, IonSelectOption} from '@ionic/react';
-import { useParams } from 'react-router-dom';
-import { useState, useEffect, useContext, useRef } from 'react';
-import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteGenericDocument,
-   useGetOneDoc, useItems, useRecipes } from '../components/Usehooks';
-import { cloneDeep } from 'lodash';
-import { PouchResponse, HistoryProps, ListRow, RowType, RecipeFileTypes } from '../components/DataTypes';
-import { ItemDoc, ItemList, CategoryDoc, InitCategoryDoc, RecipeDoc, InitRecipeDoc, RecipeItem } from '../components/DBSchema';
-import { addOutline, closeOutline, returnDownBackOutline, saveOutline, trashOutline } from 'ionicons/icons';
+import { IonContent, IonPage, IonButton, IonList, 
+ IonItem, NavContext, IonIcon, useIonAlert, IonToolbar, IonButtons, IonSelect, IonSelectOption} from '@ionic/react';
+import { useState,  useContext, useRef } from 'react';
+import { useCreateGenericDocument, useItems, useRecipes } from '../components/Usehooks';
+import { HistoryProps, RowType, RecipeFileTypes } from '../components/DataTypes';
+import { returnDownBackOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
-import { translatedItemName } from '../components/translationUtilities';
 import { FilePicker, PickFilesResult } from '@capawesome/capacitor-file-picker'
 import {useProcessInputFile } from '../components/importUtiliites';
 import { usePouch } from 'use-pouchdb';
-
 
 type PageState = {
   recipeFormat: string,
@@ -28,16 +22,12 @@ const RecipeImport: React.FC<HistoryProps> = (props: HistoryProps) => {
   const [pageState, setPageState] = useState<PageState>({
       recipeFormat:"tandoor", formError: ""
   })
-  const [presentAlert,dismissAlert] = useIonAlert();
-  const createRecipe = useCreateGenericDocument();
-  const { recipeDocs, recipesLoading, recipesError } = useRecipes();
-  const { dbError: itemError, itemRowsLoaded, itemRows } = useItems({selectedListGroupID: null, isReady: true, 
+  const { dbError: itemError, itemRowsLoaded } = useItems({selectedListGroupID: null, isReady: true, 
         needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
-  const {goBack, navigate} = useContext(NavContext);
+  const {goBack} = useContext(NavContext);
   const screenLoading = useRef(true);
   const globalData = useContext(GlobalDataContext);
   const { t } = useTranslation();
-  const db = usePouch();
   const processInputFile = useProcessInputFile()
 
   if ( globalData.listError || itemError ){ return (

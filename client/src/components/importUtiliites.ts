@@ -55,7 +55,6 @@ function getTandoorAlertInputs(recipeObjs: TandoorRecipe[]): AlertInput[] {
     return alertInputs;
 }
 
-
 type TandoorResponse = {
     success: boolean,
     errorMessage: string,
@@ -151,16 +150,12 @@ async function createTandoorRecipe(recipeObj: TandoorRecipe, db: PouchDB.Databas
 }
 
 function findMatchingUOM(uom: string, globalData: GlobalDataState): string {
-    console.log("uomDocs:",globalData.uomDocs);
-    console.log("trying to find UOM for:",uom);
     if (uom == null || uom == undefined) {return ""};
     let foundUOM = globalData.uomDocs.find(u => (u.description.toUpperCase() == uom.toUpperCase() || u.pluralDescription.toUpperCase() == uom.toUpperCase()));
-    console.log("initial found UOM:",foundUOM)
     if (foundUOM == undefined) {
         foundUOM = globalData.uomDocs.find(u => {
             if (u.hasOwnProperty("alternates") && u.alternates !== null) {
                 let upperAlternates = u.alternates!.map(el => (el.replace(/\W|_/g, '').toUpperCase()))
-                console.log("checking alternates for:",uom,upperAlternates,u.alternates)
                 return upperAlternates.includes(uom.replace(/\W|_/g, '').toUpperCase());
             } else {return false}
         })
@@ -170,7 +165,6 @@ function findMatchingUOM(uom: string, globalData: GlobalDataState): string {
     }
     if (foundUOM == undefined) {
         let translatedUOM = globalData.uomDocs.find(u=> ((t("uom."+u.name,{count:1})).toLocaleUpperCase() == uom.toLocaleUpperCase() ) || (t("uom."+u.name,{count: 2}).toLocaleUpperCase() == uom.toLocaleUpperCase()) );
-        console.log("second found UOM (translated)", translatedUOM);
         if (translatedUOM == undefined) {
             return "";
         } else {
@@ -178,15 +172,15 @@ function findMatchingUOM(uom: string, globalData: GlobalDataState): string {
         }
     }
     else { return foundUOM.name}
-    return "";
 }
 
-function findMatchingGlobalItem(foodName: string|null, globalData: GlobalDataState) : [string|null,string] {
+export function findMatchingGlobalItem(foodName: string|null, globalData: GlobalDataState) : [string|null,string] {
     let sysItemKey = "system:item";
     if (foodName === null) {return [null,""]}
     let globalItem = globalData.globalItemDocs.find(gi => (gi.name.toUpperCase() == foodName.toUpperCase()));
     if (globalItem == undefined) {
-        let translatedGlobal = globalData.globalItemDocs.find(git => (t("globalitem."+(git._id as string).substring(sysItemKey.length+1)).toLocaleUpperCase() == foodName.toLocaleUpperCase()))
+        let translatedGlobal = globalData.globalItemDocs.find(git => (t("globalitem."+(git._id as string).substring(sysItemKey.length+1),{count: 1}).toLocaleUpperCase() == foodName.toLocaleUpperCase()) || 
+        (t("globalitem."+(git._id as string).substring(sysItemKey.length+1),{count: 2}).toLocaleUpperCase() == foodName.toLocaleUpperCase()) )
         if (translatedGlobal == undefined) {return [null,""]}
         else {return [translatedGlobal._id as string,t(translatedGlobal._id as string)]}
     }

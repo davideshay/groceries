@@ -171,7 +171,7 @@ export type RecipeFileType = {
 
 export const RecipeFileTypes : RecipeFileType[]= [
   {type: "tandoor", name: "Tandoor", fileType: "application/zip"},
-  {type: "json_ld", name: "JSON-LD", fileType: "application/json"}
+//  {type: "json_ld", name: "JSON-LD", fileType: "application/json"}
 ];
 
 export type TandoorIngredient = {
