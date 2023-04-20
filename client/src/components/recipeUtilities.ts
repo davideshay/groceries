@@ -6,9 +6,9 @@ import { getListGroupIDFromListOrGroupID, getRowTypeFromListOrGroupID } from "./
 import { translatedItemName } from "./translationUtilities";
 import { RowType } from "./DataTypes";
 
-export function isRecipeItemOnList({ recipeItem, listOrGroupID,globalData} : 
+export async function isRecipeItemOnList({ recipeItem, listOrGroupID,globalData, db} : 
     {recipeItem: RecipeItem, listOrGroupID: string | null,
-    globalData : GlobalDataState}): [boolean, string|null] {
+    globalData : GlobalDataState, db: PouchDB.Database}): Promise<[boolean, string|null]> {
 
     let inList = false;
     let itemID: string|null = null
@@ -16,13 +16,28 @@ export function isRecipeItemOnList({ recipeItem, listOrGroupID,globalData} :
     const listGroupID = getListGroupIDFromListOrGroupID(listOrGroupID as string,globalData.listCombinedRows);
     console.log("IRIOL: ListGroupID returned:",listGroupID);
     if (listGroupID === null) {return [inList,itemID]}
-    let foundItem = globalData.itemDocs.find(item => (item.listGroupID == listGroupID && 
-        (translatedItemName(item.globalItemID,item.name).toLocaleUpperCase() == recipeItem.name.toLocaleUpperCase() ||
+    let itemExists=true;
+    let itemResults: PouchDB.Find.FindResponse<{}> = {docs: []}
+    try {itemResults = await db.find({
+        selector: {
+            type: "item",
+            listGroupID: listGroupID }
+    })}
+    catch(err) {itemExists=false;};
+    if (itemExists && itemResults.docs.length < 1) { itemExists = false};
+    let foundItem: ItemDoc | null = null;
+    if (itemExists) {
+        for (let i = 0; i < itemResults.docs.length; i++) {
+            const item = itemResults.docs[i] as ItemDoc;
 // TODO : Add other plural checking once built
-        item.globalItemID === recipeItem.globalItemID)
-        ));
+            if (translatedItemName(item.globalItemID,item.name).toLocaleUpperCase() == recipeItem.name.toLocaleUpperCase() ||
+                item.globalItemID == recipeItem.globalItemID ) {
+                    foundItem = cloneDeep(item);
+            } 
+        }
+    }
     console.log("IRIOL: foundItem",foundItem)    
-    if (foundItem == undefined) {return [inList,itemID]}
+    if (foundItem === null) {return [inList,itemID]}
     else { inList = true; itemID = foundItem._id as string}
     return [inList,itemID]
 }
@@ -32,13 +47,18 @@ export async function updateItemFromRecipeItem({itemID,listOrGroupID,recipeItem,
     {itemID: string, listOrGroupID: string | null, recipeItem: RecipeItem, globalData: GlobalDataState, 
         settings: GlobalSettings, db: PouchDB.Database}) : Promise<string> {
     
+    console.log("UIFRI",recipeItem,itemID)
     let status="";
     if (!recipeItem.addToList) {return "Item "+recipeItem.name+" not selected to add."}
     let uomMismatch = false;
     let overwroteNote = false;
     let updateError = false;
-    let foundItem = globalData.itemDocs.find(item => item._id === itemID);
-    if (foundItem === undefined) {return "No item found to update for "+recipeItem.name};
+    let foundItem = null;
+    let itemExists=true;
+    try {foundItem = await db.get(itemID)}
+    catch(err) {console.log("ERROR: ",err);itemExists=false};
+    if (itemExists && foundItem == null) {itemExists =false}
+    if (!itemExists) {return "No item found to update for "+recipeItem.name};
     console.log("Original found item:",cloneDeep(foundItem));
     let rowType: RowType | null = getRowTypeFromListOrGroupID(listOrGroupID as string,globalData.listCombinedRows)
     let updItem: ItemDoc = cloneDeep(foundItem);
@@ -83,6 +103,7 @@ export async function updateItemFromRecipeItem({itemID,listOrGroupID,recipeItem,
 export async function createNewItemFromRecipeItem({listOrGroupID,recipeItem,globalData,settings, db} : 
     {listOrGroupID: string | null, recipeItem: RecipeItem, globalData: GlobalDataState, settings: GlobalSettings, db: PouchDB.Database}) : Promise<string> {
 
+    console.log("CNIFRI:",cloneDeep(recipeItem))
     let status="";
     if (!recipeItem.addToList) {return "Item "+recipeItem.name+" not selected to add."};
     let addError = false;

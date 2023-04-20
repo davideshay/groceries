@@ -176,8 +176,8 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
       let newListItem: ItemDoc = cloneDeep(ItemDocInit);
       newListItem.globalItemID = item.globalItemID;
       newListItem.name = item.name;
-      const [inList, itemID] = isRecipeItemOnList({recipeItem: item, listOrGroupID: pageState.selectedListOrGroupID,
-          globalData});
+      const [inList, itemID] = await isRecipeItemOnList({recipeItem: item, listOrGroupID: pageState.selectedListOrGroupID,
+          globalData, db: db});
       if (inList && itemID !== null) {
         let status=await updateItemFromRecipeItem({itemID: itemID, listOrGroupID: pageState.selectedListOrGroupID,
               recipeItem: item, globalData: globalData, settings: globalState.settings, db: db})
