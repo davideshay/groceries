@@ -1,36 +1,52 @@
 import { PouchResponse, PouchResponseInit, RecipeFileType, TandoorRecipe } from "./DataTypes";
 import { PickFilesResult } from "@capawesome/capacitor-file-picker";
 import zip from 'jszip';
-import { InitRecipeDoc, RecipeDoc, RecipeInstruction, RecipeItem, RecipeItemInit } from "./DBSchema";
+import { GlobalItemDoc, InitGlobalItem, InitRecipeDoc, RecipeDoc, RecipeInstruction, RecipeItem, RecipeItemInit } from "./DBSchema";
 import { cloneDeep } from "lodash";
 import { GlobalDataContext, GlobalDataContextType, GlobalDataState } from "./GlobalDataProvider";
 import { usePouch } from "use-pouchdb";
 import { useCallback, useContext } from "react";
-import { AlertInput, useIonAlert } from "@ionic/react";
+import { AlertInput, useIonAlert, useIonLoading } from "@ionic/react";
 import { useTranslation } from "react-i18next";
 import { t } from 'i18next';
 
 export function useProcessInputFile() {
     const db = usePouch();
     const globalData = useContext(GlobalDataContext);
-    const [ present, dismiss ] = useIonAlert();
+    const [ presentAlert, dismissAlert ] = useIonAlert();
+    const [ presentLoading,dismissLoading] = useIonLoading();
     const { t } = useTranslation();
     return useCallback(
         async (fileType: RecipeFileType, pickResults: PickFilesResult): Promise<[boolean,string]> => {
             let success: boolean = false;
             let errorMessage: string = "";
+            async function triggerLoadTandoor(alertData: any, recipeObjs: TandoorRecipe[]) {
+                await presentLoading("Importing Recipe(s)...");
+                const statusMessage = await loadTandoorRecipes(alertData,recipeObjs,db,globalData)
+                await dismissLoading();
+                await presentAlert({
+                      header: "Recipe Import Results",
+                      message: statusMessage,
+                      buttons: [
+                        {text: t("general.ok"), role: "confirm"}
+                      ],
+                      cssClass: "import-status-alert"
+                })              
+            }
             if ((fileType.type==="tandoor" && fileType.fileType === "application/zip")) {
+                await presentLoading("Processing Zip file...");
                 const tandoorResponse = await processTandoorZip(pickResults);
+                await dismissLoading();
                 success=tandoorResponse.success;
                 errorMessage=tandoorResponse.errorMessage;
                 let alertInputs: AlertInput[] = getTandoorAlertInputs(tandoorResponse.recipeObjs);
                 if (success) {
-                    await present({
+                    await presentAlert({
                         header: "Import Recipes?",
                         subHeader: "Select the recipes to import below",
                         buttons: [
                             { text: t("general.cancel"), role: "cancel", handler: () => {}},
-                            { text: t("general.ok"), role: "confirm", handler: (alertData) => {loadTandoorRecipes(alertData,tandoorResponse.recipeObjs,db,globalData)}},
+                            { text: t("general.ok"), role: "confirm", handler: (alertData) => {triggerLoadTandoor(alertData,tandoorResponse.recipeObjs)}},
                             ],
                         inputs: alertInputs
                 })
@@ -88,17 +104,21 @@ async function processTandoorZip(inputFile: PickFilesResult) : Promise<TandoorRe
     return response;
 }
 
-async function loadTandoorRecipes(alertData: string[],recipeObjs: TandoorRecipe[],db: PouchDB.Database,globalData: GlobalDataState) {
-    if (alertData == undefined || alertData.length === 0) {return};
+async function loadTandoorRecipes(alertData: string[],recipeObjs: TandoorRecipe[],db: PouchDB.Database,globalData: GlobalDataState) : Promise<string> {
+    if (alertData == undefined || alertData.length === 0) {return "Nothing to Load"};
+    let statusFull = ""
     for (let i = 0; i < alertData.length; i++) {
         let recipe = recipeObjs.find((recipe) => (recipe.name === alertData[i]));
         if (recipe === undefined) {console.log("Could not find recipe - "+alertData[i]); continue};
         if (await checkRecipeExists(recipe.name,db)) {
             console.log("Could not import: "+alertData[i]+" - Duplicate");
+            statusFull=statusFull+"\n"+"Could not import: "+alertData[i]+" - Duplicate"
             continue;
         }
-        const [success,errorMessage] = await createTandoorRecipe(recipe,db,globalData);
+        const [success,statusMessage] = await createTandoorRecipe(recipe,db,globalData);
+        statusFull=statusFull+"\n"+statusMessage
     }
+    return statusFull;
 }
 
 async function createTandoorRecipe(recipeObj: TandoorRecipe, db: PouchDB.Database, globalData: GlobalDataState): Promise<[boolean,string]> {
@@ -111,13 +131,13 @@ async function createTandoorRecipe(recipeObj: TandoorRecipe, db: PouchDB.Databas
     })
     newRecipeDoc.instructions = newInstructions;
     let newRecipeItems: RecipeItem[] = [];
+    let matchGlobalItem: GlobalItemDoc;
     recipeObj.steps.forEach(step => {
         step.ingredients.forEach(ingredient => {
-            console.log("ingredient:",cloneDeep(ingredient));
             let recipeItem: RecipeItem = cloneDeep(RecipeItemInit);
-            [recipeItem.globalItemID,recipeItem.name] = findMatchingGlobalItem(ingredient.food.name,globalData);  
+            [recipeItem.globalItemID,recipeItem.name,matchGlobalItem] = findMatchingGlobalItem(ingredient.food.name,globalData);  
             if (recipeItem.globalItemID == null) {
-                [recipeItem.globalItemID,recipeItem.name] = findMatchingGlobalItem(ingredient.food.plural_name,globalData);
+                [recipeItem.globalItemID,recipeItem.name,matchGlobalItem] = findMatchingGlobalItem(ingredient.food.plural_name,globalData);
             }
             if (recipeItem.globalItemID == null) {
                 recipeItem.name = ingredient.food.name as string;
@@ -127,25 +147,28 @@ async function createTandoorRecipe(recipeObj: TandoorRecipe, db: PouchDB.Databas
                 if (recipeItem.recipeUOMName == "") {
                     recipeItem.recipeUOMName = findMatchingUOM(ingredient.unit.plural_name as string,globalData);
                 }
+                if (recipeItem.recipeUOMName == "" && recipeItem.globalItemID !== null && matchGlobalItem.defaultUOM !== null) {
+                    recipeItem.recipeUOMName = matchGlobalItem.defaultUOM;
+                }
                 if (recipeItem.recipeUOMName == "" && (ingredient.unit.name != "" || ingredient.unit.plural_name != "")) {
                     recipeItem.note = "Could Not find UoM. Original was: "+ingredient.unit.name + " or "+ingredient.unit.plural_name;
                 }
             }
-            recipeItem.recipeQuantity = ingredient.amount;
-            recipeItem.shoppingQuantity = ingredient.amount;
+            let qtyToUse = ingredient.amount === 0 ? 1 : ingredient.amount
+            recipeItem.recipeQuantity = qtyToUse;
+            recipeItem.shoppingQuantity = qtyToUse;
             recipeItem.shoppingUOMName =recipeItem.recipeUOMName;
             newRecipeItems.push(recipeItem);
         })
     })
     newRecipeDoc.items = newRecipeItems;
-    console.log("newrecipeitems:",cloneDeep(newRecipeItems));
     let curDateStr=(new Date()).toISOString()
     newRecipeDoc.updatedAt = curDateStr;
     let response: PouchResponse = cloneDeep(PouchResponseInit);
     try { response.pouchData = await db.post(newRecipeDoc); }
     catch(err) { response.successful = false; response.fullError = err; console.log("ERROR:",err);}
     if (!response.pouchData.ok) { response.successful = false;}
-    return [response.successful,""]
+    return [response.successful,"Loaded Recipe "+recipeObj.name+ " successfully."]
 
 }
 
@@ -174,17 +197,18 @@ function findMatchingUOM(uom: string, globalData: GlobalDataState): string {
     else { return foundUOM.name}
 }
 
-export function findMatchingGlobalItem(foodName: string|null, globalData: GlobalDataState) : [string|null,string] {
+export function findMatchingGlobalItem(foodName: string|null, globalData: GlobalDataState) : [string|null,string, GlobalItemDoc] {
     let sysItemKey = "system:item";
-    if (foodName === null) {return [null,""]}
+    let returnInitGlobalItem = cloneDeep(InitGlobalItem)
+    if (foodName === null) {return [null,"",returnInitGlobalItem]}
     let globalItem = globalData.globalItemDocs.find(gi => (gi.name.toUpperCase() == foodName.toUpperCase()));
     if (globalItem == undefined) {
         let translatedGlobal = globalData.globalItemDocs.find(git => (t("globalitem."+(git._id as string).substring(sysItemKey.length+1),{count: 1}).toLocaleUpperCase() == foodName.toLocaleUpperCase()) || 
         (t("globalitem."+(git._id as string).substring(sysItemKey.length+1),{count: 2}).toLocaleUpperCase() == foodName.toLocaleUpperCase()) )
-        if (translatedGlobal == undefined) {return [null,""]}
-        else {return [translatedGlobal._id as string,t(translatedGlobal._id as string)]}
+        if (translatedGlobal == undefined) {return [null,"",returnInitGlobalItem]}
+        else {return [translatedGlobal._id as string,t(translatedGlobal._id as string),translatedGlobal]}
     }
-    else {return [globalItem._id as string,globalItem.name as string]}
+    else {return [globalItem._id as string,globalItem.name as string,globalItem]}
 }
 
 async function checkRecipeExists(recipeName: string, db: PouchDB.Database): Promise<boolean> {

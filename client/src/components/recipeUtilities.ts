@@ -1,10 +1,12 @@
 import { cloneDeep } from "lodash";
 import { ItemDoc, ItemDocInit, ItemList, ItemListInit, RecipeItem } from "./DBSchema";
 import { GlobalDataState } from "./GlobalDataProvider";
-import { GlobalSettings } from "./GlobalState";
+import { AddListOptions, GlobalSettings } from "./GlobalState";
 import { getListGroupIDFromListOrGroupID, getRowTypeFromListOrGroupID } from "./Utilities";
-import { translatedItemName } from "./translationUtilities";
+import { translatedItemName, translatedUOMShortName } from "./translationUtilities";
 import { RowType } from "./DataTypes";
+import { getCommonKey } from "./ItemUtilities";
+import { isEmpty } from "lodash";
 
 export async function isRecipeItemOnList({ recipeItem, listOrGroupID,globalData, db} : 
     {recipeItem: RecipeItem, listOrGroupID: string | null,
@@ -12,9 +14,7 @@ export async function isRecipeItemOnList({ recipeItem, listOrGroupID,globalData,
 
     let inList = false;
     let itemID: string|null = null
-    console.log("IRIOL: ",recipeItem,listOrGroupID);
     const listGroupID = getListGroupIDFromListOrGroupID(listOrGroupID as string,globalData.listCombinedRows);
-    console.log("IRIOL: ListGroupID returned:",listGroupID);
     if (listGroupID === null) {return [inList,itemID]}
     let itemExists=true;
     let itemResults: PouchDB.Find.FindResponse<{}> = {docs: []}
@@ -31,12 +31,11 @@ export async function isRecipeItemOnList({ recipeItem, listOrGroupID,globalData,
             const item = itemResults.docs[i] as ItemDoc;
 // TODO : Add other plural checking once built
             if (translatedItemName(item.globalItemID,item.name).toLocaleUpperCase() == recipeItem.name.toLocaleUpperCase() ||
-                item.globalItemID == recipeItem.globalItemID ) {
+                (item.globalItemID !== null && (item.globalItemID == recipeItem.globalItemID) )) {
                     foundItem = cloneDeep(item);
             } 
         }
     }
-    console.log("IRIOL: foundItem",foundItem)    
     if (foundItem === null) {return [inList,itemID]}
     else { inList = true; itemID = foundItem._id as string}
     return [inList,itemID]
@@ -47,10 +46,10 @@ export async function updateItemFromRecipeItem({itemID,listOrGroupID,recipeItem,
     {itemID: string, listOrGroupID: string | null, recipeItem: RecipeItem, globalData: GlobalDataState, 
         settings: GlobalSettings, db: PouchDB.Database}) : Promise<string> {
     
-    console.log("UIFRI",recipeItem,itemID)
     let status="";
     if (!recipeItem.addToList) {return "Item "+recipeItem.name+" not selected to add."}
     let uomMismatch = false;
+    let existingUOM = null;
     let overwroteNote = false;
     let updateError = false;
     let foundItem = null;
@@ -59,38 +58,44 @@ export async function updateItemFromRecipeItem({itemID,listOrGroupID,recipeItem,
     catch(err) {console.log("ERROR: ",err);itemExists=false};
     if (itemExists && foundItem == null) {itemExists =false}
     if (!itemExists) {return "No item found to update for "+recipeItem.name};
-    console.log("Original found item:",cloneDeep(foundItem));
     let rowType: RowType | null = getRowTypeFromListOrGroupID(listOrGroupID as string,globalData.listCombinedRows)
     let updItem: ItemDoc = cloneDeep(foundItem);
     // TODO: filter updating of lists based on whether adding to listgroup or list
     // should also check on setting?
     updItem.lists.forEach(itemList => {
+        if (!itemList.stockedAt) {return}
+        if (settings.addListOption == AddListOptions.dontAddAutomatically && 
+            rowType == RowType.list &&
+            itemList.listID !== listOrGroupID) { return }
         itemList.active = true;
         itemList.completed = false;
         if (recipeItem.note != "") {
             if (itemList.note = "") {
-                itemList.note = recipeItem.note
+                itemList.note = recipeItem.note;
             } else {
                 overwroteNote = true;
-                itemList.note = recipeItem.note
+                itemList.note = recipeItem.note;
             }
         }
-        if (itemList.uomName === recipeItem.shoppingUOMName) {
+        existingUOM = getCommonKey(updItem,"uomName",globalData.listDocs)
+        if ( existingUOM === recipeItem.shoppingUOMName) {
             itemList.quantity = recipeItem.shoppingQuantity
         } else {
             uomMismatch = true;
-            itemList.quantity = recipeItem.shoppingQuantity
+//            itemList.quantity = recipeItem.shoppingQuantity  -- May not want to update if different
+            if (itemList.note === "") {
+                itemList.note = "WARNING: Unit of measure mismatch on recipe import. Recipe shopping quantity/UoM is "+ recipeItem.shoppingQuantity + " " + translatedUOMShortName(recipeItem.shoppingUOMName,globalData);
+            }
         }
     })
-    console.log("Updated Item values:",cloneDeep(updItem))
     try {await db.put(updItem)}
     catch(err) {console.log("ERROR updating item:",err); updateError = true;}
     if (updateError) {
         status = "Error Updating item:" + updItem.name;
     } else {
         status = "Updated item successfully: " + updItem.name;
-        if (uomMismatch) {
-            status=status+"\nWARNING: Unit of measure mismatch on " + updItem.name + "(shopping UoM is "+recipeItem.shoppingUOMName+ ",list was different) - please check."
+        if (uomMismatch && (!isEmpty(recipeItem.shoppingUOMName) || !isEmpty(existingUOM))) {
+            status=status+"\nWARNING: Unit of measure mismatch on " + updItem.name + "(shopping UoM is "+translatedUOMShortName(recipeItem.shoppingUOMName,globalData) + ",list was "+translatedUOMShortName(String(existingUOM),globalData)+") - please check."
         }
         if (overwroteNote) {
             status=status+"\nWARNING: Note on item overwritten with recipe note"
@@ -103,7 +108,6 @@ export async function updateItemFromRecipeItem({itemID,listOrGroupID,recipeItem,
 export async function createNewItemFromRecipeItem({listOrGroupID,recipeItem,globalData,settings, db} : 
     {listOrGroupID: string | null, recipeItem: RecipeItem, globalData: GlobalDataState, settings: GlobalSettings, db: PouchDB.Database}) : Promise<string> {
 
-    console.log("CNIFRI:",cloneDeep(recipeItem))
     let status="";
     if (!recipeItem.addToList) {return "Item "+recipeItem.name+" not selected to add."};
     let addError = false;
@@ -115,10 +119,19 @@ export async function createNewItemFromRecipeItem({listOrGroupID,recipeItem,glob
     newItem.globalItemID = recipeItem.globalItemID;
     newItem.listGroupID = getListGroupIDFromListOrGroupID(listOrGroupID as string, globalData.listCombinedRows);
     newItem.name = recipeItem.name;
+    console.log("CNIFRI: lgid:",listOrGroupID,"newLGID:",newItem.listGroupID,"item",recipeItem);
+    console.log("listrows:",globalData.listRows);
+    console.log("filtered listrows",globalData.listRows.filter(lr => lr.listGroupID === newItem.listGroupID));
     globalData.listRows.filter(lr => lr.listGroupID === newItem.listGroupID).forEach(lr => {
         let newItemList :ItemList = cloneDeep(ItemListInit);
-        newItemList.active = true;
-        newItemList.completed = false;
+        if (settings.addListOption == AddListOptions.dontAddAutomatically && 
+            rowType == RowType.list &&
+            lr.listDoc._id !== listOrGroupID) {
+                newItemList.active = false
+            } else {
+                newItemList.active = true;
+                newItemList.completed = false;
+            }
         newItemList.note = recipeItem.note;
         if (existingGlobalItem !== undefined) {
             newItemList.categoryID = existingGlobalItem.defaultCategoryID
@@ -133,6 +146,7 @@ export async function createNewItemFromRecipeItem({listOrGroupID,recipeItem,glob
         } else if (existingGlobalItem !== undefined){
             newItemList.uomName = existingGlobalItem.defaultUOM
         }
+        console.log("pushing itemlist:",newItemList)
         newItem.lists.push(newItemList);
     })
     try {await db.post(newItem)}
@@ -140,7 +154,7 @@ export async function createNewItemFromRecipeItem({listOrGroupID,recipeItem,glob
     if (addError) {
         status = "Error Adding item:" + newItem.name;
     } else {
-        status = "Updated item successfully: " + newItem.name;
+        status = "Added item successfully: " + newItem.name;
     }
     return status;
 }

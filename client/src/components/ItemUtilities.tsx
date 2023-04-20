@@ -177,8 +177,9 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
             }
         }
         itemRow.uomDesc = uomDesc;
+
         let quantityUOMDesc = "";
-        if (! (itemRow.quantity === 1 && itemRow.uomDesc === "")) {
+        if ((itemRow.quantity !== 0) && ((itemRow.quantity > 0) || itemRow.uomDesc === "")) {
             quantityUOMDesc = itemRow.quantity.toString() + ((itemRow.uomDesc === "" ? "" : " " + itemRow.uomDesc));
             itemRow.quantityUOMDesc = quantityUOMDesc;
         }

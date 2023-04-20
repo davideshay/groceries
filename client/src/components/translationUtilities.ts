@@ -1,4 +1,5 @@
 import { t } from "i18next"
+import { GlobalDataState } from "./GlobalDataProvider";
 
 export function translatedItemName(id: string | null, name: string) {
     const sysItemKey="system:item";
@@ -28,4 +29,10 @@ export function translatedUOMName(id: string, name: string) {
         return name;
     }
     
+}
+
+export function translatedUOMShortName(shortName: string,globalData: GlobalDataState) : string {
+    const foundUOM = globalData.uomDocs.find(uom => (uom.name === shortName));
+    if (foundUOM === undefined) {console.log("no found UOM..."); return "";}
+    return(translatedUOMName(foundUOM._id!,foundUOM.description))
 }

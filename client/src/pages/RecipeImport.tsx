@@ -1,5 +1,5 @@
 import { IonContent, IonPage, IonButton, IonList, 
- IonItem, NavContext, IonIcon, IonToolbar, IonButtons, IonSelect, IonSelectOption, useIonAlert} from '@ionic/react';
+ IonItem, NavContext, IonIcon, IonToolbar, IonButtons, IonSelect, IonSelectOption, useIonAlert, useIonLoading} from '@ionic/react';
 import { useState,  useContext, useRef } from 'react';
 import { useItems } from '../components/Usehooks';
 import { HistoryProps, RowType, RecipeFileTypes } from '../components/DataTypes';
@@ -27,7 +27,8 @@ const RecipeImport: React.FC<HistoryProps> = (props: HistoryProps) => {
   const screenLoading = useRef(true);
   const globalData = useContext(GlobalDataContext);
   const { t } = useTranslation();
-  const processInputFile = useProcessInputFile()
+  const [ presentAlert,dismissAlert] = useIonAlert();
+  const processInputFile = useProcessInputFile();
 
   if ( globalData.listError || itemError ){ return (
     <ErrorPage errorText={t("error.loading_recipe_import") as string}></ErrorPage>
@@ -60,10 +61,8 @@ const RecipeImport: React.FC<HistoryProps> = (props: HistoryProps) => {
       setPageState(prevState => ({...prevState,formError:"No files selected to import."}))
       return;
     }
-    const [success,errorMessage] = await processInputFile(fileType,pickResults);
-    if (!success) {
-      setPageState(prevState => ({...prevState,formError:errorMessage}))
-    }
+    const [success,statusMessage] = await processInputFile(fileType,pickResults);
+
   }
 
   let jsonFormatOptions: JSX.Element[] = [];

@@ -1,12 +1,12 @@
 import { IonContent, IonPage, IonButton, IonList, IonInput, 
- IonItem, NavContext, IonIcon, useIonAlert, IonToolbar, IonButtons, IonItemDivider, IonGrid, IonRow, IonCol, IonCheckbox, IonSelect, IonSelectOption, IonFooter, IonModal, IonTitle, IonTextarea} from '@ionic/react';
+ IonItem, NavContext, IonIcon, useIonAlert, IonToolbar, IonButtons, IonItemDivider, IonGrid, IonRow, IonCol, IonCheckbox, IonSelect, IonSelectOption, IonFooter, IonModal, IonTitle, IonTextarea, useIonLoading} from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteGenericDocument,
    useGetOneDoc, useItems, useRecipes } from '../components/Usehooks';
 import { cloneDeep } from 'lodash';
 import { PouchResponse, HistoryProps, RowType} from '../components/DataTypes';
-import { RecipeDoc, InitRecipeDoc, RecipeItem, UomDoc, ItemDoc, ItemDocInit } from '../components/DBSchema';
+import { RecipeDoc, InitRecipeDoc, RecipeItem, UomDoc, ItemDoc, ItemDocInit, GlobalItemDoc } from '../components/DBSchema';
 import { addOutline, closeOutline, pencilOutline, returnDownBackOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
@@ -27,7 +27,8 @@ type PageState = {
   deletingRecipe: boolean,
   selectedListOrGroupID: string | null
   selectedItemIdx: number,
-  modalOpen: boolean
+  modalOpen: boolean,
+  addingInProcess: boolean,
 }
 
 const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
@@ -36,10 +37,11 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
   const [pageState, setPageState] = useState<PageState>({
       recipeDoc: cloneDeep(InitRecipeDoc),needInitDoc: (mode === "new") ? true: false,
       formError: "",deletingRecipe: false, selectedListOrGroupID: null, selectedItemIdx: 0,
-      modalOpen: false
+      modalOpen: false, addingInProcess: false
   })
   const db = usePouch();
   const [presentAlert,dismissAlert] = useIonAlert();
+  const [presentLoading, dismissLoading] = useIonLoading();
   const updateRecipe  = useUpdateGenericDocument();
   const createRecipe = useCreateGenericDocument();
   const deleteRecipe = useDeleteGenericDocument();
@@ -77,7 +79,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
     <ErrorPage errorText={t("error.loading_recipe") as string}></ErrorPage>
     )};
 
-  if ( recipeLoading || globalData.categoryLoading || !pageState.recipeDoc || pageState.deletingRecipe || !globalData.listRowsLoaded || !itemRowsLoaded)  {
+  if ( recipeLoading || globalData.categoryLoading || !pageState.recipeDoc || pageState.deletingRecipe || !globalData.listRowsLoaded || !itemRowsLoaded || pageState.addingInProcess)  {
     return ( <Loading isOpen={screenLoading.current} message={t("general.loading_recipe")} />)
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   };
@@ -148,8 +150,9 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
   function updateRecipeName(name: string) {
     let updRecipeDoc: RecipeDoc = cloneDeep(pageState.recipeDoc);
     let globalItemID: null | string = null;
+    let matchGlobalItem: GlobalItemDoc;
     let newRecipeName: string = "";
-    [globalItemID,newRecipeName] = findMatchingGlobalItem(name,globalData);  
+    [globalItemID,newRecipeName,matchGlobalItem] = findMatchingGlobalItem(name,globalData);  
     if (globalItemID == null) {
         newRecipeName= name;
     }
@@ -170,7 +173,9 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   async function addItemsToListDB() {
+    presentLoading("Adding Recipe to List...");
     let statusComplete = "Status of adding recipe to list:";
+    setPageState(prevState=>({...prevState,addingInProcess: true}));
     for (let i = 0; i < pageState.recipeDoc.items.length; i++) {
       const item = pageState.recipeDoc.items[i];
       let newListItem: ItemDoc = cloneDeep(ItemDocInit);
@@ -188,9 +193,12 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
         if (status != "") {statusComplete = statusComplete + "\n" + status};     
       }
     }
+    dismissLoading();
+    setPageState(prevState=>({...prevState,addingInProcess: false}));
     await present({
       header: "Recipe Items added to list",
       message: statusComplete,
+      cssClass: "import-status-alert",
       buttons: [
         {text: t("general.ok")}
       ]
@@ -209,7 +217,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
         }
     }
     let quantityUOMDesc = "";
-    if ((item.recipeQuantity !== 0) && ((item.recipeQuantity > 1) || uomDesc !== "")) {
+    if ((item.recipeQuantity !== 0) && ((item.recipeQuantity > 0) || uomDesc !== "")) {
         quantityUOMDesc = item.recipeQuantity.toString() + ((uomDesc === "" ? "" : " " + uomDesc));
     }
     let fullItemName = itemName;
@@ -311,14 +319,22 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
               <IonGrid>
                 { pageState.recipeDoc.instructions.map((step,index) => (
                   <IonRow key={"step-"+index}>
-                    <IonCol>{step.stepText}</IonCol>
+                    <IonCol><IonTextarea aria-label="" class="recipe-step">{step.stepText}</IonTextarea></IonCol>
                   </IonRow>
                   ))
                 }
               </IonGrid>
             </IonItem>
-            <IonItem key="addtolist">
-                <IonButton onClick={() => addItemsToList()}>{t("general.add_items_to")}</IonButton>
+          </IonList>
+          <IonItem>{pageState.formError}</IonItem>
+          </IonContent>
+          <IonFooter>
+            <IonGrid>
+              <IonRow>
+                <IonCol size="4">
+                  <IonButton onClick={() => addItemsToList()}>{t("general.add_items_to")}</IonButton>
+                </IonCol>
+                <IonCol size="8">
                 <IonSelect class="select-list-selector" aria-label="" interface="popover" onIonChange={(ev) => (setPageState(prevState=>({...prevState,selectedListOrGroupID: ev.detail.value})))} value={pageState.selectedListOrGroupID}>
                   { globalData.listCombinedRows.map(lcr => (
                   <IonSelectOption disabled={lcr.rowKey==="G-null"} className={lcr.rowType === RowType.list ? "indented" : ""} key={lcr.listOrGroupID} value={lcr.listOrGroupID}>
@@ -327,25 +343,23 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
                   ))
                   }
                 </IonSelect>
-            </IonItem>
-          </IonList>
-          <IonItem>{pageState.formError}</IonItem>
-          </IonContent>
-          <IonFooter>
-          <IonToolbar>
-            <IonButtons slot="start">
-              <IonButton fill="outline" color="danger" onClick={() => deletePrompt()}><IonIcon slot="start" icon={trashOutline}></IonIcon>{t("general.delete")}</IonButton>
-           </IonButtons>
-           <IonButtons slot="secondary">
-           <IonButton fill="outline" color="secondary" onClick={() => goBack("/recipes")}><IonIcon slot="start" icon={closeOutline}></IonIcon>{t("general.cancel")}</IonButton>
-          </IonButtons>
-          <IonButtons slot="end">
-          <IonButton fill="solid" color="primary" onClick={() => updateThisRecipe()}>
-              <IonIcon slot="start" icon={(mode === "new" ? addOutline : saveOutline)}></IonIcon>
-              {(mode === "new") ? t("general.add") : t("general.save")}
-            </IonButton>
-          </IonButtons>
-          </IonToolbar>
+                </IonCol>
+              </IonRow>  
+            </IonGrid>
+            <IonToolbar>
+              <IonButtons slot="start">
+                <IonButton fill="outline" color="danger" onClick={() => deletePrompt()}><IonIcon slot="start" icon={trashOutline}></IonIcon>{t("general.delete")}</IonButton>
+            </IonButtons>
+            <IonButtons slot="secondary">
+            <IonButton fill="outline" color="secondary" onClick={() => goBack("/recipes")}><IonIcon slot="start" icon={closeOutline}></IonIcon>{t("general.cancel")}</IonButton>
+            </IonButtons>
+            <IonButtons slot="end">
+            <IonButton fill="solid" color="primary" onClick={() => updateThisRecipe()}>
+                <IonIcon slot="start" icon={(mode === "new" ? addOutline : saveOutline)}></IonIcon>
+                {(mode === "new") ? t("general.add") : t("general.save")}
+              </IonButton>
+            </IonButtons>
+            </IonToolbar>
           </IonFooter>
     </IonPage>
   );

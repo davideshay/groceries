@@ -6,3 +6,11 @@ ion-modal#recipe-item {
     --box-shadow: 0 28px 48px rgba(0, 0, 0, 0.4);
     padding: 10px;
   }
+
+.import-status-alert {
+  white-space: pre-wrap;
+}
+
+.import-status-alert .alert-wrapper {
+  max-width: 90%;
+}

@@ -116,7 +116,8 @@ export async function adaptResultToBase64(res: Blob): Promise<string> {
 }
 
 export function getListGroupIDFromListOrGroupID(listOrGroupID: string, listCombinedRows: ListCombinedRows) : string | null {
-    let newListRow= listCombinedRows.find(lcr => lcr.listGroupID == listOrGroupID);
+    console.log("GLGIDFLOGID:",listOrGroupID,listCombinedRows);
+    let newListRow= listCombinedRows.find(lcr => lcr.listOrGroupID == listOrGroupID);
     if (newListRow == undefined) {return null}
     else { return newListRow.listGroupID}
 }
