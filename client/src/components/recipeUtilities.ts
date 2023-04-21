@@ -7,6 +7,7 @@ import { translatedItemName, translatedUOMShortName } from "./translationUtiliti
 import { RowType } from "./DataTypes";
 import { getCommonKey } from "./ItemUtilities";
 import { isEmpty } from "lodash";
+import { t } from 'i18next';
 
 export async function isRecipeItemOnList({ recipeItem, listOrGroupID,globalData, db} : 
     {recipeItem: RecipeItem, listOrGroupID: string | null,
@@ -46,7 +47,7 @@ export async function updateItemFromRecipeItem({itemID,listOrGroupID,recipeItem,
         settings: GlobalSettings, db: PouchDB.Database}) : Promise<string> {
     
     let status="";
-    if (!recipeItem.addToList) {return "Item "+recipeItem.name+" not selected to add."}
+    if (!recipeItem.addToList) {return (t("error.recipe_item_not_selected_to_add",{recipeName: recipeItem.name}) as string) }
     let uomMismatch = false;
     let existingUOM = null;
     let overwroteNote = false;
@@ -56,7 +57,7 @@ export async function updateItemFromRecipeItem({itemID,listOrGroupID,recipeItem,
     try {foundItem = await db.get(itemID)}
     catch(err) {console.log("ERROR: ",err);itemExists=false};
     if (itemExists && foundItem == null) {itemExists =false}
-    if (!itemExists) {return "No item found to update for "+recipeItem.name};
+    if (!itemExists) {return t("error.no_item_found_update_recipe",{itemName: recipeItem.name}) as string};
     let rowType: RowType | null = getRowTypeFromListOrGroupID(listOrGroupID as string,globalData.listCombinedRows)
     let updItem: ItemDoc = cloneDeep(foundItem);
     updItem.lists.forEach(itemList => {
@@ -81,21 +82,21 @@ export async function updateItemFromRecipeItem({itemID,listOrGroupID,recipeItem,
             uomMismatch = true;
 //            itemList.quantity = recipeItem.shoppingQuantity  -- May not want to update if different
             if (itemList.note === "") {
-                itemList.note = "WARNING: Unit of measure mismatch on recipe import. Recipe shopping quantity/UoM is "+ recipeItem.shoppingQuantity + " " + translatedUOMShortName(recipeItem.shoppingUOMName,globalData);
+                itemList.note = t("error.uom_mismatch_recipe_import_note",{quantity: recipeItem.shoppingQuantity, uom: translatedUOMShortName(recipeItem.shoppingUOMName,globalData) });
             }
         }
     })
     try {await db.put(updItem)}
     catch(err) {console.log("ERROR updating item:",err); updateError = true;}
     if (updateError) {
-        status = "Error Updating item:" + updItem.name;
+        status = t("error.updating_item_x",{name: updItem.name});
     } else {
-        status = "Updated item successfully: " + updItem.name;
+        status = t("general.updated_item_successfully",{name: updItem.name});
         if (uomMismatch && (!isEmpty(recipeItem.shoppingUOMName) || !isEmpty(existingUOM))) {
-            status=status+"\nWARNING: Unit of measure mismatch on " + updItem.name + "(shopping UoM is "+translatedUOMShortName(recipeItem.shoppingUOMName,globalData) + ",list was "+translatedUOMShortName(String(existingUOM),globalData)+") - please check."
+            status=status+ "\n"+t("error.uom_mistmatch_recipe_import_status",{name: updItem.name, shoppingUom: translatedUOMShortName(recipeItem.shoppingUOMName,globalData), listUom: translatedUOMShortName(String(existingUOM),globalData)});
         }
         if (overwroteNote) {
-            status=status+"\nWARNING: Note on item overwritten with recipe note"
+            status=status+"\n"+t("error.recipe_note_overwritten")
         }
     }
     return status;
@@ -106,7 +107,7 @@ export async function createNewItemFromRecipeItem({listOrGroupID,recipeItem,glob
     {listOrGroupID: string | null, recipeItem: RecipeItem, globalData: GlobalDataState, settings: GlobalSettings, db: PouchDB.Database}) : Promise<string> {
 
     let status="";
-    if (!recipeItem.addToList) {return "Item "+recipeItem.name+" not selected to add."};
+    if (!recipeItem.addToList) {return (t("error.recipe_item_not_selected_to_add",{recipeName: recipeItem.name}) as string)};
     let addError = false;
     let rowType: RowType | null = getRowTypeFromListOrGroupID(listOrGroupID as string,globalData.listCombinedRows)
     let existingGlobalItem = globalData.globalItemDocs.find(gi => gi._id === recipeItem.globalItemID)
@@ -114,9 +115,6 @@ export async function createNewItemFromRecipeItem({listOrGroupID,recipeItem,glob
     newItem.globalItemID = recipeItem.globalItemID;
     newItem.listGroupID = getListGroupIDFromListOrGroupID(listOrGroupID as string, globalData.listCombinedRows);
     newItem.name = recipeItem.name;
-    console.log("CNIFRI: lgid:",listOrGroupID,"newLGID:",newItem.listGroupID,"item",recipeItem);
-    console.log("listrows:",globalData.listRows);
-    console.log("filtered listrows",globalData.listRows.filter(lr => lr.listGroupID === newItem.listGroupID));
     globalData.listRows.filter(lr => lr.listGroupID === newItem.listGroupID).forEach(lr => {
         let newItemList :ItemList = cloneDeep(ItemListInit);
         if (settings.addListOption == AddListOptions.dontAddAutomatically && 
@@ -141,15 +139,14 @@ export async function createNewItemFromRecipeItem({listOrGroupID,recipeItem,glob
         } else if (existingGlobalItem !== undefined){
             newItemList.uomName = existingGlobalItem.defaultUOM
         }
-        console.log("pushing itemlist:",newItemList)
         newItem.lists.push(newItemList);
     })
     try {await db.post(newItem)}
     catch(err) {console.log("ERROR adding item:",err); addError = true;}
     if (addError) {
-        status = "Error Adding item:" + newItem.name;
+        status = t("general.error_adding_item_x",{name: newItem.name});
     } else {
-        status = "Added item successfully: " + newItem.name;
+        status = t("general.added_item_successfully",{name: newItem.name});
     }
     return status;
 }

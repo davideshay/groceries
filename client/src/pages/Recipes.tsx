@@ -11,7 +11,6 @@ import { useTranslation } from 'react-i18next';
 import { useRecipes } from '../components/Usehooks';
 
 const Recipes: React.FC<HistoryProps> = (props: HistoryProps) => {
-  const globalData = useContext(GlobalDataContext);
   const screenLoading=useRef(true);
   const { t } = useTranslation();
   const { recipeDocs, recipesLoading, recipesError} = useRecipes();

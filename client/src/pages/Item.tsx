@@ -14,7 +14,7 @@ import './Item.css';
 import ItemLists from '../components/ItemLists';
 import { getCommonKey, createEmptyItemDoc, checkNameInGlobal  } from '../components/ItemUtilities';
 import { PouchResponse, ListRow, RowType, PouchResponseInit } from '../components/DataTypes';
-import { UomDoc, ItemDoc, ItemDocInit, ItemList, ItemListInit, CategoryDoc, ImageDoc, ImageDocInit } from '../components/DBSchema';
+import { UomDoc, ItemDoc, ItemDocInit, ItemList, ItemListInit, CategoryDoc, ImageDoc, ImageDocInit, InitUomDoc } from '../components/DBSchema';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
@@ -232,7 +232,11 @@ const Item: React.FC = (props) => {
       presentToast({message: t("error.uom_plural_description_exists"), duration: 1500, position: "middle"});
       return false;
     }
-    let result = await addUOMDoc({"type": "uom", "name": uomData.name, "description": uomData.description, "pluralDescription": uomData.pluralDescription});
+    let newUOMDoc: UomDoc = cloneDeep(InitUomDoc);
+    newUOMDoc.name = uomData.name;
+    newUOMDoc.description = uomData.description;
+    newUOMDoc.pluralDescription = uomData.pluralDescription;
+    let result = await addUOMDoc(newUOMDoc);
     if (result.successful) {
         updateAllKey("uomName",uomData.name);
     } else {

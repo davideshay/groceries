@@ -21,11 +21,11 @@ export function useProcessInputFile() {
             let success: boolean = false;
             let errorMessage: string = "";
             async function triggerLoadTandoor(alertData: any, recipeObjs: TandoorRecipe[]) {
-                await presentLoading("Importing Recipe(s)...");
+                await presentLoading(t("general.importing_recipes") as string);
                 const statusMessage = await loadTandoorRecipes(alertData,recipeObjs,db,globalData)
                 await dismissLoading();
                 await presentAlert({
-                      header: "Recipe Import Results",
+                      header: t("general.import_recipe_results"),
                       message: statusMessage,
                       buttons: [
                         {text: t("general.ok"), role: "confirm"}
@@ -34,7 +34,7 @@ export function useProcessInputFile() {
                 })              
             }
             if ((fileType.type==="tandoor" && fileType.fileType === "application/zip")) {
-                await presentLoading("Processing Zip file...");
+                await presentLoading(t("general.processing_zip_file") as string);
                 const tandoorResponse = await processTandoorZip(pickResults);
                 await dismissLoading();
                 success=tandoorResponse.success;
@@ -42,8 +42,8 @@ export function useProcessInputFile() {
                 let alertInputs: AlertInput[] = getTandoorAlertInputs(tandoorResponse.recipeObjs);
                 if (success) {
                     await presentAlert({
-                        header: "Import Recipes?",
-                        subHeader: "Select the recipes to import below",
+                        header: t("general.import_recipes_q"),
+                        subHeader: t("general.select_recipes_import"),
                         buttons: [
                             { text: t("general.cancel"), role: "cancel", handler: () => {}},
                             { text: t("general.ok"), role: "confirm", handler: (alertData) => {triggerLoadTandoor(alertData,tandoorResponse.recipeObjs)}},
@@ -85,34 +85,34 @@ async function processTandoorZip(inputFile: PickFilesResult) : Promise<TandoorRe
     }
     let rzip = new zip();
     try { await rzip.loadAsync(inputFile.files[0].data!,{base64: true});}
-    catch(err) {response.success=false;response.errorMessage="Invalid ZIP file";return response}
+    catch(err) {response.success=false;response.errorMessage=t("error.invalid_zip_file");return response}
     for (const [key, value] of Object.entries(rzip.files)) {
         let indivZip = new zip();
         await indivZip.loadAsync(value.async("base64"),{base64: true});
         let zipObj = indivZip.files["recipe.json"];
         if (zipObj === null) {
             response.success=false;
-            response.errorMessage="At least one zip file did not contain recipe input";
+            response.errorMessage=t("error.zip_not_contain_recipe");
             return response
         }
         let recipeJsonText = (await indivZip.files["recipe.json"].async("text"));
         let recipeObj: TandoorRecipe;
         try {recipeObj = JSON.parse(recipeJsonText)}
-        catch(err) {response.success=false; response.errorMessage="Invalid recipe JSON in file"; return response}
+        catch(err) {response.success=false; response.errorMessage=t("error.invalid_recipe_json"); return response}
         response.recipeObjs.push(recipeObj);
     }
     return response;
 }
 
 async function loadTandoorRecipes(alertData: string[],recipeObjs: TandoorRecipe[],db: PouchDB.Database,globalData: GlobalDataState) : Promise<string> {
-    if (alertData == undefined || alertData.length === 0) {return "Nothing to Load"};
+    if (alertData == undefined || alertData.length === 0) {return t("error.nothing_to_load") as string};
     let statusFull = ""
     for (let i = 0; i < alertData.length; i++) {
         let recipe = recipeObjs.find((recipe) => (recipe.name === alertData[i]));
         if (recipe === undefined) {console.log("Could not find recipe - "+alertData[i]); continue};
         if (await checkRecipeExists(recipe.name,db)) {
             console.log("Could not import: "+alertData[i]+" - Duplicate");
-            statusFull=statusFull+"\n"+"Could not import: "+alertData[i]+" - Duplicate"
+            statusFull=statusFull+"\n"+t("error.could_not_import_recipe_dup",{recipe:alertData[i]});
             continue;
         }
         const [success,statusMessage] = await createTandoorRecipe(recipe,db,globalData);
@@ -151,7 +151,7 @@ async function createTandoorRecipe(recipeObj: TandoorRecipe, db: PouchDB.Databas
                     recipeItem.recipeUOMName = matchGlobalItem.defaultUOM;
                 }
                 if (recipeItem.recipeUOMName == "" && (ingredient.unit.name != "" || ingredient.unit.plural_name != "")) {
-                    recipeItem.note = "Could Not find UoM. Original was: "+ingredient.unit.name + " or "+ingredient.unit.plural_name;
+                    recipeItem.note = t("error.could_not_match_uom",{name: ingredient.unit.name ,pluralName: ingredient.unit.plural_name});
                 }
             }
             let qtyToUse = ingredient.amount === 0 ? 1 : ingredient.amount
@@ -168,8 +168,7 @@ async function createTandoorRecipe(recipeObj: TandoorRecipe, db: PouchDB.Databas
     try { response.pouchData = await db.post(newRecipeDoc); }
     catch(err) { response.successful = false; response.fullError = err; console.log("ERROR:",err);}
     if (!response.pouchData.ok) { response.successful = false;}
-    return [response.successful,"Loaded Recipe "+recipeObj.name+ " successfully."]
-
+    return [response.successful,t("general.loaded_recipe_successfully", {name: recipeObj.name})]
 }
 
 function findMatchingUOM(uom: string, globalData: GlobalDataState): string {

@@ -54,11 +54,11 @@ const RecipeImport: React.FC<HistoryProps> = (props: HistoryProps) => {
       }) }
     catch(err) {pickSuccessful = false;}
     if (!pickSuccessful || pickResults === undefined) {
-      setPageState(prevState => ({...prevState,formError:"Error picking import file"}))
+      setPageState(prevState => ({...prevState,formError:t("error.picking_import_file")}))
       return;
     }  
     if (pickResults!.files.length < 1 || pickResults!.files.length > 1) {
-      setPageState(prevState => ({...prevState,formError:"No files selected to import."}))
+      setPageState(prevState => ({...prevState,formError:t("error.no_import_file_selected")}))
       return;
     }
     const [success,statusMessage] = await processInputFile(fileType,pickResults);
@@ -68,7 +68,7 @@ const RecipeImport: React.FC<HistoryProps> = (props: HistoryProps) => {
   let jsonFormatOptions: JSX.Element[] = [];
   RecipeFileTypes.forEach((it) => {
     jsonFormatOptions.push(
-      <IonSelectOption key={it.type} value={it.type}>{it.name}</IonSelectOption>
+      <IonSelectOption key={it.type} value={it.type}>{t("general.recipe_import_type_"+it.type)}</IonSelectOption>
     )
   })
   

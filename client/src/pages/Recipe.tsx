@@ -6,8 +6,8 @@ import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteGenericDoc
    useGetOneDoc, useItems, useRecipes } from '../components/Usehooks';
 import { cloneDeep } from 'lodash';
 import { PouchResponse, HistoryProps, RowType} from '../components/DataTypes';
-import { RecipeDoc, InitRecipeDoc, RecipeItem, UomDoc, ItemDoc, ItemDocInit, GlobalItemDoc } from '../components/DBSchema';
-import { addOutline, closeOutline, pencilOutline, returnDownBackOutline, saveOutline, trashOutline } from 'ionicons/icons';
+import { RecipeDoc, InitRecipeDoc, RecipeItem, UomDoc, ItemDoc, ItemDocInit, GlobalItemDoc, RecipeInstruction } from '../components/DBSchema';
+import { addOutline, closeOutline, pencilOutline, returnDownBackOutline, saveOutline, trashBinOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
@@ -75,11 +75,11 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   },[globalData.listRowsLoaded,globalData.listCombinedRows])
 
-  if ( globalData.listError !== null || itemError || ( mode !== "new" && recipeError)) { return (
+  if ( globalData.listError !== null || itemError || ( mode !== "new" && recipeError) || recipesError) { return (
     <ErrorPage errorText={t("error.loading_recipe") as string}></ErrorPage>
     )};
 
-  if ( recipeLoading || globalData.categoryLoading || !pageState.recipeDoc || pageState.deletingRecipe || !globalData.listRowsLoaded || !itemRowsLoaded || pageState.addingInProcess)  {
+  if ( recipeLoading || recipesLoading || globalData.categoryLoading || !pageState.recipeDoc || pageState.deletingRecipe || !globalData.listRowsLoaded || !itemRowsLoaded || pageState.addingInProcess)  {
     return ( <Loading isOpen={screenLoading.current} message={t("general.loading_recipe")} />)
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   };
@@ -143,6 +143,12 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
     setPageState(prevState => ({...prevState,recipeDoc: {...prevState.recipeDoc,items: itemsToUpdate}}))
   }
 
+  function deleteItemFromList(index: number) {
+    let itemsToUpdate=cloneDeep(pageState.recipeDoc.items) as RecipeItem[];
+    itemsToUpdate.splice(index,1);
+    setPageState(prevState => ({...prevState,recipeDoc: {...prevState.recipeDoc,items: itemsToUpdate}}))
+  }
+
   function editItemModal(index: number) {
     setPageState(prevState=>({...prevState,modalOpen: true,selectedItemIdx: index}))
   }
@@ -161,10 +167,16 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
     setPageState(prevState=>({...prevState,recipeDoc: updRecipeDoc}));
   }
 
+  function updateRecipeStep(index: number, step: string) {
+    let updRecipeSteps: RecipeInstruction[] = cloneDeep(pageState.recipeDoc.instructions);
+    updRecipeSteps[index].stepText=step;
+    setPageState(prevState=>({...prevState,recipeDoc: {...prevState.recipeDoc,instructions: updRecipeSteps}}))
+  }
+
   async function addItemsToList() {
     await present({
-      header: "Add Recipe To List",
-      subHeader: "Proceed to add items in recipe "+pageState.recipeDoc.name+" to the list",
+      header: t("general.add_recipe_to_list"),
+      subHeader: t("general.add_items_in_recipe",{recipeName: pageState.recipeDoc.name}),
       buttons: [
           { text: t("general.cancel"), role: "cancel", handler: () => {}},
           { text: t("general.ok"), role: "confirm", handler: () => {addItemsToListDB()}},
@@ -173,8 +185,8 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   async function addItemsToListDB() {
-    presentLoading("Adding Recipe to List...");
-    let statusComplete = "Status of adding recipe to list:";
+    presentLoading(t("general.adding_recipe_to_list") as string);
+    let statusComplete = t("general.status_adding_recipe");
     setPageState(prevState=>({...prevState,addingInProcess: true}));
     for (let i = 0; i < pageState.recipeDoc.items.length; i++) {
       const item = pageState.recipeDoc.items[i];
@@ -225,8 +237,9 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
     recipeRows.push(
       <IonRow key={"item-"+index}>
         <IonCol size="2"><IonCheckbox aria-label="" checked={itemChecked} onIonChange={(ev) => checkItemOnList(ev.detail.checked,index)}></IonCheckbox></IonCol>
-        <IonCol size="9">{fullItemName}</IonCol>
+        <IonCol size="8">{fullItemName}</IonCol>
         <IonCol size="1"><IonButton fill="clear" onClick={() => editItemModal(index)}><IonIcon icon={pencilOutline}/></IonButton></IonCol>
+        <IonCol size="1"><IonButton fill="clear" onClick={() => deleteItemFromList(index)}><IonIcon icon={trashBinOutline} /></IonButton></IonCol>
       </IonRow>
     )
   })
@@ -319,7 +332,8 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
               <IonGrid>
                 { pageState.recipeDoc.instructions.map((step,index) => (
                   <IonRow key={"step-"+index}>
-                    <IonCol><IonTextarea aria-label="" class="recipe-step">{step.stepText}</IonTextarea></IonCol>
+                    <IonCol size="11"><IonTextarea autoGrow={true} aria-label="" class="recipe-step" value={step.stepText} onIonInput={(ev) => updateRecipeStep(index,String(ev.detail.value))}></IonTextarea></IonCol>
+                    <IonCol size="1"><IonButton fill="clear"><IonIcon icon={trashBinOutline}/></IonButton></IonCol>
                   </IonRow>
                   ))
                 }

@@ -5,7 +5,7 @@ import { CategoryDocs, GlobalItemDocs, ItemDocs, ListDocs, ListGroupDocs, UomDoc
 import { ListCombinedRows, ListRow } from "./DataTypes";
 import { getListRows } from "./GlobalDataUtilities";
 import { RemoteDBStateContext } from "./RemoteDBState";
-import { translatedCategoryName, translatedUOMName } from "./translationUtilities";
+import { translatedCategoryName, translatedItemName, translatedUOMName } from "./translationUtilities";
 
 
 export type GlobalDataState = {
@@ -136,13 +136,17 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
             itemDocs: itemDocs as ItemDocs,
             itemsLoading,
             itemError,
-            globalItemDocs: globalItemDocs as GlobalItemDocs,
+            globalItemDocs: (globalItemDocs as GlobalItemDocs).sort(function (a,b) {
+                return translatedItemName(String(a._id),a.name).toLocaleUpperCase().localeCompare(translatedItemName(String(b._id),b.name).toLocaleUpperCase())
+            }),
             globalItemsLoading,
             globalItemError,
             listDocs: listDocs as ListDocs,
             listsLoading,
             listError,
-            listGroupDocs: listGroupDocs as ListGroupDocs,
+            listGroupDocs: (listGroupDocs as ListGroupDocs).sort(function (a,b) {
+                return a.name.toLocaleUpperCase().localeCompare(b.name.toLocaleUpperCase())
+            }),
             listGroupsLoading,
             listGroupError,
             categoryDocs: (categoryDocs as CategoryDocs).sort(function (a,b) {
