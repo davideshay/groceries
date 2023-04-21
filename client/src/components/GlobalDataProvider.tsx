@@ -5,6 +5,7 @@ import { CategoryDocs, GlobalItemDocs, ItemDocs, ListDocs, ListGroupDocs, UomDoc
 import { ListCombinedRows, ListRow } from "./DataTypes";
 import { getListRows } from "./GlobalDataUtilities";
 import { RemoteDBStateContext } from "./RemoteDBState";
+import { translatedCategoryName, translatedUOMName } from "./translationUtilities";
 
 
 export type GlobalDataState = {
@@ -131,13 +132,32 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
         }
     },[listsLoading, listDocs, listGroupDocs, listGroupsLoading, remoteDBCreds])
 
-    let value: GlobalDataState = {itemDocs: itemDocs as ItemDocs, itemsLoading, itemError,
-            globalItemDocs: globalItemDocs as GlobalItemDocs, globalItemsLoading, globalItemError,
-            listDocs: listDocs as ListDocs,listsLoading,listError,
-            listGroupDocs: listGroupDocs as ListGroupDocs, listGroupsLoading, listGroupError,
-            categoryDocs: categoryDocs as CategoryDocs, categoryLoading, categoryError,
-            uomDocs: uomDocs as UomDoc[], uomLoading, uomError,
-            listRows: listRows as ListRow[], listRowsLoaded, listCombinedRows: listCombinedRows as ListCombinedRows
+    let value: GlobalDataState = {
+            itemDocs: itemDocs as ItemDocs,
+            itemsLoading,
+            itemError,
+            globalItemDocs: globalItemDocs as GlobalItemDocs,
+            globalItemsLoading,
+            globalItemError,
+            listDocs: listDocs as ListDocs,
+            listsLoading,
+            listError,
+            listGroupDocs: listGroupDocs as ListGroupDocs,
+            listGroupsLoading,
+            listGroupError,
+            categoryDocs: (categoryDocs as CategoryDocs).sort(function (a,b) {
+                return translatedCategoryName(a._id,a.name).toUpperCase().localeCompare(translatedCategoryName(b._id,b.name).toUpperCase())
+            }),
+            categoryLoading,
+            categoryError,
+            uomDocs: (uomDocs as UomDoc[]).sort(function(a,b) {
+                return translatedUOMName(a._id as string,a.name).toUpperCase().localeCompare(translatedUOMName(b._id as string,b.name).toUpperCase())
+            }),
+            uomLoading,
+            uomError,
+            listRows: listRows as ListRow[],
+            listRowsLoaded,
+            listCombinedRows: listCombinedRows as ListCombinedRows
         };
 //        console.log("GLOBAL DATA CAUSED RERENDER...",cloneDeep(value));    
     return (

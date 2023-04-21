@@ -177,10 +177,16 @@ function findMatchingUOM(uom: string, globalData: GlobalDataState): string {
     let foundUOM = globalData.uomDocs.find(u => (u.description.toUpperCase() == uom.toUpperCase() || u.pluralDescription.toUpperCase() == uom.toUpperCase()));
     if (foundUOM == undefined) {
         foundUOM = globalData.uomDocs.find(u => {
+            let foundAlt = false;
             if (u.hasOwnProperty("alternates") && u.alternates !== null) {
                 let upperAlternates = u.alternates!.map(el => (el.replace(/\W|_/g, '').toUpperCase()))
-                return upperAlternates.includes(uom.replace(/\W|_/g, '').toUpperCase());
-            } else {return false}
+                foundAlt = upperAlternates.includes(uom.replace(/\W|_/g, '').toUpperCase());
+            }
+            if (!foundAlt && u.hasOwnProperty("customAlternates") && u.customAlternates !== null) {
+                let upperCustomAlternates = u.customAlternates!.map(el => (el.replace(/\W|_/g, '').toUpperCase()))
+                foundAlt = upperCustomAlternates.includes(uom.replace(/\W|_/g, '').toUpperCase());
+            }
+            return foundAlt;
         })
         if (foundUOM != undefined) {
             return foundUOM.name;

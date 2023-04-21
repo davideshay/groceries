@@ -173,8 +173,19 @@ export const en_translations =
         "import_file": "Import File",
         "recipe_import_type": "Recipe Import File Type",
         "recipe_import_type_tandoor": "Tandoor",
-        "recipe_import_type_json_ld": "JSON-LD"
-
+        "recipe_import_type_json_ld": "JSON-LD",
+        "loading_uoms": "Loading Units of Measure ...",
+        "uoms":"Units of Measure",
+        "loading_uom": "Loading Unit of Measure...",
+        "items_using_uom_one": "There is {{count}} item using this UoM.",
+        "items_using_uom_other": "There are {{count}} items using this UoM",
+        "recipes_using_uom_one": "There is {{count}} recipe using this UoM.",
+        "recipes_using_uom_other": "There are {{count}} recipes using this UoM.",
+        "delete_this_uom": "Delete this Unit of Measure?",
+        "really_delete_uom": "This UOM will be removed from all items and recipes. Are you sure you want to delete?",
+        "all_uom_info_lost": "All unit of measure info will be lost",
+        "editing_uom": "Editing UOM",
+        "alternate_abbreviations": "Alternate UoM Abbreviations"
      },
      "error" : {
         "invalid_dbuuid" : "Invalid Database Unique Identifier",
@@ -269,6 +280,14 @@ export const en_translations =
         "updating_recipe": "Error updating recipe.",
         "unable_delete_recipe": "Unable to delete recipe, retry.",
         "loading_recipe_import": "Error Loading Recipe Import Page... Restart.",
+        "loading_uom_info": "Error loading UoM info... Restart.",
+        "loading_uom": "Error loading UOM... Restart.",
+        "duplicate_uom_name": "Duplicate UOM exists (short code or descriptions)",
+        "must_enter_description": "Must Enter a Desription",
+        "must_enter_plural_description": "Must Enter a Plural Description",
+        "unable_remove_uom_items": "Unable to remove UOM from Items",
+        "unable_remove_uom_recipes": "Unable to remove UOM from Recipes",
+        "unable_delete_uom": "Unable to delete UOM",
     },
     "itemtext": {
         "item_is_on_these_lists": "Item is on these lists:",

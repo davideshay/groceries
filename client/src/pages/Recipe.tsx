@@ -75,7 +75,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   },[globalData.listRowsLoaded,globalData.listCombinedRows])
 
-  if ( globalData.listError || itemError || recipeError) { return (
+  if ( globalData.listError !== null || itemError || ( mode !== "new" && recipeError)) { return (
     <ErrorPage errorText={t("error.loading_recipe") as string}></ErrorPage>
     )};
 

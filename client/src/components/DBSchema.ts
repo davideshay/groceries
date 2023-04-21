@@ -49,8 +49,19 @@ export interface UomDoc {
     description: string,
     pluralDescription: string,
     alternates?: string[],
+    customAlternates?: string[],
     updatedAt: string
   }
+
+ export const InitUomDoc: UomDoc = {
+  type: "uom",
+  name: "",
+  description: "",
+  pluralDescription: "",
+  alternates: [],
+  customAlternates: [],
+  updatedAt: ""
+ } 
 
 export interface ItemList {
     listID: string,

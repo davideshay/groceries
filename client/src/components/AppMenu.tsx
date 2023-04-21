@@ -63,10 +63,11 @@ const AppMenu: React.FC = () => {
         {listItem(t('general.create_new_list'),"/list/new/new")}
         {listItem(t('general.manage_all_listgroups'),"/listgroups")}
         {listHeader(t('general.other_actions'))}
-        {listItem(t(('general.recipes')),"/recipes")}
+        {listItem(t('general.recipes'),"/recipes")}
         {listItem(t('general.manage_categories'),"/categories")}
         {listItem(t('general.manage_all_items'),"/allitems")}
         {listItem(t('general.view_global_items'),"/globalitems")}
+        {listItem(t('general.uoms'),"/uoms")}
         {friendItem()}
         {conflictItem()}
         {listItem(t('general.settings'),"/settings")}

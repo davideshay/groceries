@@ -21,14 +21,13 @@ export function translatedCategoryName(id: string | undefined | null, name: stri
     }
 }
 
-export function translatedUOMName(id: string, name: string) {
+export function translatedUOMName(id: string, name: string, count: number = 1) {
     const sysUOMKey = "system:uom";
     if (id.startsWith(sysUOMKey)) {
-        return t("uom."+id.substring(sysUOMKey.length+1),{count: 1});
+        return t("uom."+id.substring(sysUOMKey.length+1),{count: count});
     } else {
         return name;
     }
-    
 }
 
 export function translatedUOMShortName(shortName: string,globalData: GlobalDataState) : string {

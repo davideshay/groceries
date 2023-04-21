@@ -40,8 +40,7 @@ export async function isRecipeItemOnList({ recipeItem, listOrGroupID,globalData,
     else { inList = true; itemID = foundItem._id as string}
     return [inList,itemID]
 }
-//TODO : We are relying on globalData, but after an update or add of item it won't change 
-// within the outer loop/function calls so will fail 
+
 export async function updateItemFromRecipeItem({itemID,listOrGroupID,recipeItem,globalData, settings, db}:
     {itemID: string, listOrGroupID: string | null, recipeItem: RecipeItem, globalData: GlobalDataState, 
         settings: GlobalSettings, db: PouchDB.Database}) : Promise<string> {
@@ -60,8 +59,6 @@ export async function updateItemFromRecipeItem({itemID,listOrGroupID,recipeItem,
     if (!itemExists) {return "No item found to update for "+recipeItem.name};
     let rowType: RowType | null = getRowTypeFromListOrGroupID(listOrGroupID as string,globalData.listCombinedRows)
     let updItem: ItemDoc = cloneDeep(foundItem);
-    // TODO: filter updating of lists based on whether adding to listgroup or list
-    // should also check on setting?
     updItem.lists.forEach(itemList => {
         if (!itemList.stockedAt) {return}
         if (settings.addListOption == AddListOptions.dontAddAutomatically && 
@@ -114,8 +111,6 @@ export async function createNewItemFromRecipeItem({listOrGroupID,recipeItem,glob
     let rowType: RowType | null = getRowTypeFromListOrGroupID(listOrGroupID as string,globalData.listCombinedRows)
     let existingGlobalItem = globalData.globalItemDocs.find(gi => gi._id === recipeItem.globalItemID)
     let newItem: ItemDoc = cloneDeep(ItemDocInit);
-    // TODO: filter updating of lists based on whether adding to listgroup or list
-    // should also check on setting?
     newItem.globalItemID = recipeItem.globalItemID;
     newItem.listGroupID = getListGroupIDFromListOrGroupID(listOrGroupID as string, globalData.listCombinedRows);
     newItem.name = recipeItem.name;
