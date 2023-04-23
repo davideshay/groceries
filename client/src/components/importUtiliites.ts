@@ -211,10 +211,13 @@ export function findMatchingGlobalItem(foodName: string|null, globalData: Global
     if (foodName === null) {return [null,"",returnInitGlobalItem]}
     let globalItem = globalData.globalItemDocs.find(gi => (gi.name.toUpperCase() == foodName.toUpperCase()));
     if (globalItem == undefined) {
-        let translatedGlobal = globalData.globalItemDocs.find(git => (t("globalitem."+(git._id as string).substring(sysItemKey.length+1),{count: 1}).toLocaleUpperCase() == foodName.toLocaleUpperCase()) || 
-        (t("globalitem."+(git._id as string).substring(sysItemKey.length+1),{count: 2}).toLocaleUpperCase() == foodName.toLocaleUpperCase()) )
+        let translatedGlobal = globalData.globalItemDocs.find(git =>{
+        return(
+        (t("globalitem."+(git._id as string).substring(sysItemKey.length+1),{count: 1}).toLocaleUpperCase() == foodName.toLocaleUpperCase()) || 
+        (t("globalitem."+(git._id as string).substring(sysItemKey.length+1),{count: 2}).toLocaleUpperCase() == foodName.toLocaleUpperCase()) )  })
+        console.log("translated global:",translatedGlobal);
         if (translatedGlobal == undefined) {return [null,"",returnInitGlobalItem]}
-        else {return [translatedGlobal._id as string,t(translatedGlobal._id as string),translatedGlobal]}
+        else {return [translatedGlobal._id as string,t("globalitem."+(translatedGlobal._id as string).substring(sysItemKey.length+1),{count: 2}),translatedGlobal]}
     }
     else {return [globalItem._id as string,globalItem.name as string,globalItem]}
 }

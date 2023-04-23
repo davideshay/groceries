@@ -107,6 +107,7 @@ export interface ItemDoc {
     imageID: string | null,
     listGroupID: string | null,
     name: string,
+    pluralName?: string,
     globalItemID: string | null,
     lists: ItemList[],
     updatedAt?: string
@@ -119,6 +120,7 @@ export const ItemDocInit:ItemDoc = {
   listGroupID: null,
   imageID: null,
   name: "",
+  pluralName:"",
   globalItemID: null,
   lists: [],
   updatedAt: ""

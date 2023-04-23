@@ -91,6 +91,9 @@ const Item: React.FC = (props) => {
       if (!newItemDoc.hasOwnProperty('imageID')) {
         newItemDoc.imageID = null;
       }
+      if (!newItemDoc.hasOwnProperty('pluralName')) {
+        newItemDoc.pluralName = "";
+      }
       newItemDoc = addDeleteLists(newItemDoc);
       setStateItemDoc(cloneDeep(newItemDoc));
     }
@@ -129,6 +132,9 @@ const Item: React.FC = (props) => {
     if (stateItemDoc.name === undefined || stateItemDoc.name==="" || stateItemDoc.name === null) {
       setFormError(prevState => (t("error.must_enter_a_name")));
       return false;
+    }
+    if (isEmpty(stateItemDoc.pluralName)) {
+      setFormError(prevState => (t("error.must_enter_a_plural_name")))
     }
     let alreadyExists = false;
     itemRows.forEach((ir) => {
@@ -316,7 +322,10 @@ const Item: React.FC = (props) => {
       <IonContent>
           <IonList>
             <IonItem key="name">
-              <IonInput disabled={stateItemDoc.globalItemID != null} label={t("general.name") as string} labelPlacement="stacked" type="text" onIonInput={(e) => setStateItemDoc({...stateItemDoc, name: String(e.detail.value)})} value={translatedItemName(stateItemDoc.globalItemID,stateItemDoc.name)}></IonInput>
+              <IonInput disabled={stateItemDoc.globalItemID != null} label={t("general.name") as string} labelPlacement="stacked" type="text" onIonInput={(e) => setStateItemDoc({...stateItemDoc, name: String(e.detail.value)})} value={translatedItemName(stateItemDoc.globalItemID,stateItemDoc.name,1)}></IonInput>
+            </IonItem>
+            <IonItem key="pluralname">
+              <IonInput disabled={stateItemDoc.globalItemID != null} label={t("general.plural_name") as string} labelPlacement="stacked" type="text" onIonInput={(e) => setStateItemDoc({...stateItemDoc, pluralName: String(e.detail.value)})} value={translatedItemName(stateItemDoc.globalItemID,(stateItemDoc.pluralName!),2)}></IonInput>
             </IonItem>
             <IonItem key="listgroup">
               <IonText >{t("general.list_group") + ": "}  {thisListGroup?.listGroupName}</IonText>

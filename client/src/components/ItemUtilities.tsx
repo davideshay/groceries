@@ -141,9 +141,9 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
         let itemRow: ItemRow = cloneDeep(initItemRow);
         itemRow.itemID = String(itemDoc._id);
         itemRow.globalItemID = itemDoc.globalItemID;
-        itemRow.itemName =  translatedItemName(itemDoc.globalItemID,itemDoc.name);
         let list = findRightList(itemDoc,listType,listOrGroupID,(listRow as ListCombinedRow), listCombinedRows);
         if (list === undefined) {return itemRows};
+        itemRow.itemName =  translatedItemName(itemDoc.globalItemID,itemDoc.name,list.hasOwnProperty("quantity") ? list.quantity : 0);
         itemRow.categoryID = list.categoryID;
         if (itemRow.categoryID === null) {
             itemRow.categoryName = t("general.uncategorized");

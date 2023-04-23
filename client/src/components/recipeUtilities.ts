@@ -29,9 +29,16 @@ export async function isRecipeItemOnList({ recipeItem, listOrGroupID,globalData,
     let foundItem: ItemDoc | null = null;
     if (itemExists) {
         for (let i = 0; i < itemResults.docs.length; i++) {
-            const item = itemResults.docs[i] as ItemDoc;
-// TODO : Add other plural checking once built
-            if (translatedItemName(item.globalItemID,item.name).toLocaleUpperCase() == recipeItem.name.toLocaleUpperCase() ||
+            const item = cloneDeep(itemResults.docs[i]) as ItemDoc;
+            if (item.hasOwnProperty("pluralName")) {
+                item.pluralName = isEmpty(item.pluralName) ? "" : item.pluralName
+            } else {
+                item.pluralName = item.name;
+            }
+            if (translatedItemName(item.globalItemID,item.name,1).toLocaleUpperCase() == recipeItem.name.toLocaleUpperCase() ||
+                translatedItemName(item.globalItemID,item.name,2).toLocaleUpperCase() == recipeItem.name.toLocaleUpperCase() ||
+                translatedItemName(item.globalItemID,item.pluralName!,1).toLocaleUpperCase() == recipeItem.name.toLocaleUpperCase() ||
+                translatedItemName(item.globalItemID,item.pluralName!,2).toLocaleUpperCase() == recipeItem.name.toLocaleUpperCase() ||
                 (item.globalItemID !== null && (item.globalItemID == recipeItem.globalItemID) )) {
                     foundItem = cloneDeep(item);
             } 
@@ -93,7 +100,7 @@ export async function updateItemFromRecipeItem({itemID,listOrGroupID,recipeItem,
     } else {
         status = t("general.updated_item_successfully",{name: updItem.name});
         if (uomMismatch && (!isEmpty(recipeItem.shoppingUOMName) || !isEmpty(existingUOM))) {
-            status=status+ "\n"+t("error.uom_mistmatch_recipe_import_status",{name: updItem.name, shoppingUom: translatedUOMShortName(recipeItem.shoppingUOMName,globalData), listUom: translatedUOMShortName(String(existingUOM),globalData)});
+            status=status+ "\n"+t("error.uom_mismatch_recipe_import_status",{name: updItem.name, shoppingUom: translatedUOMShortName(recipeItem.shoppingUOMName,globalData), listUom: translatedUOMShortName(String(existingUOM),globalData)});
         }
         if (overwroteNote) {
             status=status+"\n"+t("error.recipe_note_overwritten")
