@@ -86,7 +86,6 @@ export const en_translations =
         "add_new_category": "Add new category",
         "add_new_uom":"Add new Unit of Measure",
         "plural_description": "Plural Description",
-        "description": "Description",
         "delete_this_item": "Delete this item?",
         "really_delete_this_item":"Do you really want to delete this item?",
         "editing_item":"Editing Item:",
@@ -200,6 +199,13 @@ export const en_translations =
         "select_recipes_import": "Select the recipes to import below",
         "loaded_recipe_successfully":"Loaded Recipe {{name}} successfully.",
         "plural_name": "Plural Name",
+        "description": "Description",
+        "recipe_items_added_to_list":"Recipe Items added to list",
+        "item_on_recipe":"Item on Recipe:",
+        "recipe_quantity":"Recipe Quantity",
+        "recipe_uom": "Recipe UoM",
+        "shopping_quantity":"Shopping Quantity",
+        "shopping_uom": "Shopping UoM"
      },
      "error" : {
         "invalid_dbuuid" : "Invalid Database Unique Identifier",

@@ -246,7 +246,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
     dismissLoading();
     setPageState(prevState=>({...prevState,addingInProcess: false}));
     await present({
-      header: "Recipe Items added to list",
+      header: t("general.recipe_items_added_to_list"),
       message: statusComplete,
       cssClass: "import-status-alert",
       buttons: [
@@ -287,20 +287,20 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   let modalRecipeItem =  recipeItem !== null && recipeItem !== undefined ? (
     <IonModal id="recipe-item" isOpen={pageState.modalOpen} onDidDismiss={(ev)=>{setPageState(prevState => ({...prevState,modalOpen: false}))}}>
-      <IonTitle class="modal-title">Item On Recipe: {translatedItemName(recipeItem.globalItemID,recipeItem.name)}</IonTitle>
+      <IonTitle class="modal-title">{t('general.item_on_recipe') + translatedItemName(recipeItem.globalItemID,recipeItem.name)}</IonTitle>
       <IonList>
         <IonItem key="name">
-          <IonInput type="text" label="Name" labelPlacement="stacked" value={translatedItemName(recipeItem.globalItemID,recipeItem.name)} onIonInput={(ev)=>{updateRecipeName(ev.detail.value as string)}}></IonInput>
+          <IonInput type="text" label={t("general.name") as string} labelPlacement="stacked" value={translatedItemName(recipeItem.globalItemID,recipeItem.name)} onIonInput={(ev)=>{updateRecipeName(ev.detail.value as string)}}></IonInput>
         </IonItem>
         <IonItem key="r-qty">
-          <IonInput type="number" label="Recipe Quantity" labelPlacement="stacked" value={recipeItem.recipeQuantity} onIonInput={(ev) => {
+          <IonInput type="number" label={t("general.recipe_quantity") as string} labelPlacement="stacked" value={recipeItem.recipeQuantity} onIonInput={(ev) => {
             let updRecipeDoc: RecipeDoc=cloneDeep(pageState.recipeDoc);
             updRecipeDoc.items[pageState.selectedItemIdx].recipeQuantity = Number(ev.detail.value);
             setPageState(prevState=>({...prevState,recipeDoc: updRecipeDoc}));
           }}></IonInput>
         </IonItem>
         <IonItem key="r-uom">
-          <IonSelect label="Recipe UOM" labelPlacement="stacked" interface="popover" value={recipeItem.recipeUOMName} onIonChange={(ev) => {
+          <IonSelect label={t("general.recipe_uom") as string} labelPlacement="stacked" interface="popover" value={recipeItem.recipeUOMName} onIonChange={(ev) => {
             let updRecipeDoc: RecipeDoc=cloneDeep(pageState.recipeDoc);
             updRecipeDoc.items[pageState.selectedItemIdx].recipeUOMName = ev.detail.value;
             setPageState(prevState=>({...prevState,recipeDoc: updRecipeDoc}))   }}>
@@ -313,14 +313,14 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
           </IonSelect>
         </IonItem>
         <IonItem key="s-qty">
-          <IonInput type="number" label="Shopping Quantity" labelPlacement="stacked" value={recipeItem.shoppingQuantity} onIonInput={(ev) => {
+          <IonInput type="number" label={t("general.shopping_quantity") as string} labelPlacement="stacked" value={recipeItem.shoppingQuantity} onIonInput={(ev) => {
               let updRecipeDoc: RecipeDoc=cloneDeep(pageState.recipeDoc);
               updRecipeDoc.items[pageState.selectedItemIdx].shoppingQuantity = Number(ev.detail.value);
               setPageState(prevState=>({...prevState,recipeDoc: updRecipeDoc}));
             }}></IonInput>
         </IonItem>  
         <IonItem key="s-uom">
-          <IonSelect label="Shopping UOM" labelPlacement="stacked" interface="popover" value={recipeItem.shoppingUOMName} onIonChange={(ev) => {
+          <IonSelect label={t("general.shopping_uom") as string} labelPlacement="stacked" interface="popover" value={recipeItem.shoppingUOMName} onIonChange={(ev) => {
             let updRecipeDoc: RecipeDoc=cloneDeep(pageState.recipeDoc);
             updRecipeDoc.items[pageState.selectedItemIdx].shoppingUOMName = ev.detail.value;
             setPageState(prevState=>({...prevState,recipeDoc: updRecipeDoc}))   }}>
@@ -333,7 +333,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
           </IonSelect>
         </IonItem>
         <IonItem key="note">
-            <IonTextarea label="Note" labelPlacement="stacked" value={recipeItem.note} onIonInput={(ev) => {
+            <IonTextarea label={t("general.note") as string} labelPlacement="stacked" value={recipeItem.note} onIonInput={(ev) => {
             let updRecipeDoc: RecipeDoc=cloneDeep(pageState.recipeDoc);
             updRecipeDoc.items[pageState.selectedItemIdx].note = String(ev.detail.value);
             setPageState(prevState=>({...prevState,recipeDoc: updRecipeDoc}))   }}>
@@ -355,7 +355,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
             <IonItem key="name">
               <IonInput label={t("general.name") as string} labelPlacement="stacked" type="text" placeholder={t("general.new_placeholder") as string} onIonInput={(e) => setPageState(prevState=>({...prevState, recipeDoc: {...prevState.recipeDoc,name: String(e.detail.value)}}))} value={pageState.recipeDoc.name}></IonInput>
             </IonItem>
-            <IonItemDivider>{t("general.items_in_recipe")}</IonItemDivider>
+            <IonItemDivider class="category-divider">{t("general.items_in_recipe")}</IonItemDivider>
             <IonItem key="items-in-recipe">
               <IonGrid>
                 <IonRow key="item-header">
@@ -366,7 +366,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
               </IonGrid>
             </IonItem>
             <RecipeItemSearch rowSelected={addExistingRecipeItem} addItemWithoutRow={addNewRecipeItem}/>
-            <IonItemDivider>{t("general.recipe_steps")}</IonItemDivider>
+            <IonItemDivider class="category-divider">{t("general.recipe_steps")}</IonItemDivider>
             <IonItem key="recipesteps">
               <IonGrid>
                 { pageState.recipeDoc.instructions.map((step,index) => (
