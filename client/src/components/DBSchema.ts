@@ -246,9 +246,9 @@ export const InitFriendDoc : FriendDoc = {
 export type RecipeItem = {
   globalItemID: string | null,
   name: string,
-  recipeUOMName: string,
+  recipeUOMName: string | null,
   recipeQuantity: number,
-  shoppingUOMName: string,
+  shoppingUOMName: string | null,
   shoppingQuantity: number,
   addToList: boolean,
   note: string
@@ -257,9 +257,9 @@ export type RecipeItem = {
 export const RecipeItemInit: RecipeItem = {
   globalItemID: null,
   name: "",
-  recipeUOMName: "",
+  recipeUOMName: null,
   recipeQuantity: 1,
-  shoppingUOMName: "",
+  shoppingUOMName: null,
   shoppingQuantity: 1,
   addToList: true,
   note: ""

@@ -7,18 +7,21 @@ import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteGenericDoc
 import { cloneDeep } from 'lodash';
 import { PouchResponse, HistoryProps, RowType} from '../components/DataTypes';
 import { RecipeDoc, InitRecipeDoc, RecipeItem, UomDoc, ItemDoc, ItemDocInit, GlobalItemDoc, RecipeInstruction } from '../components/DBSchema';
-import { addOutline, closeOutline, pencilOutline, returnDownBackOutline, saveOutline, trashBinOutline, trashOutline } from 'ionicons/icons';
+import { add, addOutline, closeOutline, pencilOutline, returnDownBackOutline, saveOutline, trashBinOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
 import { GlobalStateContext } from '../components/GlobalState';
 import PageHeader from '../components/PageHeader';
+import RecipeItemSearch, { RecipeSearchData, RecipeSearchRow } from '../components/RecipeItemSearch';
 import { useTranslation } from 'react-i18next';
 import { translatedItemName, translatedUOMName } from '../components/translationUtilities';
 import './Recipe.css';
 import { findMatchingGlobalItem } from '../components/importUtiliites';
 import { createNewItemFromRecipeItem, isRecipeItemOnList, updateItemFromRecipeItem } from '../components/recipeUtilities';
 import { usePouch } from 'use-pouchdb';
+import { RecipeItemInit } from '../components/DBSchema';
+let fracty = require('fracty');
 
 type PageState = {
   recipeDoc: RecipeDoc,
@@ -173,6 +176,41 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
     setPageState(prevState=>({...prevState,recipeDoc: {...prevState.recipeDoc,instructions: updRecipeSteps}}))
   }
 
+  function deleteRecipeStep(index: number) {
+    let updRecipeSteps: RecipeInstruction[] = cloneDeep(pageState.recipeDoc.instructions);
+    updRecipeSteps.splice(index,1);
+    setPageState(prevState=>({...prevState,recipeDoc:{...prevState.recipeDoc,instructions: updRecipeSteps}}));
+  }
+
+  function addRecipeStep() {
+    let updRecipeSteps: RecipeInstruction[] = cloneDeep(pageState.recipeDoc.instructions);
+    updRecipeSteps.push({stepText: ""});
+    setPageState(prevState=>({...prevState,recipeDoc:{...prevState.recipeDoc,instructions: updRecipeSteps}}));
+  }
+
+  function addExistingRecipeItem(id: string, data: RecipeSearchData) {
+    let updItems: RecipeItem[] = cloneDeep(pageState.recipeDoc.items);
+    let newItem:RecipeItem = cloneDeep(RecipeItemInit);
+    newItem.addToList = true;
+    newItem.globalItemID = data.globalItemID;
+    newItem.name=translatedItemName(id,data.name);    
+    updItems.push(newItem)
+    setPageState(prevState=>({...prevState,recipeDoc:{...prevState.recipeDoc,items: updItems}}))
+    console.log("adding Existing Recipe Item...",id,data);
+
+  }
+
+  function addNewRecipeItem(name: string) {
+    console.log("adding new item:",name)
+    let updItems: RecipeItem[] = cloneDeep(pageState.recipeDoc.items);
+    let newItem:RecipeItem = cloneDeep(RecipeItemInit);
+    newItem.addToList = true;
+    newItem.globalItemID = null;
+    newItem.name=name;
+    updItems.push(newItem)
+    setPageState(prevState=>({...prevState,recipeDoc:{...prevState.recipeDoc,items: updItems}}))
+  }
+
   async function addItemsToList() {
     await present({
       header: t("general.add_recipe_to_list"),
@@ -229,8 +267,8 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
         }
     }
     let quantityUOMDesc = "";
-    if ((item.recipeQuantity !== 0) && ((item.recipeQuantity > 0) || uomDesc !== "")) {
-        quantityUOMDesc = item.recipeQuantity.toString() + ((uomDesc === "" ? "" : " " + uomDesc));
+    if ((item.recipeQuantity !== 0) && ((item.recipeQuantity > 1) || uomDesc !== "")) {
+        quantityUOMDesc = fracty(item.recipeQuantity).toString() + ((uomDesc === "" ? "" : " " + uomDesc));
     }
     let fullItemName = itemName;
     if (quantityUOMDesc !== "") { fullItemName = fullItemName + " (" + quantityUOMDesc +")"}
@@ -310,7 +348,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   return (
     <IonPage>
-      <PageHeader title={t("general.editing_recipe")+ pageState.recipeDoc.name } />
+      <PageHeader title={t("general.editing_recipe")+" "+pageState.recipeDoc.name } />
       <IonContent>
       {modalRecipeItem}
           <IonList>
@@ -327,16 +365,20 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
                 {recipeRows}
               </IonGrid>
             </IonItem>
+            <RecipeItemSearch rowSelected={addExistingRecipeItem} addItemWithoutRow={addNewRecipeItem}/>
             <IonItemDivider>{t("general.recipe_steps")}</IonItemDivider>
             <IonItem key="recipesteps">
               <IonGrid>
                 { pageState.recipeDoc.instructions.map((step,index) => (
                   <IonRow key={"step-"+index}>
                     <IonCol size="11"><IonTextarea autoGrow={true} aria-label="" class="recipe-step" value={step.stepText} onIonInput={(ev) => updateRecipeStep(index,String(ev.detail.value))}></IonTextarea></IonCol>
-                    <IonCol size="1"><IonButton fill="clear"><IonIcon icon={trashBinOutline}/></IonButton></IonCol>
+                    <IonCol size="1"><IonButton onClick={() => deleteRecipeStep(index)} fill="clear"><IonIcon icon={trashBinOutline}/></IonButton></IonCol>
                   </IonRow>
                   ))
                 }
+                <IonRow key="addastep">
+                  <IonCol><IonButton onClick={() => addRecipeStep()}><IonIcon icon={add} /></IonButton></IonCol>
+                </IonRow>
               </IonGrid>
             </IonItem>
           </IonList>

@@ -146,14 +146,12 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function leaveSearchBox() {
-//    console.log("LSB: setting open/focused to false");
     setSearchState(prevState => ({...prevState, isOpen: false, isFocused: false}));
   }
 
   function enterSearchBox() {
     let toOpen=true;
     if (searchState.filteredSearchRows.length === 0) { toOpen = false}
-//    console.log("ESB:",searchState.filteredSearchRows.length,toOpen, " focus to true");
     setSearchState(prevState => ({...prevState, isFocused: true,isOpen: toOpen}));
   }
 

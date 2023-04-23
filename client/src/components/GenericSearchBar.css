@@ -1,0 +1,16 @@
+ion-item.generic-search-item::part(native) {
+    min-height: auto;
+    padding-top: 0px;
+    padding-bottom: 0px;
+    
+}
+
+.generic-search-item {
+    --min-height: auto;
+    min-height: auto;
+}
+
+.generic-input-search.generic-input-search-class {
+    padding-left: .75em;
+    min-height: 1.5em;
+}

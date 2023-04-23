@@ -148,8 +148,8 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
     if (pageState.uomDoc === null) return numResults;
     recipeDocs.forEach(recipe => {
       recipe.items.forEach(recItem => {
-        if (recItem.recipeUOMName.toUpperCase() === pageState.uomDoc.name.toUpperCase() || 
-            recItem.shoppingUOMName.toUpperCase() === pageState.uomDoc.name.toUpperCase()) {
+        if (String(recItem.recipeUOMName).toUpperCase() === pageState.uomDoc.name.toUpperCase() || 
+            String(recItem.shoppingUOMName).toUpperCase() === pageState.uomDoc.name.toUpperCase()) {
               numResults++
             } 
       })

@@ -9,6 +9,7 @@ import { useCallback, useContext } from "react";
 import { AlertInput, useIonAlert, useIonLoading } from "@ionic/react";
 import { useTranslation } from "react-i18next";
 import { t } from 'i18next';
+import { isEmpty } from "lodash";
 
 export function useProcessInputFile() {
     const db = usePouch();
@@ -126,8 +127,10 @@ async function createTandoorRecipe(recipeObj: TandoorRecipe, db: PouchDB.Databas
     newRecipeDoc.name = recipeObj.name;
     let newInstructions: RecipeInstruction[] = [];
     recipeObj.steps.forEach(step => {
-        let recipeInstruction: RecipeInstruction = {stepText: step.instruction}
-        newInstructions.push(recipeInstruction);
+        if (!isEmpty(step.instruction)) {
+            let recipeInstruction: RecipeInstruction = {stepText: step.instruction}
+            newInstructions.push(recipeInstruction);
+        }
     })
     newRecipeDoc.instructions = newInstructions;
     let newRecipeItems: RecipeItem[] = [];

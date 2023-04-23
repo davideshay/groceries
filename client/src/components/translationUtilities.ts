@@ -30,7 +30,8 @@ export function translatedUOMName(id: string, name: string, count: number = 1) {
     }
 }
 
-export function translatedUOMShortName(shortName: string,globalData: GlobalDataState) : string {
+export function translatedUOMShortName(shortName: string | null,globalData: GlobalDataState) : string {
+    if (shortName === null) {return ""};
     const foundUOM = globalData.uomDocs.find(uom => (uom.name === shortName));
     if (foundUOM === undefined) {console.log("no found UOM..."); return "";}
     return(translatedUOMName(foundUOM._id!,foundUOM.description))
