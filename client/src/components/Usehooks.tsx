@@ -4,7 +4,7 @@ import { usePouch, useFind } from 'use-pouchdb'
 import { cloneDeep, pull } from 'lodash';
 import { RemoteDBStateContext, SyncStatus } from './RemoteDBState';
 import { FriendRow,InitFriendRow, ResolvedFriendStatus, ListRow, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType, UsersInfo } from './DataTypes';
-import { FriendDocs,FriendStatus, ListGroupDoc, ListDoc, ListDocs, ListGroupDocs, ListDocInit, ItemDocs, ItemDoc, ItemList, ItemListInit, ConflictDocs} from './DBSchema';
+import { FriendDocs,FriendStatus, ListGroupDoc, ListDoc, ListDocs, ListGroupDocs, ListDocInit, ItemDocs, ItemDoc, ItemList, ItemListInit, ConflictDocs, RecipeDoc} from './DBSchema';
 import { GlobalStateContext } from './GlobalState';
 import { adaptResultToBase64, getUsersInfo } from './Utilities';
 import { getCommonKey } from './ItemUtilities';
@@ -507,6 +507,25 @@ export function useConflicts() : { conflictsError: boolean, conflictDocs: Confli
   return({conflictsError: dbError !== null, conflictDocs: (conflictDocs as ConflictDocs), conflictsLoading});
 }
 
+export function useRecipes() : { recipesError: boolean, recipeDocs: RecipeDoc[], recipesLoading: boolean} {
+  const { docs: recipeDocs, loading: recipesLoading, error: dbError} = useFind({
+    index: { fields: ["type","name"]},
+    selector: { type: "recipe", name: { $exists: true } },
+    sort: [ "type", "name" ]
+  });
+  const [sortedRecipes,setSortedRecipes] = useState<RecipeDoc[]>()
+
+  useEffect( () => {
+    let sorted=cloneDeep(recipeDocs) as RecipeDoc[];
+    sorted.sort(function(a,b) {
+      return a.name.toUpperCase().localeCompare(b.name.toUpperCase())
+    });
+    setSortedRecipes(sorted);
+  },[recipeDocs,recipesLoading])
+
+  return ({recipesError: dbError !== null, recipeDocs: (sortedRecipes as RecipeDoc[]), recipesLoading})
+}
+
 export function useAddListToAllItems() {
   const db = usePouch();
   return useCallback(
@@ -519,6 +538,7 @@ export function useAddListToAllItems() {
                         listGroupID: listGroupID},
             sort: [ "type","name"]
           }) as PouchDB.Find.FindResponse<ItemDoc>;
+          console.log("add list to all items..,",cloneDeep(itemRecords.docs),listGroupID,listID)
           for (let i = 0; i < itemRecords.docs.length; i++) {
             const item = itemRecords.docs[i];
             let itemUpdated=false;

@@ -1,6 +1,6 @@
 import { CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
-import { initUsersInfo, UserIDList, UsersInfo } from './DataTypes';
-import { ListGroupDoc, ListGroupDocInit } from './DBSchema';
+import { initUsersInfo, ListCombinedRows, RowType, UserIDList, UsersInfo } from './DataTypes';
+import { ListGroupDoc, ListGroupDocInit, UomDoc } from './DBSchema';
 import { cloneDeep } from 'lodash';
 import { DBCreds} from './RemoteDBState';
 import { PouchResponse, PouchResponseInit } from './DataTypes';
@@ -115,5 +115,22 @@ export async function adaptResultToBase64(res: Blob): Promise<string> {
     })
 }
 
+export function getListGroupIDFromListOrGroupID(listOrGroupID: string, listCombinedRows: ListCombinedRows) : string | null {
+    let newListRow= listCombinedRows.find(lcr => lcr.listOrGroupID == listOrGroupID);
+    if (newListRow == undefined) {return null}
+    else { return newListRow.listGroupID}
+}
+
+export function getRowTypeFromListOrGroupID(listOrGroupID: string, listCombinedRows: ListCombinedRows) : RowType | null {
+    let newListRow = listCombinedRows.find(lcr => lcr.listOrGroupID == listOrGroupID);
+    if (newListRow == undefined) {return null}
+    else { return newListRow.rowType}
+}
+
+export function getUOMIDFromShortName(uomName: string, uomDocs: UomDoc[]) : string | null {
+    let foundUOM = uomDocs.find(uom => (uom.name.toUpperCase() === uomName.toUpperCase()));
+    if (foundUOM == undefined) { return null}
+    else { return (foundUOM._id as string)}
+}
 
 export const DEFAULT_API_URL=(window as any)._env_.DEFAULT_API_URL

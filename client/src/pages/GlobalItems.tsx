@@ -8,6 +8,7 @@ import './GlobalItems.css';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import PageHeader from '../components/PageHeader';
+import { translatedItemName } from '../components/translationUtilities';
 
 // The AllItems component is a master editor of all of the known items in the database.
 // Each item has a name, along with data about each list the item is on (list ID, quantity, count of number of times bought,
@@ -43,7 +44,7 @@ const GlobalItems: React.FC<HistoryProps> = (props: HistoryProps) => {
       <IonContent>
         {globalItemDocs.length === 0 ?(<IonList><IonItem>{t("error.no_global_items_available")}</IonItem></IonList>) : <></> }
         {(globalItemDocs as GlobalItemDocs).map(gi => (
-             <IonItem button key={gi._id} class="list-button" routerLink={("/globalitem/edit/" + gi._id)}>{gi.name}</IonItem>
+             <IonItem button key={gi._id} class="list-button" routerLink={("/globalitem/edit/" + gi._id)}>{translatedItemName(gi._id!,gi.name,2)}</IonItem>
         ))}
       </IonContent>
     </IonPage>

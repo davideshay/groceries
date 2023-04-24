@@ -22,12 +22,16 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Groceries needs to be able to take pictures of grocery items</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Groceries may add pictures of items to the library</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Groceries can add pictures to an item from existing photos in the library</string>
+	<key>UIFileSharingEnabled</key>
+	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

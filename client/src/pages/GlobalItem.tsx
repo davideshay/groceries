@@ -41,7 +41,7 @@ const GlobalItem: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   return (
     <IonPage>
-      <PageHeader title={t("general.viewing_global_item")+ translatedItemName((globalItemDoc as GlobalItemDoc)._id!, globalItemDoc.name) } />
+      <PageHeader title={t("general.viewing_global_item")+ " " + translatedItemName((globalItemDoc as GlobalItemDoc)._id!, globalItemDoc.name) } />
       <IonContent>
           <IonList>
             <IonItem key="name">

@@ -4,7 +4,7 @@ enableScheduling, resolveConflictsFrequencyMinutes,expireJWTFrequencyMinutes } f
 import { resolveConflicts } from "./apicalls";
 import { expireJWTs } from './jwt'
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
-import { cloneDeep } from "lodash";
+import { cloneDeep, isEqual, omit } from "lodash";
 import { v4 as uuidv4} from 'uuid';
 import { uomContent, categories, globalItems, totalDocCount } from "./utilities";
 import { DocumentScope, MangoResponse, MangoQuery } from "nano";
@@ -12,7 +12,7 @@ import { CategoryDoc, GlobalItemDoc, ItemDoc, ListDoc, ListGroupDoc, UUIDDoc, Uo
 
 
 let uomContentVersion = 0;
-const targetUomContentVersion = 3;
+const targetUomContentVersion = 4;
 let categoriesVersion = 0;
 const targetCategoriesVersion = 1;
 let globalItemVersion = 0;
@@ -231,17 +231,31 @@ async function createUOMContent() {
     }
     let foundUOMDocs: MangoResponse<UomDoc> =  (await todosDBAsAdmin.find(dbuomq) as MangoResponse<UomDoc>);
     for (let i = 0; i < uomContent.length; i++) {
-        let uom: any = uomContent[i];
+        let uom: UomDoc = uomContent[i];
         const docIdx=foundUOMDocs.docs.findIndex((el) => (el.name.toUpperCase() === uom.name.toUpperCase() || el._id === uom._id));
-        let needsAdded=true;
+        let needsAdded=true; let needsUpdated=false;
         if (docIdx !== -1) {
-            let thisDoc = foundUOMDocs.docs[docIdx];
+            let thisDoc: UomDoc = foundUOMDocs.docs[docIdx];
             if (thisDoc._id === uom._id) {
-                console.log("STATUS: UOM ",uom.name," already exists...skipping...");
+                console.log("STATUS: UOM ",uom.name," already exists...checking equality...");
                 needsAdded=false;
+                let filteredDoc=omit(thisDoc,["updatedAt","_rev"])
+                if (!isEqual(filteredDoc,uom)) {
+                    needsUpdated=true;
+                    thisDoc.name = uom.name;
+                    thisDoc.description = uom.description;
+                    thisDoc.pluralDescription = uom.pluralDescription;
+                    if (uom.hasOwnProperty("alternates")) {
+                        thisDoc.alternates = cloneDeep(uom.alternates)
+                    }
+                    console.log("STATUS: UOM ",uom.name," exists but needs updating...");
+                    let dbResp = null;
+                    try { dbResp = await todosDBAsAdmin.insert(thisDoc)}
+                    catch(err) {console.log("ERROR updating existing UOM", "err")}
+                }
             } else {
                 let dbResp = null;
-                try { dbResp = await todosDBAsAdmin.destroy(thisDoc._id,thisDoc._rev)}
+                try { dbResp = await todosDBAsAdmin.destroy(thisDoc._id!,thisDoc._rev!)}
                 catch(err) {console.log("ERROR deleting / replacing existing UOM: ", err);}
             }
         }
@@ -249,9 +263,9 @@ async function createUOMContent() {
             console.log("STATUS: Adding uom ",uom.name, " ", uom.description);
             let dbResp = null;
             try { dbResp = await todosDBAsAdmin.insert(uom);}
-            catch(err) { console.log("ERROR: adding uom ",uom.uom, " error: ",err);}
-        } else {
-            console.log("STATUS: UOM ",uom.name," already exists...skipping");
+            catch(err) { console.log("ERROR: adding uom ",uom.name, " error: ",err);}
+        } else if (needsUpdated) {
+            console.log("STATUS: UOM ",uom.name," already exists...updated with new content");
         }
     };
     console.log("STATUS: Finished adding units of measure, updating to UOM Content Version:",targetUomContentVersion);

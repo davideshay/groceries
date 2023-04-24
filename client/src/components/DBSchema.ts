@@ -1,5 +1,5 @@
 export const maxAppSupportedSchemaVersion = 3;
-export const appVersion = "0.5.1";
+export const appVersion = "0.6.0";
 
 export interface UUIDDoc {
   _id?: string,
@@ -48,7 +48,20 @@ export interface UomDoc {
     name: string,
     description: string,
     pluralDescription: string,
+    alternates?: string[],
+    customAlternates?: string[],
+    updatedAt: string
   }
+
+ export const InitUomDoc: UomDoc = {
+  type: "uom",
+  name: "",
+  description: "",
+  pluralDescription: "",
+  alternates: [],
+  customAlternates: [],
+  updatedAt: ""
+ } 
 
 export interface ItemList {
     listID: string,
@@ -94,6 +107,7 @@ export interface ItemDoc {
     imageID: string | null,
     listGroupID: string | null,
     name: string,
+    pluralName?: string,
     globalItemID: string | null,
     lists: ItemList[],
     updatedAt?: string
@@ -106,6 +120,7 @@ export const ItemDocInit:ItemDoc = {
   listGroupID: null,
   imageID: null,
   name: "",
+  pluralName:"",
   globalItemID: null,
   lists: [],
   updatedAt: ""
@@ -115,12 +130,14 @@ export interface ImageDoc {
   _id? : string,
   _rev?: string,
   type: string,
-  imageBase64: string | null
+  imageBase64: string | null,
+  updatedAt?: string;
 }
 
 export const ImageDocInit: ImageDoc = {
   type: "image",
-  imageBase64: null
+  imageBase64: null,
+  updatedAt: ""
 }
 
 export interface GlobalItemDoc {
@@ -129,7 +146,8 @@ export interface GlobalItemDoc {
   type: string,
   name: string,
   defaultUOM: string | null,
-  defaultCategoryID: string | null
+  defaultCategoryID: string | null,
+  updatedAt?: string
 }
 
 export type GlobalItemDocs = GlobalItemDoc[];
@@ -226,3 +244,47 @@ export const InitFriendDoc : FriendDoc = {
     type: "friend", friendID1: "", friendID2: "",
     inviteEmail: "", inviteUUID: "", friendStatus: FriendStatus.Deleted, updatedAt: ""
   }
+
+export type RecipeItem = {
+  globalItemID: string | null,
+  name: string,
+  recipeUOMName: string | null,
+  recipeQuantity: number,
+  shoppingUOMName: string | null,
+  shoppingQuantity: number,
+  addToList: boolean,
+  note: string
+}
+
+export const RecipeItemInit: RecipeItem = {
+  globalItemID: null,
+  name: "",
+  recipeUOMName: null,
+  recipeQuantity: 1,
+  shoppingUOMName: null,
+  shoppingQuantity: 1,
+  addToList: true,
+  note: ""
+}
+
+export type RecipeInstruction = {
+  stepText: string
+}
+
+export type RecipeDoc = {
+  _id?: string,
+  _rev?: string,
+  type: string,
+  name: string,
+  items: RecipeItem[],
+  instructions: RecipeInstruction[],
+  updatedAt: string
+}
+
+export const InitRecipeDoc : RecipeDoc = {
+  type: "recipe",
+  name: "",
+  items: [],
+  instructions: [],
+  updatedAt:""
+}

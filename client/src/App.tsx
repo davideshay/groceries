@@ -22,6 +22,11 @@ import AppMenu from './components/AppMenu';
 import ConflictLog from './pages/ConflictLog';
 import ConflictItem from './pages/ConflictItem';
 import AllItems from './pages/AllItems';
+import Recipes from './pages/Recipes';
+import RecipeImport from './pages/RecipeImport';
+import Recipe from './pages/Recipe';
+import Uoms from './pages/Uoms';
+import Uom from './pages/Uom';
 import ErrorBoundary from './components/ErrorBoundary';
 import { GlobalStateProvider } from './components/GlobalState';
 import { RemoteDBStateProvider } from './components/RemoteDBState';
@@ -104,6 +109,11 @@ const App: React.FC = () => {
           <Route exact path="/initialload" component={InitialLoad}></Route>
           <Route exact path="/conflictlog" component={ConflictLog}></Route>
           <Route path="/conflictitem/:id" component={ConflictItem}></Route>
+          <Route exact path="/recipes" component={Recipes}></Route>
+          <Route path="/recipe/:mode/:id" component={Recipe}></Route>
+          <Route exact path="/recipeimport" component={RecipeImport}></Route>
+          <Route exact path="/uoms" component={Uoms}></Route>
+          <Route path="/uom/:mode/:id" component={Uom}></Route>
           <Route component={InitialLoad}></Route>
           </Switch>
           {/* <Route component={InitialLoad}></Route>  */}
