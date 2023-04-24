@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@capacitor/filesystem": "^4.1.4"
+  }
+}
