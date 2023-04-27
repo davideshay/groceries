@@ -6,7 +6,8 @@ import {
  issueToken, refreshToken, checkUserExists, registerNewUser, getUsersInfo, 
         checkUserByEmailExists, createAccountUIGet, createAccountUIPost,
         triggerRegEmail, resetPassword, resetPasswordUIGet, resetPasswordUIPost,
-        triggerResolveConflicts, triggerDBCompact, authenticateJWT, logout, groceryAPIPort } from './apicalls';
+        triggerResolveConflicts, triggerDBCompact, authenticateJWT,
+        updateUserInfo, logout, groceryAPIPort } from './apicalls';
 
 import { dbStartup } from './dbstartup'
 import { CheckUserExistsReqBody, NewUserReqBody, CustomRequest, CheckUseEmailReqBody } from './datatypes';
@@ -29,6 +30,7 @@ app.post('/checkuserexists', authenticateJWT, async (req: CustomRequest<CheckUse
 app.post('/checkuserbyemailexists', authenticateJWT, async (req: CustomRequest<CheckUseEmailReqBody>,res: Response) => res.send(await checkUserByEmailExists(req,res)))
 app.post('/registernewuser', async (req: CustomRequest<NewUserReqBody>, res: Response) => res.send(await registerNewUser(req,res)));
 app.post('/getusersinfo', authenticateJWT, async (req: Request, res: Response) => res.send(await getUsersInfo(req,res)));
+app.post('/updateuserinfo', authenticateJWT, async (req: Request, res: Response) => res.send(await updateUserInfo(req,res)));
 app.get('/createaccountui', async (req: Request,res: Response) => res.render("createaccount",await createAccountUIGet(req,res)))
 app.post('/createaccountui', async (req: Request,res: Response) => res.render("createaccount",await createAccountUIPost(req,res)));
 app.post('/triggerregemail', authenticateJWT, async (req: Request,res: Response) => res.send(await triggerRegEmail(req,res)));

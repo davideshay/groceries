@@ -259,6 +259,26 @@ export async function getUsersInfo (req: Request, res: Response) : Promise<GetUs
     return(getResponse);
 }
 
+type UpdateUserInfoResponse = {
+    success: boolean
+}
+export async function updateUserInfo(req: Request, res: Response): Promise<UpdateUserInfoResponse> {
+    let userResp: UpdateUserInfoResponse = {success: false};
+    if (isEmpty(req.body?.name) || isEmpty(req.body?.fullname) || isEmpty(req.body?.email)) {
+        return userResp;
+    }
+    if (req.body?.name !== req.body?.username) {return userResp;}
+    let userDoc = await getUserDoc(req.body.name);
+    if (userDoc.error || userDoc.fullDoc === null) {return userResp}
+    userDoc.fullDoc.email = req.body.email;
+    userDoc.fullDoc.fullname = req.body.fullname;
+    let updateSuccessful = true;
+    try { await usersDBAsAdmin.insert(userDoc.fullDoc); }
+    catch(e) {updateSuccessful = false;console.log(e);}
+    userResp.success = updateSuccessful;
+    return userResp;
+}
+
 export async function createAccountUIGet(req: Request, res: Response) {
     // input - query parameter - uuid
     // creates a form pre-filled with email address (cannot change), username,full name, and password

@@ -1,5 +1,5 @@
 import { CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
-import { initUsersInfo, ListCombinedRows, RowType, UserIDList, UsersInfo } from './DataTypes';
+import { initUsersInfo, ListCombinedRows, RowType, UserIDList, UserInfo, UsersInfo } from './DataTypes';
 import { ListGroupDoc, ListGroupDocInit, UomDoc } from './DBSchema';
 import { cloneDeep } from 'lodash';
 import { DBCreds} from './RemoteDBState';
@@ -77,6 +77,29 @@ export async function getUsersInfo(userIDList: UserIDList,apiServerURL: string, 
         }
     }
     return usersInfo;
+}
+
+export async function updateUserInfo(apiServerURL: string, accessJWT: string, userInfo: UserInfo) : Promise<boolean> {
+    let result=false;
+    let updateUrl=apiServerURL+"/updateuserinfo";
+    const options: HttpOptions = {
+        url: String(updateUrl),
+        data: userInfo,
+        method: "POST",
+        headers: { 'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': 'Bearer '+accessJWT },
+        connectTimeout: apiConnectTimeout           
+    }
+    let response:HttpResponse;
+    try { response = await CapacitorHttp.post(options)}
+    catch(err) {console.log("HTTP Error: ",err); return result}
+    if (response && response.data) {
+        if (response.data.hasOwnProperty("success")) {
+            result=response.data.success
+        }
+    }
+    return result;
 }
 
 export async function initialSetupActivities(db: PouchDB.Database, username: string) {

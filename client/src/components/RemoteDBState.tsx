@@ -1,11 +1,12 @@
 import React, { createContext, useState, useEffect, useRef} from "react";
 import { usePouch} from 'use-pouchdb';
 import { Preferences } from '@capacitor/preferences';
-import { initialSetupActivities } from '../components/Utilities'; 
+import { getUsersInfo, initialSetupActivities } from '../components/Utilities'; 
 import { Device } from '@capacitor/device';
 import PouchDB from 'pouchdb';
 import { getTokenInfo, refreshToken, errorCheckCreds , checkJWT, checkDBUUID, getPrefsDBCreds } from "./RemoteUtilities";
 import { useTranslation } from 'react-i18next';    
+import { UserIDList } from "./DataTypes";
 
 const secondsBeforeAccessRefresh = 180;
 
@@ -139,6 +140,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
 
     function setDBCredsValue(key: string, value: string | null) { 
         (remoteDBCreds.current as any)[key] = value;
+        console.log("setting ",key," = ",value," new:",remoteDBCreds);
         setPrefsDBCreds();
         forceUpdate();
     }
@@ -247,6 +249,13 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             setPrefsDBCreds();
             setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error,invalid_jwt_token"), connectionStatus: ConnectionStatus.navToLoginScreen}))
              return;
+        }
+        let userIDList: UserIDList = { userIDs: [String(remoteDBCreds.current.dbUsername)] }
+        let userInfo = await getUsersInfo(userIDList,String(remoteDBCreds.current.apiServerURL),refreshResponse?.data.accessJWT)
+        if (userInfo.length > 0) {
+            remoteDBCreds.current.email = userInfo[0].email;
+            remoteDBCreds.current.fullName = userInfo[0].fullname;
+            setPrefsDBCreds();
         }
         setRemoteDBState(prevState => ({...prevState, accessJWT: refreshResponse?.data.accessJWT, accessJWTExpirationTime: JWTCheck.JWTExpireDate}));
         await assignDB(refreshResponse.data.accessJWT);

@@ -8,3 +8,27 @@ ion-item.list-button::part(native) {
 .textButton {
     text-transform: none;
 }
+
+ion-item-divider.category-divider {
+    --color: var(--ion-color-medium-shade)
+}
+
+ion-item.shorter-item-no-padding::part(native) {
+    min-height: unset;
+    padding-top: 0px;
+    padding-bottom: 0px;
+}
+
+ion-item.shorter-item-some-padding::part(native) {
+    min-height: unset;
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+
+ion-input.shorter-input.shorter-input2{
+    min-height: 42px;
+}
+
+ion-select.shorter-select.shorter-select2 {
+    min-height: 42px;
+}

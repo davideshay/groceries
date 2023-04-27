@@ -72,6 +72,3 @@ ion-col.col-no-pad {
     --ion-grid-column-padding: 0px;
 }
 
-ion-item-divider.category-divider {
-    --color: var(--ion-color-step-800)
-}
