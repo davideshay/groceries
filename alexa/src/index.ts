@@ -5,7 +5,8 @@ import { ExpressAdapter } from 'ask-sdk-express-adapter';
 import { LaunchRequestHandler, AskWeatherIntentHandler,
           HelpIntentHandler, CancelAndStopIntentHandler, SessionEndedRequestHandler,
           AlexaErrorHandler,
-          ListsIntentHandler} from './intents';
+          ListsIntentHandler,
+          ChangeListGroupIntentHandler} from './intents';
 import { dbStartup } from './dbstartup';
 
 const app = express();
@@ -16,7 +17,8 @@ const skillBuilder = SkillBuilders.custom()
     HelpIntentHandler,
     CancelAndStopIntentHandler,
     SessionEndedRequestHandler,
-    ListsIntentHandler
+    ListsIntentHandler,
+    ChangeListGroupIntentHandler
   )
   .addErrorHandlers(AlexaErrorHandler)
 ;

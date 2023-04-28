@@ -1,7 +1,9 @@
-import { ListDoc, ListGroupDoc } from "./DBSchema";
-import { todosDBAsAdmin } from "./dbstartup";
+import { ListDoc, ListGroupDoc, UserDoc } from "./DBSchema";
+import { todosDBAsAdmin, usersDBAsAdmin } from "./dbstartup";
 import { DocumentScope, MangoResponse } from "nano";
 import axios, {AxiosResponse} from 'axios';
+import { cloneDeep } from 'lodash';
+import { Directive } from "ask-sdk-model";
 
 export async function totalDocCount(db: DocumentScope<unknown>) {
     const info = await db.info();
@@ -31,6 +33,54 @@ export async function getUserInfo(accessToken: string) {
     response.email = req.data.email;
     response.name = req.data.name;
     return response;
+}
+
+export type CouchUserInfo = {
+    success: boolean
+    userName: string
+}
+
+export const CouchUserInit = {
+    success: false,
+    userName: ""
+}
+export async function getCouchUserInfo(email: string) {
+    let response: CouchUserInfo = cloneDeep(CouchUserInit);
+    let userq = {
+        selector: { type: "user", email: email},
+        limit: await totalDocCount(usersDBAsAdmin)
+    }
+    let userResponseDocs: MangoResponse<UserDoc> | null = null;
+    response.success = true;
+    try {userResponseDocs =  (await usersDBAsAdmin.find(userq) as MangoResponse<UserDoc>);}
+    catch(err) {console.log("ERROR: Could not find user documents:",err);
+                response.success = false;};
+    if (response.success && userResponseDocs !== undefined && userResponseDocs !== null) {
+        response.userName = userResponseDocs.docs[0].name
+    } else {response.success = false}
+    return response;
+}
+
+export async function getDynamicIntentDirective(username: string) : Promise<Directive> {
+    let directive: Directive;
+    directive = {
+        
+            type: "Dialog.UpdateDynamicEntities",
+             updateBehavior: "REPLACE",
+             types:[
+                { 
+                "name": "listgroup",
+                "values": [
+                    { id: 'sys:list:acme', name: { value: "Acme"}},
+                    { id: 'sys:list:gianteagle', name: { value: "Giant Eagle"}},
+                    { id: 'sys:list:sams', name: { value: "Sam's Club"}},
+                ]
+                }
+             ] 
+        
+    }
+
+    return directive;
 }
 
 function addCommasAndAnd(list: string[]) {
