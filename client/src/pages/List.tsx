@@ -10,7 +10,7 @@ import { useUpdateGenericDocument, useCreateGenericDocument, useGetOneDoc,
 import { cloneDeep, isEmpty } from 'lodash';
 import './List.css';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
-import { PouchResponse, HistoryProps, ListRow, RowType } from '../components/DataTypes';
+import { PouchResponse, HistoryProps, ListRow, RowType, LogLevel } from '../components/DataTypes';
 import { ListDocInit, ListDoc, CategoryDoc, ListDocs } from '../components/DBSchema'
 import SyncIndicator from '../components/SyncIndicator';
 import { closeCircleOutline, saveOutline, trashOutline } from 'ionicons/icons';
@@ -19,6 +19,7 @@ import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
 import { useTranslation } from 'react-i18next';
 import { translatedCategoryName } from '../components/translationUtilities';
+import { logger } from '../components/Utilities';
 
 interface PageState {
   needInitListDoc: boolean,
@@ -233,7 +234,7 @@ function deletePrompt() {
             <IonReorder slot="end"></IonReorder>
         </IonItem>)    
     } else {
-      console.log("cat doc not defined: id:",id);
+      logger(LogLevel.ERROR,"cat doc not defined: id:",id);
       return(
       <IonItem key={pageState.selectedListID+"-"+actname+"-"+id}>
           <IonButton fill="clear" class="textButton">{t("general.undefined")}</IonButton>

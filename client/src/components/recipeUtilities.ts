@@ -1,10 +1,10 @@
 import { cloneDeep } from "lodash";
 import { ItemDoc, ItemDocInit, ItemList, ItemListInit, RecipeItem } from "./DBSchema";
 import { GlobalDataState } from "./GlobalDataProvider";
-import { AddListOptions, GlobalSettings } from "./GlobalState";
-import { getListGroupIDFromListOrGroupID, getRowTypeFromListOrGroupID } from "./Utilities";
+import { AddListOptions, GlobalSettings } from "./DBSchema";
+import { getListGroupIDFromListOrGroupID, getRowTypeFromListOrGroupID, logger } from "./Utilities";
 import { translatedItemName, translatedUOMShortName } from "./translationUtilities";
-import { RowType } from "./DataTypes";
+import { LogLevel, RowType } from "./DataTypes";
 import { getCommonKey } from "./ItemUtilities";
 import { isEmpty } from "lodash";
 import { t } from 'i18next';
@@ -62,7 +62,7 @@ export async function updateItemFromRecipeItem({itemID,listOrGroupID,recipeItem,
     let foundItem = null;
     let itemExists=true;
     try {foundItem = await db.get(itemID)}
-    catch(err) {console.log("ERROR: ",err);itemExists=false};
+    catch(err) {logger(LogLevel.ERROR,"ERROR: ",err);itemExists=false};
     if (itemExists && foundItem == null) {itemExists =false}
     if (!itemExists) {return t("error.no_item_found_update_recipe",{itemName: recipeItem.name}) as string};
     let rowType: RowType | null = getRowTypeFromListOrGroupID(listOrGroupID as string,globalData.listCombinedRows)
@@ -94,7 +94,7 @@ export async function updateItemFromRecipeItem({itemID,listOrGroupID,recipeItem,
         }
     })
     try {await db.put(updItem)}
-    catch(err) {console.log("ERROR updating item:",err); updateError = true;}
+    catch(err) {logger(LogLevel.ERROR,"ERROR updating item:",err); updateError = true;}
     if (updateError) {
         status = t("error.updating_item_x",{name: updItem.name});
     } else {
@@ -149,7 +149,7 @@ export async function createNewItemFromRecipeItem({listOrGroupID,recipeItem,glob
         newItem.lists.push(newItemList);
     })
     try {await db.post(newItem)}
-    catch(err) {console.log("ERROR adding item:",err); addError = true;}
+    catch(err) {logger(LogLevel.ERROR,"ERROR adding item:",err); addError = true;}
     if (addError) {
         status = t("general.error_adding_item_x",{name: newItem.name});
     } else {

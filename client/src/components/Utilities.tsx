@@ -1,5 +1,5 @@
 import { CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
-import { initUsersInfo, ListCombinedRows, RowType, UserIDList, UserInfo, UsersInfo } from './DataTypes';
+import { initUsersInfo, ListCombinedRows, LogLevel, RowType, UserIDList, UserInfo, UsersInfo } from './DataTypes';
 import { ListGroupDoc, ListGroupDocInit, UomDoc } from './DBSchema';
 import { cloneDeep } from 'lodash';
 import { DBCreds} from './RemoteDBState';
@@ -50,7 +50,7 @@ export async function checkUserByEmailExists(email: string, remoteDBCreds: DBCre
         connectTimeout: apiConnectTimeout         
     };
     try { response = await CapacitorHttp.post(options);}
-    catch(err) {console.log("ERROR: http:",err)};
+    catch(err) {logger(LogLevel.ERROR,"ERROR: http:",err)};
     return response?.data;
 }
 
@@ -70,7 +70,7 @@ export async function getUsersInfo(userIDList: UserIDList,apiServerURL: string, 
     };
     let response:HttpResponse;
     try { response = await CapacitorHttp.post(options); }
-    catch(err) {console.log("HTTP Error: ",err); return usersInfo}
+    catch(err) {logger(LogLevel.ERROR,"HTTP Error: ",err); return usersInfo}
     if (response && response.data) {
         if (response.data.hasOwnProperty("users")) {
             usersInfo = response.data.users
@@ -93,7 +93,7 @@ export async function updateUserInfo(apiServerURL: string, accessJWT: string, us
     }
     let response:HttpResponse;
     try { response = await CapacitorHttp.post(options)}
-    catch(err) {console.log("HTTP Error: ",err); return result}
+    catch(err) {logger(LogLevel.ERROR,"HTTP Error: ",err); return result}
     if (response && response.data) {
         if (response.data.hasOwnProperty("success")) {
             result=response.data.success
@@ -104,12 +104,12 @@ export async function updateUserInfo(apiServerURL: string, accessJWT: string, us
 
 export async function initialSetupActivities(db: PouchDB.Database, username: string) {
  //  Migration to the new listgroup structure will create for existing users, this is for new users added later, or for offline model
-//    console.log("SETUP: Running Initial Setup Activities for :",username);
+    logger(LogLevel.DEBUG,"SETUP: Running Initial Setup Activities for :",username);
     const totalDocs = (await db.info()).doc_count
     const listGroupDocs = await db.find({ selector: { type: "listgroup", listGroupOwner: username, default: true},
          limit: totalDocs});
     if (listGroupDocs.docs.length === 0) {
-        console.log("STATUS: No default group found for ",username, "... creating now ...");
+        logger(LogLevel.INFO,"STATUS: No default group found for ",username, "... creating now ...");
         const defaultListGroupDoc : ListGroupDoc = cloneDeep(ListGroupDocInit);
         defaultListGroupDoc.default = true;
         defaultListGroupDoc.name = username+" (default)";
@@ -156,4 +156,35 @@ export function getUOMIDFromShortName(uomName: string, uomDocs: UomDoc[]) : stri
     else { return (foundUOM._id as string)}
 }
 
+export function logger(lvl: LogLevel, ...args: any) {
+    let argsarray = Array.from(arguments);
+    if (lvl >= LOG_LEVEL) {
+        let date=new Date();
+        let timePrefix=date.toLocaleDateString()+" "+date.toLocaleTimeString();
+        console.log(timePrefix+": ",...args);
+    }
+}
+
+function getLogLevel(level: string) {
+    switch (level.toUpperCase()) {
+        case "I":
+        case "INFO":
+        case "INFORMATION":
+            return LogLevel.INFO
+        case "D":
+        case "DEBUG":
+            return LogLevel.DEBUG
+        case "W":
+        case "WARN":
+        case "WARNING":
+            return LogLevel.WARNING
+        case "E":
+        case "ERROR":
+            return LogLevel.ERROR
+        default:
+            return LogLevel.INFO
+    }
+}
+
 export const DEFAULT_API_URL=(window as any)._env_.DEFAULT_API_URL
+export const LOG_LEVEL= (window as any)._env_.LOG_LEVEL == undefined ? LogLevel.INFO : getLogLevel((window as any)._env.LOG_LEVEL)

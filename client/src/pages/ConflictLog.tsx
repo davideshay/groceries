@@ -3,13 +3,14 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
 import { useContext, useRef } from 'react';
 import SyncIndicator from '../components/SyncIndicator';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
-import { HistoryProps } from '../components/DataTypes';
+import { HistoryProps, LogLevel } from '../components/DataTypes';
 import './Categories.css';
 import { useConflicts } from '../components/Usehooks';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { ConflictDocs } from '../components/DBSchema';
 import { useTranslation } from 'react-i18next';
+import { logger } from '../components/Utilities';
 
 const ConflictLog: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { setDBCredsValue } = useContext(RemoteDBStateContext);
@@ -30,7 +31,7 @@ const ConflictLog: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   function setConflictsAsViewed() {
     const curDateStr = (new Date()).toISOString();
-    console.log("setting to ",curDateStr);
+    logger(LogLevel.DEBUG,"setting conflicts viewed date to ",curDateStr);
     setDBCredsValue("lastConflictsViewed",curDateStr);
   }
 

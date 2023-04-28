@@ -76,7 +76,6 @@ const RecipeItemSearch: React.FC<RecipeItemSearchProps> = (props: RecipeItemSear
     },[pageState.listGroupsNeedInit,itemsLoading,globalData.globalItemsLoading])
 
     function selectRow(id: string, data: RecipeSearchData) {
-        console.log("select Row:",id,data);
         props.rowSelected(id,data);
         if (searchRef.current) {
             searchRef.current.resetSearch()
@@ -84,7 +83,6 @@ const RecipeItemSearch: React.FC<RecipeItemSearchProps> = (props: RecipeItemSear
     }
 
     function addNewRecipeItem(name: string) {
-        console.log("ADD NEW RECIPE ITEM",name)
         props.addItemWithoutRow(name);
         if (searchRef.current) {
             searchRef.current.resetSearch()

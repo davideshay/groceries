@@ -1,21 +1,9 @@
 import React, { createContext, useEffect, useState} from "react";
 import { Preferences } from '@capacitor/preferences';
 import { pick,cloneDeep } from "lodash";
-import { isJsonString } from "./Utilities";
-import { RowType } from "./DataTypes";
-
-export enum AddListOptions {
-    dontAddAutomatically = "D",
-    addToAllListsAutomatically = "ALL",
-    addToListsWithCategoryAutomatically = "CAT"
-}
-
-export type GlobalSettings = {
-    addListOption: AddListOptions,
-    removeFromAllLists: boolean,
-    completeFromAllLists: boolean,
-    daysOfConflictLog: Number
-}
+import { isJsonString, logger } from "./Utilities";
+import { LogLevel, RowType } from "./DataTypes";
+import { GlobalSettings, AddListOptions } from "./DBSchema";
 
 export type GlobalState = {
     itemMode?: string,
@@ -76,7 +64,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         setGlobalState(prevState => ({...prevState,settings: {...prevState.settings, [key]: value}}))
         let settingsStr = JSON.stringify({...globalState.settings,[key]: value})
         try { await Preferences.set({key: 'settings', value: settingsStr}) }
-        catch(err) {console.log("ERROR setting prefs:",err); return false;}
+        catch(err) {logger(LogLevel.ERROR,"ERROR setting prefs:",err); return false;}
         return true;
     }
 

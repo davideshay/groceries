@@ -288,3 +288,24 @@ export const InitRecipeDoc : RecipeDoc = {
   instructions: [],
   updatedAt:""
 }
+
+export enum AddListOptions {
+  dontAddAutomatically = "D",
+  addToAllListsAutomatically = "ALL",
+  addToListsWithCategoryAutomatically = "CAT"
+}
+
+export type GlobalSettings = {
+  addListOption: AddListOptions,
+  removeFromAllLists: boolean,
+  completeFromAllLists: boolean,
+  daysOfConflictLog: Number
+}
+
+export type SettingsDoc = {
+  _id?: string,
+  _rev?: string,
+  type: string,
+  username: string,
+  settings: GlobalSettings
+}

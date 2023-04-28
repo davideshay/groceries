@@ -68,7 +68,6 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   },[routeID])
 
   function changeListUpdateState(listGroupID: string) {
-    console.log("in changeListUpdateState about to update listdoc");
     setPageState(prevState => ({...prevState,
         selectedListGroupID: listGroupID}))
     props.history.push('/listgroup/edit/'+listGroupID);    
@@ -205,7 +204,6 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
       }
     }
   } else { // not the list owner
-    console.log("pagestate: ", cloneDeep(pageState));
     pageState.usersInfo.forEach(user => {
       if (user.name !== remoteDBCreds.dbUsername && user.name !== pageState.listGroupDoc.listGroupOwner) {
         usersElem.push(

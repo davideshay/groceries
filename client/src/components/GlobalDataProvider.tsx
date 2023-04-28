@@ -163,7 +163,6 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
             listRowsLoaded,
             listCombinedRows: listCombinedRows as ListCombinedRows
         };
-//        console.log("GLOBAL DATA CAUSED RERENDER...",cloneDeep(value));    
     return (
         <GlobalDataContext.Provider value={value}>{props.children}</GlobalDataContext.Provider>
       );

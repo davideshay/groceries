@@ -10,9 +10,9 @@ import { App } from '@capacitor/app';
 import { createNewUser, getTokenInfo, navigateToFirstListID, errorCheckCreds  } from '../components/RemoteUtilities';
 import { cloneDeep } from 'lodash';
 import { RemoteDBStateContext, SyncStatus, initialRemoteDBState } from '../components/RemoteDBState';
-import { HistoryProps } from '../components/DataTypes';
+import { HistoryProps, LogLevel } from '../components/DataTypes';
 import { useLists } from '../components/Usehooks';
-import { apiConnectTimeout } from '../components/Utilities';
+import { apiConnectTimeout, logger } from '../components/Utilities';
 import { useTranslation } from 'react-i18next';
 
 export type RemoteState = {
@@ -94,7 +94,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       };
       if (remoteDBState.dbUUIDAction !== DBUUIDAction.none) {
         if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_app_schema_mismatch) {
-          console.log("ERROR: Schema too new, not supported with this app version. Upgrade.");
+          logger(LogLevel.ERROR,"ERROR: Schema too new, not supported with this app version. Upgrade.");
           presentAndExit({
             header: t("error.error") as string,
             message: t("error.app_not_support_newer_schema") as string,
@@ -103,7 +103,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
           return;
         }
         if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_local_remote_schema_mismatch) {
-          console.log("ERROR: Local/Remote schema mismatch. Must destroy local Databse.");
+          logger(LogLevel.ERROR,"ERROR: Local/Remote schema mismatch. Must destroy local Databse.");
           presentAlert( {
             header: t("error.warning"),
             message: t("error.different_database_schema"),
@@ -115,7 +115,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
           return;
         }
         if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_no_uuid_on_server) {
-          console.log("ERROR: No database UUID defined in server todos database. Cannot continue");
+          logger(LogLevel.ERROR,"ERROR: No database UUID defined in server todos database. Cannot continue");
           presentAndExit({
             header: t("error.error") as string,
             message: t("error.server_no_unique_id") as string,
@@ -138,7 +138,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     useEffect( () => {
       if (listRowsLoaded) {
         if (remoteDBState.connectionStatus === ConnectionStatus.cannotStart) {
-          console.log("Detected cannot start, setting initRemoteState");
+          logger(LogLevel.ERROR,"Detected cannot start, setting initRemoteState");
           setRemoteState(initRemoteState);
         } else if (remoteDBState.connectionStatus === ConnectionStatus.loginComplete) {
           navigateToFirstListID(props.history,remoteDBCreds, listRows);
@@ -154,11 +154,8 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
 
     async function exitApp() {
       if (!(isPlatform("desktop") || isPlatform("electron"))) {App.exitApp()}
-      console.log("RESETTING TO INITSTATE");
       setRemoteDBState(initialRemoteDBState);
       window.location.replace('about:blank');
-//      window.location.replace('/');
-  
     }
 
     function updateDBCredsFromResponse(response: HttpResponse): DBCreds {
@@ -186,7 +183,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       await dismiss();
       return;
     }
-    console.log("creds check ok... trying to issue token...");
+    logger(LogLevel.DEBUG,"creds check ok... trying to issue token...");
     let response: HttpResponse;
     const options : HttpOptions = {
         url: String(remoteDBCreds.apiServerURL+"/issuetoken"),
@@ -200,12 +197,12 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       
     };
     try {response = await CapacitorHttp.post(options)}
-    catch(err) {console.log("Error logging in...",err)
+    catch(err) {logger(LogLevel.ERROR,"Error logging in...",err)
                 setRemoteState(prevState => ({...prevState, formError: t("error.could_not_contact_api_server")}));
                 setRemoteDBState({...remoteDBState, serverAvailable: false});
                 await dismiss();
                 return}
-    console.log("did API /issuetoken : result: ", cloneDeep(response));            
+    logger(LogLevel.INFO,"did API /issuetoken : result: ", cloneDeep(response));            
     if (!((response?.status === 200) && (response?.data?.loginSuccessful))) {
         setRemoteState(prevState => ({...prevState, formError: t("error.invalid_authentication")}))
         await dismiss();
@@ -261,7 +258,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
         connectTimeout: apiConnectTimeout        
     };
     try {await CapacitorHttp.post(options);}
-    catch(err) {console.log("ERROR: resetting password",err)}
+    catch(err) {logger(LogLevel.ERROR,"ERROR: resetting password",err)}
 //    presentAlert({
 //      header: "Password Request Sent",
 //      message: "Please check your email for the link to reset your password",

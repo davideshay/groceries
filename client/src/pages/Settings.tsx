@@ -6,10 +6,10 @@ import { usePouch } from 'use-pouchdb';
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
 import './Settings.css';
-import { GlobalStateContext, initSettings, GlobalSettings, AddListOptions } from '../components/GlobalState';
+import { GlobalStateContext, initSettings } from '../components/GlobalState';
 import { initialRemoteDBState, RemoteDBStateContext,  } from '../components/RemoteDBState';
 import { HistoryProps, UserInfo, initUserInfo } from '../components/DataTypes';
-import { maxAppSupportedSchemaVersion, appVersion } from '../components/DBSchema';
+import { maxAppSupportedSchemaVersion, appVersion , GlobalSettings, AddListOptions} from '../components/DBSchema';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
 import { languageDescriptions } from '../i18n';
@@ -54,10 +54,8 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
     let credsStr=JSON.stringify({});
     await Preferences.set({key: 'dbcreds', value: credsStr})
     if (!(isPlatform("desktop") || isPlatform("electron"))) {App.exitApp()}
-    console.log("RESETTING TO INITSTATE");
     setRemoteDBState(initialRemoteDBState);
     window.location.replace('/');
-//    navigate('/');
     return false;
   }
 
@@ -66,10 +64,8 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
     let credsStr=JSON.stringify({});
     await Preferences.set({key: 'dbcreds', value: credsStr})
     if (!(isPlatform("desktop") || isPlatform("electron"))) {App.exitApp()}
-    console.log("RESETTING TO INITSTATE");
     setRemoteDBState(initialRemoteDBState);
     window.location.replace('/');
-//    navigate('/');
     return false;
   }
 

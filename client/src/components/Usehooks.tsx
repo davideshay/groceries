@@ -3,10 +3,10 @@ import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { usePouch, useFind } from 'use-pouchdb'
 import { cloneDeep, pull } from 'lodash';
 import { RemoteDBStateContext, SyncStatus } from './RemoteDBState';
-import { FriendRow,InitFriendRow, ResolvedFriendStatus, ListRow, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType, UsersInfo } from './DataTypes';
+import { FriendRow,InitFriendRow, ResolvedFriendStatus, ListRow, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType, UsersInfo, LogLevel } from './DataTypes';
 import { FriendDocs,FriendStatus, ListGroupDoc, ListDoc, ListDocs, ListGroupDocs, ListDocInit, ItemDocs, ItemDoc, ItemList, ItemListInit, ConflictDocs, RecipeDoc} from './DBSchema';
 import { GlobalStateContext } from './GlobalState';
-import { adaptResultToBase64, getUsersInfo } from './Utilities';
+import { adaptResultToBase64, getUsersInfo, logger } from './Utilities';
 import { getCommonKey } from './ItemUtilities';
 import { GlobalDataContext } from './GlobalDataProvider';
 import { isPlatform } from '@ionic/core';
@@ -60,7 +60,7 @@ export function useUpdateGenericDocument() {
           updatedDoc.updatedAt = curDateStr;
           let response: PouchResponse = cloneDeep(PouchResponseInit);
           try { response.pouchData = await db.put(updatedDoc); }
-          catch(err) { response.successful = false; response.fullError = err; console.log("ERROR:",err);}
+          catch(err) { response.successful = false; response.fullError = err; logger(LogLevel.ERROR,"ERROR:",err);}
           if (!response.pouchData.ok) { response.successful = false;}
       return response
     },[db])
@@ -385,8 +385,6 @@ export function useItems({selectedListGroupID,isReady, needListGroupID, activeOn
     checkAndBuild();
   },[isReady,itemError, listDBError,itemsLoading,listRowsLoaded,itemDocs, listCombinedRows, selectedListGroupID, selectedListID, selectedListType, needListGroupID])
 
-//  console.log("UI Inputs:",cloneDeep({selectedListGroupID,isReady, needListGroupID, activeOnly, selectedListID, selectedListType}));
-//  console.log("UI returning:",cloneDeep({dbError, itemsLoading, itemRowsLoaded,itemRows, itemDocs}));
   return ({dbError, itemsLoading, itemRowsLoading, itemRowsLoaded, itemRows});
 }
 
@@ -538,7 +536,6 @@ export function useAddListToAllItems() {
                         listGroupID: listGroupID},
             sort: [ "type","name"]
           }) as PouchDB.Find.FindResponse<ItemDoc>;
-          console.log("add list to all items..,",cloneDeep(itemRecords.docs),listGroupID,listID)
           for (let i = 0; i < itemRecords.docs.length; i++) {
             const item = itemRecords.docs[i];
             let itemUpdated=false;
@@ -553,7 +550,6 @@ export function useAddListToAllItems() {
               newList.quantity = getCommonKey(item,"quantity",listDocs);
               newList.stockedAt = getCommonKey(item,"stockedAt",listDocs);
               newList.uomName = getCommonKey(item,"uomName",listDocs);
-              console.log("created new list:",cloneDeep(newList));
               item.lists.push(newList);
               itemUpdated=true;
             }
