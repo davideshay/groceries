@@ -2,23 +2,30 @@ import { SkillBuilders } from 'ask-sdk';
 import express from 'express';
 import { ExpressAdapter } from 'ask-sdk-express-adapter';
 
-import { LaunchRequestHandler, AskWeatherIntentHandler,
+import { LaunchRequestHandler,
           HelpIntentHandler, CancelAndStopIntentHandler, SessionEndedRequestHandler,
           AlexaErrorHandler,
           ListsIntentHandler,
-          ChangeListGroupIntentHandler} from './intents';
+          ChangeListGroupIntentHandler,
+          ListGroupsIntentHandler,
+          DefaultListGroupIntentHandler,
+          AddItemToListIntentHandler} from './intents';
 import { dbStartup } from './dbstartup';
+
+export const alexaPort = (process.env.ALEXA_PORT == undefined) ? 3000 : process.env.ALEXA_PORT;
 
 const app = express();
 const skillBuilder = SkillBuilders.custom()
   .addRequestHandlers(
     LaunchRequestHandler,
-    AskWeatherIntentHandler,
     HelpIntentHandler,
     CancelAndStopIntentHandler,
     SessionEndedRequestHandler,
     ListsIntentHandler,
-    ChangeListGroupIntentHandler
+    ListGroupsIntentHandler,
+    ChangeListGroupIntentHandler,
+    DefaultListGroupIntentHandler,
+    AddItemToListIntentHandler
   )
   .addErrorHandlers(AlexaErrorHandler)
 ;
@@ -28,4 +35,4 @@ const adapter = new ExpressAdapter(skill, true, true);
 dbStartup()
 
 app.post('/', adapter.getRequestHandlers());
-app.listen(3000, () => {console.log("Listening on port 3000...")});
+app.listen(alexaPort, () => {console.log("Listening on port "+alexaPort+" ...")});
