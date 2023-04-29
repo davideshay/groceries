@@ -2,9 +2,9 @@ import { useCallback, useState, useEffect, useContext, useRef } from 'react'
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { usePouch, useFind } from 'use-pouchdb'
 import { cloneDeep, pull } from 'lodash';
-import { RemoteDBStateContext, SyncStatus } from './RemoteDBState';
-import { FriendRow,InitFriendRow, ResolvedFriendStatus, ListRow, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType, UsersInfo, LogLevel } from './DataTypes';
-import { FriendDocs,FriendStatus, ListGroupDoc, ListDoc, ListDocs, ListGroupDocs, ListDocInit, ItemDocs, ItemDoc, ItemList, ItemListInit, ConflictDocs, RecipeDoc} from './DBSchema';
+import { RemoteDBStateContext } from './RemoteDBState';
+import { FriendRow,InitFriendRow, ResolvedFriendStatus, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType, UsersInfo, LogLevel } from './DataTypes';
+import { FriendDocs,FriendStatus, ListDoc, ListDocs, ItemDocs, ItemDoc, ItemList, ItemListInit, ConflictDocs, RecipeDoc} from './DBSchema';
 import { GlobalStateContext } from './GlobalState';
 import { adaptResultToBase64, getUsersInfo, logger } from './Utilities';
 import { getCommonKey } from './ItemUtilities';
@@ -25,6 +25,8 @@ export function useGetOneDoc(docID: string | null, attachments: boolean = false)
   const [attachBlob,setAttachBlob] = useState<Blob|null>(null);
   const [dbError, setDBError] = useState(false);
   const loadingRef = useRef(true);
+  const [, forceUpdateState] = useState<{}>();
+  const forceUpdate = useCallback(() => forceUpdateState({}), []);
 
   async function getDoc(id: string | null) {
       if (id == null) { loadingRef.current = false; return};
@@ -42,13 +44,13 @@ export function useGetOneDoc(docID: string | null, attachments: boolean = false)
       loadingRef.current = false;
       if (success) {setDoc(docRet)};
       if (attSuccess) {setAttachBlob(docAtt as Blob);}
+      forceUpdate();
     }
     
   useEffect( () => {
       getDoc(docID)
       return ( () => { if (changesRef.current) {changesRef.current.cancel()};})  
   },[docID])  
-
   return {dbError, loading: loadingRef.current, doc, attachBlob };
 }
 
@@ -202,130 +204,6 @@ export function useDeleteCategoryFromLists() {
     },[db]) 
 }
 
-export function useLists() : {dbError: boolean, listsLoading: boolean, listDocs: ListDocs, listRowsLoaded: boolean, listRows: ListRow[], listCombinedRows: ListCombinedRow[]} {
-  const { remoteDBCreds } = useContext(RemoteDBStateContext);
-  const [listRows,setListRows] = useState<ListRow[]>([]);
-  const [listCombinedRows,setListCombinedRows] = useState<ListCombinedRow[]>([]);
-  const [listRowsLoaded, setListRowsLoaded] = useState(false);
-  const [dbError, setDBError] = useState(false);
-  const globalData = useContext(GlobalDataContext);
-
-  function buildListRows() {
-    let curListDocs: ListDocs = cloneDeep(globalData.listDocs);
-    let newListRows: ListRow[] = [];
-    curListDocs.forEach((listDoc) => {
-      let listGroupID=null;
-      let listGroupName="";
-      let listGroupDefault=false;
-      let listGroupOwner = "";
-      for (let i = 0; i < globalData.listGroupDocs.length; i++) {
-        const lgd = (globalData.listGroupDocs[i] as ListGroupDoc);
-        if (lgd.listGroupOwner !== remoteDBCreds.dbUsername || lgd.sharedWith.includes(remoteDBCreds.dbUsername)) {
-          continue;
-        }
-        if ( listDoc.listGroupID === lgd._id ) {
-          listGroupID=lgd._id
-          listGroupName=lgd.name
-          listGroupDefault=lgd.default;
-          listGroupOwner=lgd.listGroupOwner;
-        }
-      }
-      if (listGroupID == null) { return };
-      let listRow: ListRow ={
-        listGroupID: listGroupID,
-        listGroupName: listGroupName,
-        listGroupDefault: listGroupDefault,
-        listGroupOwner: listGroupOwner,
-        listDoc: listDoc,
-      }
-      newListRows.push(listRow);
-    });
-
-    newListRows.sort(function (a: ListRow, b: ListRow) {
-      return a.listDoc.name.toUpperCase().localeCompare(b.listDoc.name.toUpperCase());
-    })
-
-    setListRows(newListRows);
-    const sortedListGroups: ListGroupDocs = cloneDeep(globalData.listGroupDocs).filter( 
-      (lgd: ListGroupDoc) => lgd.listGroupOwner === remoteDBCreds.dbUsername ||
-            lgd.sharedWith.includes(String(remoteDBCreds.dbUsername))
-    );
-    sortedListGroups.sort(function (a: ListGroupDoc, b: ListGroupDoc) {
-      return a.name.toUpperCase().localeCompare(b.name.toUpperCase());
-    });
-
-    let newCombinedRows: ListCombinedRow[] = [];
-    sortedListGroups.forEach((listGroup: ListGroupDoc) => {
-      let groupRow: ListCombinedRow = {
-          rowType : RowType.listGroup,
-          rowName : listGroup.name,
-          rowKey: "G-"+listGroup._id,
-          listOrGroupID: String(listGroup._id),
-          listGroupID : String(listGroup._id),
-          listGroupName : listGroup.name,
-          listGroupOwner: listGroup.listGroupOwner,
-          listGroupDefault: listGroup.default,
-          listDoc: ListDocInit
-        }
-      newCombinedRows.push(groupRow);
-      for (let i = 0; i < newListRows.length; i++) {
-        const listRow = newListRows[i];
-        if (listGroup._id === listRow.listGroupID) {
-          let listListRow: ListCombinedRow = {
-            rowType: RowType.list,
-            rowName: listRow.listDoc.name,
-            rowKey: "L-"+listRow.listDoc._id,
-            listOrGroupID: String(listRow.listDoc._id),
-            listGroupID: listRow.listGroupID,
-            listGroupName: listRow.listGroupName,
-            listGroupOwner: listRow.listGroupOwner,
-            listGroupDefault: listRow.listGroupDefault,
-            listDoc: listRow.listDoc
-          }
-          newCombinedRows.push(listListRow);    
-        } 
-      }  
-    });
-    // now add any ungrouped (error) lists:
-    let testRow = newListRows.find(el => (el.listGroupID === null))
-    if (testRow !== undefined) {
-      let groupRow: ListCombinedRow = {
-        rowType : RowType.listGroup, rowName : testRow.listGroupName,
-        rowKey: "G-null", listOrGroupID: null, listGroupID : null,
-        listGroupName : testRow.listGroupName, listGroupDefault: false, listGroupOwner: null,
-        listDoc: ListDocInit
-      }
-      newCombinedRows.push(groupRow);
-      newListRows.forEach(newListRow => {
-        if (newListRow.listGroupID == null) {
-          let listlistRow: ListCombinedRow = {
-            rowType: RowType.list, rowName: newListRow.listDoc.name,
-            rowKey: "L-"+newListRow.listDoc._id, listOrGroupID: String(newListRow.listDoc._id),listGroupID: null,
-            listGroupName: newListRow.listGroupName, listGroupOwner: null, listGroupDefault: false,
-            listDoc: newListRow.listDoc
-          }
-          newCombinedRows.push(listlistRow);  
-        }
-      })
-    }
-    setListCombinedRows(newCombinedRows);
-  }
-
-  useEffect( () => {
-    if (globalData.listsLoading || globalData.listGroupsLoading) { setListRowsLoaded(false); return };
-    if (globalData.listError !== null || globalData.listGroupError !== null) { setDBError(true); return};
-    setDBError(false);
-    if ( !globalData.listsLoading && !globalData.listGroupsLoading && !listRowsLoaded)  {
-      setListRowsLoaded(false);
-      buildListRows();
-      setListRowsLoaded(true);
-    }
-  },[globalData.listError, globalData.listGroupError, globalData.listsLoading,
-    globalData.listDocs, globalData.listGroupDocs, globalData.listGroupsLoading])
-
-  return ({dbError, listsLoading: globalData.listsLoading, listDocs: globalData.listDocs, listRowsLoaded, listRows, listCombinedRows});
-}
-
 export function useItems({selectedListGroupID,isReady, needListGroupID, activeOnly = false, selectedListID = null, selectedListType = RowType.list,} :
                    {selectedListGroupID: string | null, isReady: boolean, needListGroupID: boolean, activeOnly: boolean, selectedListID: string | null, selectedListType: RowType})
       : {dbError: boolean, itemsLoading: boolean, itemRowsLoading: boolean, itemRowsLoaded: boolean, itemRows: ItemDocs} {
@@ -418,12 +296,12 @@ export function useFriends(username: string) : { useFriendState: UseFriendState,
 
     useEffect( () => {
       if (useFriendState === UseFriendState.baseFriendsLoaded) {
-        if (remoteDBState.syncStatus === SyncStatus.active || remoteDBState.syncStatus === SyncStatus.paused) {
+        if ( remoteDBState.initialSyncComplete ) {
           setUseFriendState((prevState) => UseFriendState.rowsLoading);
           loadFriendRows();
         }  
       }
-    },[useFriendState,remoteDBState.syncStatus])
+    },[useFriendState,remoteDBState.initialSyncComplete])
 
     useEffect( () => {
       if (friendState === "error") {setUseFriendState((prevState) => UseFriendState.error); return};
@@ -486,7 +364,7 @@ export function useFriends(username: string) : { useFriendState: UseFriendState,
 
 export function useConflicts() : { conflictsError: boolean, conflictDocs: ConflictDocs, conflictsLoading: boolean} {
   const { remoteDBCreds } = useContext(RemoteDBStateContext);
-  const { globalState } = useContext(GlobalStateContext);
+  const { globalState, settingsLoading } = useContext(GlobalStateContext);
   const [mostRecentDate,setMostRecentDate] = useState<Date>(new Date());
 
   const { docs: conflictDocs, loading: conflictsLoading, error: dbError } = useFind({
@@ -496,11 +374,13 @@ export function useConflicts() : { conflictsError: boolean, conflictDocs: Confli
   })
 
   useEffect( () => {
-    const oneDayOldDate=new Date();
-    oneDayOldDate.setDate(oneDayOldDate.getDate()-Number(globalState.settings.daysOfConflictLog));
-    const lastConflictsViewed = new Date(String(remoteDBCreds.lastConflictsViewed))
-    setMostRecentDate((lastConflictsViewed > oneDayOldDate) ? lastConflictsViewed : oneDayOldDate);  
-  },[remoteDBCreds.lastConflictsViewed,globalState.settings.daysOfConflictLog])
+    if (globalState.settingsLoaded && !settingsLoading) {
+      let oneDayOldDate=new Date();
+      oneDayOldDate.setDate(oneDayOldDate.getDate()-Number(globalState.settings.daysOfConflictLog));
+      const lastConflictsViewed = new Date(String(remoteDBCreds.lastConflictsViewed))
+      setMostRecentDate((lastConflictsViewed > oneDayOldDate) ? lastConflictsViewed : oneDayOldDate);  
+    }
+  },[remoteDBCreds.lastConflictsViewed,globalState.settings.daysOfConflictLog, globalState.settingsLoaded, settingsLoading])
 
   return({conflictsError: dbError !== null, conflictDocs: (conflictDocs as ConflictDocs), conflictsLoading});
 }
@@ -579,7 +459,7 @@ export function usePhotoGallery() {
       promptLabelHeader: t("general.take_picture_for_item") as string
     });
     let photoString = rPhoto.base64String;
-    if (photoString != undefined && (isPlatform("desktop") || isPlatform("electron"))) {
+    if (photoString !== undefined && (isPlatform("desktop") || isPlatform("electron"))) {
       //image needs resizing -- desktop doesn't obey size constraints
       let base64Resp = await fetch(pictureSrcPrefix+photoString);
       const blob = await base64Resp.blob();

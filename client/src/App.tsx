@@ -80,9 +80,9 @@ const App: React.FC = () => {
   return (
   <IonApp>
     <ErrorBoundary>
-    <GlobalStateProvider>
     <Provider pouchdb={db}>
     <RemoteDBStateProvider>
+    <GlobalStateProvider>
     <GlobalDataProvider>
     <IonReactRouter>
       <IonSplitPane contentId="main">
@@ -121,9 +121,9 @@ const App: React.FC = () => {
       </IonSplitPane>
     </IonReactRouter>
     </GlobalDataProvider>
-    </RemoteDBStateProvider>
-    </Provider>    
     </GlobalStateProvider>
+    </RemoteDBStateProvider>
+    </Provider>
     </ErrorBoundary>
   </IonApp>
   )

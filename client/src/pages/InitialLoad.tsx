@@ -4,11 +4,13 @@ import { useContext, useEffect, useRef} from 'react';
 import { usePouch } from 'use-pouchdb';
 import { ConnectionStatus, RemoteDBStateContext } from '../components/RemoteDBState';
 import { navigateToFirstListID } from '../components/RemoteUtilities';
-import { initialSetupActivities } from '../components/Utilities';
+import { initialSetupActivities, logger } from '../components/Utilities';
 import ErrorPage from './ErrorPage';
 import { History } from 'history';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
 import { useTranslation } from 'react-i18next';
+import { LogLevel } from '../components/DataTypes';
+import { cloneDeep } from 'lodash';
 
 type InitialLoadProps = {
   history : History
@@ -16,7 +18,7 @@ type InitialLoadProps = {
 
 const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
     const { remoteDBState, remoteDBCreds, remoteDB,setConnectionStatus} = useContext(RemoteDBStateContext);
-    const { listError ,listRowsLoaded, listRows } = useContext(GlobalDataContext)
+    const { listError ,listRowsLoaded, listRows, listsLoading } = useContext(GlobalDataContext)
     const db=usePouch();
     const screenLoading = useRef(true);
     const { t } = useTranslation();
@@ -25,15 +27,16 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
         async function initialStartup() {
             await initialSetupActivities(remoteDB as PouchDB.Database, String(remoteDBCreds.dbUsername));
             screenLoading.current=false;
+            logger(LogLevel.DEBUG,"Calling Nav from initial load",cloneDeep(listRows));
             await navigateToFirstListID(props.history,remoteDBCreds,listRows);
             setConnectionStatus(ConnectionStatus.initialNavComplete);
         }
-        if (listRowsLoaded) {
+        if (listRowsLoaded && !listsLoading) {
             if ((remoteDBState.connectionStatus === ConnectionStatus.loginComplete)) {
                 initialStartup();
             } 
         }      
-    },[db, listRows, props.history, remoteDBCreds, remoteDBState.connectionStatus, listRowsLoaded])   
+    },[db, listRows, props.history, remoteDBCreds, remoteDBState.connectionStatus, listRowsLoaded, listsLoading])   
 
     useEffect(() => {
         async function dismissToLogin() {

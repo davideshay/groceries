@@ -81,7 +81,6 @@ export function getAllSearchRows(allItemDocs: ItemDocs, listID: string,listType:
         searchRows.push(searchRow);
       }   
     })
-    logger(LogLevel.DEBUG,"returned searchrows: ",cloneDeep(searchRows))
     return searchRows;
   }
 

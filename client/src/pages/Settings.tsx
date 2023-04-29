@@ -1,12 +1,13 @@
 import { IonContent, IonPage, IonList, IonItem,
         IonButton, useIonAlert, IonInput,
         IonRadioGroup, IonRadio, IonCheckbox, isPlatform, IonItemDivider, IonSelect, IonSelectOption, IonButtons, IonToolbar, IonText } from '@ionic/react';
-import { useContext, useEffect, useState } from 'react';        
+import { useContext, useEffect, useRef, useState } from 'react';        
 import { usePouch } from 'use-pouchdb';
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
 import './Settings.css';
-import { GlobalStateContext, initSettings } from '../components/GlobalState';
+import { InitSettings } from '../components/DBSchema';
+import { GlobalStateContext } from '../components/GlobalState';
 import { initialRemoteDBState, RemoteDBStateContext,  } from '../components/RemoteDBState';
 import { HistoryProps, UserInfo, initUserInfo } from '../components/DataTypes';
 import { maxAppSupportedSchemaVersion, appVersion , GlobalSettings, AddListOptions} from '../components/DBSchema';
@@ -16,6 +17,7 @@ import { languageDescriptions } from '../i18n';
 import { isEmpty, isEqual } from 'lodash';
 import { checkUserByEmailExists, emailPatternValidation, fullnamePatternValidation, updateUserInfo } from '../components/Utilities';
 import { cloneDeep } from 'lodash';
+import Loading from '../components/Loading';
 
 type ErrorInfo = {
   isError: boolean,
@@ -34,13 +36,14 @@ const ErrorInfoInit: ErrorInfo = {
 const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
   const db = usePouch();
   const [presentAlert] = useIonAlert();
-  const {globalState, updateSettingKey} = useContext(GlobalStateContext);
+  const {globalState, settingsLoading, updateSettingKey} = useContext(GlobalStateContext);
   const { remoteDBCreds, setDBCredsValue, remoteDBState, setRemoteDBState } = useContext(RemoteDBStateContext);
-  const [localSettings, setLocalSettings] = useState<GlobalSettings>(initSettings)
+  const [localSettings, setLocalSettings] = useState<GlobalSettings>(InitSettings)
   const [localSettingsInitialized,setLocalSettingsInitialized] = useState(false);
   const [userInfo, setUserInfo] = useState<UserInfo>(initUserInfo);
   const [errorInfo,setErrorInfo] = useState<ErrorInfo>(cloneDeep(ErrorInfoInit));
   const { t, i18n } = useTranslation();
+  const screenLoading = useRef(false);
 
   useEffect( () => {
     if (!localSettingsInitialized && globalState.settingsLoaded) {
@@ -49,6 +52,12 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
       setLocalSettingsInitialized(true);
     }
   },[globalState.settings,localSettingsInitialized,globalState.settingsLoaded, remoteDBCreds.fullName, remoteDBCreds.email, remoteDBCreds.dbUsername])
+
+  if ( settingsLoading || !globalState.settingsLoaded)  {
+    return ( <Loading isOpen={screenLoading.current} message={t("general.loading")} />)
+//    setIsOpen={() => {screenLoading.current = false}} /> )
+  };
+
 
   async function stopSync() {
     let credsStr=JSON.stringify({});

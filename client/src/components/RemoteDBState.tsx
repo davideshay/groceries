@@ -21,6 +21,8 @@ export type RemoteDBState = {
     accessJWTExpirationTime: Number,
     syncStatus: SyncStatus,
     connectionStatus: ConnectionStatus,
+    initialSyncStarted: boolean,
+    initialSyncComplete: boolean,
     dbUUIDAction: DBUUIDAction,
     credsError: boolean,
     credsErrorText: string,
@@ -34,7 +36,6 @@ export interface RemoteDBStateContextType {
     remoteDB: PouchDB.Database,
     setRemoteDBState: React.Dispatch<React.SetStateAction<RemoteDBState>>,
     setRemoteDBCreds: (newCreds: DBCreds) => void,
-    startSync: () => void,
     assignDB: (accessJWT: string) => Promise<boolean>,
     setDBCredsValue: (key: string, value: string|null) => void,
     setConnectionStatus: (value: ConnectionStatus) => void
@@ -101,6 +102,8 @@ export const initialRemoteDBState: RemoteDBState = {
     accessJWTExpirationTime: 0,
     syncStatus: SyncStatus.init,
     connectionStatus: ConnectionStatus.cannotStart,
+    initialSyncStarted: false,
+    initialSyncComplete: false,
     dbUUIDAction: DBUUIDAction.none,
     credsError: false,
     credsErrorText: "",
@@ -114,7 +117,6 @@ const initialContext = {
     remoteDB: {},
     setRemoteDBState: (state: RemoteDBState ) => {},
     setRemoteDBCreds: (dbCreds: DBCreds) => {},
-    startSync: () => {},
     assignDB: async (accessJWT: string): Promise<boolean> => {return false},
     setDBCredsValue: (key: string, value: string | null) => {},
     setConnectionStatus: (value: ConnectionStatus) => {},
@@ -141,7 +143,6 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
 
     function setDBCredsValue(key: string, value: string | null) { 
         (remoteDBCreds.current as any)[key] = value;
-        logger(LogLevel.DEBUG,"setting ",key," = ",value," new:",remoteDBCreds);
         setPrefsDBCreds();
         forceUpdate();
     }
@@ -160,17 +161,40 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         logger(LogLevel.DEBUG,"Starting sync of database",cloneDeep(globalRemoteDB));
         globalSync = db.sync((globalRemoteDB as PouchDB.Database), {
             back_off_function: function(delay) {
-                logger(LogLevel.DEBUG,"going offline");
+                logger(LogLevel.DEBUG,"Initial sync going offline");
+                setSyncStatus(SyncStatus.offline);
+                if (delay===0) {return 1000};
+                if (delay < 60000) {return delay*1.5} else {return 60000};
+            },
+            retry: true,
+            live: false,
+            }).on('paused', () => {  logger(LogLevel.DEBUG, "Initial sync paused"); setSyncStatus(SyncStatus.paused)})
+            .on('active', () => { logger(LogLevel.DEBUG, "Initial sync active"); setSyncStatus(SyncStatus.active)})
+            .on('complete',() => {logger(LogLevel.DEBUG, "Initial sync complete"); liveSync()})
+            .on('denied', (err) => { setSyncStatus(SyncStatus.denied); logger(LogLevel.DEBUG,"Initial sync denied: ",{err})})
+            .on('error', (err) => { logger(LogLevel.DEBUG,"initial error state",{err}) ; 
+                                globalSync.cancel();
+                                setSyncStatus(SyncStatus.error);
+                                });
+        setRemoteDBState(prevState=>({...prevState,initialSyncStarted: true}))
+    }
+
+    function liveSync() {
+        logger(LogLevel.DEBUG,"Starting live sync of database",cloneDeep(globalRemoteDB));
+        setRemoteDBState(prevState=>({...prevState,initialSyncComplete: true}));
+        globalSync = db.sync((globalRemoteDB as PouchDB.Database), {
+            back_off_function: function(delay) {
+                logger(LogLevel.DEBUG,"live sync going offline");
                 setSyncStatus(SyncStatus.offline);
                 if (delay===0) {return 1000};
                 if (delay < 60000) {return delay*1.5} else {return 60000};
             },
             retry: true,
             live: true,
-            }).on('paused', () => {  logger(LogLevel.DEBUG, "sync paused"); setSyncStatus(SyncStatus.paused)})
-            .on('active', () => { logger(LogLevel.DEBUG, "sync active"); setSyncStatus(SyncStatus.active)})
-            .on('denied', (err) => { setSyncStatus(SyncStatus.denied); logger(LogLevel.DEBUG,"sync denied: ",{err})})
-            .on('error', (err) => { logger(LogLevel.DEBUG,"db.sync error state",{err}) ; 
+            }).on('paused', () => {  logger(LogLevel.DEBUG, "live sync paused"); setSyncStatus(SyncStatus.paused)})
+            .on('active', () => { logger(LogLevel.DEBUG, "live sync active"); setSyncStatus(SyncStatus.active)})
+            .on('denied', (err) => { setSyncStatus(SyncStatus.denied); logger(LogLevel.DEBUG,"live sync denied: ",{err})})
+            .on('error', (err) => { logger(LogLevel.DEBUG,"live sync error state",{err}) ; 
                                 globalSync.cancel();
                                 setSyncStatus(SyncStatus.error);
                                 })
@@ -305,14 +329,14 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     },[remoteDBState.connectionStatus])
 
     useEffect(() => {
-        if (( remoteDBState.syncStatus === SyncStatus.active || remoteDBState.syncStatus === SyncStatus.paused) && (remoteDBState.connectionStatus !== ConnectionStatus.initialNavComplete)) {
+        if (( remoteDBState.initialSyncComplete) && (remoteDBState.connectionStatus !== ConnectionStatus.initialNavComplete)) {
             setRemoteDBState(prevState => ({...prevState,connectionStatus: ConnectionStatus.loginComplete}));
         }
         if (remoteDBState.syncStatus === SyncStatus.error) {
             logger(LogLevel.ERROR,"ERROR syncing, refreshing access token and retrying...");
             retrySync();
         }
-    },[remoteDBState.syncStatus,remoteDBState.connectionStatus])
+    },[remoteDBState.initialSyncComplete,remoteDBState.syncStatus,remoteDBState.connectionStatus])
 
     useEffect(() => {
         if (remoteDBState.accessJWTExpirationTime === 0) {return;}
@@ -325,7 +349,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         return () => clearTimeout(refreshTimer);
     },[remoteDBState.accessJWTExpirationTime])
 
-    let value: RemoteDBStateContextType = {remoteDBState, remoteDBCreds: remoteDBCreds.current, remoteDB: globalRemoteDB as PouchDB.Database<{}> , setRemoteDBState, setRemoteDBCreds, startSync, assignDB, setDBCredsValue, setConnectionStatus};
+    let value: RemoteDBStateContextType = {remoteDBState, remoteDBCreds: remoteDBCreds.current, remoteDB: globalRemoteDB as PouchDB.Database<{}> , setRemoteDBState, setRemoteDBCreds, assignDB, setDBCredsValue, setConnectionStatus};
     return (
         <RemoteDBStateContext.Provider value={value}>{props.children}</RemoteDBStateContext.Provider>
       );

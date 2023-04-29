@@ -1,5 +1,5 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput, IonItem,
-  IonButtons, IonMenuButton, IonText, useIonAlert, isPlatform, IonIcon, useIonLoading, AlertOptions } from '@ionic/react';
+import { IonContent, IonPage, IonButton, IonList, IonInput, IonItem,
+  IonText, useIonAlert, isPlatform, IonIcon, useIonLoading, AlertOptions } from '@ionic/react';
 import { useState, useEffect, useContext } from 'react';
 import { eye, eyeOff } from 'ionicons/icons';
 import { CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
@@ -11,9 +11,10 @@ import { createNewUser, getTokenInfo, navigateToFirstListID, errorCheckCreds  } 
 import { cloneDeep } from 'lodash';
 import { RemoteDBStateContext, SyncStatus, initialRemoteDBState } from '../components/RemoteDBState';
 import { HistoryProps, LogLevel } from '../components/DataTypes';
-import { useLists } from '../components/Usehooks';
 import { apiConnectTimeout, logger } from '../components/Utilities';
 import { useTranslation } from 'react-i18next';
+import PageHeader from '../components/PageHeader';
+import { GlobalDataContext } from '../components/GlobalDataProvider';
 
 export type RemoteState = {
   password: string | undefined,
@@ -75,7 +76,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     const [remoteState,setRemoteState]=useState<RemoteState>(initRemoteState);
     const [presentAlert] = useIonAlert();
     const { remoteDBState, remoteDBCreds, setRemoteDBState, setRemoteDBCreds, assignDB, setDBCredsValue} = useContext(RemoteDBStateContext);
-    const { listRowsLoaded, listRows } = useLists();
+    const globalData = useContext(GlobalDataContext);
     const [ present, dismiss ]= useIonLoading();
     const { t } = useTranslation();
 
@@ -136,15 +137,19 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     },[remoteDBState.dbUUIDAction])
 
     useEffect( () => {
-      if (listRowsLoaded) {
+      async function doNav() {
+        await dismiss()
+        navigateToFirstListID(props.history,remoteDBCreds, globalData.listRows);
+      }
+      if (globalData.listRowsLoaded && !globalData.listsLoading) {
         if (remoteDBState.connectionStatus === ConnectionStatus.cannotStart) {
           logger(LogLevel.ERROR,"Detected cannot start, setting initRemoteState");
           setRemoteState(initRemoteState);
-        } else if (remoteDBState.connectionStatus === ConnectionStatus.loginComplete) {
-          navigateToFirstListID(props.history,remoteDBCreds, listRows);
+        } else if (remoteDBState.connectionStatus === ConnectionStatus.loginComplete && (remoteDBState.initialSyncComplete || remoteDBState.workingOffline)) {
+          doNav();
         }
       }
-    },[remoteDBState.connectionStatus, db, listRows, props.history, remoteDBCreds, listRowsLoaded]);
+    },[remoteDBState.initialSyncComplete , remoteDBState.workingOffline, remoteDBState.connectionStatus, db, globalData.listRows, props.history, remoteDBCreds, globalData.listRowsLoaded, globalData.listsLoading]);
 
     async function destroyAndExit() {
       await db.destroy();
@@ -213,7 +218,6 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     setRemoteDBCreds(newCreds);
     setRemoteDBState({...remoteDBState, accessJWT: response.data.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate});
     await assignDB(response.data.accessJWT);
-    await dismiss();
   }
   
   async function submitCreateForm() {
@@ -284,9 +288,10 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function setWorkingOffline() {
+    logger(LogLevel.DEBUG,"Working Offline Now...");
     setRemoteDBState({...remoteDBState,workingOffline: true,connectionStatus: ConnectionStatus.loginComplete, 
         syncStatus: SyncStatus.offline})
-    navigateToFirstListID(props.history,remoteDBCreds, listRows);    
+    navigateToFirstListID(props.history,remoteDBCreds, globalData.listRows);    
   }
 
 /*   function workOffline() {
@@ -387,11 +392,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   return(
         <IonPage>
-            <IonHeader><IonToolbar>
-            <IonButtons slot="start"><IonMenuButton /></IonButtons>
-            <IonTitle>
-            {t("general.login_page")}
-            </IonTitle></IonToolbar></IonHeader>
+            <PageHeader title={t("general.login_page")} />
             <IonContent>
             <IonList>
               {formElem}

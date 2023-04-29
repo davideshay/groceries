@@ -139,13 +139,13 @@ export async function adaptResultToBase64(res: Blob): Promise<string> {
 }
 
 export function getListGroupIDFromListOrGroupID(listOrGroupID: string, listCombinedRows: ListCombinedRows) : string | null {
-    let newListRow= listCombinedRows.find(lcr => lcr.listOrGroupID == listOrGroupID);
+    let newListRow= listCombinedRows.find(lcr => lcr.listOrGroupID === listOrGroupID);
     if (newListRow == undefined) {return null}
     else { return newListRow.listGroupID}
 }
 
 export function getRowTypeFromListOrGroupID(listOrGroupID: string, listCombinedRows: ListCombinedRows) : RowType | null {
-    let newListRow = listCombinedRows.find(lcr => lcr.listOrGroupID == listOrGroupID);
+    let newListRow = listCombinedRows.find(lcr => lcr.listOrGroupID === listOrGroupID);
     if (newListRow == undefined) {return null}
     else { return newListRow.rowType}
 }
@@ -157,7 +157,6 @@ export function getUOMIDFromShortName(uomName: string, uomDocs: UomDoc[]) : stri
 }
 
 export function logger(lvl: LogLevel, ...args: any) {
-    let argsarray = Array.from(arguments);
     if (lvl >= LOG_LEVEL) {
         let date=new Date();
         let timePrefix=date.toLocaleDateString()+" "+date.toLocaleTimeString();
@@ -187,4 +186,4 @@ function getLogLevel(level: string) {
 }
 
 export const DEFAULT_API_URL=(window as any)._env_.DEFAULT_API_URL
-export const LOG_LEVEL= (window as any)._env_.LOG_LEVEL == undefined ? LogLevel.INFO : getLogLevel((window as any)._env.LOG_LEVEL)
+export const LOG_LEVEL= (window as any)._env_.LOG_LEVEL == undefined ? LogLevel.INFO : getLogLevel((window as any)._env_.LOG_LEVEL)
