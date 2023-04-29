@@ -196,12 +196,9 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
     newItem.name=translatedItemName(id,data.name);    
     updItems.push(newItem)
     setPageState(prevState=>({...prevState,recipeDoc:{...prevState.recipeDoc,items: updItems}}))
-    console.log("adding Existing Recipe Item...",id,data);
-
   }
 
   function addNewRecipeItem(name: string) {
-    console.log("adding new item:",name)
     let updItems: RecipeItem[] = cloneDeep(pageState.recipeDoc.items);
     let newItem:RecipeItem = cloneDeep(RecipeItemInit);
     newItem.addToList = true;

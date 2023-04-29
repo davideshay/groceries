@@ -1,6 +1,6 @@
 import { IonContent, IonPage, IonButton, IonList, 
- IonItem, NavContext, IonIcon, IonToolbar, IonButtons, IonSelect, IonSelectOption, useIonAlert, useIonLoading} from '@ionic/react';
-import { useState,  useContext, useRef, ChangeEvent } from 'react';
+ IonItem, NavContext, IonIcon, IonToolbar, IonButtons, IonSelect, IonSelectOption, useIonAlert} from '@ionic/react';
+import { useState,  useContext, useRef } from 'react';
 import { useItems } from '../components/Usehooks';
 import { HistoryProps, RowType, RecipeFileTypes } from '../components/DataTypes';
 import { returnDownBackOutline } from 'ionicons/icons';
@@ -12,7 +12,6 @@ import { useTranslation } from 'react-i18next';
 import { FilePicker, PickFilesResult } from '@capawesome/capacitor-file-picker';
 import { Filesystem } from '@capacitor/filesystem';
 import {useProcessInputFile } from '../components/importUtiliites';
-var chooser=require("@awesome-cordova-plugins/chooser-simple-file");
 
 type PageState = {
   recipeFormat: string,
@@ -29,7 +28,6 @@ const RecipeImport: React.FC<HistoryProps> = (props: HistoryProps) => {
   const screenLoading = useRef(true);
   const globalData = useContext(GlobalDataContext);
   const { t } = useTranslation();
-  const [ presentAlert,dismissAlert] = useIonAlert();
   const processInputFile = useProcessInputFile();
 
   if ( globalData.listError || itemError ){ return (
@@ -65,7 +63,9 @@ const RecipeImport: React.FC<HistoryProps> = (props: HistoryProps) => {
       return;
     }
     const [success,statusMessage] = await processInputFile(fileType,pickResults);
-
+    if (!success) {
+      setPageState(prevState=>({...prevState,formError: statusMessage}));
+    }
   }
 
   let jsonFormatOptions: JSX.Element[] = [];

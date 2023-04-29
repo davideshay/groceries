@@ -4,13 +4,14 @@ import { useParams } from 'react-router-dom';
 import { useGetOneDoc} from '../components/Usehooks';
 import { useContext, useRef } from 'react';
 import { isEqual, pull } from 'lodash';
-import { HistoryProps } from '../components/DataTypes';
+import { HistoryProps, LogLevel } from '../components/DataTypes';
 import { ConflictDoc } from '../components/DBSchema';
 import './Category.css';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
+import { logger } from '../components/Utilities';
 
 const ConflictItem: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { id: routeID } = useParams<{ id: string}>();
@@ -58,10 +59,9 @@ const ConflictItem: React.FC<HistoryProps> = (props: HistoryProps) => {
     });
   });
 
-  console.log({mainPropsDifferent});
+  logger(LogLevel.DEBUG,{mainPropsDifferent});
   const mainDiffsText = Array.from(mainPropsDifferent).join(',')
 
-  
   return (
     <IonPage>
       <PageHeader title={t("general.conflict_item")+" "+(conflictDoc as ConflictDoc).docType +" " + t("general.from") + " " +localDate} />

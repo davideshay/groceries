@@ -1,10 +1,8 @@
 import { useContext, useEffect, useRef, useState } from "react";
-import { useLists } from "./Usehooks";
 import { useFind } from "use-pouchdb";
 import { GlobalDataContext } from "./GlobalDataProvider";
 import { translatedItemName } from "./translationUtilities";
 import { ItemDoc, ItemDocs } from "./DBSchema";
-import { cloneDeep } from "lodash";
 import GenericSearchBar, { SearchRefType } from "./GenericSearchBar";
 
 type PageState = {
@@ -32,14 +30,13 @@ type RecipeItemSearchProps = {
 
 
 const RecipeItemSearch: React.FC<RecipeItemSearchProps> = (props: RecipeItemSearchProps) => {
-    const {dbError: listError,listRowsLoaded,listRows} = useLists()
     const [pageState,setPageState] = useState<PageState>({
         allListGroups: new Set(""),
         listGroupsNeedInit: true,
         itemsNeedLoaded: true,
         recipeSearchRows: [],
     });
-    const {docs: itemDocs, loading: itemsLoading, error: itemsError} = useFind({
+    const {docs: itemDocs, loading: itemsLoading } = useFind({
         index: { fields: ["type","listGroupID"] },
         selector: { type: "item", "listGroupID": { "$in": Array.from(pageState.allListGroups)} } 
     });
@@ -47,14 +44,14 @@ const RecipeItemSearch: React.FC<RecipeItemSearchProps> = (props: RecipeItemSear
     const searchRef = useRef<SearchRefType>(null);
 
     useEffect( () => {
-        if (listRowsLoaded) {
+        if (globalData.listRowsLoaded) {
             let newListGroups: Set<string> = new Set();
-            listRows.forEach((lr) => {
+            globalData.listRows.forEach((lr) => {
                 newListGroups.add(String(lr.listDoc.listGroupID))
             })
             setPageState(prevState=>({...prevState,allListGroups: newListGroups,listGroupsNeedInit: false}))
         }
-    },[listRows, listRowsLoaded])
+    },[globalData.listRows, globalData.listRowsLoaded])
 
     useEffect( () => {
         if (!pageState.listGroupsNeedInit && pageState.itemsNeedLoaded && !itemsLoading && !globalData.globalItemsLoading) {
@@ -76,7 +73,6 @@ const RecipeItemSearch: React.FC<RecipeItemSearchProps> = (props: RecipeItemSear
     },[pageState.listGroupsNeedInit,itemsLoading,globalData.globalItemsLoading])
 
     function selectRow(id: string, data: RecipeSearchData) {
-        console.log("select Row:",id,data);
         props.rowSelected(id,data);
         if (searchRef.current) {
             searchRef.current.resetSearch()
@@ -84,18 +80,14 @@ const RecipeItemSearch: React.FC<RecipeItemSearchProps> = (props: RecipeItemSear
     }
 
     function addNewRecipeItem(name: string) {
-        console.log("ADD NEW RECIPE ITEM",name)
         props.addItemWithoutRow(name);
         if (searchRef.current) {
             searchRef.current.resetSearch()
         }    
     }
 
-
     return (
-
         <GenericSearchBar searchRows={pageState.recipeSearchRows} rowSelected={selectRow} addItemWithoutRow={addNewRecipeItem} ref={searchRef}/>
-
     )
 }
 

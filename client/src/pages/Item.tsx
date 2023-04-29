@@ -13,7 +13,7 @@ import { cloneDeep, isEmpty, remove } from 'lodash';
 import './Item.css';
 import ItemLists from '../components/ItemLists';
 import { getCommonKey, createEmptyItemDoc, checkNameInGlobal  } from '../components/ItemUtilities';
-import { PouchResponse, ListRow, RowType, PouchResponseInit } from '../components/DataTypes';
+import { PouchResponse, ListRow, RowType, PouchResponseInit, LogLevel } from '../components/DataTypes';
 import { UomDoc, ItemDoc, ItemDocInit, ItemList, ItemListInit, CategoryDoc, ImageDoc, ImageDocInit, InitUomDoc } from '../components/DBSchema';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
@@ -21,6 +21,7 @@ import { GlobalDataContext } from '../components/GlobalDataProvider';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
 import { translatedCategoryName, translatedItemName, translatedUOMName } from '../components/translationUtilities';
+import { logger } from '../components/Utilities';
 
 const Item: React.FC = (props) => {
   let { mode, itemid } = useParams<{mode: string, itemid: string}>();
@@ -114,7 +115,7 @@ const Item: React.FC = (props) => {
     }
   },[itemLoading,itemDoc,globalData.listsLoading,globalData.listDocs,globalData.listRowsLoaded, globalData.listRows,globalState.itemMode,globalState.newItemName, globalState.callingListID, needInitItemDoc]);
 
-  if (itemError || globalData.listError || globalData.categoryError || globalData.uomError || itemsError) { console.log("ERROR");return (
+  if (itemError || globalData.listError || globalData.categoryError || globalData.uomError || itemsError) { logger(LogLevel.ERROR,"ERROR");return (
     <ErrorPage errorText={t("error.loading_item_info_restart") as string}></ErrorPage>
   )}
 
@@ -300,7 +301,7 @@ const Item: React.FC = (props) => {
     if (newPhoto != undefined) {
       setStateImageDoc(prevState => ({...prevState, imageBase64: (newPhoto as string)}))
     }
-    else { console.log("photo undefined....")};
+    else { logger(LogLevel.ERROR,"photo undefined....")};
   }
 
   function deletePhoto() {

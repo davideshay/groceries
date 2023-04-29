@@ -1,5 +1,5 @@
 export const maxAppSupportedSchemaVersion = 3;
-export const appVersion = "0.6.0";
+export const appVersion = "0.6.1";
 
 export interface UUIDDoc {
   _id?: string,
@@ -95,7 +95,7 @@ type AttachmentData = string | Blob | Buffer;
     data: AttachmentData;
 }
 
-interface Attachments {
+export interface Attachments {
   [attachmentId: string]: FullAttachment;
 }
 
@@ -287,4 +287,38 @@ export const InitRecipeDoc : RecipeDoc = {
   items: [],
   instructions: [],
   updatedAt:""
+}
+
+export enum AddListOptions {
+  dontAddAutomatically = "D",
+  addToAllListsAutomatically = "ALL",
+  addToListsWithCategoryAutomatically = "CAT"
+}
+
+export type GlobalSettings = {
+  addListOption: AddListOptions,
+  removeFromAllLists: boolean,
+  completeFromAllLists: boolean,
+  daysOfConflictLog: Number
+}
+
+export const InitSettings: GlobalSettings = {
+  addListOption: AddListOptions.addToAllListsAutomatically,
+  removeFromAllLists: true,
+  completeFromAllLists: true,
+  daysOfConflictLog: 2
+}
+
+export type SettingsDoc = {
+  _id?: string,
+  _rev?: string,
+  type: string,
+  username: string,
+  settings: GlobalSettings
+}
+
+export const InitSettingsDoc = {
+  type: "settings",
+  username: "",
+  settings: InitSettings
 }

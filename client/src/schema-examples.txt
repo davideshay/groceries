@@ -204,7 +204,7 @@ Item editor:
     Maybe you have a listgroup filter which controls which rows on the grid appear
 
 Should not need participants checks anymore ?
-change useLists to return listgroup as well as lists -- put logic in here for "undefined"/no listgroup name
+change  to return listgroup as well as lists -- put logic in here for "undefined"/no listgroup name
 Do I need a listowner as well as a listgroup owner?
 
 Need to make sure before you save an item, you clean up the "list" entries and ensure all belong to the group. (?needed?)

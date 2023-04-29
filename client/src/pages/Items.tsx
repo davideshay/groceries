@@ -8,7 +8,8 @@ import { useParams } from 'react-router-dom';
 import { cloneDeep } from 'lodash';
 import './Items.css';
 import { useUpdateGenericDocument, useCreateGenericDocument, useItems } from '../components/Usehooks';
-import { AddListOptions, GlobalStateContext } from '../components/GlobalState';
+import { GlobalStateContext } from '../components/GlobalState';
+import { AddListOptions } from '../components/DBSchema';
 import { ItemSearch, SearchState, PageState, ListCombinedRow, HistoryProps, RowType, ItemSearchType} from '../components/DataTypes'
 import { ItemDoc, ItemDocs, ItemListInit, ItemList, ItemDocInit, CategoryDoc, UomDoc, GlobalItemDocs } from '../components/DBSchema';
 import { getAllSearchRows, getItemRows, filterSearchRows } from '../components/ItemUtilities';
@@ -115,7 +116,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   function updateSearchCriteria(event: CustomEvent) {
     let toOpen=true;
     if (event.detail.value.length === 0) {toOpen = false}
-//    console.log("USC: ",event.detail.value,"toOpen:",toOpen);
     setSearchState(prevState => ({...prevState, isFocused: true}));
     filterAndCheckRows(event.detail.value,true)
   }
@@ -133,7 +133,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       setGlobalStateInfo("callingListID",pageState.selectedListOrGroupID);
       setGlobalStateInfo("callingListType",pageState.selectedListType);
       setGlobalStateInfo("newItemName",itemName);
-//      console.log("ANITL, setting is Open/is Focused to false")
       setSearchState(prevState => ({...prevState, isOpen: false,searchCriteria:"",isFocused: false}))
       props.history.push("/item/new/");
     }
@@ -321,7 +320,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function selectList(listOrGroupID: string) {
-    if (listOrGroupID === "null" ) { console.log("ungrouped selected");  return }
+    if (listOrGroupID === "null" ) { return }
     let combinedRow: ListCombinedRow | undefined = listCombinedRows.find(lcr => lcr.listOrGroupID === listOrGroupID);
     let newListType: RowType = combinedRow!.rowType;
     setPageState({...pageState, selectedListOrGroupID: listOrGroupID, selectedListType: newListType, itemRows: getItemRows(baseItemDocs as ItemDocs, listCombinedRows, categoryDocs as CategoryDoc[], uomDocs as UomDoc[], newListType, listOrGroupID)});

@@ -7,7 +7,7 @@ Use the docker-compose.yaml file from the docs directory to start with. This is 
 * The docker-compose has 3 volumes setup as 2 subdirectories and 1 file:
     * File groceries-web-conf -- see file in docs directory for contents. Just sets up some defaults for nginx.
     * Directory ./dbdata -- will have the database files
-    * Directory ./dbetclocal -- has configuration files for couchdb. Should start with two files called admin.ini which contains the startup user/password. See admin.ini in docs directory for contents.  Other file should be jwt.ini which you will need to update with your personal HMAC key on the line that starts with "hmac:_default".
+    * Directory ./dbetclocal -- has configuration files for couchdb. Should start with two files called admin.ini which contains the startup user/password. See admin.ini in docs directory for contents.  Other file should be jwt.ini which you will need to update with your personal HMAC key (base64 encoded) on the line that starts with "hmac:_default".
 * Launch the file with docker-compose up. CouchDB will start, but is not yet configured. You will need to do the following steps after it launches.
 * Go to the following URL: http://localhost:5984/_utils
 * Login with the user (admin/admin in the files).

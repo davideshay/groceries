@@ -63,7 +63,7 @@ data:
     [jwt_auth]
     required_claims=exp
     [jwt_keys]
-    hmac:_default = HMAC-encoded-secret
+    hmac:_default = HMAC-base64-encoded-secret
 ---
 apiVersion: v1
 kind: ConfigMap

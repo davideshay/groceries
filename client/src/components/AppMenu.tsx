@@ -1,4 +1,4 @@
-import { IonMenu, IonContent, IonMenuToggle, IonList, 
+import { IonMenu, IonContent, IonMenuToggle, IonList, IonToolbar, IonTitle,
      IonItem, IonItemDivider, IonListHeader, IonBadge } from '@ionic/react';
 import { useContext } from 'react';    
 import { useConflicts, useFriends, UseFriendState } from './Usehooks';    
@@ -47,10 +47,10 @@ const AppMenu: React.FC = () => {
               </IonItem></IonMenuToggle>) 
   }
 
-/*   if (useFriendState !== UseFriendState.rowsLoaded|| conflictsLoading)  {return(
-    <IonPage><IonHeader><IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar></IonHeader><IonContent></IonContent></IonPage>
+   if (useFriendState !== UseFriendState.rowsLoaded|| conflictsLoading)  {return(
+    <IonToolbar><IonTitle>Loading...</IonTitle></IonToolbar>
   )};
- */
+ 
   return (
   <IonMenu contentId="main" type="overlay">
     <IonContent className="ion-padding">

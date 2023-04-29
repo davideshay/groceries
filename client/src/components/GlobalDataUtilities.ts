@@ -35,7 +35,9 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
     });
 
     newListRows.sort(function (a: ListRow, b: ListRow) {
-    return a.listDoc.name.toUpperCase().localeCompare(b.listDoc.name.toUpperCase());
+    return ( (Number(b.listGroupDefault) - Number(a.listGroupDefault)) ||
+            a.listGroupName.toLocaleUpperCase().localeCompare(b.listGroupName.toLocaleUpperCase()) ||
+            a.listDoc.name.toLocaleUpperCase().localeCompare(b.listDoc.name.toLocaleUpperCase()));
     })
 
     const sortedListGroups: ListGroupDocs = cloneDeep(listGroupDocs).filter( 

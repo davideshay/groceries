@@ -188,7 +188,7 @@ Other Settings:
 COUCHDB_URL : full couchDB url + port (no database reference)
 COUCHDB_INTERNAL_URL : "Internal" URL - Can be used in a kubernetes environment to access the database without going through the ingress layer, but still give out the FQDN ad the COUCHDB_URL.
 COUCHDB_DATABASE: CouchDB database name (i.e. todos)
-COUCHDB_HMAC_KEY: A key (base64 encoded) configured into your couchDB security to allow JWT keys to work.
+COUCHDB_HMAC_KEY: A key (plaintext) configured into your couchDB security to allow JWT keys to work. The base64 encoded version of this plaintext should match what is in your jwt.ini file in CouchDB.
 COUCHDB_ADMIN_USER: Admin user for couchDB instance (admin)
 COUCHDB_ADMIN_PASSWORD: Admin password for CouchDB instance
 GROCERY_URL : for testing could be http://localhost:8100, for prod could be https://groceries.mydomain.com

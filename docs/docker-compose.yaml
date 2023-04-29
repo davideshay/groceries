@@ -39,7 +39,7 @@ services:
       COUCHDB_URL: http://localhost:5984
       COUCHDB_INTERNAL_URL:  http://couchdb:5984
       COUCHDB_DATABASE: "todos"
-      COUCHDB_HMAC_KEY: "eyEaMmi82uH9ySScWg8AEyHrXtqgyVAfdkC5W8GduByzp96mrcAq4jZa2fdbFCvk"
+      COUCHDB_HMAC_KEY: "my-plaintext-hmac-key"
       COUCHDB_ADMIN_USER: "admin"
       COUCHDB_ADMIN_PASSWORD: "mypassword"
       GROCERY_URL: "http://localhost:8100"

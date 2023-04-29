@@ -1,4 +1,4 @@
-import { PouchResponse, PouchResponseInit, RecipeFileType, TandoorRecipe } from "./DataTypes";
+import { LogLevel, PouchResponse, PouchResponseInit, RecipeFileType, TandoorRecipe } from "./DataTypes";
 import { PickFilesResult } from "@capawesome/capacitor-file-picker";
 import zip from 'jszip';
 import { GlobalItemDoc, InitGlobalItem, InitRecipeDoc, RecipeDoc, RecipeInstruction, RecipeItem, RecipeItemInit } from "./DBSchema";
@@ -10,6 +10,7 @@ import { AlertInput, useIonAlert, useIonLoading } from "@ionic/react";
 import { useTranslation } from "react-i18next";
 import { t } from 'i18next';
 import { isEmpty } from "lodash";
+import { logger } from "./Utilities";
 
 export function useProcessInputFile() {
     const db = usePouch();
@@ -110,9 +111,9 @@ async function loadTandoorRecipes(alertData: string[],recipeObjs: TandoorRecipe[
     let statusFull = ""
     for (let i = 0; i < alertData.length; i++) {
         let recipe = recipeObjs.find((recipe) => (recipe.name === alertData[i]));
-        if (recipe === undefined) {console.log("Could not find recipe - "+alertData[i]); continue};
+        if (recipe === undefined) {logger(LogLevel.ERROR,"Could not find recipe - "+alertData[i]); continue};
         if (await checkRecipeExists(recipe.name,db)) {
-            console.log("Could not import: "+alertData[i]+" - Duplicate");
+            logger(LogLevel.WARNING,"Could not import: "+alertData[i]+" - Duplicate");
             statusFull=statusFull+"\n"+t("error.could_not_import_recipe_dup",{recipe:alertData[i]});
             continue;
         }
@@ -169,7 +170,7 @@ async function createTandoorRecipe(recipeObj: TandoorRecipe, db: PouchDB.Databas
     newRecipeDoc.updatedAt = curDateStr;
     let response: PouchResponse = cloneDeep(PouchResponseInit);
     try { response.pouchData = await db.post(newRecipeDoc); }
-    catch(err) { response.successful = false; response.fullError = err; console.log("ERROR:",err);}
+    catch(err) { response.successful = false; response.fullError = err; logger(LogLevel.ERROR,"ERROR:",err);}
     if (!response.pouchData.ok) { response.successful = false;}
     return [response.successful,t("general.loaded_recipe_successfully", {name: recipeObj.name})]
 }
@@ -215,7 +216,7 @@ export function findMatchingGlobalItem(foodName: string|null, globalData: Global
         return(
         (t("globalitem."+(git._id as string).substring(sysItemKey.length+1),{count: 1}).toLocaleUpperCase() == foodName.toLocaleUpperCase()) || 
         (t("globalitem."+(git._id as string).substring(sysItemKey.length+1),{count: 2}).toLocaleUpperCase() == foodName.toLocaleUpperCase()) )  })
-        console.log("translated global:",translatedGlobal);
+        logger(LogLevel.DEBUG,"translated global:",translatedGlobal);
         if (translatedGlobal == undefined) {return [null,"",returnInitGlobalItem]}
         else {return [translatedGlobal._id as string,t("globalitem."+(translatedGlobal._id as string).substring(sysItemKey.length+1),{count: 2}),translatedGlobal]}
     }

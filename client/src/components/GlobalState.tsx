@@ -1,21 +1,12 @@
-import React, { createContext, useEffect, useState} from "react";
+import React, { createContext, useContext, useEffect, useState} from "react";
 import { Preferences } from '@capacitor/preferences';
 import { pick,cloneDeep } from "lodash";
 import { isJsonString } from "./Utilities";
 import { RowType } from "./DataTypes";
-
-export enum AddListOptions {
-    dontAddAutomatically = "D",
-    addToAllListsAutomatically = "ALL",
-    addToListsWithCategoryAutomatically = "CAT"
-}
-
-export type GlobalSettings = {
-    addListOption: AddListOptions,
-    removeFromAllLists: boolean,
-    completeFromAllLists: boolean,
-    daysOfConflictLog: Number
-}
+import { GlobalSettings, AddListOptions, SettingsDoc, InitSettings, InitSettingsDoc } from "./DBSchema";
+import { useCreateGenericDocument, useUpdateGenericDocument } from "./Usehooks";
+import { RemoteDBStateContext } from "./RemoteDBState";
+import { useFind } from "use-pouchdb";
 
 export type GlobalState = {
     itemMode?: string,
@@ -29,17 +20,12 @@ export type GlobalState = {
 
 export interface GlobalStateContextType {
     globalState: GlobalState,
+    settingsLoading: boolean,
     setGlobalState: React.Dispatch<React.SetStateAction<GlobalState>>,
     setStateInfo: (key: string, value: string | null | RowType) => void,
     updateSettingKey: (key: string, value: AddListOptions | boolean | number) => Promise<boolean>
 }
 
-export const initSettings: GlobalSettings = {
-    addListOption: AddListOptions.addToAllListsAutomatically,
-    removeFromAllLists: true,
-    completeFromAllLists: true,
-    daysOfConflictLog: 2
-}
 
 const initialState: GlobalState = {
     itemMode: "none",
@@ -47,12 +33,13 @@ const initialState: GlobalState = {
     newItemGlobalItemID: null,
     callingListID: undefined,
     callingListType: RowType.list,
-    settings: initSettings,
-    settingsLoaded: false
+    settings: InitSettings,
+    settingsLoaded: false,
 }
 
 const initialContext = {
     globalState: initialState,
+    settingsLoading: false,
     setGlobalState: (state: GlobalState ) => {},
     setStateInfo: (key: string, value: string | null | RowType) => {},
     updateSettingKey: async (key: string, value: AddListOptions | boolean | number) => {return false}
@@ -67,6 +54,12 @@ type GlobalStateProviderProps = {
 export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: GlobalStateProviderProps) => {
     const [globalState,setGlobalState] = useState(initialState);
     const [settingsRetrieved,setSettingsRetrieved] = useState(false);
+    const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
+    const { docs: settingsDocs, loading: settingsLoading, error: settingsError} = useFind({
+        selector: {type: "settings", "username": remoteDBCreds.dbUsername}
+    })
+    const updateSettingDoc = useUpdateGenericDocument();
+    const createSettingDoc = useCreateGenericDocument();
 
     function setStateInfo(key: string,value: string | null | RowType) {
         setGlobalState(prevState => ({ ...prevState, [key]: value}))
@@ -74,58 +67,97 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
 
     async function updateSettingKey(key: string, value: AddListOptions | boolean | number): Promise<boolean> {
         setGlobalState(prevState => ({...prevState,settings: {...prevState.settings, [key]: value}}))
-        let settingsStr = JSON.stringify({...globalState.settings,[key]: value})
-        try { await Preferences.set({key: 'settings', value: settingsStr}) }
-        catch(err) {console.log("ERROR setting prefs:",err); return false;}
+        let dbSettingsDoc: SettingsDoc = settingsDocs[0] as SettingsDoc;
+        let newSettingsDoc: SettingsDoc = {...dbSettingsDoc,settings: {...dbSettingsDoc.settings,[key]: value}};
+        await updateSettingDoc(newSettingsDoc);
         return true;
     }
 
+    function validateSettings(settings: GlobalSettings) : [GlobalSettings, boolean] {
+        let updated = false; let newSettings: GlobalSettings = cloneDeep(settings);
+        if (newSettings == null) {newSettings = cloneDeep(InitSettings); updated = true;}
+        if (!newSettings.hasOwnProperty('addListOption')) {
+            newSettings.addListOption = InitSettings.addListOption;
+            updated = true;
+        }
+        if (!newSettings.hasOwnProperty('removeFromAllLists')) {
+            newSettings.removeFromAllLists = InitSettings.removeFromAllLists;
+            updated = true;
+        }
+        if (!newSettings.hasOwnProperty('completeFromAllLists')) {
+            newSettings.completeFromAllLists = InitSettings.completeFromAllLists;
+            updated = true;
+        }
+        if (!newSettings.hasOwnProperty('daysOfConflictLog')) {
+            newSettings.daysOfConflictLog = InitSettings.daysOfConflictLog;
+            updated = true;
+        }
+        return [newSettings, updated]
+    }
+
     async function getSettings() {
-        let { value: settingsStr } = await Preferences.get({ key: 'settings'});
-        let settingsObj: GlobalSettings = cloneDeep(initSettings);
-        if (settingsStr != null && isJsonString(String(settingsStr))) {
-            settingsObj=JSON.parse(String(settingsStr));
-            let settingsObjFiltered=pick(settingsObj,"addListOption","removeFromAllLists","completeFromAllLists","daysOfConflictLog");
-            setGlobalState(prevState => ({...prevState,settings: settingsObjFiltered}))
-            settingsObj = settingsObjFiltered;
-        } else {
-            await Preferences.set({key: 'settings', value: JSON.stringify(initSettings)})
+        let dbSettingsExist = (settingsDocs.length > 0);
+        let dbSettingsDoc: SettingsDoc = cloneDeep(settingsDocs[0]);
+        let { value: storageSettingsStr } = await Preferences.get({ key: 'settings'});
+        let storageSettings: GlobalSettings = cloneDeep(InitSettings);
+        let storageSettingsExist = false;
+        if (storageSettingsStr != null && isJsonString(String(storageSettingsStr))) {
+            storageSettings=JSON.parse(String(storageSettingsStr));
+            let settingsObjFiltered=pick(storageSettings,"addListOption","removeFromAllLists","completeFromAllLists","daysOfConflictLog");
+            storageSettings = settingsObjFiltered;
+            storageSettingsExist = true;
         }
-        let needUpdate=false;
-        if (settingsObj == null) {settingsObj = initSettings; needUpdate = true;}
-        if (!settingsObj.hasOwnProperty('addListOption')) {
-            settingsObj.addListOption = initSettings.addListOption;
-            needUpdate = true;
+        if (storageSettingsExist) {
+            let storageUpd = false;
+            [storageSettings, storageUpd] = validateSettings(storageSettings);
         }
-        if (!settingsObj.hasOwnProperty('removeFromAllLists')) {
-            settingsObj.removeFromAllLists = initSettings.removeFromAllLists;
-            needUpdate = true;
+        let dbUpdated = false;
+        if (dbSettingsExist) {
+            [dbSettingsDoc.settings, dbUpdated] = validateSettings(dbSettingsDoc.settings);
         }
-        if (!settingsObj.hasOwnProperty('completeFromAllLists')) {
-            settingsObj.completeFromAllLists = initSettings.completeFromAllLists;
-            needUpdate = true;
+        let finalSettings: GlobalSettings = cloneDeep(InitSettings);
+        if (storageSettingsExist && !dbSettingsExist) {
+            let newSettingsDoc: SettingsDoc = cloneDeep(InitSettingsDoc);
+            newSettingsDoc.username = String(remoteDBCreds.dbUsername);
+            newSettingsDoc.settings = cloneDeep(storageSettings);
+            await createSettingDoc(newSettingsDoc);
+            await Preferences.remove({ key: "settings"});
+            finalSettings = cloneDeep(newSettingsDoc.settings);
+        } else if (!storageSettingsExist && !dbSettingsExist) {
+            let newSettingsDoc: SettingsDoc = cloneDeep(InitSettingsDoc);
+            newSettingsDoc.username = String(remoteDBCreds.dbUsername);
+            await createSettingDoc(newSettingsDoc)
+            finalSettings = cloneDeep(newSettingsDoc.settings);
+        } else if (storageSettingsExist && dbSettingsExist) {
+            await Preferences.remove({key : "settings"});
+            if (dbUpdated) {
+                let newSettingsDoc:SettingsDoc = cloneDeep(settingsDocs[0]);
+                newSettingsDoc.settings = cloneDeep(dbSettingsDoc.settings);
+                await updateSettingDoc(newSettingsDoc)
+            }
+            finalSettings = cloneDeep(dbSettingsDoc.settings);
+        } else if (!storageSettingsExist && dbSettingsExist) {
+            if (dbUpdated) {
+                let newSettingsDoc: SettingsDoc = cloneDeep(settingsDocs[0]);
+                newSettingsDoc.settings = dbSettingsDoc.settings;
+                await updateSettingDoc(newSettingsDoc)
+                finalSettings = dbSettingsDoc.settings;
+            }
         }
-        if (!settingsObj.hasOwnProperty('daysOfConflictLog')) {
-            settingsObj.daysOfConflictLog = initSettings.daysOfConflictLog;
-            needUpdate = true;
-        }
-        if (needUpdate) {
-            await Preferences.set({key: 'settings', value: JSON.stringify(settingsObj)})
-            setGlobalState(prevState => ({...prevState,settings: settingsObj}));
-        }
+        setGlobalState(prevState => ({...prevState,settings: finalSettings}))
         setSettingsRetrieved(true);
         setGlobalState(prevState => ({...prevState,settingsLoaded: true}));
-        return (settingsObj);
+        return (finalSettings);
     }
 
     useEffect( () => {
-        if (!settingsRetrieved) {
+        if (!settingsRetrieved && remoteDBState.initialSyncComplete && !settingsLoading && (settingsError === null)) {
             getSettings()
         }
-    },[])
+    },[remoteDBState.initialSyncComplete, settingsLoading, settingsError])
 
 
-    let value: GlobalStateContextType = {globalState, setGlobalState, setStateInfo, updateSettingKey};
+    let value: GlobalStateContextType = {globalState, setGlobalState, setStateInfo, updateSettingKey, settingsLoading: settingsLoading};
     return (
         <GlobalStateContext.Provider value={value}>{props.children}</GlobalStateContext.Provider>
       );
