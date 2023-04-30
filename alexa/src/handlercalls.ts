@@ -1,10 +1,10 @@
-import { ListDoc, ListDocs, ListGroupDoc, ListGroupDocs, UserDoc } from "./DBSchema";
+import { GlobalItemDoc, InitSettingsDoc, ItemDoc, ListDoc, ListDocs, ListGroupDoc, ListGroupDocs, SettingsDoc, UserDoc } from "./DBSchema";
 import { todosDBAsAdmin, usersDBAsAdmin } from "./dbstartup";
 import { DocumentScope, MangoResponse } from "nano";
 import axios, {AxiosResponse} from 'axios';
 import { cloneDeep, isEmpty } from 'lodash';
 import { Directive, SimpleSlotValue, Slot, er } from "ask-sdk-model";
-import { SlotInfo , CouchUserInfo, CouchUserInit, SimpleListGroups, SimpleListGroup, SimpleLists, SimpleList} from "./datatypes";
+import { SlotInfo , CouchUserInfo, CouchUserInit, SimpleListGroups, SimpleListGroup, SimpleLists, SimpleList, SettingsResponse, SettingsResponseInit, SimpleItems, SimpleItem} from "./datatypes";
 
 export async function totalDocCount(db: DocumentScope<unknown>) {
     const info = await db.info();
@@ -47,14 +47,35 @@ export async function getCouchUserInfo(email: string) {
     try {userResponseDocs =  (await usersDBAsAdmin.find(userq) as MangoResponse<UserDoc>);}
     catch(err) {console.log("ERROR: Could not find user documents:",err);
                 response.success = false;};
-    if (response.success && userResponseDocs !== undefined && userResponseDocs !== null) {
+    if (response.success && userResponseDocs !== undefined && userResponseDocs !== null && userResponseDocs.docs.length > 0) {
         response.userName = userResponseDocs.docs[0].name
     } else {response.success = false}
     return response;
 }
 
-export function getDynamicIntentDirective(listGroups: SimpleListGroups, lists: SimpleLists) : Directive {
+export async function getUserSettings(username: string) {
+    console.log("in get user settings:",username);
+    let response: SettingsResponse = cloneDeep(SettingsResponseInit);
+    console.log("SettingsResponse initial:",response);
+    let settingsq = {
+        selector: { type: "settings", "username": username},
+        limit: await totalDocCount(todosDBAsAdmin)
+    }
+    let settingsResponseDocs: MangoResponse<SettingsDoc> | null = null;
+    response.success = true;
+    try {settingsResponseDocs =  (await todosDBAsAdmin.find(settingsq) as MangoResponse<SettingsDoc>);}
+    catch(err) {console.log("ERROR: Could not find user setting documents:",err);
+                response.success = false;};
+    if (response.success && settingsResponseDocs !== undefined && settingsResponseDocs !== null && settingsResponseDocs.docs.length > 0) {
+        response.settings = settingsResponseDocs.docs[0].settings;
+    } else {response.success = false}
+    return response;
+}
+
+export async function getDynamicIntentDirective(listGroups: SimpleListGroups, lists: SimpleLists) : Promise<Directive> {
     let directive: Directive;
+
+    let simpleLocalItems = await getItems(listGroups);
     let listGroupValues : er.dynamic.Entity[] = [];
     listGroups.forEach(lg => {
         const value = { id: lg._id, name: { value: lg.name}};
@@ -65,9 +86,18 @@ export function getDynamicIntentDirective(listGroups: SimpleListGroups, lists: S
         const value = { id: l._id, name: { value: l.name}};
         listValues.push(value);
     })
+    let simpleItemValues: er.dynamic.Entity[] = [];
+    simpleLocalItems.forEach(li => {
+        let value: er.dynamic.Entity;
+        if (li.pluralName === undefined) {
+            value = { id: li._id, name: {value: li.name}}
+        } else {
+            value = { id: li._id, name: {value: li.name, synonyms: [li.pluralName]}}
+        }
+        simpleItemValues.push(value);    
+    })
 
-    directive = {
-        
+    directive = {  
             type: "Dialog.UpdateDynamicEntities",
              updateBehavior: "REPLACE",
              types:[
@@ -78,9 +108,12 @@ export function getDynamicIntentDirective(listGroups: SimpleListGroups, lists: S
                 {
                 "name": "list",
                 "values": listValues
+                },
+                {
+                "name": "item",
+                "values": simpleItemValues    
                 }
              ] 
-        
     }
 
     console.log("directive:",JSON.stringify(directive,null,4))
@@ -88,9 +121,68 @@ export function getDynamicIntentDirective(listGroups: SimpleListGroups, lists: S
     return directive;
 }
 
+
+async function getLocalItems(listGroupIDs: string[]): Promise<SimpleItems> {
+    const itemq = {
+        selector: { type: "item",
+                    listGroupID: {"$in": listGroupIDs}},
+        limit: await totalDocCount(todosDBAsAdmin)
+    }
+    let foundItemDocs: MangoResponse<ItemDoc> | null = null;
+    try {foundItemDocs = (await todosDBAsAdmin.find(itemq) as MangoResponse<ItemDoc>);}
+    catch(err) {console.log("ERROR: Could not find item documents",err);
+                return []};
+    let simpleItems: SimpleItems = [];
+    foundItemDocs.docs.forEach(item => {
+        if (item.globalItemID === null) {
+            let simpleItem: SimpleItem = {_id: item._id, name: item.name, pluralName: item.pluralName}
+            simpleItems.push(simpleItem);
+        }    
+    })
+    console.log(JSON.stringify(simpleItems,null,4));
+    return simpleItems;
+}
+
+async function getGlobalItems(): Promise<SimpleItems> {
+    const itemq = {
+        selector: { type: "globalitem"},
+        limit: await totalDocCount(todosDBAsAdmin)
+    }
+    let foundItemDocs: MangoResponse<GlobalItemDoc> | null = null;
+    try {foundItemDocs = (await todosDBAsAdmin.find(itemq) as MangoResponse<GlobalItemDoc>);}
+    catch(err) {console.log("ERROR: Could not find global item documents",err);
+                return []};
+    let simpleItems: SimpleItems = [];
+    foundItemDocs.docs.forEach(item => {
+        let simpleItem: SimpleItem = {_id: item._id, name: item.name}
+        simpleItems.push(simpleItem);
+    })
+    return simpleItems;
+}
+
+export async function getItems(listGroups: SimpleListGroups) {
+    let listGroupIDs: string[] = [];           
+    listGroups.forEach(lg => {
+        listGroupIDs.push(lg._id);
+    });
+    let simpleLocalItems = await getLocalItems(listGroupIDs);
+//    let simpleGlobalItems = getGlobalItems();
+    let nameMap: any = {};
+    let simplifiedItems: SimpleItems = [];
+    simpleLocalItems.forEach(li => {
+        if (!nameMap.hasOwnProperty(li.name) && !nameMap.hasOwnProperty(li.pluralName)) {
+            nameMap[li.name] = li._id;
+            let newItem:SimpleItem = {_id: li._id, name: li.name, pluralName: li.pluralName}
+            if (li.pluralName !== undefined) {nameMap[li.pluralName!] = li._id}
+            simplifiedItems.push(newItem);
+        }   
+    })
+    console.log("reduced items:",JSON.stringify(simplifiedItems,null,4));
+    return simplifiedItems;
+}
+
 function addCommasAndAnd(list: string[]) {
     if (list.length < 3) { return list.join(' and '); }
-  
     return `${list.slice(0, - 1).join(', ')}, and ${list[list.length - 1]}`;
   };
 

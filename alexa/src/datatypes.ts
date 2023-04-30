@@ -1,4 +1,5 @@
 import { ServerConfig } from "nano"
+import { GlobalSettings, InitSettings } from "./DBSchema"
 
 export type SlotInfo = {
     id: string | null,
@@ -13,6 +14,16 @@ export type CouchUserInfo = {
 export const CouchUserInit = {
     success: false,
     userName: ""
+}
+
+export type SettingsResponse = {
+    success: boolean,
+    settings: GlobalSettings
+}
+
+export const SettingsResponseInit = {
+    success: false,
+    settings: InitSettings
 }
 
 export type SimpleListGroup = {
@@ -30,3 +41,11 @@ export type SimpleList = {
 }
 
 export type SimpleLists = SimpleList[];
+
+export type SimpleItem = {
+    _id: string,
+    name: string,
+    pluralName?: string
+}
+
+export type SimpleItems = SimpleItem[];

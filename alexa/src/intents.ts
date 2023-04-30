@@ -12,9 +12,9 @@ import {
 
 import { getListGroups, getLists, getUserInfo, getCouchUserInfo,
          getDynamicIntentDirective, 
-         getDefaultListGroup, getListsText, getListGroupsText, getSelectedSlotInfo} from "./handlercalls";
-import { SlotInfo , CouchUserInfo, CouchUserInit} from "./datatypes";
-import { ListGroupDocs } from './DBSchema';
+         getDefaultListGroup, getListsText, getListGroupsText, getSelectedSlotInfo, getUserSettings} from "./handlercalls";
+import { SlotInfo , CouchUserInfo, CouchUserInit, SettingsResponse} from "./datatypes";
+import { GlobalSettings, ListGroupDocs } from './DBSchema';
 
 
 export const LaunchRequestHandler : RequestHandler = {
@@ -48,13 +48,16 @@ export const LaunchRequestHandler : RequestHandler = {
           let listGroups = await getListGroups(couchUserInfo.userName);
           let defaultListGroup  = getDefaultListGroup(listGroups);
           let lists = await getLists(couchUserInfo.userName,listGroups);
+          let userSettings: SettingsResponse = await getUserSettings(couchUserInfo.userName);
+          console.log(userSettings);
           let { attributesManager } = handlerInput;
           let sessionAttributes = attributesManager.getSessionAttributes();
-          dynamicDirective = getDynamicIntentDirective(listGroups,lists);
+          dynamicDirective = await getDynamicIntentDirective(listGroups,lists);
           sessionAttributes.dbusername = couchUserInfo.userName;
           sessionAttributes.listGroups = listGroups;
           sessionAttributes.defaultListGroupID = defaultListGroup?._id;
           sessionAttributes.lists = lists;
+          sessionAttributes.settings = userSettings.settings;
           attributesManager.setSessionAttributes(sessionAttributes);
         }
 
