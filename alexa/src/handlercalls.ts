@@ -247,19 +247,29 @@ export function getSelectedSlotInfo(slot: Slot) : SlotInfo {
     let dynamicFound = false;
     let staticAnswer: SlotInfo = {id: null, name: ""};
     let staticFound = false;
+    let alexaAnswer: SlotInfo = {id: null, name: ""};
+    let alexaFound = false;
+    console.log(JSON.stringify(slot.resolutions,null,2));
     slot.resolutions?.resolutionsPerAuthority?.every(auth => {
         if (auth.status.code === "ER_SUCCESS_MATCH") {
             if (auth.authority.includes("dynamic") && !dynamicFound) {
                 dynamicAnswer.id = auth.values[0].value.id;
                 dynamicAnswer.name = auth.values[0].value.name;
                 dynamicFound = true;
+                return true;
             }
+            if (auth.authority == "AlexaEntities" && !alexaFound) {
+                alexaAnswer.id = auth.values[0].value.id;
+                alexaAnswer.name = auth.values[0].value.name;
+                alexaFound = true;
+                return true;
+            }    
             if (!auth.authority.includes("dynamic") && !staticFound) {
                 staticAnswer.id = auth.values[0].value.id;
                 staticAnswer.name = auth.values[0].value.name;
                 staticFound = true;
             }    
-            return (!(staticFound && dynamicFound))
+            return (!(staticFound && dynamicFound && alexaFound))
         } else { return true;}
     })
     if (dynamicFound) {return dynamicAnswer};

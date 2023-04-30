@@ -125,6 +125,30 @@ export const AddItemToListIntentHandler: RequestHandler = {
   },
 }
 
+export const TestFoodIntentHandler: RequestHandler = {
+  canHandle(handlerInput : HandlerInput) : boolean {
+    const request = handlerInput.requestEnvelope.request;  
+    return request.type === 'IntentRequest'
+      && request.intent.name === 'TestFoodIntent';
+  },
+  async handle(handlerInput : HandlerInput) : Promise<Response> {
+    let { attributesManager, requestEnvelope } = handlerInput;
+    let sessionAttributes = attributesManager.getSessionAttributes();
+    let speechText = "";
+    let itemSlot = getSlot(requestEnvelope,"food");
+    if (itemSlot !== null) {
+      let selectedItem = getSelectedSlotInfo(itemSlot);
+      speechText = "Test Food Added "+selectedItem.name+" to the list";
+    } else {
+      speechText = "No item available to add";
+    }
+    return handlerInput.responseBuilder
+      .speak(speechText)
+      .withSimpleCard('Added items', speechText)
+      .getResponse();
+  },
+}
+
 export const ListsIntentHandler : RequestHandler = {
   canHandle(handlerInput : HandlerInput) : boolean {
     const request = handlerInput.requestEnvelope.request;  
