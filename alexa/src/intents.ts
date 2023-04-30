@@ -32,14 +32,11 @@ export const LaunchRequestHandler : RequestHandler = {
           .withLinkAccountCard()
           .getResponse();
       } else {
-        console.log("launching, access token is:",accessToken);
         const userInfo = await getUserInfo(accessToken);
-        console.log("got userinfo",userInfo);
         let couchUserInfo : CouchUserInfo = CouchUserInit;
         if (userInfo.success) {
           couchUserInfo = await getCouchUserInfo(userInfo.email);
         }
-        console.log("userinfo",userInfo,"couchinfo",couchUserInfo);
         let dynamicDirective: any = null;
         if (!userInfo.success || !couchUserInfo.success) {
           speechText = "Welcome to Specifically Clementines. An error was encountered finding the user account."
@@ -49,7 +46,6 @@ export const LaunchRequestHandler : RequestHandler = {
           let defaultListGroup  = getDefaultListGroup(listGroups);
           let lists = await getLists(couchUserInfo.userName,listGroups);
           let userSettings: SettingsResponse = await getUserSettings(couchUserInfo.userName);
-          console.log(userSettings);
           let { attributesManager } = handlerInput;
           let sessionAttributes = attributesManager.getSessionAttributes();
           dynamicDirective = await getDynamicIntentDirective(listGroups,lists);
@@ -116,11 +112,8 @@ export const AddItemToListIntentHandler: RequestHandler = {
     let speechText = "";
     let itemSlot = getSlot(requestEnvelope,"item");
     let listSlot = getSlot(requestEnvelope,"list");
-    console.log("itemSlot:",JSON.stringify(itemSlot,null,4));
-    console.log("listSlot:",JSON.stringify(listSlot,null,4));
     if (itemSlot !== null) {
       let selectedItem = getSelectedSlotInfo(itemSlot);
-      console.log("selectedItem", selectedItem);
       speechText = "Added "+selectedItem.name+" to the list";
     } else {
       speechText = "No item available to add";

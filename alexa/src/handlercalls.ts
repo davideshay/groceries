@@ -6,6 +6,8 @@ import { cloneDeep, isEmpty } from 'lodash';
 import { Directive, SimpleSlotValue, Slot, er } from "ask-sdk-model";
 import { SlotInfo , CouchUserInfo, CouchUserInit, SimpleListGroups, SimpleListGroup, SimpleLists, SimpleList, SettingsResponse, SettingsResponseInit, SimpleItems, SimpleItem} from "./datatypes";
 
+const MaxDynamicEntitites = 100;
+
 export async function totalDocCount(db: DocumentScope<unknown>) {
     const info = await db.info();
     return info.doc_count;
@@ -54,9 +56,7 @@ export async function getCouchUserInfo(email: string) {
 }
 
 export async function getUserSettings(username: string) {
-    console.log("in get user settings:",username);
     let response: SettingsResponse = cloneDeep(SettingsResponseInit);
-    console.log("SettingsResponse initial:",response);
     let settingsq = {
         selector: { type: "settings", "username": username},
         limit: await totalDocCount(todosDBAsAdmin)
@@ -87,14 +87,20 @@ export async function getDynamicIntentDirective(listGroups: SimpleListGroups, li
         listValues.push(value);
     })
     let simpleItemValues: er.dynamic.Entity[] = [];
+    let totalDynamicSoFar=listGroups.length+lists.length;
+    let dynamicLeft = MaxDynamicEntitites - totalDynamicSoFar;
     simpleLocalItems.forEach(li => {
-        let value: er.dynamic.Entity;
-        if (li.pluralName === undefined) {
-            value = { id: li._id, name: {value: li.name}}
-        } else {
-            value = { id: li._id, name: {value: li.name, synonyms: [li.pluralName]}}
-        }
-        simpleItemValues.push(value);    
+        if (dynamicLeft > 0) {
+            let value: er.dynamic.Entity;
+            if (li.pluralName === undefined) {
+                value = { id: li._id, name: {value: li.name}}
+                dynamicLeft--;
+            } else {
+                value = { id: li._id, name: {value: li.name, synonyms: [li.pluralName]}}
+                dynamicLeft=dynamicLeft-2;
+            }
+            simpleItemValues.push(value);
+        }    
     })
 
     directive = {  
@@ -115,9 +121,6 @@ export async function getDynamicIntentDirective(listGroups: SimpleListGroups, li
                 }
              ] 
     }
-
-    console.log("directive:",JSON.stringify(directive,null,4))
-
     return directive;
 }
 
@@ -139,24 +142,6 @@ async function getLocalItems(listGroupIDs: string[]): Promise<SimpleItems> {
             simpleItems.push(simpleItem);
         }    
     })
-    console.log(JSON.stringify(simpleItems,null,4));
-    return simpleItems;
-}
-
-async function getGlobalItems(): Promise<SimpleItems> {
-    const itemq = {
-        selector: { type: "globalitem"},
-        limit: await totalDocCount(todosDBAsAdmin)
-    }
-    let foundItemDocs: MangoResponse<GlobalItemDoc> | null = null;
-    try {foundItemDocs = (await todosDBAsAdmin.find(itemq) as MangoResponse<GlobalItemDoc>);}
-    catch(err) {console.log("ERROR: Could not find global item documents",err);
-                return []};
-    let simpleItems: SimpleItems = [];
-    foundItemDocs.docs.forEach(item => {
-        let simpleItem: SimpleItem = {_id: item._id, name: item.name}
-        simpleItems.push(simpleItem);
-    })
     return simpleItems;
 }
 
@@ -166,7 +151,6 @@ export async function getItems(listGroups: SimpleListGroups) {
         listGroupIDs.push(lg._id);
     });
     let simpleLocalItems = await getLocalItems(listGroupIDs);
-//    let simpleGlobalItems = getGlobalItems();
     let nameMap: any = {};
     let simplifiedItems: SimpleItems = [];
     simpleLocalItems.forEach(li => {
@@ -177,7 +161,6 @@ export async function getItems(listGroups: SimpleListGroups) {
             simplifiedItems.push(newItem);
         }   
     })
-    console.log("reduced items:",JSON.stringify(simplifiedItems,null,4));
     return simplifiedItems;
 }
 
@@ -260,12 +243,26 @@ export function getSelectedSlotInfo(slot: Slot) : SlotInfo {
     let slotInfo: SlotInfo = {id: null, name: ""};
     if (slot === null) {return slotInfo};
     if (isEmpty(slot.resolutions?.resolutionsPerAuthority)) { return slotInfo};
+    let dynamicAnswer: SlotInfo = {id: null, name: ""};
+    let dynamicFound = false;
+    let staticAnswer: SlotInfo = {id: null, name: ""};
+    let staticFound = false;
     slot.resolutions?.resolutionsPerAuthority?.every(auth => {
         if (auth.status.code === "ER_SUCCESS_MATCH") {
-            slotInfo.id = auth.values[0].value.id;
-            slotInfo.name = auth.values[0].value.name;
-            return false;
+            if (auth.authority.includes("dynamic") && !dynamicFound) {
+                dynamicAnswer.id = auth.values[0].value.id;
+                dynamicAnswer.name = auth.values[0].value.name;
+                dynamicFound = true;
+            }
+            if (!auth.authority.includes("dynamic") && !staticFound) {
+                staticAnswer.id = auth.values[0].value.id;
+                staticAnswer.name = auth.values[0].value.name;
+                staticFound = true;
+            }    
+            return (!(staticFound && dynamicFound))
         } else { return true;}
     })
+    if (dynamicFound) {return dynamicAnswer};
+    if (staticFound) {return staticAnswer};
     return slotInfo;
 }
