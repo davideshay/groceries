@@ -35,7 +35,7 @@ const GlobalItems: React.FC<HistoryProps> = (props: HistoryProps) => {
   screenLoading.current = false;
 
   (globalItemDocs as GlobalItemDocs).sort((a,b) => (
-    a.name.toLocaleUpperCase().localeCompare(b.name.toLocaleUpperCase())
+    translatedItemName(a._id!,a.name,2).toLocaleUpperCase().localeCompare(translatedItemName(b._id!,b.name,2).toLocaleUpperCase())
   ));
 
   return (
