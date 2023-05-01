@@ -206,7 +206,9 @@ export const es_translations =
         "recipe_quantity":"Cantidad de la receta",
         "recipe_uom": "Unidad de medida de la receta",
         "shopping_quantity":"Cantidad de compra",
-        "shopping_uom": "Unidad de medida de la compra"
+        "shopping_uom": "Unidad de medida de la compra",
+        "update_user_info": "Actualizar información de usuario",
+        "include_globalitems_in_search": "Incluir elementos globales en la búsqueda"
      },
      "itemtext": {
         "item_is_on_these_lists": "El artículo está en estas listas:",

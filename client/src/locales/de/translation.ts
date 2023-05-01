@@ -204,7 +204,10 @@ export const de_translations =
         "recipe_quantity":"Rezeptmenge",
         "recipe_uom": "Rezeptmaßeinheit",
         "shopping_quantity":"Einkaufsmenge",
-        "shopping_uom": "Einkaufsmaßeinheit"
+        "shopping_uom": "Einkaufsmaßeinheit",
+        "update_user_info": "Benutzerinformationen aktualisieren",
+        "include_globalitems_in_search": "Globale Elemente in die Suche einbeziehen"
+
     },
     "error": {
         "invalid_dbuuid" : "Ungültiger Datenbank-Identifier",
