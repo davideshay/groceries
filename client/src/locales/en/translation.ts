@@ -206,7 +206,8 @@ export const en_translations =
         "recipe_uom": "Recipe UoM",
         "shopping_quantity":"Shopping Quantity",
         "shopping_uom": "Shopping UoM",
-        "update_user_info": "Update User Info"
+        "update_user_info": "Update User Info",
+        "include_globalitems_in_search": "Include Global Items in Search"
      },
      "error" : {
         "invalid_dbuuid" : "Invalid Database Unique Identifier",

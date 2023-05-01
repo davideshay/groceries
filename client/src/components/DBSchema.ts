@@ -299,6 +299,7 @@ export type GlobalSettings = {
   addListOption: AddListOptions,
   removeFromAllLists: boolean,
   completeFromAllLists: boolean,
+  includeGlobalInSearch: boolean,
   daysOfConflictLog: Number
 }
 
@@ -306,6 +307,7 @@ export const InitSettings: GlobalSettings = {
   addListOption: AddListOptions.addToAllListsAutomatically,
   removeFromAllLists: true,
   completeFromAllLists: true,
+  includeGlobalInSearch: true,
   daysOfConflictLog: 2
 }
 

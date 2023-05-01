@@ -220,6 +220,9 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
           <IonItem class="shorter-item-some-padding" key="deletesettings">
             <IonCheckbox justify="space-between" labelPlacement="start" checked={localSettings.completeFromAllLists} onIonChange={(e) => changeSetting("completeFromAllLists",e.detail.checked)}>{t("general.delete_all_lists_when_deleting_completed")}</IonCheckbox>
           </IonItem>
+          <IonItem class="shorter-item-some-padding" key="searchsettings">
+            <IonCheckbox justify="space-between" labelPlacement="start" checked={localSettings.includeGlobalInSearch} onIonChange={(e) => changeSetting("includeGlobalInSearch",e.detail.checked)}>{t("general.include_globalitems_in_search")}</IonCheckbox>
+          </IonItem>
           <IonItem class="shorter-item-no-padding" key="dayslog">
             <IonInput class="shorter-input shorter-input2" label={t("general.days_conflict_log_to_view") as string} labelPlacement="start" type="number" min="0" max="25" onIonInput={(e) => changeSetting("daysOfConflictLog", Number(e.detail.value))} value={Number(localSettings?.daysOfConflictLog)}></IonInput>
           </IonItem>
