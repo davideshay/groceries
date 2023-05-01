@@ -2,6 +2,7 @@ import {
     ErrorHandler,
     HandlerInput,
     RequestHandler,
+    getApiAccessToken,
     getSlot,
   } from 'ask-sdk';
 
@@ -14,8 +15,7 @@ import { getListGroups, getLists, getUserInfo, getCouchUserInfo,
          getDynamicIntentDirective, 
          getDefaultListGroup, getListsText, getListGroupsText,
          getSelectedSlotInfo, getUserSettings, SlotType, addItemToList} from "./handlercalls";
-import { SlotInfo , CouchUserInfo, CouchUserInit, SettingsResponse, SimpleListGroups, SimpleLists} from "./datatypes";
-import { GlobalSettings, ListGroupDocs } from './DBSchema';
+import { CouchUserInfo, CouchUserInit, SettingsResponse, SimpleListGroups, SimpleLists} from "./datatypes";
 
 
 export const LaunchRequestHandler : RequestHandler = {
@@ -153,9 +153,10 @@ export const AddItemToListIntentHandler: RequestHandler = {
     let speechText = "";
     let itemSlot = getSlot(requestEnvelope,"item");
     let listSlot = getSlot(requestEnvelope,"list");
+    let accessToken = getApiAccessToken(requestEnvelope);
     let itemAddResults=await addItemToList(itemSlot,listSlot,sessionAttributes.currentListGroupID,
         sessionAttributes.currentListID, sessionAttributes.listMode, sessionAttributes.lists,
-        sessionAttributes.settings);
+        sessionAttributes.settings,accessToken);
     speechText = itemAddResults.message;
     return handlerInput.responseBuilder
       .speak(speechText)
