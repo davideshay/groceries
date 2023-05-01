@@ -10,10 +10,10 @@ on:
        - 'alexa/**'
 defaults:
   run:
-    working-directory: server
+    working-directory: alexa
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}-server
+  IMAGE_NAME: ${{ github.repository }}-alexa
 jobs:
   build-it:
     runs-on: ubuntu-latest
