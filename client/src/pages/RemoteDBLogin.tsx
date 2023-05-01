@@ -93,6 +93,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
         await presentAlert(alertObject);
         setRemoteDBState(({...remoteDBState,dbUUIDAction: DBUUIDAction.none}))
       };
+      dismiss();
       if (remoteDBState.dbUUIDAction !== DBUUIDAction.none) {
         if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_app_schema_mismatch) {
           logger(LogLevel.ERROR,"ERROR: Schema too new, not supported with this app version. Upgrade.");

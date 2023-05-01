@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useEffect, useState} from "react";
 import { Preferences } from '@capacitor/preferences';
 import { pick,cloneDeep } from "lodash";
-import { isJsonString } from "./Utilities";
-import { RowType } from "./DataTypes";
+import { isJsonString, logger } from "./Utilities";
+import { LogLevel, RowType } from "./DataTypes";
 import { GlobalSettings, AddListOptions, SettingsDoc, InitSettings, InitSettingsDoc } from "./DBSchema";
 import { useCreateGenericDocument, useUpdateGenericDocument } from "./Usehooks";
 import { RemoteDBStateContext } from "./RemoteDBState";
@@ -141,11 +141,11 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
             }
             finalSettings = cloneDeep(dbSettingsDoc.settings);
         } else if (!storageSettingsExist && dbSettingsExist) {
+            finalSettings = dbSettingsDoc.settings;
             if (dbUpdated) {
                 let newSettingsDoc: SettingsDoc = cloneDeep(settingsDocs[0]);
                 newSettingsDoc.settings = dbSettingsDoc.settings;
                 await updateSettingDoc(newSettingsDoc)
-                finalSettings = dbSettingsDoc.settings;
             }
         }
         setGlobalState(prevState => ({...prevState,settings: finalSettings}))

@@ -49,7 +49,7 @@ export function getAllSearchRows(allItemDocs: ItemDocs, listID: string,listType:
         searchRows.push(searchRow);
       }  
     })
-    if (!settings.includeGlobalInSearch) { return searchRows};
+    if (!settings.includeGlobalInSearch) {return searchRows};
     globalItemDocs.forEach((globalItem) => {
       let itemExistsInSearchIdx = searchRows.findIndex((sr) => (sr.globalItemID === globalItem._id || sr.itemName === globalItem.name));
       let itemExistsInItem = false;
@@ -77,8 +77,7 @@ export function getAllSearchRows(allItemDocs: ItemDocs, listID: string,listType:
             globalItemCategoryID: globalItem.defaultCategoryID,
             globalItemUOM: globalItem.defaultUOM,
             quantity: 0,
-            boughtCount: 0
-        }
+            boughtCount: 0        }
         searchRows.push(searchRow);
       }   
     })

@@ -53,11 +53,10 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   },[globalState.settings,localSettingsInitialized,globalState.settingsLoaded, remoteDBCreds.fullName, remoteDBCreds.email, remoteDBCreds.dbUsername])
 
-  if ( settingsLoading || !globalState.settingsLoaded)  {
+  if ( settingsLoading || !globalState.settingsLoaded || !localSettingsInitialized)  {
     return ( <Loading isOpen={screenLoading.current} message={t("general.loading")} />)
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   };
-
 
   async function stopSync() {
     let credsStr=JSON.stringify({});
