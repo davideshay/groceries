@@ -19,7 +19,6 @@ import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
 import { isEqual } from 'lodash';
 import { useTranslation } from 'react-i18next';
-import { translatedItemName } from '../components/translationUtilities';
 
 const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode: routeMode, id: routeListID  } = useParams<{mode: string, id: string}>();
@@ -125,6 +124,23 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     return(!(existingItem === undefined));
   }
 
+  function getGlobalItemID(itemName: string): string|null {
+    let globalItemID: string|null = null;
+    let sysItemKey = "system:item";
+    let sysItemKeyLength = sysItemKey.length + 1;
+    globalData.globalItemDocs.every(gi => {
+      let giItemTransKey="globalitem."+(String(gi._id).substring(sysItemKeyLength));
+      if (itemName.toLocaleUpperCase().localeCompare(gi.name.toLocaleUpperCase()) === 0 ||
+          itemName.toLocaleUpperCase().localeCompare(t(giItemTransKey,{count: 1}).toLocaleUpperCase()) === 0 || 
+          itemName.toLocaleUpperCase().localeCompare(t(giItemTransKey,{count: 2}).toLocaleUpperCase()) === 0 )
+       {
+        globalItemID = gi._id!;
+        return false;
+      } else { return true; }
+    })
+    return globalItemID;
+  }
+
   function addNewItemToList(itemName: string) {
     if (isItemAlreadyInList(itemName)) {
       setPageState(prevState => ({...prevState, showAlert: true, alertHeader: t("error.adding_to_list") , alertMessage: t("error.item_exists_current_list")}))
@@ -132,6 +148,8 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       setGlobalStateInfo("itemMode","new");
       setGlobalStateInfo("callingListID",pageState.selectedListOrGroupID);
       setGlobalStateInfo("callingListType",pageState.selectedListType);
+      let globalItemID = getGlobalItemID(itemName)
+      setGlobalStateInfo("newItemGlobalItemID",globalItemID)
       setGlobalStateInfo("newItemName",itemName);
       setSearchState(prevState => ({...prevState, isOpen: false,searchCriteria:"",isFocused: false}))
       props.history.push("/item/new/");
@@ -355,7 +373,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   let popOverElem = (
     <IonPopover side="bottom" trigger="item-search-box-id" isOpen={searchState.isOpen} keyboardClose={false} onDidDismiss={(e) => {leaveSearchBox()}}>
     <IonContent><IonList key="popoverItemList">
-      {(searchState.filteredSearchRows as ItemSearch[]).map((item: ItemSearch) => (
+      {(searchState.filteredSearchRows).map((item: ItemSearch) => (
         <IonItem button key={pageState.selectedListOrGroupID+"-poilist-"+item.itemID} onClick={(e) => {chooseSearchItem(item)}}>{item.itemName}</IonItem>
       ))}
     </IonList></IonContent>

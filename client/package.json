@@ -4,7 +4,7 @@
   "private": true,
   "dependencies": {
     "@awesome-cordova-plugins/chooser-simple-file": "^6.3.0",
-    "@capacitor/android": "^4.7.0",
+    "@capacitor/android": "^4.8.0",
     "@capacitor/app": "4.1.1",
     "@capacitor/camera": "^4.1.4",
     "@capacitor/clipboard": "^4.1.0",
@@ -12,7 +12,7 @@
     "@capacitor/device": "^4.1.0",
     "@capacitor/filesystem": "^4.1.4",
     "@capacitor/haptics": "4.1.0",
-    "@capacitor/ios": "4.7.3",
+    "@capacitor/ios": "^4.8.0",
     "@capacitor/keyboard": "^4.1.1",
     "@capacitor/preferences": "^4.0.2",
     "@capacitor/status-bar": "4.1.1",
