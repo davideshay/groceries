@@ -83,7 +83,9 @@ export const ChangeListGroupIntentHandler: RequestHandler = {
     let listGroupSlot = getSlot(requestEnvelope,"listgroup");
     if (listGroupSlot !== null) {
       let [slotType,selectedListGroup] = getSelectedSlotInfo(listGroupSlot);
+      console.log("listgroup selected:",slotType,selectedListGroup);
       if (selectedListGroup.id !== null) {
+        console.log("trying to find listgroup in listgroups: ", listGroups);
         let foundListGroup = listGroups.find((lg) => (lg._id === selectedListGroup.id));
         if (foundListGroup !== undefined) {
           speechText = "Changing list group to "+foundListGroup.name;
@@ -151,21 +153,10 @@ export const AddItemToListIntentHandler: RequestHandler = {
     let speechText = "";
     let itemSlot = getSlot(requestEnvelope,"item");
     let listSlot = getSlot(requestEnvelope,"list");
-    let itemAddResults=await addItemToList(itemSlot,listSlot,sessionAttributes.defaultListGroupID,
-        sessionAttributes.defaultListID, sessionAttributes.listMode, sessionAttributes.lists,
+    let itemAddResults=await addItemToList(itemSlot,listSlot,sessionAttributes.currentListGroupID,
+        sessionAttributes.currentListID, sessionAttributes.listMode, sessionAttributes.lists,
         sessionAttributes.settings);
-
-    if (itemSlot !== null) {
-      let [slotType,selectedItem] = getSelectedSlotInfo(itemSlot);
-      console.log("selected item:",selectedItem);
-      if (slotType != SlotType.None) {
-        speechText = "Added "+selectedItem.name+" to the list";
-      } else {
-        speechText = "No item available to add";
-      }
-    } else {
-      speechText = "No item available to add";
-    }
+    speechText = itemAddResults.message;
     return handlerInput.responseBuilder
       .speak(speechText)
       .withSimpleCard('Added items', speechText)
@@ -229,12 +220,12 @@ export const DefaultListGroupIntentHandler : RequestHandler = {
   async handle(handlerInput : HandlerInput) : Promise<Response> {
     let { attributesManager } = handlerInput;
     let sessionAttributes = attributesManager.getSessionAttributes();
-    let listGroups : ListGroupDocs = sessionAttributes.listGroups;
+    let listGroups :SimpleListGroups = sessionAttributes.listGroups;
     let defaultListGroupID = sessionAttributes.defaultListGroupID;
     let speechText = "";
     let defaultListGroup = listGroups?.find(lg => (lg._id === defaultListGroupID));
     if (defaultListGroup === undefined) {
-      speechText = "Not default list group available. Please check the app."
+      speechText = "No default list group available. Please check the app."
     } else {
       speechText = "The default list group is "+defaultListGroup.name;
     }
@@ -245,6 +236,32 @@ export const DefaultListGroupIntentHandler : RequestHandler = {
   },
 };
 
+export const DefaultListIntentHandler : RequestHandler = {
+  canHandle(handlerInput : HandlerInput) : boolean {
+    const request = handlerInput.requestEnvelope.request;  
+    return request.type === 'IntentRequest'
+      && request.intent.name === 'DefaultListIntent';
+  },
+  async handle(handlerInput : HandlerInput) : Promise<Response> {
+    let { attributesManager } = handlerInput;
+    let sessionAttributes = attributesManager.getSessionAttributes();
+    let lists : SimpleLists = sessionAttributes.lists;
+    let defaultListID = sessionAttributes.defaultListID;
+    let speechText = "";
+    let defaultList = lists?.find(l => (l._id === defaultListID));
+    if (defaultList === undefined) {
+      speechText = "No default list available. Please check the app."
+    } else {
+      speechText = "The default list is "+defaultList.name;
+    }
+    return handlerInput.responseBuilder
+      .speak(speechText)
+      .withSimpleCard("Lists",speechText)
+      .getResponse();
+  },
+};
+
+
 export const HelpIntentHandler : RequestHandler = {
     canHandle(handlerInput : HandlerInput) : boolean {
       const request = handlerInput.requestEnvelope.request;    
@@ -253,6 +270,23 @@ export const HelpIntentHandler : RequestHandler = {
     },
     handle(handlerInput : HandlerInput) : Response {
       const speechText = 'You can ask me the weather!';
+  
+      return handlerInput.responseBuilder
+        .speak(speechText)
+        .reprompt(speechText)
+        .withSimpleCard('You can ask me the weather!', speechText)
+        .getResponse();
+    },
+  };
+
+  export const AmazonFallbackIntentHandler : RequestHandler = {
+    canHandle(handlerInput : HandlerInput) : boolean {
+      const request = handlerInput.requestEnvelope.request;    
+      return request.type === 'IntentRequest'
+        && request.intent.name === 'AMAZON.Fallback';
+    },
+    handle(handlerInput : HandlerInput) : Response {
+      const speechText = 'Ask me about shopping lists. Fallback.';
   
       return handlerInput.responseBuilder
         .speak(speechText)

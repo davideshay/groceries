@@ -11,6 +11,7 @@ import { LaunchRequestHandler,
           DefaultListGroupIntentHandler,
           AddItemToListIntentHandler,
           ChangeListIntentHandler,
+          DefaultListIntentHandler,
           } from './intents';
 import { dbStartup } from './dbstartup';
 
@@ -28,6 +29,7 @@ const skillBuilder = SkillBuilders.custom()
     ChangeListGroupIntentHandler,
     ChangeListIntentHandler,
     DefaultListGroupIntentHandler,
+    DefaultListIntentHandler,
     AddItemToListIntentHandler
   )
   .addErrorHandlers(AlexaErrorHandler)

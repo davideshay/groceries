@@ -1,11 +1,10 @@
-import { GlobalItemDoc, GlobalSettings, InitSettingsDoc, ItemDoc, ItemDocInit, ListDoc, ListDocs, ListGroupDoc, ListGroupDocs, SettingsDoc, UserDoc } from "./DBSchema";
+import { GlobalItemDoc, GlobalSettings, InitGlobalItem, InitSettingsDoc, ItemDoc, ItemDocInit, ListDoc, ListDocs, ListGroupDoc, ListGroupDocs, SettingsDoc, UserDoc } from "./DBSchema";
 import { dbStartup, todosDBAsAdmin, usersDBAsAdmin } from "./dbstartup";
 import { DocumentScope, MangoResponse } from "nano";
 import axios, {AxiosResponse} from 'axios';
 import { cloneDeep, isEmpty } from 'lodash';
-import { Directive, SimpleSlotValue, Slot, er } from "ask-sdk-model";
+import { Directive, Slot, er } from "ask-sdk-model";
 import { SlotInfo , CouchUserInfo, CouchUserInit, SimpleListGroups, SimpleListGroup, SimpleLists, SimpleList, SettingsResponse, SettingsResponseInit, SimpleItems, SimpleItem} from "./datatypes";
-import { ExecOptionsWithStringEncoding } from "child_process";
 import { ItemList } from "./DBSchema";
 import { AddListOptions } from "./DBSchema";
 import e from "express";
@@ -120,7 +119,7 @@ export async function getDynamicIntentDirective(listGroups: SimpleListGroups, li
                 "values": listValues
                 },
                 {
-                "name": "item",
+                "name": "AMAZON.Food",
                 "values": simpleItemValues    
                 }
              ] 
@@ -259,10 +258,6 @@ export function getDefaultListGroup(listGroups: SimpleListGroups) {
     return defaultGroup;
 }
 
-export function getDefaultListID(lists: SimpleLists) {
-//TODO
-}
-
 export enum SlotType {
     Alexa, Dynamic, Static, None
 }
@@ -307,6 +302,24 @@ export function getSelectedSlotInfo(slot: Slot) : [ SlotType,  SlotInfo ]{
     return [SlotType.None,slotInfo];
 }
 
+export function getCommonKey(itemDoc: ItemDoc, key: string) {
+    let freqObj: any = {};
+    let maxKey = null; let maxCnt=0;
+    let lists=cloneDeep(itemDoc.lists);
+    lists.sort((a,b) => (a.listID.toUpperCase().localeCompare(b.listID.toUpperCase())))
+    lists.forEach( (list: ItemList) => {
+      let value=(list as any)[key]
+      if (freqObj.hasOwnProperty(value)) {
+        freqObj[value]=freqObj[value]+1;
+        if (freqObj[value] > maxCnt) {maxCnt = freqObj[value]; maxKey=value;} 
+      } else {
+        freqObj[value]=1
+      }
+    });
+    if (maxCnt === 0 && lists.length > 0 ) {maxKey = (lists[0] as any)[key]}
+    return maxKey;
+  }
+
 type HandlerResponse = {success: boolean, message: string}
 const HandlerResponseInit = {success: false, message: ""};
 
@@ -329,17 +342,16 @@ export async function addItemToList(itemSlot: Slot, listSlot: Slot,defaultListGr
        addItemResponse = await addGlobalItemToList(selectedItem.id,defaultListGroupID,listID,listMode,lists,settings);
     } else if (itemSlotType === SlotType.Dynamic) {
         console.log("adding dynamic item to list: ",selectedItem);
+        addItemResponse = await addDynamicItemToList(selectedItem.id,defaultListGroupID,listID,listMode,lists,settings);
     } else if (itemSlotType === SlotType.Alexa) {
         console.log("adding Alexa item to the list", selectedItem);
     }
     return addItemResponse;
 }
 
-async function itemInListGroup(itemID: string, listGroupID: string) : Promise<{exists: boolean, itemDoc:ItemDoc | null}> {
+async function getItem(itemID: string) : Promise<{exists: boolean, itemDoc:ItemDoc | null}> {
     let itemResponse: {exists: boolean, itemDoc: ItemDoc|null}= {exists: false, itemDoc: null};
     let itemDoc: ItemDoc|null = null;
-    //TODO -- for global items, this is passing in the global item ID and saying OK, but that isn't right
-    // it will always exist, even if that global item is not in the list group
     try { itemDoc = await todosDBAsAdmin.get(itemID) as ItemDoc;}
     catch(err) {console.log("ERROR: Could not find item"); return itemResponse}
     if (itemDoc === undefined || itemDoc === null) {return itemResponse}
@@ -366,10 +378,36 @@ async function globalItemInListGroup(globalItemID: string, listGroupID: string) 
     return itemResponse;
 }
 
-async function updateItemInList(itemDoc: ItemDoc,listMode: string, settings: GlobalSettings) : Promise<HandlerResponse> {
+async function updateItemInList(itemDoc: ItemDoc,listMode: string, listID: string|null, settings: GlobalSettings) : Promise<HandlerResponse> {
     let updateResponse: HandlerResponse = cloneDeep(HandlerResponseInit);
-
-
+    let newItem: ItemDoc = cloneDeep(itemDoc);
+    let changed=false;
+    newItem.lists.forEach(l => {
+        let setActive=true;
+        if ((settings.addListOption === AddListOptions.addToAllListsAutomatically || listMode === "G")) {
+            setActive = true
+        } else if (l.listID !== listID && listMode === "L") {
+            setActive = false;
+        }
+        if (!l.stockedAt) {setActive=false;}
+        if (setActive && (!l.active || l.completed)) {
+            l.active = true;
+            l.boughtCount = l.boughtCount+1;
+            l.completed = false;
+            changed=true;
+        }
+    })
+    newItem.updatedAt = (new Date()).toISOString();
+    console.log("trying to update item in list:",JSON.stringify(newItem,null,4));
+    try {let dbResp = await todosDBAsAdmin.insert(newItem); updateResponse.success=true;}
+    catch(err) {updateResponse.message="Error updating item in the list"; updateResponse.success = false; console.log("ERROR updating item in the list:",err)}
+    if (updateResponse.success) {
+        if (changed) {
+            updateResponse.message="Added "+itemDoc.name+" to the list";
+        } else {
+            updateResponse.message=itemDoc.name + " was already on the list";
+        }
+    }
     return updateResponse;
 }
 
@@ -384,6 +422,7 @@ async function getGlobalItem(id: string) : Promise<GlobalItemDoc | null> {
 async function addNewItemToList(globalItem: GlobalItemDoc,listGroupID: string,listID: string|null,lists: SimpleLists, listMode: string, settings: GlobalSettings) : Promise<HandlerResponse>{
     let addResponse: HandlerResponse = cloneDeep(HandlerResponseInit);
     let newItem: ItemDoc = cloneDeep(ItemDocInit);
+    newItem.name=globalItem.name;
     newItem.globalItemID=globalItem._id!;
     newItem.listGroupID=listGroupID;
     let newItemLists: ItemList[] = [];
@@ -397,7 +436,7 @@ async function addNewItemToList(globalItem: GlobalItemDoc,listGroupID: string,li
             }
             let itemList: ItemList = {
                 listID: l._id,
-                active: setActive, /// maybe depending on settings, mode
+                active: setActive, 
                 completed: false, 
                 stockedAt: true,
                 boughtCount: 0,
@@ -412,8 +451,11 @@ async function addNewItemToList(globalItem: GlobalItemDoc,listGroupID: string,li
     newItem.lists = newItemLists;
     newItem.updatedAt = (new Date()).toISOString();
     console.log("trying to add to list:",JSON.stringify(newItem,null,4));
-    try {let dbResp = await todosDBAsAdmin.insert(newItem)}
-    catch(err) {addResponse.message="Error adding item to the list"; console.log("ERROR adding to the list:",err)}
+    try {let dbResp = await todosDBAsAdmin.insert(newItem); addResponse.success = true;}
+    catch(err) {addResponse.message="Error adding item to the list"; addResponse.success = false; console.log("ERROR adding to the list:",err)}
+    if (addResponse.success) {
+        addResponse.message="Added "+globalItem.name+" to the list";
+    }
     return addResponse;
 }
 
@@ -428,7 +470,7 @@ async function addGlobalItemToList(itemID: string,listGroupID: string,listID: st
     let itemResponse = await globalItemInListGroup(itemID,listGroupID);
     console.log("item is in list group:",itemResponse);
     if (itemResponse.exists && itemResponse.itemDoc !== null) {
-        addResponse= await updateItemInList(itemResponse.itemDoc,listMode,settings)
+        addResponse= await updateItemInList(itemResponse.itemDoc,listMode,listID,settings)
     } else if (!itemResponse.exists || itemResponse.itemDoc === null) {
         let globalItem= await getGlobalItem(itemID)
         if (globalItem !== null) {
@@ -436,5 +478,32 @@ async function addGlobalItemToList(itemID: string,listGroupID: string,listID: st
             addResponse = await addNewItemToList(globalItem,listGroupID,listID,lists,listMode,settings)
         }    
     }
+    return addResponse;
+}
+
+async function addDynamicItemToList(itemID: string,listGroupID: string,listID: string | null,listMode: string, lists: SimpleLists, settings: GlobalSettings) : Promise<HandlerResponse> {
+    // check if item exists at all in the selected list group
+    // if it exists:
+    //      update lists to active based on settings and selected list mode and stocked at
+    // if it doesn't exist:
+    //      add to list, copying the item's name, category, and UOM from the "common key" values of the other list item
+    console.log("adding dynamic item to the list...");
+    let addResponse: HandlerResponse = cloneDeep(HandlerResponseInit);
+    let itemResponse = await getItem(itemID);
+    console.log("item :",itemResponse, "selected list groupID: ",listGroupID);
+    if (!itemResponse.exists || itemResponse === null) {
+        addResponse.message="Unable to find item in list";
+        return addResponse;
+    }
+    if (itemResponse.itemDoc!.listGroupID === listGroupID) {
+        addResponse= await updateItemInList(itemResponse.itemDoc!,listMode,listID,settings)
+    } else {
+        let globalItem: GlobalItemDoc = cloneDeep(InitGlobalItem);
+        globalItem._id = undefined;
+        globalItem.name = itemResponse.itemDoc!.name;
+        globalItem.defaultCategoryID = getCommonKey(itemResponse.itemDoc!,"categoryID");
+        globalItem.defaultUOM = getCommonKey(itemResponse.itemDoc!,"uomName");
+        addResponse = await addNewItemToList(globalItem,listGroupID,listID,lists,listMode,settings)
+    }    
     return addResponse;
 }
