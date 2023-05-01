@@ -10,7 +10,8 @@ import { LaunchRequestHandler,
           ListGroupsIntentHandler,
           DefaultListGroupIntentHandler,
           AddItemToListIntentHandler,
-          TestFoodIntentHandler} from './intents';
+          ChangeListIntentHandler,
+          } from './intents';
 import { dbStartup } from './dbstartup';
 
 export const alexaPort = (process.env.ALEXA_PORT == undefined) ? 3000 : process.env.ALEXA_PORT;
@@ -25,9 +26,9 @@ const skillBuilder = SkillBuilders.custom()
     ListsIntentHandler,
     ListGroupsIntentHandler,
     ChangeListGroupIntentHandler,
+    ChangeListIntentHandler,
     DefaultListGroupIntentHandler,
-    AddItemToListIntentHandler,
-    TestFoodIntentHandler
+    AddItemToListIntentHandler
   )
   .addErrorHandlers(AlexaErrorHandler)
 ;

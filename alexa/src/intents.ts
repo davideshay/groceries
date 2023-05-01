@@ -12,8 +12,9 @@ import {
 
 import { getListGroups, getLists, getUserInfo, getCouchUserInfo,
          getDynamicIntentDirective, 
-         getDefaultListGroup, getListsText, getListGroupsText, getSelectedSlotInfo, getUserSettings} from "./handlercalls";
-import { SlotInfo , CouchUserInfo, CouchUserInit, SettingsResponse} from "./datatypes";
+         getDefaultListGroup, getListsText, getListGroupsText,
+         getSelectedSlotInfo, getUserSettings, SlotType, addItemToList} from "./handlercalls";
+import { SlotInfo , CouchUserInfo, CouchUserInit, SettingsResponse, SimpleListGroups, SimpleLists} from "./datatypes";
 import { GlobalSettings, ListGroupDocs } from './DBSchema';
 
 
@@ -44,7 +45,7 @@ export const LaunchRequestHandler : RequestHandler = {
           speechText = 'Welcome to Specifically Clementines! '+userInfo.name+',ask me about shopping lists!';
           let listGroups = await getListGroups(couchUserInfo.userName);
           let defaultListGroup  = getDefaultListGroup(listGroups);
-          let lists = await getLists(couchUserInfo.userName,listGroups);
+          let [defaultListID,lists] = await getLists(couchUserInfo.userName,listGroups);
           let userSettings: SettingsResponse = await getUserSettings(couchUserInfo.userName);
           let { attributesManager } = handlerInput;
           let sessionAttributes = attributesManager.getSessionAttributes();
@@ -52,12 +53,14 @@ export const LaunchRequestHandler : RequestHandler = {
           sessionAttributes.dbusername = couchUserInfo.userName;
           sessionAttributes.listGroups = listGroups;
           sessionAttributes.defaultListGroupID = defaultListGroup?._id;
+          sessionAttributes.currentListGroupID = defaultListGroup?._id;
+          sessionAttributes.defaultListID = defaultListID;
+          sessionAttributes.currentListID = defaultListID;
+          sessionAttributes.listMode = "G";
           sessionAttributes.lists = lists;
           sessionAttributes.settings = userSettings.settings;
           attributesManager.setSessionAttributes(sessionAttributes);
         }
-
-        console.log("dynamic",dynamicDirective,"speech",speechText);
         return handlerInput.responseBuilder
           .speak(speechText)
           .addDirective(dynamicDirective)
@@ -75,16 +78,18 @@ export const ChangeListGroupIntentHandler: RequestHandler = {
   async handle(handlerInput : HandlerInput) : Promise<Response> {
     let { attributesManager, requestEnvelope } = handlerInput;
     let sessionAttributes = attributesManager.getSessionAttributes();
-    let listGroups: ListGroupDocs = sessionAttributes.listGroups;
+    let listGroups: SimpleListGroups = sessionAttributes.listGroups;
     let speechText = "";
     let listGroupSlot = getSlot(requestEnvelope,"listgroup");
     if (listGroupSlot !== null) {
-      let selectedListGroup = getSelectedSlotInfo(listGroupSlot);
+      let [slotType,selectedListGroup] = getSelectedSlotInfo(listGroupSlot);
       if (selectedListGroup.id !== null) {
         let foundListGroup = listGroups.find((lg) => (lg._id === selectedListGroup.id));
         if (foundListGroup !== undefined) {
           speechText = "Changing list group to "+foundListGroup.name;
-          sessionAttributes.defaultListGroupID = foundListGroup._id;
+          sessionAttributes.currentListGroupID = foundListGroup._id;
+          sessionAttributes.listMode = "G";
+          attributesManager.setSessionAttributes(sessionAttributes);
         } else {speechText = "Could not find list group to switch to"}
       } else {
         speechText = "Could not find list group to switch to";
@@ -97,7 +102,41 @@ export const ChangeListGroupIntentHandler: RequestHandler = {
       .withSimpleCard('List Group Change', speechText)
       .getResponse();
   },
+}
 
+export const ChangeListIntentHandler: RequestHandler = {
+  canHandle(handlerInput : HandlerInput) : boolean {
+    const request = handlerInput.requestEnvelope.request;  
+    return request.type === 'IntentRequest'
+      && request.intent.name === 'ChangeListIntent';
+  },
+  async handle(handlerInput : HandlerInput) : Promise<Response> {
+    let { attributesManager, requestEnvelope } = handlerInput;
+    let sessionAttributes = attributesManager.getSessionAttributes();
+    let lists: SimpleLists = sessionAttributes.lists;
+    let speechText = "";
+    let listSlot = getSlot(requestEnvelope,"list");
+    if (listSlot !== null) {
+      let [slotType,selectedList] = getSelectedSlotInfo(listSlot);
+      if (selectedList.id !== null) {
+        let foundList = lists.find((lg) => (lg._id === selectedList.id));
+        if (foundList !== undefined) {
+          speechText = "Changing list to "+foundList.name;
+          sessionAttributes.currentListGroupID = foundList._id;
+          sessionAttributes.listMode = "L";
+          attributesManager.setSessionAttributes(sessionAttributes);
+        } else {speechText = "Could not find list to switch to"}
+      } else {
+        speechText = "Could not find list to switch to";
+      }
+    } else {
+      speechText = "No selected list lists available to switch to";
+    }
+    return handlerInput.responseBuilder
+      .speak(speechText)
+      .withSimpleCard('List Change', speechText)
+      .getResponse();
+  },
 }
 
 export const AddItemToListIntentHandler: RequestHandler = {
@@ -112,33 +151,18 @@ export const AddItemToListIntentHandler: RequestHandler = {
     let speechText = "";
     let itemSlot = getSlot(requestEnvelope,"item");
     let listSlot = getSlot(requestEnvelope,"list");
-    if (itemSlot !== null) {
-      let selectedItem = getSelectedSlotInfo(itemSlot);
-      speechText = "Added "+selectedItem.name+" to the list";
-    } else {
-      speechText = "No item available to add";
-    }
-    return handlerInput.responseBuilder
-      .speak(speechText)
-      .withSimpleCard('Added items', speechText)
-      .getResponse();
-  },
-}
+    let itemAddResults=await addItemToList(itemSlot,listSlot,sessionAttributes.defaultListGroupID,
+        sessionAttributes.defaultListID, sessionAttributes.listMode, sessionAttributes.lists,
+        sessionAttributes.settings);
 
-export const TestFoodIntentHandler: RequestHandler = {
-  canHandle(handlerInput : HandlerInput) : boolean {
-    const request = handlerInput.requestEnvelope.request;  
-    return request.type === 'IntentRequest'
-      && request.intent.name === 'TestFoodIntent';
-  },
-  async handle(handlerInput : HandlerInput) : Promise<Response> {
-    let { attributesManager, requestEnvelope } = handlerInput;
-    let sessionAttributes = attributesManager.getSessionAttributes();
-    let speechText = "";
-    let itemSlot = getSlot(requestEnvelope,"food");
     if (itemSlot !== null) {
-      let selectedItem = getSelectedSlotInfo(itemSlot);
-      speechText = "Test Food Added "+selectedItem.name+" to the list";
+      let [slotType,selectedItem] = getSelectedSlotInfo(itemSlot);
+      console.log("selected item:",selectedItem);
+      if (slotType != SlotType.None) {
+        speechText = "Added "+selectedItem.name+" to the list";
+      } else {
+        speechText = "No item available to add";
+      }
     } else {
       speechText = "No item available to add";
     }
