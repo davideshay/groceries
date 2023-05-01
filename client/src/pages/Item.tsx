@@ -135,7 +135,8 @@ const Item: React.FC = (props) => {
       return false;
     }
     if (isEmpty(stateItemDoc.pluralName)) {
-      setFormError(prevState => (t("error.must_enter_a_plural_name")))
+      setFormError(prevState => (t("error.must_enter_a_plural_name")));
+      return false;
     }
     let alreadyExists = false;
     itemRows.forEach((ir) => {

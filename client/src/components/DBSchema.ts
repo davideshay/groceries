@@ -1,5 +1,5 @@
 export const maxAppSupportedSchemaVersion = 3;
-export const appVersion = "0.6.1";
+export const appVersion = "0.7.0";
 
 export interface UUIDDoc {
   _id?: string,
@@ -299,6 +299,7 @@ export type GlobalSettings = {
   addListOption: AddListOptions,
   removeFromAllLists: boolean,
   completeFromAllLists: boolean,
+  includeGlobalInSearch: boolean,
   daysOfConflictLog: Number
 }
 
@@ -306,6 +307,7 @@ export const InitSettings: GlobalSettings = {
   addListOption: AddListOptions.addToAllListsAutomatically,
   removeFromAllLists: true,
   completeFromAllLists: true,
+  includeGlobalInSearch: true,
   daysOfConflictLog: 2
 }
 

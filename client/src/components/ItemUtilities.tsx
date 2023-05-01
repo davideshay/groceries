@@ -1,7 +1,7 @@
 import {initItemRow, ItemRow, ItemSearch, ListCombinedRow, ListCombinedRows,
      ListRow, RowType, ItemSearchType, LogLevel} from '../components/DataTypes';
 import { GlobalState } from "./GlobalState";
-import { AddListOptions } from './DBSchema';
+import { AddListOptions, GlobalSettings } from './DBSchema';
 import { UomDoc, ItemDoc, ItemDocs, ItemList, ListDocs, ListDoc, CategoryDoc, GlobalItemDocs } from './DBSchema';
 import { cloneDeep } from 'lodash';
 import { t } from 'i18next';
@@ -16,7 +16,7 @@ export function getGroupIDForList(listID: string, listDocs: ListDocs): string | 
     return retGID;
 }
 
-export function getAllSearchRows(allItemDocs: ItemDocs, listID: string,listType: RowType ,listDocs: ListDocs, globalItemDocs: GlobalItemDocs): ItemSearch[] {
+export function getAllSearchRows(allItemDocs: ItemDocs, listID: string,listType: RowType ,listDocs: ListDocs, globalItemDocs: GlobalItemDocs, settings: GlobalSettings): ItemSearch[] {
     let searchRows: ItemSearch[] = [];
     allItemDocs.forEach((itemDoc) => {
       let searchRow: ItemSearch = {
@@ -49,6 +49,7 @@ export function getAllSearchRows(allItemDocs: ItemDocs, listID: string,listType:
         searchRows.push(searchRow);
       }  
     })
+    if (!settings.includeGlobalInSearch) { return searchRows};
     globalItemDocs.forEach((globalItem) => {
       let itemExistsInSearchIdx = searchRows.findIndex((sr) => (sr.globalItemID === globalItem._id || sr.itemName === globalItem.name));
       let itemExistsInItem = false;
@@ -88,7 +89,7 @@ export function filterSearchRows(searchRows: ItemSearch[] | undefined, searchCri
     let filteredSearchRows: ItemSearch[] = [];
     if (searchRows !== undefined) {
         searchRows.forEach(searchRow => {
-            if (searchRow.itemName.toUpperCase().includes(searchCriteria.toUpperCase())) {
+            if (searchRow.itemName.toLocaleUpperCase().includes(searchCriteria.toLocaleUpperCase())) {
                 filteredSearchRows.push(searchRow);
             }    
         });

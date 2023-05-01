@@ -5,7 +5,7 @@ import { LogLevel } from "./DataTypes";
 
 export function translatedItemName(id: string | null, name: string,count: number=1) {
     const sysItemKey="system:item";
-    if (id === null) { return name };
+    if (id === null || id === undefined) { return name };
     if (id.startsWith(sysItemKey)) {
       return t("globalitem."+id.substring(sysItemKey.length+1),{count: count});
     } else {

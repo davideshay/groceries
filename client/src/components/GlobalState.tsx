@@ -88,6 +88,10 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
             newSettings.completeFromAllLists = InitSettings.completeFromAllLists;
             updated = true;
         }
+        if (!newSettings.hasOwnProperty('includeGlobalInSearch')) {
+            newSettings.includeGlobalInSearch = InitSettings.includeGlobalInSearch;
+            updated = true;
+        }
         if (!newSettings.hasOwnProperty('daysOfConflictLog')) {
             newSettings.daysOfConflictLog = InitSettings.daysOfConflictLog;
             updated = true;
@@ -103,7 +107,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         let storageSettingsExist = false;
         if (storageSettingsStr != null && isJsonString(String(storageSettingsStr))) {
             storageSettings=JSON.parse(String(storageSettingsStr));
-            let settingsObjFiltered=pick(storageSettings,"addListOption","removeFromAllLists","completeFromAllLists","daysOfConflictLog");
+            let settingsObjFiltered=pick(storageSettings,"addListOption","removeFromAllLists","completeFromAllLists","includeGlobalInSearch","daysOfConflictLog");
             storageSettings = settingsObjFiltered;
             storageSettingsExist = true;
         }
