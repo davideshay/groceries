@@ -1,9 +1,12 @@
-import { ServerConfig } from "nano"
 import { GlobalSettings, InitSettings } from "./DBSchema"
 
 export type SlotInfo = {
     id: string | null,
     name: string
+}
+
+export enum SlotType {
+    Alexa="A", Dynamic="D", Static="S", None="N"
 }
 
 export type CouchUserInfo = {

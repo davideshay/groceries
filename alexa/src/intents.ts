@@ -4,6 +4,7 @@ import {
     RequestHandler,
     getApiAccessToken,
     getSlot,
+    getSlotValue,
   } from 'ask-sdk';
 
 import {
@@ -14,8 +15,9 @@ import {
 import { getListGroups, getLists, getUserInfo, getCouchUserInfo,
          getDynamicIntentDirective, 
          getDefaultListGroup, getListsText, getListGroupsText,
-         getSelectedSlotInfo, getUserSettings, SlotType, addItemToList} from "./handlercalls";
-import { CouchUserInfo, CouchUserInit, SettingsResponse, SimpleListGroups, SimpleLists} from "./datatypes";
+         getSelectedSlotInfo, getUserSettings, addItemToList} from "./handlercalls";
+import { SlotType,CouchUserInfo, CouchUserInit, SettingsResponse, SimpleListGroups, SimpleLists} from "./datatypes";
+import { getSlotValueV2 } from 'ask-sdk-core';
 
 
 export const LaunchRequestHandler : RequestHandler = {
@@ -158,20 +160,33 @@ export const AddItemToListIntentHandler: RequestHandler = {
   },
   async handle(handlerInput : HandlerInput) : Promise<Response> {
     let { attributesManager, requestEnvelope } = handlerInput;
+    console.log("Request:",JSON.stringify(requestEnvelope,null,2));
     let sessionAttributes = attributesManager.getSessionAttributes();
     let speechText = "";
     let itemSlot = getSlot(requestEnvelope,"item");
+    let itemSlotValue = getSlotValue(requestEnvelope,"item");
+    let itemSlotValueV2 = getSlotValueV2(requestEnvelope,"item");
     let listSlot = getSlot(requestEnvelope,"list");
-    console.log("itemSlot:",JSON.stringify(itemSlot,null,4));
-    console.log("listSlot:",JSON.stringify(listSlot,null,4)); 
+    let listGroupSlot = getSlot(requestEnvelope,"listgroup");
     let accessToken = getApiAccessToken(requestEnvelope);
-    let itemAddResults=await addItemToList(itemSlot,listSlot,sessionAttributes.currentListGroupID,
-        sessionAttributes.currentListID, sessionAttributes.listMode, sessionAttributes.lists, sessionAttributes.listGroups,
-        sessionAttributes.settings,accessToken);
+    console.log("item slot value:",itemSlotValue," v2:",itemSlotValueV2);
+    let itemAddResults = await addItemToList({ itemSlot,listSlot,listGroupSlot,defaultListGroupID: sessionAttributes.currentListGroupID,
+        defaultListID: sessionAttributes.currentListID, listMode: sessionAttributes.listMode,
+        lists:sessionAttributes.lists, listGroups: sessionAttributes.listGroups,
+        settings: sessionAttributes.settings,accessToken});
+    let dynamicDirective = await getDynamicIntentDirective(sessionAttributes.listGroups,sessionAttributes.lists);
+    if (dynamicDirective === null) {
+      speechText = "No lists available. Item not added."
+      return handlerInput.responseBuilder
+      .speak(speechText)
+      .withSimpleCard('Error adding items', speechText)
+      .getResponse();
+    }
     speechText = itemAddResults.message;
     return handlerInput.responseBuilder
       .speak(speechText)
       .withSimpleCard('Added items', speechText)
+      .addDirective(dynamicDirective)
       .getResponse();
   },
 }
