@@ -1,5 +1,6 @@
-import { GlobalItemDoc, GlobalSettings, InitGlobalItem, InitSettingsDoc, ItemDoc, ItemDocInit, ListDoc, ListDocs, ListGroupDoc, ListGroupDocs, SettingsDoc, UserDoc } from "./DBSchema";
-import { dbStartup, todosDBAsAdmin, usersDBAsAdmin } from "./dbstartup";
+import { GlobalItemDoc, GlobalSettings, InitGlobalItem, ItemDoc, ItemDocInit, ListDoc, ListGroupDoc,
+     SettingsDoc, UserDoc } from "./DBSchema";
+import { todosDBAsAdmin, usersDBAsAdmin } from "./dbstartup";
 import { DocumentScope, MangoResponse } from "nano";
 import axios, {AxiosResponse} from 'axios';
 import { cloneDeep, isEmpty } from 'lodash';
@@ -7,7 +8,6 @@ import { Directive, Slot, er } from "ask-sdk-model";
 import { SlotInfo , CouchUserInfo, CouchUserInit, SimpleListGroups, SimpleListGroup, SimpleLists, SimpleList, SettingsResponse, SettingsResponseInit, SimpleItems, SimpleItem} from "./datatypes";
 import { ItemList } from "./DBSchema";
 import { AddListOptions } from "./DBSchema";
-import e from "express";
 
 const MaxDynamicEntitites = 100;
 
@@ -338,23 +338,33 @@ export function getCommonKey(itemDoc: ItemDoc, key: string) {
     return maxKey;
   }
 
+function getListGroupForList(listID: string, lists: SimpleLists): string | null {
+    let foundList = lists.find(l => (l._id == listID));
+    if (foundList !== undefined) {return foundList.listGroupID} else {
+        return null;
+    }
+}
+
 type HandlerResponse = {success: boolean, message: string}
 const HandlerResponseInit = {success: false, message: ""};
 type DefaultItemData = {globalItemID: string | null, name: string, categoryID: string|null, uomName: string|null}
 
 export async function addItemToList(itemSlot: Slot, listSlot: Slot,defaultListGroupID: string, defaultListID: string,
-        listMode: string, lists: SimpleLists, settings: GlobalSettings, accessToken: string) {
+        listMode: string, lists: SimpleLists, listGroups: SimpleListGroups, settings: GlobalSettings, accessToken: string) {
     let addItemResponse: HandlerResponse = cloneDeep(HandlerResponseInit);
     let [itemSlotType,selectedItem] = getSelectedSlotInfo(itemSlot);
     let [listSlotType,selectedList] = getSelectedSlotInfo(listSlot);
+    let listID : string|null = defaultListID;
+    if (listSlotType!==SlotType.None && selectedList!==null && selectedList.id !==null) {
+        listID = selectedList.id;
+        listMode = "L"
+        let newListGroupID = getListGroupForList(listID,lists);
+        if (newListGroupID !== null) {defaultListGroupID = newListGroupID}
+    }
     if (itemSlotType == SlotType.None || selectedItem.id === null) {
         addItemResponse.message="No item found to add to list";
         console.log("ERROR: No slot type or no id");
         return addItemResponse;
-    }
-    let listID : string|null = defaultListID;
-    if (listSlotType!==SlotType.None && selectedList!==null) {
-        listID = selectedList.id;
     }
     if (itemSlotType === SlotType.Static) {
        addItemResponse = await addGlobalItemToList(selectedItem.id,defaultListGroupID,listID,listMode,lists,settings);
