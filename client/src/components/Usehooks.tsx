@@ -12,6 +12,7 @@ import { GlobalDataContext } from './GlobalDataProvider';
 import { isPlatform } from '@ionic/core';
 import { fromBlob } from 'image-resize-compress';
 import { useTranslation } from 'react-i18next';
+import { translatedItemName } from './translationUtilities';
 
 const imageQuality = 80;
 export const imageWidth = 200;
@@ -241,7 +242,7 @@ export function useItems({selectedListGroupID,isReady, needListGroupID, activeOn
       }
     })
     newItemRows.sort(function (a: ItemDoc, b: ItemDoc) {
-      return a.name.toUpperCase().localeCompare(b.name.toUpperCase());
+      return translatedItemName(a.globalItemID,a.name,2).toLocaleUpperCase().localeCompare(translatedItemName(b.globalItemID,b.name,2).toLocaleUpperCase())
     });
     setItemRows(newItemRows);
   }

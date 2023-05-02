@@ -29,7 +29,7 @@ const Categories: React.FC<HistoryProps> = (props: HistoryProps) => {
   screenLoading.current=false;
 
   (globalData.categoryDocs as CategoryDoc[]).sort(function(a,b) {
-    return a.name.toUpperCase().localeCompare(b.name.toUpperCase())
+    return translatedCategoryName(a._id,a.name).toLocaleUpperCase().localeCompare(translatedCategoryName(b._id,b.name).toLocaleUpperCase())
   })
 
   return (
