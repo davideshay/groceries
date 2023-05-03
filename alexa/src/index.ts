@@ -12,6 +12,7 @@ import { LaunchRequestHandler,
           AddItemToListIntentHandler,
           ChangeListIntentHandler,
           DefaultListIntentHandler,
+          LocalizationInterceptor,
           } from './intents';
 import { dbStartup } from './dbstartup';
 
@@ -33,6 +34,7 @@ const skillBuilder = SkillBuilders.custom()
     AddItemToListIntentHandler
   )
   .addErrorHandlers(AlexaErrorHandler)
+  .addRequestInterceptors(LocalizationInterceptor)
 ;
 const skill = skillBuilder.create();
 const adapter = new ExpressAdapter(skill, true, true);

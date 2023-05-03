@@ -8,6 +8,7 @@ import { Directive, Slot, er } from "ask-sdk-model";
 import { SlotInfo , SlotType, CouchUserInfo, CouchUserInit, SimpleListGroups, SimpleListGroup, SimpleLists, SimpleList, SettingsResponse, SettingsResponseInit, SimpleItems, SimpleItem} from "./datatypes";
 import { ItemList } from "./DBSchema";
 import { AddListOptions } from "./DBSchema";
+import { getSlotValue } from "ask-sdk-core";
 
 const MaxDynamicEntitites = 100;
 
@@ -384,9 +385,9 @@ type HandlerResponse = {success: boolean, message: string}
 const HandlerResponseInit = {success: false, message: ""};
 type DefaultItemData = {globalItemID: string | null, name: string, categoryID: string|null, uomName: string|null}
 
-export async function addItemToList({ itemSlot, listSlot, listGroupSlot, defaultListGroupID, defaultListID,
+export async function addItemToList({ itemSlot, itemSlotValue, listSlot, listGroupSlot, defaultListGroupID, defaultListID,
         listMode, lists, listGroups, settings, accessToken} :
-        {itemSlot: Slot, listSlot: Slot, listGroupSlot: Slot, defaultListGroupID: string, defaultListID: string,
+        {itemSlot: Slot, itemSlotValue: string, listSlot: Slot, listGroupSlot: Slot, defaultListGroupID: string, defaultListID: string,
         listMode: string, lists: SimpleLists, listGroups: SimpleListGroups, settings: GlobalSettings, accessToken: string}) {
     let addItemResponse: HandlerResponse = cloneDeep(HandlerResponseInit);
     let [itemSlotType,selectedItem] = getSelectedSlotInfo(itemSlot);
@@ -410,17 +411,20 @@ export async function addItemToList({ itemSlot, listSlot, listGroupSlot, default
         listGroupSpecified = true;
     }
     console.log("Resolved list:",listID,getListNameForList(listID,lists),"group:",listGroupID,getListGroupName(listGroupID,listGroups),"list mode:",listMode);
-    if (itemSlotType == SlotType.None || selectedItem.id === null) {
+    if ((itemSlotType == SlotType.None && isEmpty(itemSlotValue)) || 
+        (itemSlotType !== SlotType.None && selectedItem.id === null)) {
         addItemResponse.message="No item found to add to list";
         console.log("ERROR: No slot type or no id");
         return addItemResponse;
     }
     if (itemSlotType === SlotType.Static) {
-       addItemResponse = await addGlobalItemToList(selectedItem.id,listGroupID,listID,listMode,lists,listGroups,listSpecified,listGroupSpecified,settings);
+       addItemResponse = await addGlobalItemToList(String(selectedItem.id),listGroupID,listID,listMode,lists,listGroups,listSpecified,listGroupSpecified,settings);
     } else if (itemSlotType === SlotType.Dynamic) {
-        addItemResponse = await addDynamicItemToList(selectedItem.id,listGroupID,listID,listMode,lists,listGroups,listSpecified,listGroupSpecified,settings);
+        addItemResponse = await addDynamicItemToList(String(selectedItem.id),listGroupID,listID,listMode,lists,listGroups,listSpecified,listGroupSpecified,settings);
     } else if (itemSlotType === SlotType.Alexa) {
-        addItemResponse = await addAlexaItemToList(selectedItem.id,selectedItem.name,listGroupID,listID,listMode,lists,listGroups,listSpecified,listGroupSpecified,settings, accessToken);
+        addItemResponse = await addAlexaItemToList(String(selectedItem.id),selectedItem.name,listGroupID,listID,listMode,lists,listGroups,listSpecified,listGroupSpecified,settings, accessToken);
+    } else if (itemSlotType === SlotType.None) {
+        addItemResponse = await addNoSlotItemToList(itemSlotValue, listGroupID, listID, listMode, lists, listGroups, listSpecified, listGroupSpecified, settings);
     }
     return addItemResponse;
 }
@@ -645,3 +649,23 @@ async function addAlexaItemToList(itemID: string,itemName: string,listGroupID: s
     addResponse = await addNewItemToList(defaultItem,listGroupID,listID,lists,listGroups,listMode,listSpecified,listGroupSpecified,settings)
     return addResponse;
 }
+
+async function addNoSlotItemToList(itemSlotValue: string, listGroupID: string, listID: string, listMode: string,
+    lists: SimpleLists, listGroups: SimpleListGroups, listSpecified: boolean, listGroupSpecified: boolean, settings: GlobalSettings) : Promise<HandlerResponse> {
+
+    let addResponse: HandlerResponse = cloneDeep(HandlerResponseInit);
+    let alreadyExists = await checkItemByNameOnList(itemSlotValue, String(listID), listGroupID, listMode)
+    if (alreadyExists) {
+        addResponse.message="Item already exists on list";
+        return addResponse
+    }
+    let defaultItem: DefaultItemData = {
+        globalItemID: null,
+        name: itemSlotValue,
+        categoryID: null,
+        uomName: null
+    }
+    addResponse = await addNewItemToList(defaultItem,listGroupID,listID,lists,listGroups,listMode,listSpecified,listGroupSpecified,settings)
+    return addResponse;
+
+    }

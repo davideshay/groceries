@@ -8,6 +8,7 @@ import {
   } from 'ask-sdk';
 
 import {
+    IntentRequest,
     Response,
     SessionEndedRequest,
 } from 'ask-sdk-model';
@@ -17,8 +18,31 @@ import { getListGroups, getLists, getUserInfo, getCouchUserInfo,
          getDefaultListGroup, getListsText, getListGroupsText,
          getSelectedSlotInfo, getUserSettings, addItemToList} from "./handlercalls";
 import { SlotType,CouchUserInfo, CouchUserInit, SettingsResponse, SimpleListGroups, SimpleLists} from "./datatypes";
+import { en_translations } from './locales/en/translation';
+import { de_translations } from './locales/de/translation';
+import { es_translations } from './locales/es/translation';
 import { getSlotValueV2 } from 'ask-sdk-core';
+import { isEmpty } from 'lodash';
+const i18n = require('i18next');
+const sprintf = require('i18next-sprintf-postprocessor');
 
+export const LocalizationInterceptor = {
+  async process(handlerInput: HandlerInput) {
+      const localizationClient = await i18n.use(sprintf).init({
+          lng: handlerInput.requestEnvelope.request.locale,
+          fallbackLng: 'en', // fallback to EN if locale doesn't exist
+          resources: {
+            en: { translation: en_translations },
+            de: { translation: de_translations },
+            es: { translation: es_translations }
+            }
+      });
+      const attributes = handlerInput.attributesManager.getRequestAttributes();
+      attributes.t = function (...args: any) {
+        return localizationClient.t(...args)
+      }
+  },
+};
 
 export const LaunchRequestHandler : RequestHandler = {
     canHandle(handlerInput : HandlerInput) : boolean {
@@ -27,7 +51,7 @@ export const LaunchRequestHandler : RequestHandler = {
     },
     async handle(handlerInput : HandlerInput) : Promise<Response> {
       const { accessToken } = handlerInput.requestEnvelope.context.System.user;
-      let speechText = 'Welcome to Specifically Clementines! Ask me about shopping lists!';
+      let speechText = "";
       if (!accessToken) {
         speechText = 'You must authenticate with your Amazon Account to use Specifically Clementines. I sent instructions for how to do this in your Alexa App';
         return handlerInput.responseBuilder
@@ -51,6 +75,8 @@ export const LaunchRequestHandler : RequestHandler = {
           let userSettings: SettingsResponse = await getUserSettings(couchUserInfo.userName);
           let { attributesManager } = handlerInput;
           let sessionAttributes = attributesManager.getSessionAttributes();
+          let requestAttributes = attributesManager.getRequestAttributes();
+          speechText += requestAttributes.t('general.take_picture_for_item');
           dynamicDirective = await getDynamicIntentDirective(listGroups,lists);
           sessionAttributes.dbusername = couchUserInfo.userName;
           sessionAttributes.listGroups = listGroups;
@@ -160,17 +186,29 @@ export const AddItemToListIntentHandler: RequestHandler = {
   },
   async handle(handlerInput : HandlerInput) : Promise<Response> {
     let { attributesManager, requestEnvelope } = handlerInput;
-    console.log("Request:",JSON.stringify(requestEnvelope,null,2));
+    console.log("Request:",JSON.stringify((requestEnvelope.request as IntentRequest).intent,null,2));
     let sessionAttributes = attributesManager.getSessionAttributes();
     let speechText = "";
     let itemSlot = getSlot(requestEnvelope,"item");
+    let [itemSlotType,selectedItem] = getSelectedSlotInfo(itemSlot);
     let itemSlotValue = getSlotValue(requestEnvelope,"item");
     let itemSlotValueV2 = getSlotValueV2(requestEnvelope,"item");
+    let addNoMatchSlot = getSlot(requestEnvelope,"addnomatch");
+    let [addNoMatchSlotType,addNoMatchItem] = getSelectedSlotInfo(addNoMatchSlot);
+    console.log("item slot value:",itemSlotValue," v2:",itemSlotValueV2);
+    if (itemSlotType == SlotType.None && !isEmpty(itemSlotValue) && addNoMatchSlotType !== SlotType.Static && addNoMatchItem.id !== "sys:yes") {
+        speechText="Do you really want to add "+itemSlotValue+" to the list?";
+        return handlerInput.responseBuilder
+        .speak(speechText)
+        .addElicitSlotDirective("addnomatch")
+        .withSimpleCard("Really?", speechText)
+        .getResponse();
+
+    }
     let listSlot = getSlot(requestEnvelope,"list");
     let listGroupSlot = getSlot(requestEnvelope,"listgroup");
     let accessToken = getApiAccessToken(requestEnvelope);
-    console.log("item slot value:",itemSlotValue," v2:",itemSlotValueV2);
-    let itemAddResults = await addItemToList({ itemSlot,listSlot,listGroupSlot,defaultListGroupID: sessionAttributes.currentListGroupID,
+    let itemAddResults = await addItemToList({ itemSlot,itemSlotValue, listSlot,listGroupSlot,defaultListGroupID: sessionAttributes.currentListGroupID,
         defaultListID: sessionAttributes.currentListID, listMode: sessionAttributes.listMode,
         lists:sessionAttributes.lists, listGroups: sessionAttributes.listGroups,
         settings: sessionAttributes.settings,accessToken});
