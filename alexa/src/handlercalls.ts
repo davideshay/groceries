@@ -1,11 +1,11 @@
 import { GlobalItemDoc, GlobalSettings, InitGlobalItem, ItemDoc, ItemDocInit, ListDoc, ListGroupDoc,
      SettingsDoc, UserDoc } from "./DBSchema";
 import { todosDBAsAdmin, usersDBAsAdmin } from "./dbstartup";
-import { DocumentScope, MangoResponse } from "nano";
+import { DocumentGetResponse, DocumentScope, MangoResponse } from "nano";
 import axios, {AxiosResponse} from 'axios';
 import { cloneDeep, isEmpty } from 'lodash';
 import { Directive, Slot, er } from "ask-sdk-model";
-import { SlotInfo , SlotType, CouchUserInfo, CouchUserInit, SimpleListGroups, SimpleListGroup, SimpleLists, SimpleList, SettingsResponse, SettingsResponseInit, SimpleItems, SimpleItem} from "./datatypes";
+import { SlotInfo , SlotType, CouchUserInfo, CouchUserInit, SimpleListGroups, SimpleListGroup, SimpleLists, SimpleList, SettingsResponse, SettingsResponseInit, SimpleItems, SimpleItem, RequestAttributes} from "./datatypes";
 import { ItemList } from "./DBSchema";
 import { AddListOptions } from "./DBSchema";
 import { getSlotValue } from "ask-sdk-core";
@@ -145,6 +145,16 @@ export async function getDynamicIntentDirective(listGroups: SimpleListGroups, li
              ] 
     }
     return directive;
+}
+
+async function getItemByID(id: string) : Promise<ItemDoc | GlobalItemDoc | null> {
+    let foundDoc: DocumentGetResponse | null = null;
+    try {foundDoc = await todosDBAsAdmin.get(id)}
+    catch(err) {console.log("ERROR: could not get item "+id); return null}
+    if (foundDoc == undefined || foundDoc == null) {return null};
+    if (id.startsWith("sys:item")) {return (foundDoc as GlobalItemDoc)} else {
+        return foundDoc as ItemDoc
+    }
 }
 
 async function checkItemByNameOnList(itemName: string, listID: string, listGroupID: string, listMode: string) {
@@ -304,7 +314,6 @@ export function getDefaultListGroup(listGroups: SimpleListGroups) {
     return defaultGroup;
 }
 
-
 export function getSelectedSlotInfo(slot: Slot) : [ SlotType,  SlotInfo ]{
     let slotInfo: SlotInfo = {id: null, name: ""};
     if (slot === null) {return [SlotType.None,slotInfo]};
@@ -343,6 +352,102 @@ export function getSelectedSlotInfo(slot: Slot) : [ SlotType,  SlotInfo ]{
     if (staticFound) {return [SlotType.Static, staticAnswer]};
     if (alexaFound) {return [SlotType.Alexa, alexaAnswer]};
     return [SlotType.None,slotInfo];
+}
+
+type PotentialAnswer = {
+    id: string | null,
+    name: string,
+    originalIndex: Number,
+    slotType: SlotType,
+    exactMatch: boolean,
+    levenDistance: Number
+}
+
+function checkGlobalItemMatch(name: string) {
+
+}
+
+async function isExactMatch(slotType: SlotType,id: string,name: string, slotValue: string, t: any) {
+    // if its a global item id, compare singular and plural in translated and untranslated
+    // if its a list id, compare the singular and plural in translated and untranslated
+    if (slotType === SlotType.Static) {
+        let globalItem: GlobalItemDoc | null = await getItemByID(id) as GlobalItemDoc | null;
+        if (globalItem == null) return false;
+        let globalKey="system:item";
+        let tkey=globalItem.name.substring(globalKey.length+1)
+        return (
+            globalItem.name.toLocaleUpperCase() === slotValue.toLocaleUpperCase() ||
+            name.toLocaleUpperCase() === slotValue.toLocaleUpperCase() ||
+            t('globalitem.'+tkey,{count: 1}).toLocaleUpperCase() === slotValue.toLocaleUpperCase() ||
+            t('globalitem.'+tkey,{count: 2}).toLocaleUpperCase() === slotValue.toLocaleUpperCase()
+        )
+    } else if (slotType === SlotType.Dynamic) {
+        let item: ItemDoc | null = await getItemByID(id) as ItemDoc | null;
+        if (item === null) return false;
+        return (
+            item.name.toLocaleUpperCase() === slotValue.toLocaleUpperCase() ||
+            (item.pluralName !== undefined && item.pluralName.toLocaleUpperCase() === slotValue.toLocaleUpperCase())
+        )
+    } else if (slotType === SlotType.Alexa) {
+        return (
+            name.toLocaleUpperCase() === slotValue.toLocaleUpperCase()
+        )
+    }
+    return false;
+}
+
+
+function levenDistance(name: string, slotValue: string) {
+    return 1;
+}
+
+export async function getSelectedItemSlotInfo(slot: Slot, slotValue: string,t : any) : Promise<[SlotType,SlotInfo]>{
+    let slotInfo: SlotInfo = {id: null, name: ""};
+    if (slot === null) {return [SlotType.None,slotInfo]};
+    if (isEmpty(slot.resolutions?.resolutionsPerAuthority)) {
+         return [SlotType.None,slotInfo]
+    };
+    let potentialAnswers: PotentialAnswer[] = [];
+    // add slotvalue itself first?
+    if (!(slot && slot.resolutions && slot.resolutions.resolutionsPerAuthority)) {
+        return [SlotType.None,slotInfo]
+    }
+    for (let i = 0; i < slot.resolutions.resolutionsPerAuthority.length; i++) {
+        const auth = slot.resolutions.resolutionsPerAuthority[i];
+        if (auth.status.code === "ER_SUCCESS_MATCH") {
+            let slotType: SlotType;
+            if (auth.authority.includes("dynamic")) {
+                slotType = SlotType.Dynamic
+            } else if (auth.authority.includes("AlexaEntities")) {
+                slotType = SlotType.Alexa
+            } else {
+                slotType = SlotType.Static
+            }
+            for (let i = 0; i < auth.values.length; i++) {
+                const val = auth.values[i];
+                let potentialAnswer: PotentialAnswer = {
+                    id: val.value.id,
+                    name: val.value.name,
+                    originalIndex: i,
+                    slotType: slotType,
+                    exactMatch: await isExactMatch(slotType,val.value.id,val.value.name,slotValue,t),
+                    levenDistance: levenDistance(val.value.name,slotValue)
+                } 
+                potentialAnswers.push(potentialAnswer);
+            }
+        }
+    }
+    if (potentialAnswers.length === 0) {return [SlotType.None,slotInfo]}
+    console.log("Potential Answers:",JSON.stringify(potentialAnswers,null,2))
+    potentialAnswers.sort((a,b) => (
+        Number(b.exactMatch) - Number(a.exactMatch) ||
+        Number(a.originalIndex) - Number(b.originalIndex) ||
+        Number(a.slotType) - Number(b.slotType)
+    ))
+    console.log("Sorted Potential Answers:",JSON.stringify(potentialAnswers,null,4))
+    let slotType = potentialAnswers[0].slotType;
+    slotInfo = {id: potentialAnswers[0].id, name: potentialAnswers[0].name};
+    return [slotType,slotInfo]
 }
 
 export function getCommonKey(itemDoc: ItemDoc, key: string) {
@@ -385,12 +490,14 @@ type HandlerResponse = {success: boolean, message: string}
 const HandlerResponseInit = {success: false, message: ""};
 type DefaultItemData = {globalItemID: string | null, name: string, categoryID: string|null, uomName: string|null}
 
-export async function addItemToList({ itemSlot, itemSlotValue, listSlot, listGroupSlot, defaultListGroupID, defaultListID,
+export async function addItemToList({ requestAttributes, itemSlot, itemSlotValue, listSlot, listGroupSlot, defaultListGroupID, defaultListID,
         listMode, lists, listGroups, settings, accessToken} :
-        {itemSlot: Slot, itemSlotValue: string, listSlot: Slot, listGroupSlot: Slot, defaultListGroupID: string, defaultListID: string,
+        {requestAttributes: RequestAttributes,itemSlot: Slot, itemSlotValue: string, listSlot: Slot, listGroupSlot: Slot, defaultListGroupID: string, defaultListID: string,
         listMode: string, lists: SimpleLists, listGroups: SimpleListGroups, settings: GlobalSettings, accessToken: string}) {
     let addItemResponse: HandlerResponse = cloneDeep(HandlerResponseInit);
-    let [itemSlotType,selectedItem] = getSelectedSlotInfo(itemSlot);
+//    let [itemSlotType,selectedItem] = getSelectedSlotInfo(itemSlot);
+    let [itemSlotType,selectedItem] = await getSelectedItemSlotInfo(itemSlot,itemSlotValue,requestAttributes.t)
+    console.log("returned itemSlotType",itemSlotType,"selected item:",selectedItem);
     let [listSlotType,selectedList] = getSelectedSlotInfo(listSlot);
     let [listGroupSlotType,selectedListGroup] = getSelectedSlotInfo(listGroupSlot);
     console.log("item:",itemSlotType,selectedItem,"list:",listSlotType,selectedList,"group:",listGroupSlotType,selectedListGroup);

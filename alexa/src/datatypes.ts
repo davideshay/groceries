@@ -6,7 +6,7 @@ export type SlotInfo = {
 }
 
 export enum SlotType {
-    Alexa="A", Dynamic="D", Static="S", None="N"
+    Alexa=3, Dynamic=2, Static=1, None=4
 }
 
 export type CouchUserInfo = {
@@ -52,3 +52,7 @@ export type SimpleItem = {
 }
 
 export type SimpleItems = SimpleItem[];
+
+export type RequestAttributes = {
+    [key:string]: any
+}

@@ -17,7 +17,7 @@ import { getListGroups, getLists, getUserInfo, getCouchUserInfo,
          getDynamicIntentDirective, 
          getDefaultListGroup, getListsText, getListGroupsText,
          getSelectedSlotInfo, getUserSettings, addItemToList} from "./handlercalls";
-import { SlotType,CouchUserInfo, CouchUserInit, SettingsResponse, SimpleListGroups, SimpleLists} from "./datatypes";
+import { SlotType,CouchUserInfo, CouchUserInit, SettingsResponse, SimpleListGroups, SimpleLists, RequestAttributes} from "./datatypes";
 import { en_translations } from './locales/en/translation';
 import { de_translations } from './locales/de/translation';
 import { es_translations } from './locales/es/translation';
@@ -27,20 +27,36 @@ const i18n = require('i18next');
 const sprintf = require('i18next-sprintf-postprocessor');
 
 export const LocalizationInterceptor = {
-  async process(handlerInput: HandlerInput) {
-      const localizationClient = await i18n.use(sprintf).init({
-          lng: handlerInput.requestEnvelope.request.locale,
-          fallbackLng: 'en', // fallback to EN if locale doesn't exist
-          resources: {
-            en: { translation: en_translations },
-            de: { translation: de_translations },
-            es: { translation: es_translations }
-            }
-      });
-      const attributes = handlerInput.attributesManager.getRequestAttributes();
-      attributes.t = function (...args: any) {
-        return localizationClient.t(...args)
+  process(handlerInput: HandlerInput) {
+    const localizationClient = i18n.use(sprintf).init({
+      lng: handlerInput.requestEnvelope.request.locale,
+      resources: {
+        en: { translation: en_translations },
+        de: { translation: de_translations },
+        es: { translation: es_translations }
+        }
+
+    });
+    localizationClient.localize = function localize() {
+      const args = arguments;
+      const values = [];
+      for (let i = 1; i < args.length; i += 1) {
+        values.push(args[i]);
       }
+      const value = i18n.t(args[0], {
+        returnObjects: true,
+        postProcess: 'sprintf',
+        sprintf: values,
+      });
+      if (Array.isArray(value)) {
+        return value[Math.floor(Math.random() * value.length)];
+      }
+      return value;
+    };
+    const attributes = handlerInput.attributesManager.getRequestAttributes();
+    attributes.t = function translate(...args: any) {
+      return localizationClient.localize(...args);
+    };
   },
 };
 
@@ -75,8 +91,6 @@ export const LaunchRequestHandler : RequestHandler = {
           let userSettings: SettingsResponse = await getUserSettings(couchUserInfo.userName);
           let { attributesManager } = handlerInput;
           let sessionAttributes = attributesManager.getSessionAttributes();
-          let requestAttributes = attributesManager.getRequestAttributes();
-          speechText += requestAttributes.t('general.take_picture_for_item');
           dynamicDirective = await getDynamicIntentDirective(listGroups,lists);
           sessionAttributes.dbusername = couchUserInfo.userName;
           sessionAttributes.listGroups = listGroups;
@@ -188,6 +202,7 @@ export const AddItemToListIntentHandler: RequestHandler = {
     let { attributesManager, requestEnvelope } = handlerInput;
     console.log("Request:",JSON.stringify((requestEnvelope.request as IntentRequest).intent,null,2));
     let sessionAttributes = attributesManager.getSessionAttributes();
+    let requestAttributes:RequestAttributes = attributesManager.getRequestAttributes();
     let speechText = "";
     let itemSlot = getSlot(requestEnvelope,"item");
     let [itemSlotType,selectedItem] = getSelectedSlotInfo(itemSlot);
@@ -203,12 +218,18 @@ export const AddItemToListIntentHandler: RequestHandler = {
         .addElicitSlotDirective("addnomatch")
         .withSimpleCard("Really?", speechText)
         .getResponse();
-
+    }
+    console.log("addNoMatchSlotType",addNoMatchSlotType,"id",addNoMatchItem.id);
+    if (addNoMatchSlotType === SlotType.Static && addNoMatchItem.id === "sys:no") {
+      return handlerInput.responseBuilder
+      .speak("OK. Item not added to the list")
+      .withSimpleCard("Item Not Added","OK. Item not added to the list")
+      .getResponse();
     }
     let listSlot = getSlot(requestEnvelope,"list");
     let listGroupSlot = getSlot(requestEnvelope,"listgroup");
     let accessToken = getApiAccessToken(requestEnvelope);
-    let itemAddResults = await addItemToList({ itemSlot,itemSlotValue, listSlot,listGroupSlot,defaultListGroupID: sessionAttributes.currentListGroupID,
+    let itemAddResults = await addItemToList({ requestAttributes, itemSlot,itemSlotValue, listSlot,listGroupSlot,defaultListGroupID: sessionAttributes.currentListGroupID,
         defaultListID: sessionAttributes.currentListID, listMode: sessionAttributes.listMode,
         lists:sessionAttributes.lists, listGroups: sessionAttributes.listGroups,
         settings: sessionAttributes.settings,accessToken});
