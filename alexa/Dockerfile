@@ -4,6 +4,7 @@ WORKDIR /usr/app/alexa
 
 COPY alexa/. /usr/app/alexa
 COPY client/src/components /usr/app/client/src/components
+COPY client/src/locales /usr/app/client/src/locales
 
 #COPY server/package.json server/package-lock.json server/tsconfig.json /usr/app/
 
