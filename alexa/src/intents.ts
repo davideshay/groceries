@@ -4,9 +4,11 @@ import {
     RequestHandler,
     getApiAccessToken,
     getSlot,
+    getSlotValue,
   } from 'ask-sdk';
 
 import {
+    IntentRequest,
     Response,
     SessionEndedRequest,
 } from 'ask-sdk-model';
@@ -14,9 +16,49 @@ import {
 import { getListGroups, getLists, getUserInfo, getCouchUserInfo,
          getDynamicIntentDirective, 
          getDefaultListGroup, getListsText, getListGroupsText,
-         getSelectedSlotInfo, getUserSettings, SlotType, addItemToList} from "./handlercalls";
-import { CouchUserInfo, CouchUserInit, SettingsResponse, SimpleListGroups, SimpleLists} from "./datatypes";
+         getSelectedSlotInfo, getUserSettings, addItemToList} from "./handlercalls";
+import { SlotType,CouchUserInfo, CouchUserInit, SettingsResponse, SimpleListGroups, SimpleLists, RequestAttributes} from "./datatypes";
+import { en_translations } from './locales/en/translation';
+import { de_translations } from './locales/de/translation';
+import { es_translations } from './locales/es/translation';
+import { getSlotValueV2 } from 'ask-sdk-core';
+import { isEmpty } from 'lodash';
+const i18n = require('i18next');
+const sprintf = require('i18next-sprintf-postprocessor');
 
+export const LocalizationInterceptor = {
+  process(handlerInput: HandlerInput) {
+    const localizationClient = i18n.use(sprintf).init({
+      lng: handlerInput.requestEnvelope.request.locale,
+      resources: {
+        en: { translation: en_translations },
+        de: { translation: de_translations },
+        es: { translation: es_translations }
+        }
+
+    });
+    localizationClient.localize = function localize() {
+      const args = arguments;
+      const values = [];
+      for (let i = 1; i < args.length; i += 1) {
+        values.push(args[i]);
+      }
+      const value = i18n.t(args[0], {
+        returnObjects: true,
+        postProcess: 'sprintf',
+        sprintf: values,
+      });
+      if (Array.isArray(value)) {
+        return value[Math.floor(Math.random() * value.length)];
+      }
+      return value;
+    };
+    const attributes = handlerInput.attributesManager.getRequestAttributes();
+    attributes.t = function translate(...args: any) {
+      return localizationClient.localize(...args);
+    };
+  },
+};
 
 export const LaunchRequestHandler : RequestHandler = {
     canHandle(handlerInput : HandlerInput) : boolean {
@@ -25,7 +67,7 @@ export const LaunchRequestHandler : RequestHandler = {
     },
     async handle(handlerInput : HandlerInput) : Promise<Response> {
       const { accessToken } = handlerInput.requestEnvelope.context.System.user;
-      let speechText = 'Welcome to Specifically Clementines! Ask me about shopping lists!';
+      let speechText = "";
       if (!accessToken) {
         speechText = 'You must authenticate with your Amazon Account to use Specifically Clementines. I sent instructions for how to do this in your Alexa App';
         return handlerInput.responseBuilder
@@ -52,9 +94,7 @@ export const LaunchRequestHandler : RequestHandler = {
           dynamicDirective = await getDynamicIntentDirective(listGroups,lists);
           sessionAttributes.dbusername = couchUserInfo.userName;
           sessionAttributes.listGroups = listGroups;
-          sessionAttributes.defaultListGroupID = defaultListGroup?._id;
           sessionAttributes.currentListGroupID = defaultListGroup?._id;
-          sessionAttributes.defaultListID = defaultListID;
           sessionAttributes.currentListID = defaultListID;
           sessionAttributes.listMode = "G";
           sessionAttributes.lists = lists;
@@ -84,7 +124,12 @@ export const ChangeListGroupIntentHandler: RequestHandler = {
     if (listGroupSlot !== null) {
       let [slotType,selectedListGroup] = getSelectedSlotInfo(listGroupSlot);
       console.log("listgroup selected:",slotType,selectedListGroup);
-      if (selectedListGroup.id !== null) {
+      if (slotType == SlotType.Static && selectedListGroup.id == "sys:listgroup:default") {
+        let foundListGroup = listGroups.find(l => (l._id === sessionAttributes.currentListGroupID))
+        if (foundListGroup === undefined) {
+          speechText = "The current list group is invalid"
+        } else { speechText = "The current list group is already "+foundListGroup.name }
+      } else if (selectedListGroup.id !== null) {
         console.log("trying to find listgroup in listgroups: ", listGroups);
         let foundListGroup = listGroups.find((lg) => (lg._id === selectedListGroup.id));
         if (foundListGroup !== undefined) {
@@ -120,17 +165,23 @@ export const ChangeListIntentHandler: RequestHandler = {
     let listSlot = getSlot(requestEnvelope,"list");
     if (listSlot !== null) {
       let [slotType,selectedList] = getSelectedSlotInfo(listSlot);
+      console.log("list selected:",slotType,selectedList);
       if (selectedList.id !== null) {
-        let foundList = lists.find((lg) => (lg._id === selectedList.id));
-        if (foundList !== undefined) {
-          speechText = "Changing list to "+foundList.name;
-          sessionAttributes.currentListGroupID = foundList._id;
-          sessionAttributes.listMode = "L";
-          attributesManager.setSessionAttributes(sessionAttributes);
-        } else {speechText = "Could not find list to switch to"}
-      } else {
-        speechText = "Could not find list to switch to";
-      }
+        if (slotType == SlotType.Static && selectedList.id == "sys:list:default") {
+          let foundList = lists.find(l => (l._id === sessionAttributes.currentListID))
+          if (foundList === undefined) {
+            speechText = "The current list is invalid"
+          } else { speechText = "The current list is already "+foundList.name }
+        } else if (selectedList.id !== null) {
+          let foundList = lists.find((lg) => (lg._id === selectedList.id));
+          if (foundList !== undefined) {
+            speechText = "Changing list to "+foundList.name;
+            sessionAttributes.currentListGroupID = foundList._id;
+            sessionAttributes.listMode = "L";
+            attributesManager.setSessionAttributes(sessionAttributes);
+          } else {speechText = "Could not find list to switch to"}          
+        } else { speechText = "Could not find list to switch to";}
+      }  
     } else {
       speechText = "No selected list lists available to switch to";
     }
@@ -149,18 +200,52 @@ export const AddItemToListIntentHandler: RequestHandler = {
   },
   async handle(handlerInput : HandlerInput) : Promise<Response> {
     let { attributesManager, requestEnvelope } = handlerInput;
+    console.log("Request:",JSON.stringify((requestEnvelope.request as IntentRequest).intent,null,2));
     let sessionAttributes = attributesManager.getSessionAttributes();
+    let requestAttributes:RequestAttributes = attributesManager.getRequestAttributes();
     let speechText = "";
     let itemSlot = getSlot(requestEnvelope,"item");
+    let [itemSlotType,selectedItem] = getSelectedSlotInfo(itemSlot);
+    let itemSlotValue = getSlotValue(requestEnvelope,"item");
+    let itemSlotValueV2 = getSlotValueV2(requestEnvelope,"item");
+    let addNoMatchSlot = getSlot(requestEnvelope,"addnomatch");
+    let [addNoMatchSlotType,addNoMatchItem] = getSelectedSlotInfo(addNoMatchSlot);
+    console.log("item slot value:",itemSlotValue," v2:",itemSlotValueV2);
+    if (itemSlotType == SlotType.None && !isEmpty(itemSlotValue) && addNoMatchSlotType !== SlotType.Static && addNoMatchItem.id !== "sys:yes") {
+        speechText="Do you really want to add "+itemSlotValue+" to the list?";
+        return handlerInput.responseBuilder
+        .speak(speechText)
+        .addElicitSlotDirective("addnomatch")
+        .withSimpleCard("Really?", speechText)
+        .getResponse();
+    }
+    console.log("addNoMatchSlotType",addNoMatchSlotType,"id",addNoMatchItem.id);
+    if (addNoMatchSlotType === SlotType.Static && addNoMatchItem.id === "sys:no") {
+      return handlerInput.responseBuilder
+      .speak("OK. Item not added to the list")
+      .withSimpleCard("Item Not Added","OK. Item not added to the list")
+      .getResponse();
+    }
     let listSlot = getSlot(requestEnvelope,"list");
+    let listGroupSlot = getSlot(requestEnvelope,"listgroup");
     let accessToken = getApiAccessToken(requestEnvelope);
-    let itemAddResults=await addItemToList(itemSlot,listSlot,sessionAttributes.currentListGroupID,
-        sessionAttributes.currentListID, sessionAttributes.listMode, sessionAttributes.lists,
-        sessionAttributes.settings,accessToken);
+    let itemAddResults = await addItemToList({ requestAttributes, itemSlot,itemSlotValue, listSlot,listGroupSlot,defaultListGroupID: sessionAttributes.currentListGroupID,
+        defaultListID: sessionAttributes.currentListID, listMode: sessionAttributes.listMode,
+        lists:sessionAttributes.lists, listGroups: sessionAttributes.listGroups,
+        settings: sessionAttributes.settings,accessToken});
+    let dynamicDirective = await getDynamicIntentDirective(sessionAttributes.listGroups,sessionAttributes.lists);
+    if (dynamicDirective === null) {
+      speechText = "No lists available. Item not added."
+      return handlerInput.responseBuilder
+      .speak(speechText)
+      .withSimpleCard('Error adding items', speechText)
+      .getResponse();
+    }
     speechText = itemAddResults.message;
     return handlerInput.responseBuilder
       .speak(speechText)
       .withSimpleCard('Added items', speechText)
+      .addDirective(dynamicDirective)
       .getResponse();
   },
 }
@@ -222,13 +307,13 @@ export const DefaultListGroupIntentHandler : RequestHandler = {
     let { attributesManager } = handlerInput;
     let sessionAttributes = attributesManager.getSessionAttributes();
     let listGroups :SimpleListGroups = sessionAttributes.listGroups;
-    let defaultListGroupID = sessionAttributes.defaultListGroupID;
+    let currentListGroupID = sessionAttributes.currentListGroupID;
     let speechText = "";
-    let defaultListGroup = listGroups?.find(lg => (lg._id === defaultListGroupID));
-    if (defaultListGroup === undefined) {
-      speechText = "No default list group available. Please check the app."
+    let currentListGroup = listGroups?.find(lg => (lg._id === currentListGroupID));
+    if (currentListGroup === undefined) {
+      speechText = "No current list group available. Please check the app."
     } else {
-      speechText = "The default list group is "+defaultListGroup.name;
+      speechText = "The current list group is "+currentListGroup.name;
     }
     return handlerInput.responseBuilder
       .speak(speechText)
@@ -247,13 +332,13 @@ export const DefaultListIntentHandler : RequestHandler = {
     let { attributesManager } = handlerInput;
     let sessionAttributes = attributesManager.getSessionAttributes();
     let lists : SimpleLists = sessionAttributes.lists;
-    let defaultListID = sessionAttributes.defaultListID;
+    let currentListID = sessionAttributes.currentListID;
     let speechText = "";
-    let defaultList = lists?.find(l => (l._id === defaultListID));
-    if (defaultList === undefined) {
-      speechText = "No default list available. Please check the app."
+    let currentList = lists?.find(l => (l._id === currentListID));
+    if (currentList === undefined) {
+      speechText = "No current list available. Please check the app."
     } else {
-      speechText = "The default list is "+defaultList.name;
+      speechText = "The current list is "+currentList.name;
     }
     return handlerInput.responseBuilder
       .speak(speechText)
@@ -270,12 +355,12 @@ export const HelpIntentHandler : RequestHandler = {
         && request.intent.name === 'AMAZON.HelpIntent';
     },
     handle(handlerInput : HandlerInput) : Response {
-      const speechText = 'You can ask me the weather!';
+      const speechText = 'You can ask me about lists, list groups, or add an item to your list!';
   
       return handlerInput.responseBuilder
         .speak(speechText)
         .reprompt(speechText)
-        .withSimpleCard('You can ask me the weather!', speechText)
+        .withSimpleCard('Ask me about Shopping', speechText)
         .getResponse();
     },
   };
@@ -292,7 +377,7 @@ export const HelpIntentHandler : RequestHandler = {
       return handlerInput.responseBuilder
         .speak(speechText)
         .reprompt(speechText)
-        .withSimpleCard('You can ask me the weather!', speechText)
+        .withSimpleCard('Ask me about shopping lists. Fallback.', speechText)
         .getResponse();
     },
   };
