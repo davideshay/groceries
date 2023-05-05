@@ -554,7 +554,7 @@ function convertLogLevel(level: string) : LogLevelDesc {
         return "WARN"
     } else if (["4","ERROR","E"].includes(level)) {
         return "ERROR"
-    } else if (["5","SILENT","S","NONE","N"]) {
+    } else if (["5","SILENT","S","NONE","N"].includes(level)) {
         return "SILENT"
     }
     return "INFO"    

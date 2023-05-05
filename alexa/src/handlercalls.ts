@@ -8,7 +8,7 @@ import { Directive, Slot, er } from "ask-sdk-model";
 import { SlotInfo , SlotType, CouchUserInfo, CouchUserInit, SimpleListGroups, SimpleListGroup, SimpleLists, SimpleList, SettingsResponse, SettingsResponseInit, SimpleItems, SimpleItem, RequestAttributes} from "./datatypes";
 import { ItemList } from "./DBSchema";
 import { AddListOptions } from "./DBSchema";
-import { getSlotValue } from "ask-sdk-core";
+import log from "loglevel";
 
 const MaxDynamicEntitites = 100;
 
@@ -34,7 +34,7 @@ export async function getUserInfo(accessToken: string) {
     };
     let req: AxiosResponse<any,any> 
     try { req = await axios.request(options) }
-    catch(err) {console.log("Error getting user info",err); response.error="API call failed"; return response}
+    catch(err) {log.error("Error getting user info",err); response.error="API call failed"; return response}
     response.success=true;
     response.userID = req.data.user_id;
     response.email = req.data.email;
@@ -55,7 +55,7 @@ export async function getEntityInfo(link: string, accessToken: string) {
     }
     let req: AxiosResponse<any,any> 
     try { req = await axios.request(options) }
-    catch(err) {console.log("Error getting user info",err); return response}
+    catch(err) {log.error("Error getting user info",err); return response}
     response.data = req.data;
     return response;
 }
@@ -69,7 +69,7 @@ export async function getCouchUserInfo(email: string) {
     let userResponseDocs: MangoResponse<UserDoc> | null = null;
     response.success = true;
     try {userResponseDocs =  (await usersDBAsAdmin.find(userq) as MangoResponse<UserDoc>);}
-    catch(err) {console.log("ERROR: Could not find user documents:",err);
+    catch(err) {log.error("Could not find user documents:",err);
                 response.success = false;};
     if (response.success && userResponseDocs !== undefined && userResponseDocs !== null && userResponseDocs.docs.length > 0) {
         response.userName = userResponseDocs.docs[0].name
@@ -86,7 +86,7 @@ export async function getUserSettings(username: string) {
     let settingsResponseDocs: MangoResponse<SettingsDoc> | null = null;
     response.success = true;
     try {settingsResponseDocs =  (await todosDBAsAdmin.find(settingsq) as MangoResponse<SettingsDoc>);}
-    catch(err) {console.log("ERROR: Could not find user setting documents:",err);
+    catch(err) {log.error("Could not find user setting documents:",err);
                 response.success = false;};
     if (response.success && settingsResponseDocs !== undefined && settingsResponseDocs !== null && settingsResponseDocs.docs.length > 0) {
         response.settings = settingsResponseDocs.docs[0].settings;
@@ -150,9 +150,9 @@ export async function getDynamicIntentDirective(listGroups: SimpleListGroups, li
 async function getItemByID(id: string) : Promise<ItemDoc | GlobalItemDoc | null> {
     let foundDoc: DocumentGetResponse | null = null;
     try {foundDoc = await todosDBAsAdmin.get(id)}
-    catch(err) {console.log("ERROR: could not get item "+id); return null}
+    catch(err) {log.error("Could not get item "+id); return null}
     if (foundDoc == undefined || foundDoc == null) {return null};
-    if (id.startsWith("sys:item")) {return (foundDoc as GlobalItemDoc)} else {
+    if (id.startsWith("system:item")) {return (foundDoc as GlobalItemDoc)} else {
         return foundDoc as ItemDoc
     }
 }
@@ -168,7 +168,7 @@ async function checkItemByNameOnList(itemName: string, listID: string, listGroup
     }
     let foundItemDocs: MangoResponse<ItemDoc> | null = null;
     try {foundItemDocs = (await todosDBAsAdmin.find(itemq) as MangoResponse<ItemDoc>);}
-    catch(err) {console.log("ERROR: Could not find item documents",err);
+    catch(err) {log.error("Could not find item documents",err);
                 return alreadyExists};
     foundItemDocs.docs.every(i => {
         if (i.name.toLocaleUpperCase() === itemName.toLocaleUpperCase() ||
@@ -192,7 +192,7 @@ async function getLocalItems(listGroupIDs: string[]): Promise<SimpleItems> {
     }
     let foundItemDocs: MangoResponse<ItemDoc> | null = null;
     try {foundItemDocs = (await todosDBAsAdmin.find(itemq) as MangoResponse<ItemDoc>);}
-    catch(err) {console.log("ERROR: Could not find item documents",err);
+    catch(err) {log.error("Could not find item documents",err);
                 return []};
     let simpleItems: SimpleItems = [];
     foundItemDocs.docs.forEach(item => {
@@ -236,7 +236,7 @@ export async function getListGroups(username: string) {
     }
     let foundListGroupDocs: MangoResponse<ListGroupDoc> | null = null;
     try {foundListGroupDocs =  (await todosDBAsAdmin.find(lgq) as MangoResponse<ListGroupDoc>);}
-    catch(err) {console.log("ERROR: Could not find listgroup documents:",err);
+    catch(err) {log.error("Could not find listgroup documents:",err);
                 return []};
     let simpleListGroups: SimpleListGroups = [];
     foundListGroupDocs.docs.forEach(lg => {
@@ -267,7 +267,7 @@ export async function getLists(username: string, listGroups: SimpleListGroups): 
     }
     let foundListDocs: MangoResponse<ListDoc> | null = null;
     try {foundListDocs = (await todosDBAsAdmin.find(lq) as MangoResponse<ListDoc>);}
-    catch(err) {console.log("ERROR: Could not find list documents",err);
+    catch(err) {log.error("Could not find list documents",err);
                 return [null,[]]};
     let mergedListDocs: {_id: string, name: string, listGroupID: string|null, lgName: string, lgDefault: boolean}[] = [];
     foundListDocs.docs.forEach(l => {
@@ -363,10 +363,6 @@ type PotentialAnswer = {
     levenDistance: Number
 }
 
-function checkGlobalItemMatch(name: string) {
-
-}
-
 async function isExactMatch(slotType: SlotType,id: string,name: string, slotValue: string, t: any) {
     // if its a global item id, compare singular and plural in translated and untranslated
     // if its a list id, compare the singular and plural in translated and untranslated
@@ -438,13 +434,13 @@ export async function getSelectedItemSlotInfo(slot: Slot, slotValue: string,t : 
         }
     }
     if (potentialAnswers.length === 0) {return [SlotType.None,slotInfo]}
-    console.log("Potential Answers:",JSON.stringify(potentialAnswers,null,2))
+    log.debug("Potential Answers:",JSON.stringify(potentialAnswers,null,2))
     potentialAnswers.sort((a,b) => (
         Number(b.exactMatch) - Number(a.exactMatch) ||
         Number(a.originalIndex) - Number(b.originalIndex) ||
         Number(a.slotType) - Number(b.slotType)
     ))
-    console.log("Sorted Potential Answers:",JSON.stringify(potentialAnswers,null,4))
+    log.debug("Sorted Potential Answers:",JSON.stringify(potentialAnswers,null,4))
     let slotType = potentialAnswers[0].slotType;
     slotInfo = {id: potentialAnswers[0].id, name: potentialAnswers[0].name};
     return [slotType,slotInfo]
@@ -497,10 +493,10 @@ export async function addItemToList({ requestAttributes, itemSlot, itemSlotValue
     let addItemResponse: HandlerResponse = cloneDeep(HandlerResponseInit);
 //    let [itemSlotType,selectedItem] = getSelectedSlotInfo(itemSlot);
     let [itemSlotType,selectedItem] = await getSelectedItemSlotInfo(itemSlot,itemSlotValue,requestAttributes.t)
-    console.log("returned itemSlotType",itemSlotType,"selected item:",selectedItem);
+    log.debug("returned itemSlotType",itemSlotType,"selected item:",selectedItem);
     let [listSlotType,selectedList] = getSelectedSlotInfo(listSlot);
     let [listGroupSlotType,selectedListGroup] = getSelectedSlotInfo(listGroupSlot);
-    console.log("item:",itemSlotType,selectedItem,"list:",listSlotType,selectedList,"group:",listGroupSlotType,selectedListGroup);
+    log.debug("item:",itemSlotType,selectedItem,"list:",listSlotType,selectedList,"group:",listGroupSlotType,selectedListGroup);
     let listID : string|null = defaultListID;
     let listSpecified = false;
     if (listSlotType===SlotType.Dynamic && selectedList!==null && selectedList.id !==null) {
@@ -517,11 +513,11 @@ export async function addItemToList({ requestAttributes, itemSlot, itemSlotValue
         listMode = "G";
         listGroupSpecified = true;
     }
-    console.log("Resolved list:",listID,getListNameForList(listID,lists),"group:",listGroupID,getListGroupName(listGroupID,listGroups),"list mode:",listMode);
+    log.debug("Resolved list:",listID,getListNameForList(listID,lists),"group:",listGroupID,getListGroupName(listGroupID,listGroups),"list mode:",listMode);
     if ((itemSlotType == SlotType.None && isEmpty(itemSlotValue)) || 
         (itemSlotType !== SlotType.None && selectedItem.id === null)) {
         addItemResponse.message="No item found to add to list";
-        console.log("ERROR: No slot type or no id");
+        log.error("No slot type or no id");
         return addItemResponse;
     }
     if (itemSlotType === SlotType.Static) {
@@ -540,7 +536,7 @@ async function getItem(itemID: string) : Promise<{exists: boolean, itemDoc:ItemD
     let itemResponse: {exists: boolean, itemDoc: ItemDoc|null}= {exists: false, itemDoc: null};
     let itemDoc: ItemDoc|null = null;
     try { itemDoc = await todosDBAsAdmin.get(itemID) as ItemDoc;}
-    catch(err) {console.log("ERROR: Could not find item"); return itemResponse}
+    catch(err) {log.error("Could not find item"); return itemResponse}
     if (itemDoc === undefined || itemDoc === null) {return itemResponse}
     itemResponse.exists = true;
     itemResponse.itemDoc = itemDoc;
@@ -557,7 +553,7 @@ async function globalItemInListGroup(globalItemID: string, listGroupID: string) 
     }
     let foundItemDocs: MangoResponse<ItemDoc> | null = null;
     try {foundItemDocs = (await todosDBAsAdmin.find(itemq) as MangoResponse<ItemDoc>);}
-    catch(err) {console.log("ERROR: Could not find list documents",err); return itemResponse}
+    catch(err) {log.error("Could not find list documents",err); return itemResponse}
     if (foundItemDocs.docs.length > 0) {
         itemResponse.exists = true;
         itemResponse.itemDoc = foundItemDocs.docs[0];    
@@ -587,7 +583,7 @@ async function updateItemInList(itemDoc: ItemDoc,listMode: string, lists: Simple
     })
     newItem.updatedAt = (new Date()).toISOString();
     try {let dbResp = await todosDBAsAdmin.insert(newItem); updateResponse.success=true;}
-    catch(err) {updateResponse.message="Error updating item in the list"; updateResponse.success = false; console.log("ERROR updating item in the list:",err)}
+    catch(err) {updateResponse.message="Error updating item in the list"; updateResponse.success = false; log.error("Updating item in the list:",err)}
     if (updateResponse.success) {
         if (changed) {
             updateResponse.message="Added "+itemDoc.name+" to the ";
@@ -620,7 +616,7 @@ async function getGlobalItem(id: string) : Promise<GlobalItemDoc | null> {
     let globalItem : GlobalItemDoc|null = null;
     try { let gi = await todosDBAsAdmin.get(id) as GlobalItemDoc;
           if (gi !== null && gi !== undefined) {globalItem = gi}}
-    catch(err) {console.log("ERROR retrieving global",err);}      
+    catch(err) {log.error("Retrieving global failed",err);}      
     return globalItem;
 }
 
@@ -657,9 +653,9 @@ async function addNewItemToList(item: DefaultItemData,listGroupID: string,listID
     })
     newItem.lists = newItemLists;
     newItem.updatedAt = (new Date()).toISOString();
-    console.log("trying to add to list:",JSON.stringify(newItem,null,4));
-    try {let dbResp = await todosDBAsAdmin.insert(newItem); addResponse.success = true; console.log(JSON.stringify(dbResp,null,4));}
-    catch(err) {addResponse.message="Error adding item to the list"; addResponse.success = false; console.log("ERROR adding to the list:",err)}
+    log.debug("trying to add to list:",JSON.stringify(newItem,null,4));
+    try {let dbResp = await todosDBAsAdmin.insert(newItem); addResponse.success = true; log.debug(JSON.stringify(dbResp,null,4));}
+    catch(err) {addResponse.message="Error adding item to the list"; addResponse.success = false; log.error("Adding to the list:",err)}
     if (addResponse.success) {
         addResponse.message="Added "+item.name+" to the ";
         if (listMode === "L") {
