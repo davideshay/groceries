@@ -2,14 +2,15 @@ import { DBCreds, DBCredsInit, RemoteDBState } from "./RemoteDBState";
 import { CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
 import { Preferences } from '@capacitor/preferences';
 import jwt_decode from 'jwt-decode';
-import { ListRow, LogLevel } from "./DataTypes";
+import { ListRow } from "./DataTypes";
 import { UUIDDoc, maxAppSupportedSchemaVersion } from "./DBSchema";
 import { DBUUIDAction, DBUUIDCheck } from "./RemoteDBState";
 import { History } from "history";
 import { urlPatternValidation, usernamePatternValidation, emailPatternValidation,
-        fullnamePatternValidation, apiConnectTimeout, isJsonString, DEFAULT_API_URL, logger } from "./Utilities";
+        fullnamePatternValidation, apiConnectTimeout, isJsonString, DEFAULT_API_URL } from "./Utilities";
 import { cloneDeep, pick, keys, isEqual } from 'lodash';
 import { t } from "i18next";
+import log from "loglevel";
 
 export async function navigateToFirstListID(phistory: History,remoteDBCreds: DBCreds, listRows: ListRow[]) {
     let firstListID = null;
@@ -41,7 +42,7 @@ export async function createNewUser(remoteDBState: RemoteDBState,remoteDBCreds: 
         connectTimeout: apiConnectTimeout
     };
     try {response = await CapacitorHttp.post(options);}
-    catch(err) {logger(LogLevel.ERROR,"http error in creating new user:",err)}
+    catch(err) {log.error("http error in creating new user:",err)}
     return response;
 }
 
@@ -53,7 +54,7 @@ export function getTokenInfo(JWT: string) {
     let JWTDecode;
     let JWTDecodeValid = true;
     try { JWTDecode = jwt_decode(JWT);}
-    catch(err) {logger(LogLevel.ERROR,"INVALID access token:",err); JWTDecodeValid= false}
+    catch(err) {log.error("INVALID access token:",err); JWTDecodeValid= false}
     if (JWTDecodeValid) {
         tokenResponse.valid = true;
         tokenResponse.expireDate = (JWTDecode as any).exp
@@ -62,8 +63,8 @@ export function getTokenInfo(JWT: string) {
 }
 
 export async function refreshToken(remoteDBCreds: DBCreds, devID: string) {
-    logger(LogLevel.INFO,"STATUS: refreshing token, device id: ", devID);
-    logger(LogLevel.INFO,"STATUS: Using API Server: ", remoteDBCreds.apiServerURL);
+    log.info("Refreshing token, device id: ", devID);
+    log.info("Using API Server: ", remoteDBCreds.apiServerURL);
     let response: HttpResponse | undefined;
     const options: HttpOptions = {
         url: String(remoteDBCreds.apiServerURL+"/refreshtoken"),
@@ -78,7 +79,7 @@ export async function refreshToken(remoteDBCreds: DBCreds, devID: string) {
         }            
     };
     try { response = await CapacitorHttp.post(options);}
-    catch(err) { logger(LogLevel.ERROR,"http error refreshing token",err);}
+    catch(err) { log.error("http error refreshing token",err);}
     return response;
 }
 
@@ -147,7 +148,7 @@ export async function checkJWT(accessJWT: string, remoteDBCreds: DBCreds) {
         connectTimeout: apiConnectTimeout          
           };
     try { response = await CapacitorHttp.get(options); }
-    catch(err) {logger(LogLevel.ERROR,"http error getting session error:",err); checkResponse.DBServerAvailable=false}
+    catch(err) {log.error("http error getting session error:",err); checkResponse.DBServerAvailable=false}
     if (checkResponse.DBServerAvailable) {
         if ((response?.status === 200) && (response.data?.userCtx?.name !== null)) {
             let tokenInfo = getTokenInfo(accessJWT);
@@ -186,7 +187,7 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
     if (localDBInfo != null && localDBInfo.doc_count > 0) { localHasRecords = true}
     if (localHasRecords) {
       let localDBAllDocs = null;
-      try { localDBAllDocs = await db.allDocs({include_docs: true});} catch(e) {logger(LogLevel.ERROR,e)};
+      try { localDBAllDocs = await db.allDocs({include_docs: true});} catch(e) {log.error("error checking docs for uuid",e)};
       localHasRecords = false;
       if (localDBAllDocs != null) {
         localDBAllDocs.rows.forEach(row => {
@@ -199,13 +200,13 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
     if (localHasRecords) {
         let localDBFindDocs = null;
         try { localDBFindDocs = await db.find({selector: { "type": { "$eq": "dbuuid"} }}) }
-        catch(e) {logger(LogLevel.ERROR,e)};
+        catch(e) {log.error("error finding dbuuid doc",e)};
         if ((localDBFindDocs !== null) && localDBFindDocs.docs.length === 1) {
             localDBUUID = (localDBFindDocs.docs[0] as UUIDDoc).uuid;
             localSchemaVersion = Number((localDBFindDocs.docs[0] as UUIDDoc).schemaVersion);
         }
     }
-    logger(LogLevel.DEBUG,"maxAppSupportedVersion",maxAppSupportedSchemaVersion)
+    log.info("maxAppSupportedVersion",maxAppSupportedSchemaVersion)
     if (Number(UUIDCheck.schemaVersion) > maxAppSupportedSchemaVersion) {
         UUIDCheck.checkOK = false;
         UUIDCheck.dbUUIDAction = DBUUIDAction.exit_app_schema_mismatch;
@@ -214,9 +215,9 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
 
     // compare to current DBCreds one.
     if (localDBUUID === UUIDResult) {
-        logger(LogLevel.DEBUG,"Schema: remote:",remoteSchemaVersion," local:",localSchemaVersion);
+        log.debug("Schema: remote:",remoteSchemaVersion," local:",localSchemaVersion);
         if (remoteSchemaVersion > localSchemaVersion) {
-            logger(LogLevel.ERROR,"ERROR: Remote Schema greater than local");
+            log.error("Remote Schema greater than local");
             UUIDCheck.checkOK = false;
             UUIDCheck.dbUUIDAction = DBUUIDAction.exit_local_remote_schema_mismatch;
         }   

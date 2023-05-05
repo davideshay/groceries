@@ -10,13 +10,14 @@ import { useCreateGenericDocument, useFriends, UseFriendState, useUpdateGenericD
 import { add } from 'ionicons/icons';
 import './Friends.css';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
-import { FriendRow, ResolvedFriendStatus, HistoryProps, LogLevel } from '../components/DataTypes';
+import { FriendRow, ResolvedFriendStatus, HistoryProps} from '../components/DataTypes';
 import { FriendStatus } from '../components/DBSchema';
-import { checkUserByEmailExists, emailPatternValidation, apiConnectTimeout, logger } from '../components/Utilities';
+import { checkUserByEmailExists, emailPatternValidation, apiConnectTimeout } from '../components/Utilities';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
+import log from 'loglevel';
 
 /* 
 
@@ -130,7 +131,7 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
         let elem=(<IonRow  key={itemKey}>
               <IonCol class="col-minimal-padding ion-align-items-center" size="3">{ButtonElem(friendRow)}</IonCol>
               <IonCol class="col-minimal-padding ion-align-items-center" size="4"><IonLabel class="friend-label">{friendRow.friendStatusText}</IonLabel></IonCol>
-              <IonCol class="col-minimal-padding ion-align-items-center" size="5">{friendRow.targetFullName == "" ? friendRow.targetEmail : friendRow.targetFullName}</IonCol>
+              <IonCol class="col-minimal-padding ion-align-items-center" size="5">{friendRow.targetFullName === "" ? friendRow.targetEmail : friendRow.targetFullName}</IonCol>
             </IonRow>)
         friendRowsElem.push(elem);
       });
@@ -159,10 +160,9 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
 
     }
     let createFriendSuccessful=true;
-    let createResults;
-    try { createResults = await (remoteDB as PouchDB.Database).post(newFriendDoc) } 
-    catch(e) {createFriendSuccessful=false; logger(LogLevel.ERROR,e)}
-    if (!createFriendSuccessful) { logger(LogLevel.ERROR,"ERROR: Creating friend"); return false;}
+    try { await (remoteDB as PouchDB.Database).post(newFriendDoc) } 
+    catch(e) {createFriendSuccessful=false; log.error("SendFriendRequest",e)}
+    if (!createFriendSuccessful) { log.error("Creating friend"); return false;}
 
     const options: HttpOptions = {
       url: String(remoteDBCreds.apiServerURL+"/triggerregemail"),
@@ -175,7 +175,7 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
       };
       
     try {await CapacitorHttp.post(options)}
-    catch(err) {logger(LogLevel.ERROR,"ERROR sending friend email."); return false}
+    catch(err) {log.error("sending friend email."); return false}
 
     let confURL = remoteDBCreds.apiServerURL + "/createaccountui?uuid="+invuid;
     Clipboard.write({string: confURL});
@@ -221,7 +221,7 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
         inviteUUID: "",
         friendStatus: pendfrom1 ? FriendStatus.PendingFrom1 : FriendStatus.PendingFrom2
       }
-      logger(LogLevel.DEBUG,newFriendDoc);
+      log.debug("new friend doc to create:",newFriendDoc);
       let result = await createDoc(newFriendDoc);
       if (result.successful) {
           setPageState(prevState => ({...prevState,formError: "",inAddMode: false, newFriendEmail: ""}))

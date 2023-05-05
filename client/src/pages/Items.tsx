@@ -113,8 +113,8 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   screenLoading.current=false;
 
   function updateSearchCriteria(event: CustomEvent) {
-    let toOpen=true;
-    if (event.detail.value.length === 0) {toOpen = false}
+//    let toOpen=true;
+//    if (event.detail.value.length === 0) {toOpen = false}
     setSearchState(prevState => ({...prevState, isFocused: true}));
     filterAndCheckRows(event.detail.value,true)
   }

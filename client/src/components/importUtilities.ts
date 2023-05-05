@@ -1,16 +1,16 @@
-import { LogLevel, PouchResponse, PouchResponseInit, RecipeFileType, TandoorRecipe } from "./DataTypes";
+import { PouchResponse, PouchResponseInit, RecipeFileType, TandoorRecipe } from "./DataTypes";
 import { PickFilesResult } from "@capawesome/capacitor-file-picker";
 import zip from 'jszip';
 import { GlobalItemDoc, InitGlobalItem, InitRecipeDoc, RecipeDoc, RecipeInstruction, RecipeItem, RecipeItemInit } from "./DBSchema";
 import { cloneDeep } from "lodash";
-import { GlobalDataContext, GlobalDataContextType, GlobalDataState } from "./GlobalDataProvider";
+import { GlobalDataContext, GlobalDataState } from "./GlobalDataProvider";
 import { usePouch } from "use-pouchdb";
 import { useCallback, useContext } from "react";
 import { AlertInput, useIonAlert, useIonLoading } from "@ionic/react";
 import { useTranslation } from "react-i18next";
 import { t } from 'i18next';
 import { isEmpty } from "lodash";
-import { logger } from "./Utilities";
+import log from 'loglevel';
 
 export function useProcessInputFile() {
     const db = usePouch();
@@ -107,13 +107,13 @@ async function processTandoorZip(inputFile: PickFilesResult) : Promise<TandoorRe
 }
 
 async function loadTandoorRecipes(alertData: string[],recipeObjs: TandoorRecipe[],db: PouchDB.Database,globalData: GlobalDataState) : Promise<string> {
-    if (alertData == undefined || alertData.length === 0) {return t("error.nothing_to_load") as string};
+    if (alertData === undefined || alertData.length === 0) {return t("error.nothing_to_load") as string};
     let statusFull = ""
     for (let i = 0; i < alertData.length; i++) {
         let recipe = recipeObjs.find((recipe) => (recipe.name === alertData[i]));
-        if (recipe === undefined) {logger(LogLevel.ERROR,"Could not find recipe - "+alertData[i]); continue};
+        if (recipe === undefined) {log.error("Could not find recipe - "+alertData[i]); continue};
         if (await checkRecipeExists(recipe.name,db)) {
-            logger(LogLevel.WARNING,"Could not import: "+alertData[i]+" - Duplicate");
+            log.warn("Could not import: "+alertData[i]+" - Duplicate");
             statusFull=statusFull+"\n"+t("error.could_not_import_recipe_dup",{recipe:alertData[i]});
             continue;
         }
@@ -148,13 +148,13 @@ async function createTandoorRecipe(recipeObj: TandoorRecipe, db: PouchDB.Databas
             }
             if (ingredient.unit !== null) {
                 recipeItem.recipeUOMName = findMatchingUOM(ingredient.unit.name as string,globalData);
-                if (recipeItem.recipeUOMName == "") {
+                if (recipeItem.recipeUOMName === "") {
                     recipeItem.recipeUOMName = findMatchingUOM(ingredient.unit.plural_name as string,globalData);
                 }
-                if (recipeItem.recipeUOMName == "" && recipeItem.globalItemID !== null && matchGlobalItem.defaultUOM !== null) {
+                if (recipeItem.recipeUOMName === "" && recipeItem.globalItemID !== null && matchGlobalItem.defaultUOM !== null) {
                     recipeItem.recipeUOMName = matchGlobalItem.defaultUOM;
                 }
-                if (recipeItem.recipeUOMName == "" && (ingredient.unit.name != "" || ingredient.unit.plural_name != "")) {
+                if (recipeItem.recipeUOMName === "" && (ingredient.unit.name !== "" || ingredient.unit.plural_name !== "")) {
                     recipeItem.note = t("error.could_not_match_uom",{name: ingredient.unit.name ,pluralName: ingredient.unit.plural_name});
                 }
             }
@@ -170,15 +170,15 @@ async function createTandoorRecipe(recipeObj: TandoorRecipe, db: PouchDB.Databas
     newRecipeDoc.updatedAt = curDateStr;
     let response: PouchResponse = cloneDeep(PouchResponseInit);
     try { response.pouchData = await db.post(newRecipeDoc); }
-    catch(err) { response.successful = false; response.fullError = err; logger(LogLevel.ERROR,"ERROR:",err);}
+    catch(err) { response.successful = false; response.fullError = err; log.error("Creating recipe failed",err);}
     if (!response.pouchData.ok) { response.successful = false;}
     return [response.successful,t("general.loaded_recipe_successfully", {name: recipeObj.name})]
 }
 
 function findMatchingUOM(uom: string, globalData: GlobalDataState): string {
-    if (uom == null || uom == undefined) {return ""};
-    let foundUOM = globalData.uomDocs.find(u => (u.description.toUpperCase() == uom.toUpperCase() || u.pluralDescription.toUpperCase() == uom.toUpperCase()));
-    if (foundUOM == undefined) {
+    if (uom === null || uom === undefined) {return ""};
+    let foundUOM = globalData.uomDocs.find(u => (u.description.toUpperCase() === uom.toUpperCase() || u.pluralDescription.toUpperCase() === uom.toUpperCase()));
+    if (foundUOM === undefined) {
         foundUOM = globalData.uomDocs.find(u => {
             let foundAlt = false;
             if (u.hasOwnProperty("alternates") && u.alternates !== null) {
@@ -191,13 +191,13 @@ function findMatchingUOM(uom: string, globalData: GlobalDataState): string {
             }
             return foundAlt;
         })
-        if (foundUOM != undefined) {
+        if (foundUOM !== undefined) {
             return foundUOM.name;
         }
     }
-    if (foundUOM == undefined) {
-        let translatedUOM = globalData.uomDocs.find(u=> ((t("uom."+u.name,{count:1})).toLocaleUpperCase() == uom.toLocaleUpperCase() ) || (t("uom."+u.name,{count: 2}).toLocaleUpperCase() == uom.toLocaleUpperCase()) );
-        if (translatedUOM == undefined) {
+    if (foundUOM === undefined) {
+        let translatedUOM = globalData.uomDocs.find(u=> ((t("uom."+u.name,{count:1})).toLocaleUpperCase() === uom.toLocaleUpperCase() ) || (t("uom."+u.name,{count: 2}).toLocaleUpperCase() === uom.toLocaleUpperCase()) );
+        if (translatedUOM === undefined) {
             return "";
         } else {
             return translatedUOM.name
@@ -211,13 +211,13 @@ export function findMatchingGlobalItem(foodName: string|null, globalData: Global
     let returnInitGlobalItem = cloneDeep(InitGlobalItem)
     if (foodName === null) {return [null,"",returnInitGlobalItem]}
     let globalItem = globalData.globalItemDocs.find(gi => (gi.name.toUpperCase() == foodName.toUpperCase()));
-    if (globalItem == undefined) {
+    if (globalItem === undefined) {
         let translatedGlobal = globalData.globalItemDocs.find(git =>{
         return(
-        (t("globalitem."+(git._id as string).substring(sysItemKey.length+1),{count: 1}).toLocaleUpperCase() == foodName.toLocaleUpperCase()) || 
-        (t("globalitem."+(git._id as string).substring(sysItemKey.length+1),{count: 2}).toLocaleUpperCase() == foodName.toLocaleUpperCase()) )  })
-        logger(LogLevel.DEBUG,"translated global:",translatedGlobal);
-        if (translatedGlobal == undefined) {return [null,"",returnInitGlobalItem]}
+        (t("globalitem."+(git._id as string).substring(sysItemKey.length+1),{count: 1}).toLocaleUpperCase() === foodName.toLocaleUpperCase()) || 
+        (t("globalitem."+(git._id as string).substring(sysItemKey.length+1),{count: 2}).toLocaleUpperCase() === foodName.toLocaleUpperCase()) )  })
+        log.debug("translated global:",translatedGlobal);
+        if (translatedGlobal === undefined) {return [null,"",returnInitGlobalItem]}
         else {return [translatedGlobal._id as string,t("globalitem."+(translatedGlobal._id as string).substring(sysItemKey.length+1),{count: 2}),translatedGlobal]}
     }
     else {return [globalItem._id as string,globalItem.name as string,globalItem]}

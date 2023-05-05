@@ -7,17 +7,17 @@ import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteGenericDoc
 import { cloneDeep } from 'lodash';
 import { PouchResponse, HistoryProps, RowType} from '../components/DataTypes';
 import { RecipeDoc, InitRecipeDoc, RecipeItem, UomDoc, ItemDoc, ItemDocInit, GlobalItemDoc, RecipeInstruction } from '../components/DBSchema';
-import { add, addOutline, closeOutline, pencilOutline, returnDownBackOutline, saveOutline, trashBinOutline, trashOutline } from 'ionicons/icons';
+import { add, addCircleOutline, closeCircleOutline, pencilOutline, returnDownBackOutline, saveOutline, trashBinOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
 import { GlobalStateContext } from '../components/GlobalState';
 import PageHeader from '../components/PageHeader';
-import RecipeItemSearch, { RecipeSearchData, RecipeSearchRow } from '../components/RecipeItemSearch';
+import RecipeItemSearch, { RecipeSearchData } from '../components/RecipeItemSearch';
 import { useTranslation } from 'react-i18next';
 import { translatedItemName, translatedUOMName } from '../components/translationUtilities';
 import './Recipe.css';
-import { findMatchingGlobalItem } from '../components/importUtiliites';
+import { findMatchingGlobalItem } from '../components/importUtilities';
 import { createNewItemFromRecipeItem, isRecipeItemOnList, updateItemFromRecipeItem } from '../components/recipeUtilities';
 import { usePouch } from 'use-pouchdb';
 import { RecipeItemInit } from '../components/DBSchema';
@@ -50,7 +50,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
   const deleteRecipe = useDeleteGenericDocument();
   const { doc: recipeDoc, loading: recipeLoading, dbError: recipeError} = useGetOneDoc(routeID);
   const { recipeDocs, recipesLoading, recipesError } = useRecipes();
-  const { dbError: itemError, itemRowsLoaded, itemRows } = useItems({selectedListGroupID: null, isReady: true, 
+  const { dbError: itemError, itemRowsLoaded } = useItems({selectedListGroupID: null, isReady: true, 
         needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const {goBack} = useContext(NavContext);
   const screenLoading = useRef(true);
@@ -233,11 +233,11 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
       if (inList && itemID !== null) {
         let status=await updateItemFromRecipeItem({itemID: itemID, listOrGroupID: pageState.selectedListOrGroupID,
               recipeItem: item, globalData: globalData, settings: globalState.settings, db: db})
-        if (status != "") {statusComplete = statusComplete + "\n" + status};   
+        if (status !== "") {statusComplete = statusComplete + "\n" + status};   
       } else {
         let status=await createNewItemFromRecipeItem({listOrGroupID: pageState.selectedListOrGroupID,
               recipeItem: item, globalData: globalData, settings: globalState.settings, db: db})
-        if (status != "") {statusComplete = statusComplete + "\n" + status};     
+        if (status !== "") {statusComplete = statusComplete + "\n" + status};     
       }
     }
     dismissLoading();
@@ -257,7 +257,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
     let itemChecked = item.addToList;
     let itemName = translatedItemName(item.globalItemID,item.name,item.recipeQuantity)
     let uomDesc = "";
-    if (item.recipeUOMName != null && item.recipeUOMName != "") {
+    if (item.recipeUOMName !== null && item.recipeUOMName !== "") {
         const uomDoc = globalData.uomDocs.find((el: UomDoc) => (el.name === item.recipeUOMName));
         if (uomDoc !== undefined) {
             uomDesc = t("uom."+item.recipeUOMName,{ count: item.recipeQuantity});
@@ -404,11 +404,11 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
                 <IonButton fill="outline" color="danger" onClick={() => deletePrompt()}><IonIcon slot="start" icon={trashOutline}></IonIcon>{t("general.delete")}</IonButton>
             </IonButtons>
             <IonButtons slot="secondary">
-            <IonButton fill="outline" color="secondary" onClick={() => goBack("/recipes")}><IonIcon slot="start" icon={closeOutline}></IonIcon>{t("general.cancel")}</IonButton>
+            <IonButton fill="outline" color="secondary" onClick={() => goBack("/recipes")}><IonIcon slot="start" icon={closeCircleOutline}></IonIcon>{t("general.cancel")}</IonButton>
             </IonButtons>
             <IonButtons slot="end">
             <IonButton fill="solid" color="primary" onClick={() => updateThisRecipe()}>
-                <IonIcon slot="start" icon={(mode === "new" ? addOutline : saveOutline)}></IonIcon>
+                <IonIcon slot="start" icon={(mode === "new" ? addCircleOutline : saveOutline)}></IonIcon>
                 {(mode === "new") ? t("general.add") : t("general.save")}
               </IonButton>
             </IonButtons>

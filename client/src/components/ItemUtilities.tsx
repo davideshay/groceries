@@ -1,12 +1,12 @@
 import {initItemRow, ItemRow, ItemSearch, ListCombinedRow, ListCombinedRows,
-     ListRow, RowType, ItemSearchType, LogLevel} from '../components/DataTypes';
+     ListRow, RowType, ItemSearchType} from '../components/DataTypes';
 import { GlobalState } from "./GlobalState";
 import { AddListOptions, GlobalSettings } from './DBSchema';
 import { UomDoc, ItemDoc, ItemDocs, ItemList, ListDocs, ListDoc, CategoryDoc, GlobalItemDocs } from './DBSchema';
 import { cloneDeep } from 'lodash';
 import { t } from 'i18next';
-import { translatedCategoryName, translatedItemName, translatedUOMName, translatedUOMShortName } from './translationUtilities';
-import { logger } from './Utilities';
+import { translatedCategoryName, translatedItemName, translatedUOMShortName } from './translationUtilities';
+import log from 'loglevel';
 
 export function getGroupIDForList(listID: string, listDocs: ListDocs): string | null {
     let retGID = null;
@@ -322,9 +322,9 @@ export async function checkNameInGlobal(db: PouchDB.Database, name: string) {
     let nameExists=false;
     let globalItemDocs = null;
     try { globalItemDocs = await db.query('_utilities/ucase-globalitems',{ key: name.toUpperCase()}) }
-    catch(e) {logger(LogLevel.ERROR,e)};
+    catch(e) {log.error("checkNameInGlobal query error:",e)};
     if (globalItemDocs !== null && globalItemDocs.hasOwnProperty("rows") && globalItemDocs.rows.length > 0) {
-        logger(LogLevel.DEBUG,globalItemDocs);
+        log.debug(globalItemDocs);
         if (globalItemDocs.rows[0].key === name.toUpperCase()) {nameExists = true}
     }
     return nameExists;

@@ -118,7 +118,7 @@ export async function createNewUser(userObj: UserObj, deviceUUID: string) {
     }    
     let res = null;
     try { res = await usersDBAsAdmin.insert(newDoc as MaybeDocument,couchUserPrefix+":"+userObj.username); }
-    catch(err) { console.log("ERROR: problem creating user: ",err); createResponse.error= true }
+    catch(err) { log.error("Problem creating user: ",err); createResponse.error= true }
     if (!createResponse.error && res != null) {
         createResponse.idCreated = res.id;
     }
@@ -132,7 +132,7 @@ export async function updateUnregisteredFriends(req: CustomRequest<NewUserReqBod
     }
     let foundFriendDocs;
     try {foundFriendDocs =  await todosDBAsAdmin.find(emailq);}
-    catch(err) {console.log("ERROR: Could not find friend documents:",err); return false;}
+    catch(err) {log.error("Could not find friend documents:",err); return false;}
     let foundFriendDoc = undefined;
 //    if (foundFriendDocs.docs.length > 0) {foundFriendDoc = foundFriendDocs.docs[0]}
     (foundFriendDocs.docs as FriendDocs).forEach(async (doc) => {
@@ -154,7 +154,7 @@ export async function getFriendDocByUUID(uuid: string): Promise<FriendDoc|null> 
     }
     let foundFriendDocs: MangoResponse<FriendDoc>;
     try {foundFriendDocs =  (await todosDBAsAdmin.find(uuidq) as MangoResponse<FriendDoc>);}
-    catch(err) {console.log("ERROR: Could not find friend documents:", err); return null;};
+    catch(err) {log.error("Could not find friend documents:", err); return null;};
     let foundFriendDoc: FriendDoc | null = null;
     if (foundFriendDocs.docs.length > 0) {foundFriendDoc = foundFriendDocs.docs[0]}
     return(foundFriendDoc);

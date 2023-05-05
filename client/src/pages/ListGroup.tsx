@@ -8,7 +8,7 @@ import { useUpdateGenericDocument, useCreateGenericDocument, useFriends,
   UseFriendState, useDeleteGenericDocument, useDeleteItemsInListGroup, useGetOneDoc } from '../components/Usehooks';
 import { cloneDeep, isEmpty, isEqual } from 'lodash';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
-import { initUserIDList, initUsersInfo, PouchResponse, ResolvedFriendStatus, UserIDList, UsersInfo, HistoryProps, ListCombinedRow, RowType, FriendRow } from '../components/DataTypes'
+import { initUserIDList, initUsersInfo, PouchResponse, ResolvedFriendStatus, UserIDList, UsersInfo, HistoryProps, ListCombinedRow, RowType, FriendRow, ListCombinedRows } from '../components/DataTypes'
 import { ListGroupDoc, ListGroupDocInit } from '../components/DBSchema';
 import SyncIndicator from '../components/SyncIndicator';
 import { getUsersInfo } from '../components/Utilities';
@@ -278,14 +278,14 @@ function deletePrompt() {
     })
   }              
 }
-
+  let groupOnlyRows: ListCombinedRows = cloneDeep(listCombinedRows);
+  groupOnlyRows.filter(lg => (lg.rowType === RowType.listGroup))
   let selectOptionListElem = (
-    listCombinedRows.map((list: ListCombinedRow) => { 
-      if (list.rowType === RowType.listGroup) { return (
+    groupOnlyRows.map((list: ListCombinedRow) => (
       <IonSelectOption key={list.rowKey} value={list.listGroupID}>
         {list.listGroupName}
-      </IonSelectOption>) }
-      }))
+      </IonSelectOption>) 
+      ))
 
   let selectElem=[];
   if (pageState.changesMade) {

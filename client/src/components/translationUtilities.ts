@@ -1,8 +1,6 @@
 import { t } from "i18next"
-import { GlobalDataState } from "./GlobalDataProvider";
-import { logger } from "./Utilities";
-import { LogLevel } from "./DataTypes";
 import { UomDoc } from "./DBSchema";
+import log from 'loglevel';
 
 export function translatedItemName(id: string | null, name: string,count: number=1) {
     const sysItemKey="system:item";
@@ -36,6 +34,6 @@ export function translatedUOMName(id: string, name: string, count: number = 1) {
 export function translatedUOMShortName(shortName: string | null,uomDocs: UomDoc[]) : string {
     if (shortName === null) {return ""};
     const foundUOM = uomDocs.find(uom => (uom.name === shortName));
-    if (foundUOM === undefined) {logger(LogLevel.ERROR,"no found UOM..."); return "";}
+    if (foundUOM === undefined) {log.error("no found UOM...",shortName); return "";}
     return(translatedUOMName(foundUOM._id!,foundUOM.description))
 }

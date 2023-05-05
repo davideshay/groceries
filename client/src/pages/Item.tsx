@@ -2,7 +2,7 @@ import { IonContent, IonPage, IonButton, IonList, IonInput, IonItem,
   IonSelect, IonIcon, 
   IonSelectOption, useIonAlert,useIonToast, IonTextarea, IonGrid, IonRow, IonCol, IonText, IonCard,
   IonCardSubtitle, NavContext, IonButtons, IonToolbar, IonImg, IonFooter } from '@ionic/react';
-import { addOutline, closeCircleOutline, trashOutline, saveOutline } from 'ionicons/icons';
+import { addCircleOutline, closeCircleOutline, trashOutline, saveOutline } from 'ionicons/icons';
 import { usePhotoGallery } from '../components/Usehooks';
 import { useParams } from 'react-router-dom';
 import { usePouch } from 'use-pouchdb';
@@ -13,7 +13,7 @@ import { cloneDeep, isEmpty, remove } from 'lodash';
 import './Item.css';
 import ItemLists from '../components/ItemLists';
 import { getCommonKey, createEmptyItemDoc, checkNameInGlobal  } from '../components/ItemUtilities';
-import { PouchResponse, ListRow, RowType, PouchResponseInit, LogLevel } from '../components/DataTypes';
+import { PouchResponse, ListRow, RowType, PouchResponseInit} from '../components/DataTypes';
 import { UomDoc, ItemDoc, ItemDocInit, ItemList, ItemListInit, CategoryDoc, ImageDoc, ImageDocInit, InitUomDoc } from '../components/DBSchema';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
@@ -21,7 +21,7 @@ import { GlobalDataContext } from '../components/GlobalDataProvider';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
 import { translatedCategoryName, translatedItemName, translatedUOMName } from '../components/translationUtilities';
-import { logger } from '../components/Utilities';
+import log from 'loglevel';
 
 const Item: React.FC = (props) => {
   let { mode, itemid } = useParams<{mode: string, itemid: string}>();
@@ -115,7 +115,7 @@ const Item: React.FC = (props) => {
     }
   },[itemLoading,itemDoc,globalData.listsLoading,globalData.listDocs,globalData.listRowsLoaded, globalData.listRows,globalState.itemMode,globalState.newItemName, globalState.callingListID, needInitItemDoc]);
 
-  if (itemError || globalData.listError || globalData.categoryError || globalData.uomError || itemsError) { logger(LogLevel.ERROR,"ERROR");return (
+  if (itemError || globalData.listError || globalData.categoryError || globalData.uomError || itemsError) { log.error("loading item info");return (
     <ErrorPage errorText={t("error.loading_item_info_restart") as string}></ErrorPage>
   )}
 
@@ -299,10 +299,10 @@ const Item: React.FC = (props) => {
   
   async function getNewPhoto() {
     let newPhoto = await takePhoto();
-    if (newPhoto != undefined) {
+    if (newPhoto !== undefined) {
       setStateImageDoc(prevState => ({...prevState, imageBase64: (newPhoto as string)}))
     }
-    else { logger(LogLevel.ERROR,"photo undefined....")};
+    else { log.error("Photo undefined....")};
   }
 
   function deletePhoto() {
@@ -353,7 +353,7 @@ const Item: React.FC = (props) => {
                     ))}
                     </IonSelect>
                   </IonCol>
-                  <IonCol class="ion-no-padding" size="1"><IonButton fill="default" onClick={(e) => {addUOMPopup()}}><IonIcon icon={addOutline}></IonIcon></IonButton></IonCol>
+                  <IonCol class="ion-no-padding" size="1"><IonButton fill="default" onClick={(e) => {addUOMPopup()}}><IonIcon icon={addCircleOutline}></IonIcon></IonButton></IonCol>
                 </IonRow>
                 </IonGrid>
               </IonItem>
@@ -367,7 +367,7 @@ const Item: React.FC = (props) => {
                   ))}
                 </IonSelect>
                 <IonButton slot="end" fill="default" onClick={() => {addCategoryPopup()}}>
-                  <IonIcon slot="end" icon={addOutline} ></IonIcon>
+                  <IonIcon slot="end" icon={addCircleOutline} ></IonIcon>
                 </IonButton>  
               </IonItem>
               <IonItem key="note">

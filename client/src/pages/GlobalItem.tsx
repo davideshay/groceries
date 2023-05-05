@@ -7,7 +7,7 @@ import { useGetOneDoc } from '../components/Usehooks';
 import './Category.css';
 import {  HistoryProps} from '../components/DataTypes';
 import { CategoryDoc, GlobalItemDoc, UomDoc } from '../components/DBSchema';
-import { closeOutline} from 'ionicons/icons';
+import { closeCircleOutline} from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
@@ -54,7 +54,7 @@ const GlobalItem: React.FC<HistoryProps> = (props: HistoryProps) => {
               <IonInput disabled={true} label={t("general.default_uom") as string} labelPlacement="stacked" value={curUOM}></IonInput>
             </IonItem>
           </IonList>
-          <IonButton class="ion-float-right" fill="outline" color="secondary" onClick={() => goBack("/categories")}><IonIcon slot="start" icon={closeOutline}></IonIcon>{t("general.go_back")}</IonButton>
+          <IonButton class="ion-float-right" fill="outline" color="secondary" onClick={() => goBack("/categories")}><IonIcon slot="start" icon={closeCircleOutline}></IonIcon>{t("general.go_back")}</IonButton>
       </IonContent>
       <IonFooter>
       </IonFooter>

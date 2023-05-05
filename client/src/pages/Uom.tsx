@@ -1,19 +1,19 @@
 import { IonContent, IonPage, IonButton, IonList, IonInput, 
- IonItem, IonLabel, NavContext, IonIcon, useIonAlert, IonToolbar, IonButtons, IonItemDivider, IonGrid, IonRow, IonCol} from '@ionic/react';
+ IonItem, NavContext, IonIcon, useIonAlert, IonToolbar, IonButtons, IonItemDivider, IonGrid, IonRow, IonCol} from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useState, useEffect, useContext, useRef } from 'react';
-import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteCategoryFromItems, useDeleteGenericDocument,
-   useDeleteCategoryFromLists, useGetOneDoc, useItems, useRecipes } from '../components/Usehooks';
+import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteGenericDocument,
+    useGetOneDoc, useItems, useRecipes } from '../components/Usehooks';
 import { cloneDeep } from 'lodash';
-import { PouchResponse, HistoryProps, ListRow, RowType} from '../components/DataTypes';
-import { ItemDoc, ItemList, CategoryDoc, InitCategoryDoc, UomDoc, InitUomDoc } from '../components/DBSchema';
-import { add, addOutline, closeOutline, saveOutline, trashBinOutline, trashOutline } from 'ionicons/icons';
+import { PouchResponse, HistoryProps, RowType} from '../components/DataTypes';
+import { ItemDoc, ItemList, UomDoc, InitUomDoc } from '../components/DBSchema';
+import { add, addCircleOutline, closeCircleOutline, saveOutline, trashBinOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
-import { translatedCategoryName, translatedUOMName } from '../components/translationUtilities';
+import { translatedUOMName } from '../components/translationUtilities';
 import { useDeleteUomFromItems, useDeleteUomFromRecipes } from '../components/uomUtilities';
 import { isEmpty } from 'lodash';
 
@@ -262,11 +262,11 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
               <IonButton fill="outline" color="danger" onClick={() => deletePrompt()}><IonIcon slot="start" icon={trashOutline}></IonIcon>{t("general.delete")}</IonButton>
            </IonButtons>}
            <IonButtons slot="secondary">
-           <IonButton fill="outline" color="secondary" onClick={() => goBack("/uoms")}><IonIcon slot="start" icon={closeOutline}></IonIcon>{t("general.cancel")}</IonButton>
+           <IonButton fill="outline" color="secondary" onClick={() => goBack("/uoms")}><IonIcon slot="start" icon={closeCircleOutline}></IonIcon>{t("general.cancel")}</IonButton>
           </IonButtons>
           <IonButtons slot="end">
           <IonButton fill="solid" color="primary" onClick={() => updateThisUom()}>
-              <IonIcon slot="start" icon={(mode === "new" ? addOutline : saveOutline)}></IonIcon>
+              <IonIcon slot="start" icon={(mode === "new" ? addCircleOutline : saveOutline)}></IonIcon>
               {(mode === "new") ? t("general.add") : t("general.save")}
             </IonButton>
           </IonButtons>

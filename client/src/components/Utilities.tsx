@@ -1,9 +1,11 @@
 import { CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
-import { initUsersInfo, ListCombinedRows, LogLevel, RowType, UserIDList, UserInfo, UsersInfo } from './DataTypes';
+import { initUsersInfo, ListCombinedRows, RowType, UserIDList, UserInfo, UsersInfo } from './DataTypes';
 import { ListGroupDoc, ListGroupDocInit, UomDoc } from './DBSchema';
 import { cloneDeep } from 'lodash';
 import { DBCreds} from './RemoteDBState';
 import { PouchResponse, PouchResponseInit } from './DataTypes';
+import log, { LogLevelDesc } from 'loglevel';
+import prefix from "loglevel-plugin-prefix";
 
 export const apiConnectTimeout = 500;
 
@@ -50,7 +52,7 @@ export async function checkUserByEmailExists(email: string, remoteDBCreds: DBCre
         connectTimeout: apiConnectTimeout         
     };
     try { response = await CapacitorHttp.post(options);}
-    catch(err) {logger(LogLevel.ERROR,"ERROR: http:",err)};
+    catch(err) {log.error("CheckUserByEmail: http:",err)};
     return response?.data;
 }
 
@@ -70,7 +72,7 @@ export async function getUsersInfo(userIDList: UserIDList,apiServerURL: string, 
     };
     let response:HttpResponse;
     try { response = await CapacitorHttp.post(options); }
-    catch(err) {logger(LogLevel.ERROR,"HTTP Error: ",err); return usersInfo}
+    catch(err) {log.error("GetUsersInfo HTTP Error",err); return usersInfo}
     if (response && response.data) {
         if (response.data.hasOwnProperty("users")) {
             usersInfo = response.data.users
@@ -93,7 +95,7 @@ export async function updateUserInfo(apiServerURL: string, accessJWT: string, us
     }
     let response:HttpResponse;
     try { response = await CapacitorHttp.post(options)}
-    catch(err) {logger(LogLevel.ERROR,"HTTP Error: ",err); return result}
+    catch(err) {log.error("UpdateUserInfo HTTP Error: ",err); return result}
     if (response && response.data) {
         if (response.data.hasOwnProperty("success")) {
             result=response.data.success
@@ -104,12 +106,12 @@ export async function updateUserInfo(apiServerURL: string, accessJWT: string, us
 
 export async function initialSetupActivities(db: PouchDB.Database, username: string) {
  //  Migration to the new listgroup structure will create for existing users, this is for new users added later, or for offline model
-    logger(LogLevel.DEBUG,"SETUP: Running Initial Setup Activities for :",username);
+    log.debug("SETUP: Running Initial Setup Activities for :",username);
     const totalDocs = (await db.info()).doc_count
     const listGroupDocs = await db.find({ selector: { type: "listgroup", listGroupOwner: username, default: true},
          limit: totalDocs});
     if (listGroupDocs.docs.length === 0) {
-        logger(LogLevel.INFO,"STATUS: No default group found for ",username, "... creating now ...");
+        log.info("No default group found for ",username, "... creating now ...");
         const defaultListGroupDoc : ListGroupDoc = cloneDeep(ListGroupDocInit);
         defaultListGroupDoc.default = true;
         defaultListGroupDoc.name = username+" (default)";
@@ -120,7 +122,7 @@ export async function initialSetupActivities(db: PouchDB.Database, username: str
         try { response.pouchData = await db.post(defaultListGroupDoc);}
         catch(err) { response.successful = false; response.fullError = err;}
         if (!response.pouchData.ok) { response.successful = false;}
-        if (!response.successful) { console.error("Could not create new default listGroup for ",username); return;}
+        if (!response.successful) { log.error("Could not create new default listGroup for ",username); return;}
     }
 }
 
@@ -139,51 +141,43 @@ export async function adaptResultToBase64(res: Blob): Promise<string> {
 }
 
 export function getListGroupIDFromListOrGroupID(listOrGroupID: string, listCombinedRows: ListCombinedRows) : string | null {
-    let newListRow= listCombinedRows.find(lcr => lcr.listOrGroupID === listOrGroupID);
-    if (newListRow == undefined) {return null}
+    let newListRow = listCombinedRows.find(lcr => lcr.listOrGroupID === listOrGroupID);
+    if (newListRow === undefined) {return null}
     else { return newListRow.listGroupID}
 }
 
 export function getRowTypeFromListOrGroupID(listOrGroupID: string, listCombinedRows: ListCombinedRows) : RowType | null {
     let newListRow = listCombinedRows.find(lcr => lcr.listOrGroupID === listOrGroupID);
-    if (newListRow == undefined) {return null}
+    if (newListRow === undefined) {return null}
     else { return newListRow.rowType}
 }
 
 export function getUOMIDFromShortName(uomName: string, uomDocs: UomDoc[]) : string | null {
     let foundUOM = uomDocs.find(uom => (uom.name.toUpperCase() === uomName.toUpperCase()));
-    if (foundUOM == undefined) { return null}
+    if (foundUOM === undefined) { return null}
     else { return (foundUOM._id as string)}
 }
 
-export function logger(lvl: LogLevel, ...args: any) {
-    if (lvl >= LOG_LEVEL) {
-        let date=new Date();
-        let timePrefix=date.toLocaleDateString()+" "+date.toLocaleTimeString();
-        console.log(timePrefix+": ",...args);
-    }
-}
-
-function getLogLevel(level: string) {
-    switch (level.toUpperCase()) {
-        case "I":
-        case "INFO":
-        case "INFORMATION":
-            return LogLevel.INFO
-        case "D":
-        case "DEBUG":
-            return LogLevel.DEBUG
-        case "W":
-        case "WARN":
-        case "WARNING":
-            return LogLevel.WARNING
-        case "E":
-        case "ERROR":
-            return LogLevel.ERROR
-        default:
-            return LogLevel.INFO
-    }
+function startLogging(level: string) {
+    let uLevel=level.toUpperCase();
+    let targetLevel: LogLevelDesc
+    if (["0","TRACE","T"].includes(uLevel)) {
+        targetLevel="TRACE" 
+    } else if (["1","DEBUG","D"].includes(uLevel)) {
+        targetLevel="DEBUG"
+    } else if (["2","INFO","INFORMATION","I"].includes(uLevel)) {
+        targetLevel="INFO"
+    } else if (["3","WARN","WARNING","W"].includes(uLevel)) {
+        targetLevel="WARN"
+    } else if (["4","ERROR","E"].includes(uLevel)) {
+        targetLevel="ERROR"
+    } else if (["5","SILENT","S","NONE","N"].includes(uLevel)) {
+        targetLevel="SILENT"
+    } else {targetLevel="INFO"}
+    prefix.reg(log);
+    prefix.apply(log);
+    log.setLevel(targetLevel);
 }
 
 export const DEFAULT_API_URL=(window as any)._env_.DEFAULT_API_URL
-export const LOG_LEVEL= (window as any)._env_.LOG_LEVEL == undefined ? LogLevel.INFO : getLogLevel((window as any)._env_.LOG_LEVEL)
+export const LOG_LEVEL= (window as any)._env_.LOG_LEVEL === undefined ? startLogging("INFO") : startLogging((window as any)._env_.LOG_LEVEL)

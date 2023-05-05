@@ -8,7 +8,7 @@ import { cloneDeep } from 'lodash';
 import './Category.css';
 import { PouchResponse, HistoryProps, ListRow, RowType} from '../components/DataTypes';
 import { ItemDoc, ItemList, CategoryDoc, InitCategoryDoc } from '../components/DBSchema';
-import { addOutline, closeOutline, saveOutline, trashOutline } from 'ionicons/icons';
+import { addCircleOutline, closeCircleOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
@@ -174,11 +174,11 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
               <IonButton fill="outline" color="danger" onClick={() => deletePrompt()}><IonIcon slot="start" icon={trashOutline}></IonIcon>{t("general.delete")}</IonButton>
            </IonButtons>
            <IonButtons slot="secondary">
-           <IonButton fill="outline" color="secondary" onClick={() => goBack("/categories")}><IonIcon slot="start" icon={closeOutline}></IonIcon>{t("general.cancel")}</IonButton>
+           <IonButton fill="outline" color="secondary" onClick={() => goBack("/categories")}><IonIcon slot="start" icon={closeCircleOutline}></IonIcon>{t("general.cancel")}</IonButton>
           </IonButtons>
           <IonButtons slot="end">
           <IonButton fill="solid" color="primary" onClick={() => updateThisCategory()}>
-              <IonIcon slot="start" icon={(mode === "new" ? addOutline : saveOutline)}></IonIcon>
+              <IonIcon slot="start" icon={(mode === "new" ? addCircleOutline : saveOutline)}></IonIcon>
               {(mode === "new") ? t("general.add") : t("general.save")}
             </IonButton>
           </IonButtons>

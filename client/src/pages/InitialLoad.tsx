@@ -4,13 +4,13 @@ import { useContext, useEffect, useRef} from 'react';
 import { usePouch } from 'use-pouchdb';
 import { ConnectionStatus, RemoteDBStateContext } from '../components/RemoteDBState';
 import { navigateToFirstListID } from '../components/RemoteUtilities';
-import { initialSetupActivities, logger } from '../components/Utilities';
+import { initialSetupActivities } from '../components/Utilities';
 import ErrorPage from './ErrorPage';
 import { History } from 'history';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
 import { useTranslation } from 'react-i18next';
-import { LogLevel } from '../components/DataTypes';
 import { cloneDeep } from 'lodash';
+import log from 'loglevel';
 
 type InitialLoadProps = {
   history : History
@@ -27,7 +27,7 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
         async function initialStartup() {
             await initialSetupActivities(remoteDB as PouchDB.Database, String(remoteDBCreds.dbUsername));
             screenLoading.current=false;
-            logger(LogLevel.DEBUG,"Calling Nav from initial load",cloneDeep(listRows));
+            log.debug("Calling Nav from initial load",cloneDeep(listRows));
             await navigateToFirstListID(props.history,remoteDBCreds,listRows);
             setConnectionStatus(ConnectionStatus.initialNavComplete);
         }
