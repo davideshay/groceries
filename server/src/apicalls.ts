@@ -5,13 +5,14 @@ export const couchKey = process.env.COUCHDB_HMAC_KEY;
 export const couchAdminUser = process.env.COUCHDB_ADMIN_USER;
 export const couchAdminPassword = process.env.COUCHDB_ADMIN_PASSWORD;
 export const refreshTokenExpires = (process.env.REFRESH_TOKEN_EXPIRES == undefined) ? "30d" : process.env.REFRESH_TOKEN_EXPIRES;
-export const accessTokenExpires = (process.env.ACCESS_TOKEN_EXPIRES == undefined) ? "5m" : process.env.ACCESS_TOKEN_EXPIRES;
-export const enableScheduling = (process.env.ENABLE_SCHEDULING == undefined) ? true : Boolean(process.env.ENABLE_SCHEDULING);
+export const accessTokenExpires = (process.env.ACCESS_TOKEN_EXPIRES == undefined) ? "15m" : process.env.ACCESS_TOKEN_EXPIRES;
+export const enableScheduling = (process.env.ENABLE_SCHEDULING == undefined) ? true : getBooleanFromText(process.env.ENABLE_SCHEDULING);
 export const resolveConflictsFrequencyMinutes = (process.env.RESOLVE_CONFLICTS_FREQUENCY_MINUTES == undefined) ? 15 : process.env.RESOLVE_CONFLICTS_FREQUENCY_MINUTES;
 export const expireJWTFrequencyMinutes = (process.env.EXPIRE_JWT_FREQUENCY_MINUTES == undefined) ? 10 : process.env.EXPIRE_JWT_FREQUENCY_MINUTES;
 export const groceryUrl = (process.env.GROCERY_URL == undefined) ? "" : process.env.GROCERY_URL.endsWith("/") ? process.env.GROCERY_URL.slice(0,-1): process.env.GROCERY_URL;
 export const groceryAPIUrl = (process.env.GROCERY_API_URL == undefined) ? "" : process.env.GROCERY_API_URL.endsWith("/") ? process.env.GROCERY_API_URL.slice(0,-1): process.env.GROCERY_API_URL;
 export const groceryAPIPort = (process.env.GROCERY_API_PORT == undefined) ? "3333" : process.env.GROCERY_API_PORT;
+export const disableAccountCreation = (process.env.DISABLE_ACCOUNT_CREATION == undefined) ? false : getBooleanFromText(process.env.DISABLE_ACCOUNT_CREATION);
 const smtpHost = process.env.SMTP_HOST;
 const smtpPort = Number(process.env.SMTP_PORT);
 const smtpSecure = Boolean(process.env.SMTP_SECURE);
@@ -49,6 +50,13 @@ import { NextFunction, Request, Response } from 'express';
 import { CheckUseEmailReqBody, CheckUserExistsReqBody, CustomRequest, NewUserReqBody, RefreshTokenResponse, checkUserByEmailExistsResponse } from './datatypes';
 import { ConflictDoc, FriendDoc, UserDoc } from './DBSchema';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
+import log from 'loglevel';
+
+export function getBooleanFromText(val: string | boolean) {
+    if (val === true) {return true}; if (val === false) {return false};
+    let trueStrings=["TRUE","YES","1"];                                 
+    return trueStrings.includes(String(val).toUpperCase());
+}
 
 export async function checkUserExists(req: CustomRequest<CheckUserExistsReqBody>, res: Response) {
     const { username } = req.body;
@@ -200,6 +208,7 @@ export async function registerNewUser(req: CustomRequest<NewUserReqBody>, res: R
         invalidData: false,
         userAlreadyExists: false,
         createdSuccessfully: false,
+        creationDisabled: false,
         idCreated: "",
         refreshJWT: "",
         accessJWT: "",
@@ -209,15 +218,19 @@ export async function registerNewUser(req: CustomRequest<NewUserReqBody>, res: R
         fullname: fullname
     }
 
+    if (disableAccountCreation) {
+        registerResponse.creationDisabled=true;
+        return (registerResponse)
+    }
     if (isNothing(username) || isNothing(password) || isNothing(email) || isNothing(fullname)) {
         registerResponse.invalidData = true;
         return (registerResponse);
     }
-
     let userDoc = await getUserDoc(username);
     if (!userDoc.error) {
         registerResponse.userAlreadyExists = true;
     } 
+    log.debug("user already exists:",registerResponse.userAlreadyExists);
     if (!registerResponse.userAlreadyExists)  {
         let createResponse = await createNewUser({username: username, password: password, email: email, fullname: fullname}, deviceUUID);
         registerResponse.createdSuccessfully = !createResponse.error;
@@ -342,6 +355,10 @@ export async function createAccountUIPost(req: Request,res: Response) {
         createdSuccessfully: false
     }
 
+    if (disableAccountCreation) {
+        respObj.formError = "Account Creation is Disabled For this Service. Contact Administrator."
+        return (respObj);
+    }
     if (req.body.fullname.length < 2 ) {
         respObj.formError = "Please enter a full name 3 characters or longer";
         return (respObj);} 

@@ -5,7 +5,7 @@ import { AddListOptions, GlobalSettings } from './DBSchema';
 import { UomDoc, ItemDoc, ItemDocs, ItemList, ListDocs, ListDoc, CategoryDoc, GlobalItemDocs } from './DBSchema';
 import { cloneDeep } from 'lodash';
 import { t } from 'i18next';
-import { translatedCategoryName, translatedItemName } from './translationUtilities';
+import { translatedCategoryName, translatedItemName, translatedUOMName, translatedUOMShortName } from './translationUtilities';
 import { logger } from './Utilities';
 
 export function getGroupIDForList(listID: string, listDocs: ListDocs): string | null {
@@ -170,13 +170,7 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
         }
         itemRow.quantity =  list.hasOwnProperty("quantity") ? list.quantity : 0;
         const uomName = list.hasOwnProperty("uomName") ? list.uomName : null;
-        let uomDesc = "";
-        if (uomName != null) {
-            const uomDoc = uomDocs.find((el: UomDoc) => (el.name === uomName));
-            if (uomDoc !== undefined) {
-                uomDesc = t("uom."+uomName,{ count: itemRow.quantity});
-            }
-        }
+        let uomDesc=translatedUOMShortName(uomName,uomDocs)
         itemRow.uomDesc = uomDesc;
 
         let quantityUOMDesc = "";
@@ -281,6 +275,7 @@ export function getCommonKey(stateItemDoc: ItemDoc, key: string, listDocs: ListD
     let newItemDoc: ItemDoc ={
       type: "item",
       name: String(globalState.newItemName),
+      pluralName: String(globalState.newItemName),
       globalItemID: globalState.newItemGlobalItemID,
       listGroupID: String(listGroupID),
       imageID: null,

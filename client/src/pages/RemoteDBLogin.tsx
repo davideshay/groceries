@@ -232,6 +232,12 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
         await dismiss();
         return;
       }
+      if (createResponse.data.creationDisabled) {
+        credsCheck.errorText=(t("error.account_creation_disabled"));
+        setRemoteState(prevState => ({...prevState, formError: credsCheck.errorText}))
+        await dismiss();
+        return;
+      }
       if (!createResponse.data.createdSuccessfully) {
         credsCheck.errorText="";
         if (createResponse.data.invalidData) {credsCheck.errorText = t("error.invalid_data_entered");} 

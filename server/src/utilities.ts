@@ -5,6 +5,7 @@ import { UserDoc, FriendDoc, FriendDocs} from './DBSchema'
 import { DocumentScope, MangoQuery, MangoResponse, MaybeDocument } from "nano";
 import { cloneDeep } from "lodash";
 import { NewUserReqBody, UserObj, CustomRequest } from "./datatypes";
+import log from 'loglevel';
 
 export const uomContent = require("../data/uomContent.json")
 export const globalItems = require("../data/globalItems.json");
@@ -48,10 +49,9 @@ const UserResponseInit: UserResponse = {
 
 export async function getUserDoc(username: string) {
     const userResponse = cloneDeep(UserResponseInit)
-    
     let res: UserDoc | null = null;
     try { res = (await usersDBAsAdmin.get(couchUserPrefix+":"+username) as UserDoc | null)}
-    catch(err) { console.log("ERROR GETTING USER:",username); userResponse.error= true }
+    catch(err) { userResponse.error= true }
     if (!userResponse.error) {
         userResponse.email = String(res?.email);
         userResponse.fullname = String(res?.fullname);
@@ -65,7 +65,7 @@ export async function getUserByEmailDoc(email: string) {
     const query: MangoQuery={selector: {"email": {"$eq": email}}, limit: await totalDocCount(usersDBAsAdmin)};
     let res: MangoResponse<unknown> | null = null;
     try { res = (await usersDBAsAdmin.find(query) );}
-    catch(err) { console.log("ERROR getting user by email:",err); userResponse.error= true }
+    catch(err) { log.error("ERROR getting user by email:"); userResponse.error= true }
     if (!userResponse.error) {
         if (res != null && res.hasOwnProperty("docs")) {
             if (res.docs.length > 0) {
@@ -95,10 +95,13 @@ export async function createNewUser(userObj: UserObj, deviceUUID: string) {
         refreshJWT: null,
         accessJWT: null
     }
-    let refreshJWTs = {};
+    log.debug("Creating new user :"+userObj.username+" with device ID:",deviceUUID);
+    let refreshJWTs: any = {};
     if (deviceUUID !== "") {
         let newJWT = await generateJWT({username: userObj.username,deviceUUID: deviceUUID,includeRoles: false, timeString: refreshTokenExpires});
-        refreshJWTs = { deviceUUID: newJWT}
+        log.debug("Generated new JWT:",newJWT);
+        refreshJWTs[deviceUUID] = newJWT;
+//        refreshJWTs = {deviceUUID: newJWT}
         createResponse.refreshJWT = newJWT;
     }
     const newDoc = {

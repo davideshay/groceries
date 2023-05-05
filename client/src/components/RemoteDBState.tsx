@@ -149,6 +149,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
 
     function setRemoteDBCreds(newCreds: DBCreds) {
         remoteDBCreds.current = newCreds;
+        setPrefsDBCreds();
         forceUpdate();
     }
 

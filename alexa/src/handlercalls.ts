@@ -629,6 +629,7 @@ async function addNewItemToList(item: DefaultItemData,listGroupID: string,listID
     let addResponse: HandlerResponse = cloneDeep(HandlerResponseInit);
     let newItem: ItemDoc = cloneDeep(ItemDocInit);
     newItem.name=item.name;
+    newItem.pluralName=item.name;
     newItem.globalItemID=item.globalItemID;
     newItem.listGroupID=listGroupID;
     let newItemLists: ItemList[] = [];

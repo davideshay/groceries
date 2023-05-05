@@ -1,6 +1,6 @@
 import { todosNanoAsAdmin, usersNanoAsAdmin, couchDatabase, couchAdminPassword, couchAdminUser, couchdbUrl, couchdbInternalUrl, couchStandardRole,
 couchAdminRole, conflictsViewID, conflictsViewName, utilitiesViewID, refreshTokenExpires, accessTokenExpires,
-enableScheduling, resolveConflictsFrequencyMinutes,expireJWTFrequencyMinutes } from "./apicalls";
+enableScheduling, resolveConflictsFrequencyMinutes,expireJWTFrequencyMinutes, disableAccountCreation } from "./apicalls";
 import { resolveConflicts } from "./apicalls";
 import { expireJWTs } from './jwt'
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
@@ -9,6 +9,7 @@ import { v4 as uuidv4} from 'uuid';
 import { uomContent, categories, globalItems, totalDocCount } from "./utilities";
 import { DocumentScope, MangoResponse, MangoQuery } from "nano";
 import { CategoryDoc, GlobalItemDoc, ItemDoc, ListDoc, ListGroupDoc, UUIDDoc, UomDoc, UserDoc, appVersion, maxAppSupportedSchemaVersion } from "./DBSchema";
+import log from "loglevel";
 
 
 let uomContentVersion = 0;
@@ -531,7 +532,7 @@ async function createUtilitiesViews() {
     }
 }
 
-async function  checkAndCreateViews() {
+async function checkAndCreateViews() {
     await createConflictsView();
     await createUtilitiesViews();
 }
@@ -541,7 +542,8 @@ function isInteger(str: string) {
 }
 
 export async function dbStartup() {
-    console.log("STATUS: Starting up auth server for couchdb...");
+    log.setLevel("DEBUG");
+    log.info("STATUS: Starting up auth server for couchdb...");
     console.log("STATUS: App Version: ",appVersion);
     console.log("STATUS: Database Schema Version:",maxAppSupportedSchemaVersion);
     if (couchdbUrl == "") {console.log("ERROR: No environment variable for CouchDB URL"); return false;}
@@ -552,6 +554,7 @@ export async function dbStartup() {
     console.log("STATUS: Using database: ",couchDatabase);
     console.log("STATUS: Refresh token expires in ",refreshTokenExpires);
     console.log("STATUS: Access token expires in ",accessTokenExpires);
+    console.log("STATUS: User Account Creation is: ",disableAccountCreation ? "DISABLED" : "ENABLED");
     await createDBIfNotExists();
     await setDBSecurity();
     try {todosDBAsAdmin = todosNanoAsAdmin.use(couchDatabase);}

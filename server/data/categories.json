@@ -38,7 +38,4 @@
     { "_id" : "system:cat:auto", "name": "Automotive" },
     { "_id" : "system:cat:office", "name": "Office Supplies" },
     { "_id" : "system:cat:beauty", "name": "Beauty Supplies" }
-
-
-
 ]

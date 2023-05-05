@@ -129,7 +129,9 @@ spec:
          - name: ACCESS_TOKEN_EXPIRES
            value: "12h"
          - name: REFRESH_TOKEN_EXPIRES
-           value: "30d"      
+           value: "30d"
+         - name: DISABLE_ACCOUNT_CREATION
+           value: "false"
         ports:
         - containerPort: 80
 ---

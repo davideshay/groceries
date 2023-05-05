@@ -327,7 +327,8 @@ export const en_translations =
         "nothing_to_load": "Nothing To Load",
         "could_not_import_recipe_dup":"Could not import: {{recipe}} - Duplicate",
         "could_not_match_uom":"Could Not find UoM. Original was: {{name}} or {{pluralName}}",
-        "must_enter_a_plural_name":"Must Enter a Plural Name"
+        "must_enter_a_plural_name":"Must Enter a Plural Name",
+        "account_creation_disabled":"Account Creation Disabled"
     },
     "itemtext": {
         "item_is_on_these_lists": "Item is on these lists:",
