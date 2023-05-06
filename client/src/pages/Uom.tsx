@@ -7,7 +7,7 @@ import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteGenericDoc
 import { cloneDeep } from 'lodash';
 import { PouchResponse, HistoryProps, RowType} from '../components/DataTypes';
 import { ItemDoc, ItemList, UomDoc, InitUomDoc } from '../components/DBSchema';
-import { add, addCircleOutline, closeCircleOutline, saveOutline, trashBinOutline, trashOutline } from 'ionicons/icons';
+import { add, addCircleOutline, closeCircleOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
@@ -278,7 +278,7 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
                     <IonInput aria-label="" type="text" placeholder={t("general.new_placeholder") as string} onIonInput={(e) => updateCustomAlternateUom(index,String(e.detail.value))}  value={pageState.uomDoc.customAlternates![index]}></IonInput>                  
                   </IonCol>
                   <IonCol size="2">
-                    <IonButton onClick={() => deleteCustom(index)}><IonIcon icon={trashBinOutline}></IonIcon></IonButton>
+                    <IonButton onClick={() => deleteCustom(index)}><IonIcon icon={trashOutline}></IonIcon></IonButton>
                   </IonCol>
                 </IonRow>
               ))}

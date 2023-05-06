@@ -7,7 +7,7 @@ import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteGenericDoc
 import { cloneDeep } from 'lodash';
 import { PouchResponse, HistoryProps, RowType} from '../components/DataTypes';
 import { RecipeDoc, InitRecipeDoc, RecipeItem, UomDoc, ItemDoc, ItemDocInit, GlobalItemDoc, RecipeInstruction } from '../components/DBSchema';
-import { add, addCircleOutline, closeCircleOutline, pencilOutline, returnDownBackOutline, saveOutline, trashBinOutline, trashOutline } from 'ionicons/icons';
+import { add, addCircleOutline, closeCircleOutline, pencilOutline, returnDownBackOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
@@ -283,7 +283,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
         <IonCol size="2"><IonCheckbox aria-label="" checked={itemChecked} onIonChange={(ev) => checkItemOnList(ev.detail.checked,index)}></IonCheckbox></IonCol>
         <IonCol size="8">{fullItemName}</IonCol>
         <IonCol size="1"><IonButton fill="clear" onClick={() => editItemModal(index)}><IonIcon icon={pencilOutline}/></IonButton></IonCol>
-        <IonCol size="1"><IonButton fill="clear" onClick={() => deleteItemFromList(index)}><IonIcon icon={trashBinOutline} /></IonButton></IonCol>
+        <IonCol size="1"><IonButton fill="clear" onClick={() => deleteItemFromList(index)}><IonIcon icon={trashOutline} /></IonButton></IonCol>
       </IonRow>
     )
   })
@@ -384,7 +384,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
                 { pageState.recipeDoc.instructions.map((step,index) => (
                   <IonRow key={"step-"+index}>
                     <IonCol size="11"><IonTextarea autoGrow={true} aria-label="" class="recipe-step" value={step.stepText} onIonInput={(ev) => updateRecipeStep(index,String(ev.detail.value))}></IonTextarea></IonCol>
-                    <IonCol size="1"><IonButton onClick={() => deleteRecipeStep(index)} fill="clear"><IonIcon icon={trashBinOutline}/></IonButton></IonCol>
+                    <IonCol size="1"><IonButton onClick={() => deleteRecipeStep(index)} fill="clear"><IonIcon icon={trashOutline}/></IonButton></IonCol>
                   </IonRow>
                   ))
                 }
