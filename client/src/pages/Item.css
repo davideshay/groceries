@@ -16,3 +16,9 @@
   ion-img.item-image {
     height: 200px;
   }
+
+  #floating-error {
+    border: none;
+    outline: none;
+    box-shadow: 0 0 15px 10px var(--ion-item-background,#ffffff);
+  }

@@ -23,13 +23,23 @@ import { useTranslation } from 'react-i18next';
 import { translatedCategoryName, translatedItemName, translatedUOMName } from '../components/translationUtilities';
 import log from 'loglevel';
 
+enum ErrorLocation  {
+   Name, PluralName, General
+}
+
+const FormErrorInit = {  [ErrorLocation.Name]:       {errorMessage:"", hasError: false},
+                      [ErrorLocation.PluralName]: {errorMessage:"", hasError: false},
+                      [ErrorLocation.General]:    {errorMessage:"", hasError: false}
+                    }
+
 const Item: React.FC = (props) => {
   let { mode, itemid } = useParams<{mode: string, itemid: string}>();
   const routeItemID = (mode === "new" ? null : itemid)
   const [needInitItemDoc,setNeedInitItemDoc] = useState((mode === "new") ? true: false);
   const [stateItemDoc,setStateItemDoc] = useState<ItemDoc>(ItemDocInit);
   const [stateImageDoc,setStateImageDoc] = useState<ImageDoc>(ImageDocInit);
-  const [formError,setFormError] = useState("");
+  const [formErrors,setFormErrors] = useState(FormErrorInit);
+
   const updateItem  = useUpdateGenericDocument();
   const updateImage = useUpdateGenericDocument();
   const addItem = useCreateGenericDocument();
@@ -127,16 +137,16 @@ const Item: React.FC = (props) => {
   screenLoading.current=false;
   
   async function updateThisItem() {
-    setFormError(prevState => (""));
+    setFormErrors(prevState => (FormErrorInit));
     let result: PouchResponse = cloneDeep(PouchResponseInit);
     let imgResult: PouchResponse = cloneDeep(PouchResponseInit);
     let newItemDoc: ItemDoc = cloneDeep(stateItemDoc);
     if (stateItemDoc.name === undefined || stateItemDoc.name==="" || stateItemDoc.name === null) {
-      setFormError(prevState => (t("error.must_enter_a_name")));
+      setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.must_enter_a_name"), hasError: true}}))
       return false;
     }
     if (isEmpty(stateItemDoc.pluralName) && (stateItemDoc.globalItemID === null)) {
-      setFormError(prevState => (t("error.must_enter_a_plural_name")));
+      setFormErrors(prevState => ({...prevState,[ErrorLocation.PluralName]: {errorMessage: t("error.must_enter_a_plural_name"), hasError: true}}))
       return false;
     }
     if (isEmpty(stateItemDoc.pluralName) && (stateItemDoc.globalItemID !== null)) {
@@ -149,11 +159,11 @@ const Item: React.FC = (props) => {
       }
     })
     if (alreadyExists) {
-      setFormError(prevState => (t("error.cannot_use_name_existing_item")));
+      setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.cannot_use_name_existing_item"), hasError: true}}))
       return false;
     }
     if ( stateItemDoc.globalItemID == null && await checkNameInGlobal(db as PouchDB.Database,stateItemDoc.name.toUpperCase())) {
-      setFormError(prevState => (t("error.cannot_use_name_existing_globalitem")));
+      setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.cannot_use_name_existing_globalitem"), hasError: true}}))
       return false;
     }
     if ((mode === "new" && stateImageDoc.imageBase64 !== null) ||
@@ -176,7 +186,7 @@ const Item: React.FC = (props) => {
     if (result.successful) {
       goBack();
     } else {
-      setFormError(t("error.updating_item") as string);
+      setFormErrors(prevState => ({...prevState,[ErrorLocation.PluralName]: {errorMessage: t("error.updating_item"), hasError: true}}))
     }
   }
 
@@ -280,13 +290,13 @@ const Item: React.FC = (props) => {
   }
 
   async function deleteItemFromDB() {
-      setFormError(prevState => (""));
+      setFormErrors(prevState => (FormErrorInit));
       let result: PouchResponse;
       result = await delItem(stateItemDoc);
       if (result.successful) {
         goBack();
       } else {
-        setFormError(t("error.updating_item") as string);
+        setFormErrors(prevState => ({...prevState,[ErrorLocation.PluralName]: {errorMessage: t("error.updating_item"), hasError: true}}))
       }
   }
 
@@ -325,12 +335,22 @@ const Item: React.FC = (props) => {
     <IonPage>
       <PageHeader title={t("general.editing_item")+" "+ translatedItemName(stateItemDoc.globalItemID,stateItemDoc.name)} />
       <IonContent>
-          <IonList>
+          <IonList lines="none">
             <IonItem key="name">
-              <IonInput disabled={stateItemDoc.globalItemID != null} label={t("general.name") as string} labelPlacement="stacked" type="text" onIonInput={(e) => setStateItemDoc({...stateItemDoc, name: String(e.detail.value)})} value={translatedItemName(stateItemDoc.globalItemID,stateItemDoc.name,1)}></IonInput>
+              <IonInput disabled={stateItemDoc.globalItemID != null} label={t("general.name") as string}
+                        labelPlacement="stacked" type="text" onIonInput={(e) => setStateItemDoc({...stateItemDoc, name: String(e.detail.value)})}
+                        value={translatedItemName(stateItemDoc.globalItemID,stateItemDoc.name,1)}
+                        className={"ion-touched "+(formErrors[ErrorLocation.Name].hasError ? "ion-invalid": "")}
+                        errorText={formErrors[ErrorLocation.Name].errorMessage}>
+              </IonInput>
             </IonItem>
             <IonItem key="pluralname">
-              <IonInput disabled={stateItemDoc.globalItemID != null} label={t("general.plural_name") as string} labelPlacement="stacked" type="text" onIonInput={(e) => setStateItemDoc({...stateItemDoc, pluralName: String(e.detail.value)})} value={translatedItemName(stateItemDoc.globalItemID,(stateItemDoc.pluralName!),2)}></IonInput>
+              <IonInput disabled={stateItemDoc.globalItemID != null} label={t("general.plural_name") as string}
+                        labelPlacement="stacked" type="text" onIonInput={(e) => setStateItemDoc({...stateItemDoc, pluralName: String(e.detail.value)})}
+                        value={translatedItemName(stateItemDoc.globalItemID,(stateItemDoc.pluralName!),2)}
+                        className={"ion-touched "+(formErrors[ErrorLocation.PluralName].hasError ? "ion-invalid" : "")}
+                        errorText={formErrors[ErrorLocation.PluralName].errorMessage}>
+              </IonInput>
             </IonItem>
             <IonItem key="listgroup">
               <IonText >{t("general.list_group") + ": "}  {thisListGroup?.listGroupName}</IonText>
@@ -380,10 +400,12 @@ const Item: React.FC = (props) => {
             </IonCard>
             <ItemLists stateItemDoc={stateItemDoc} setStateItemDoc={setStateItemDoc}           
                       addCategoryPopup={addCategoryPopup} addUOMPopup={addUOMPopup} />
-            <IonItem key="formErrors">{formError}</IonItem>
           </IonList>
       </IonContent>
-      <IonFooter>
+      <IonFooter id="floating-error">
+        {
+          formErrors[ErrorLocation.General].hasError ? <IonItem class="shorter-item-some-padding" color="danger" lines="none">{formErrors[ErrorLocation.General].errorMessage}</IonItem> : <></>
+        }  
       <IonToolbar>
           <IonButtons slot="start">
             {mode !== "new" ? 

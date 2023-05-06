@@ -16,12 +16,20 @@ import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
 import { translatedCategoryName } from '../components/translationUtilities';
 
+enum ErrorLocation  {
+   Name, PluralName, General
+}
+
+const FormErrorInit = {  [ErrorLocation.Name]:       {errorMessage:"", hasError: false},
+                      [ErrorLocation.General]:    {errorMessage:"", hasError: false}
+                    }
+
 const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
   if ( mode === "new" ) { routeID = "<new>"};
   const [needInitCategoryDoc,setNeedInitCategoryDoc] = useState((mode === "new") ? true: false);
   const [stateCategoryDoc,setStateCategoryDoc] = useState<CategoryDoc>(InitCategoryDoc);
-  const [formError,setFormError] = useState<string>("");
+  const [formErrors,setFormErrors] = useState(FormErrorInit);
   const [deletingCategory,setDeletingCategory] = useState(false)
   const [presentAlert,dismissAlert] = useIonAlert();
   const updateCategory  = useUpdateGenericDocument();
@@ -61,9 +69,9 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   screenLoading.current=false;
 
   async function updateThisCategory() {
-    setFormError("");
+    setFormErrors(prevState=>(FormErrorInit));
     if (stateCategoryDoc.name === undefined || stateCategoryDoc.name === "" || stateCategoryDoc.name === null) {
-      setFormError(t("error.must_enter_a_name") as string);
+      setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.must_enter_a_name"), hasError: true}}))
       return false;
     }
     let categoryDup=false;
@@ -73,7 +81,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
       }
     });
     if (categoryDup) {
-      setFormError(t("error.duplicate_category_name") as string);
+      setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.duplicate_category_name"), hasError: true}}))
       return
     }
     let result: PouchResponse;
@@ -85,7 +93,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
     if (result.successful) {
         goBack("/categories");
     } else {
-        setFormError((t("error.updating_category") as string) + " " + result.errorCode + " : " + result.errorText + ". " + (t("error.please_retry") as string));
+        setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.updating_category"), hasError: true}}))
     } 
   }
   
@@ -116,19 +124,19 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   async function deleteCategoryFromDB() {
     let catItemDelResponse = await deleteCategoryFromItems(String(stateCategoryDoc._id));
     if (!catItemDelResponse.successful) {
-      setFormError(t("error.unable_remove_category_items") as string);
+      setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.unable_remove_category_items"), hasError: true}}))
       setDeletingCategory(false);
       return;
     }
     let catListDelResponse = await deleteCategoryFromLists(String(stateCategoryDoc._id));
     if (!catListDelResponse.successful) {
-      setFormError(t("error.unable_remove_category_lists") as string);
+      setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.unable_remove_category_lists"), hasError: true}}))
       setDeletingCategory(false);
       return;
     }
    let catDelResponse = await deleteCategory(stateCategoryDoc);
    if (!catDelResponse.successful) {
-     setFormError(t("error.unable_delete_category") as string);
+     setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.unable_delete_category"), hasError: true}}))
      setDeletingCategory(false);
      return;
    }
@@ -159,16 +167,22 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
     <IonPage>
       <PageHeader title={t("general.editing_category")+ translatedCategoryName(stateCategoryDoc._id,stateCategoryDoc.name)  } />
       <IonContent>
-          <IonList>
+          <IonList lines="none">
             <IonItem key="name">
-              <IonInput label={t("general.name") as string} disabled={stateCategoryDoc._id?.startsWith("system:cat")} labelPlacement="stacked" type="text" placeholder="<NEW>" onIonInput={(e) => setStateCategoryDoc({...stateCategoryDoc, name: String(e.detail.value)})} value={translatedCategoryName(stateCategoryDoc._id,stateCategoryDoc.name)}></IonInput>
+              <IonInput label={t("general.name") as string} disabled={stateCategoryDoc._id?.startsWith("system:cat")}
+              labelPlacement="stacked" type="text" placeholder="<NEW>"
+              onIonInput={(e) => setStateCategoryDoc({...stateCategoryDoc, name: String(e.detail.value)})}
+              value={translatedCategoryName(stateCategoryDoc._id,stateCategoryDoc.name)}
+              className={"ion-touched "+(formErrors[ErrorLocation.Name].hasError ? "ion-invalid": "")}
+              errorText={formErrors[ErrorLocation.Name].errorMessage}>
+              </IonInput>
             </IonItem>
             <IonItem key="color">
               <IonLabel position="stacked">{t("general.color")}</IonLabel>
               <input type="color" value={stateCategoryDoc.color} onChange={(e) => {setStateCategoryDoc((prevState) => ({...prevState,color: e.target.value}))}}></input>
             </IonItem>
           </IonList>
-          <IonItem>{formError}</IonItem>
+          <IonItem>{formErrors[ErrorLocation.General].hasError ? formErrors[ErrorLocation.General].errorMessage : <></>}</IonItem>
           <IonToolbar>
             <IonButtons slot="start">
               <IonButton fill="outline" color="danger" onClick={() => deletePrompt()}><IonIcon slot="start" icon={trashOutline}></IonIcon>{t("general.delete")}</IonButton>

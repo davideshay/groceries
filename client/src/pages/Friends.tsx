@@ -1,6 +1,6 @@
 import { IonContent, IonPage, IonList, IonItem, IonLabel,
         IonButton, useIonToast, 
-        IonFab, IonFabButton, IonIcon, IonInput, IonAlert, IonGrid, IonRow, IonCol } from '@ionic/react';
+        IonFab, IonFabButton, IonIcon, IonInput, IonAlert, IonGrid, IonRow, IonCol, IonText } from '@ionic/react';
 import { useState, useContext, Fragment, useRef } from 'react';
 import { Clipboard } from '@capacitor/clipboard';
 import { CapacitorHttp, HttpOptions } from '@capacitor/core';
@@ -112,7 +112,7 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
   function ButtonElem(friendRow: FriendRow) {
     if (friendRow.resolvedStatus === ResolvedFriendStatus.WaitingToRegister) {
       return(
-        <IonButton size="small" class="extra-small-button" onClick={() => showURL(friendRow)}>{t("general.URL")}</IonButton> 
+        <IonButton size="small" class="extra-small-button" onClick={() => showURL(friendRow)}>{t("general.url")}</IonButton> 
       )
     }
     else if (friendRow.resolvedStatus === ResolvedFriendStatus.PendingConfirmation)
@@ -126,12 +126,18 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
   function updateFriendsElem() {
     let friendRowsElem: JSX.Element[] = [];
     if (friendRows.length > 0) {
+      let elem=(<IonRow  class="ion-justify-content-center ion-align-items-center friend-row" key={"header"}>
+              <IonCol class="col-minimal-padding" size="6"><IonText color="primary" class="bold-header">Friend Name/Email</IonText></IonCol>
+              <IonCol class="col-minimal-padding" size="3"><IonText color="primary" class="bold-header">Status</IonText></IonCol>
+              <IonCol class="col-minimal-padding" size="3"><IonText color="primary" class="bold-header">Action</IonText></IonCol>
+            </IonRow>)
+      friendRowsElem.push(elem);      
       friendRows.forEach((friendRow: FriendRow) => {
         const itemKey = (friendRow.targetUserName === "" || friendRow.targetUserName === null) ? friendRow.targetEmail : friendRow.targetUserName;
-        let elem=(<IonRow  key={itemKey}>
-              <IonCol class="col-minimal-padding ion-align-items-center" size="3">{ButtonElem(friendRow)}</IonCol>
-              <IonCol class="col-minimal-padding ion-align-items-center" size="4"><IonLabel class="friend-label">{friendRow.friendStatusText}</IonLabel></IonCol>
-              <IonCol class="col-minimal-padding ion-align-items-center" size="5">{friendRow.targetFullName === "" ? friendRow.targetEmail : friendRow.targetFullName}</IonCol>
+        let elem=(<IonRow  class="ion-justify-content-center ion-align-items-center friend-row" key={itemKey}>
+              <IonCol class="col-minimal-padding" size="6">{friendRow.targetFullName === "" ? friendRow.targetEmail : friendRow.targetFullName}</IonCol>
+              <IonCol class="col-minimal-padding" size="3"><IonLabel class="friend-label">{friendRow.friendStatusText}</IonLabel></IonCol>
+              <IonCol class="col-minimal-padding" size="3">{ButtonElem(friendRow)}</IonCol>
             </IonRow>)
         friendRowsElem.push(elem);
       });

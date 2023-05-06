@@ -174,8 +174,8 @@ function startLogging(level: string) {
     } else if (["5","SILENT","S","NONE","N"].includes(uLevel)) {
         targetLevel="SILENT"
     } else {targetLevel="INFO"}
-    prefix.reg(log);
-    prefix.apply(log);
+//    prefix.reg(log);
+//    prefix.apply(log);
     log.setLevel(targetLevel);
 }
 

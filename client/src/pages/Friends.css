@@ -7,11 +7,22 @@ ion-label.friend-label {
 }
 
 ion-button.extra-small-button {
+    height: max-content;    
+    padding-block: 4px;
     margin: 0px;
-    padding: 0px;
-}
+}   
 
 ion-button.extra-small-button::part(native) {
-    height: 18px;
+    height: max-content;    
+    padding-block: 4px;
     margin: 0px;
+}
+
+ion-row.friend-row {
+    height: 3.5em;
+    border-bottom: 1px solid var(--ion-color-primary);
+}
+
+ion-text.bold-header {
+    font-weight: bold;
 }
