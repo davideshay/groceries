@@ -130,13 +130,17 @@ const Item: React.FC = (props) => {
     setFormError(prevState => (""));
     let result: PouchResponse = cloneDeep(PouchResponseInit);
     let imgResult: PouchResponse = cloneDeep(PouchResponseInit);
+    let newItemDoc: ItemDoc = cloneDeep(stateItemDoc);
     if (stateItemDoc.name === undefined || stateItemDoc.name==="" || stateItemDoc.name === null) {
       setFormError(prevState => (t("error.must_enter_a_name")));
       return false;
     }
-    if (isEmpty(stateItemDoc.pluralName)) {
+    if (isEmpty(stateItemDoc.pluralName) && (stateItemDoc.globalItemID === null)) {
       setFormError(prevState => (t("error.must_enter_a_plural_name")));
       return false;
+    }
+    if (isEmpty(stateItemDoc.pluralName) && (stateItemDoc.globalItemID !== null)) {
+      newItemDoc.pluralName = stateItemDoc.name;
     }
     let alreadyExists = false;
     itemRows.forEach((ir) => {
@@ -152,7 +156,6 @@ const Item: React.FC = (props) => {
       setFormError(prevState => (t("error.cannot_use_name_existing_globalitem")));
       return false;
     }
-    let newItemDoc = cloneDeep(stateItemDoc);
     if ((mode === "new" && stateImageDoc.imageBase64 !== null) ||
          (mode !== "new" && stateImageDoc.imageBase64 !== null && (newItemDoc.imageID === null))) {
           imgResult = await addImage(stateImageDoc);

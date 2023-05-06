@@ -247,6 +247,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         newItem.globalItemID = itemSearch.globalItemID;
         newItem.listGroupID = pageState.groupIDforSelectedList;
         newItem.name = itemSearch.itemName;
+        newItem.pluralName = itemSearch.itemName;
         listRows.forEach((lr) => {
           if (lr.listGroupID === pageState.groupIDforSelectedList) {
             let newItemList: ItemList = cloneDeep(ItemListInit); // sets to active true by default

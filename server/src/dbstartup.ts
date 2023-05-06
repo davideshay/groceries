@@ -14,11 +14,11 @@ import prefix from "loglevel-plugin-prefix";
 
 
 let uomContentVersion = 0;
-const targetUomContentVersion = 4;
+const targetUomContentVersion = 5;
 let categoriesVersion = 0;
-const targetCategoriesVersion = 1;
+const targetCategoriesVersion = 2;
 let globalItemVersion = 0;
-const targetGlobalItemVersion = 1;
+const targetGlobalItemVersion = 2;
 let schemaVersion = 0;
 const targetSchemaVersion = 3;
 
@@ -342,7 +342,27 @@ async function createGlobalItemContent() {
             try { dbResp = await todosDBAsAdmin.insert(globalItem);}
             catch(err) { log.error("Adding global item ",globalItem.name, " error: ",err);}
         } else {
-            log.info("Global Item ",globalItem.name," already exists...skipping");
+            log.info("Global Item ",globalItem.name," already exists...comparing values...");
+            let needsChanged=false;
+            let compareDoc=foundGlobalItemDocs.docs[docIdx];
+            if (globalItem.name !== compareDoc.name) {
+                compareDoc.name = globalItem.name;
+                needsChanged = true;
+            }
+            if (globalItem.defaultUOM !== compareDoc.defaultUOM) {
+                compareDoc.defaultUOM = globalItem.defaultUOM;
+                needsChanged = true;
+            }
+            if (globalItem.defaultCategoryID !== compareDoc.defaultCategoryID) {
+                compareDoc.defaultCategoryID = globalItem.defaultCategoryID;
+                needsChanged = true;
+            }
+            if (needsChanged) {
+                log.info("Item "+globalItem.name+ " had changed values. Reverting to original...");
+                let dbResp = null;
+                try {dbResp = await todosDBAsAdmin.insert(compareDoc)}
+                catch(err) {log.error("Error reverting values on doc "+globalItem.name,"error:",err)}
+            }
         }
     };
     log.info("Finished adding global Items, updating to Global Item Version:",targetGlobalItemVersion);

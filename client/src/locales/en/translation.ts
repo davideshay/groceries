@@ -375,7 +375,9 @@ export const en_translations =
         "hair": "Hair Products-Shampoo/Conditioner",
         "auto": "Automotive",
         "office": "Office Supplies",
-        "beauty": "Beauty Products"
+        "beauty": "Beauty Products",
+        "breakfast": "Breakfast (other)",
+        "coffeetea": "Coffee/Tea",
     },
     "uom": {
         "EA_one": "Each",
@@ -922,7 +924,15 @@ export const en_translations =
         "maplesyrup_one": "Maple Syrup",
         "maplesyrup_other": "Maple Syrups",
         "windshieldwiperfluid_one": "Windshield Wiper Fluid",
-        "windshieldwiperfluid_other": "Windshield Wiper Fluid"
-    }
+        "windshieldwiperfluid_other": "Windshield Wiper Fluid",
+        "coffee_one": "Coffee",
+        "coffee_other": "Coffee",
+        "coffeecreamer_one": "Coffee Creamer",
+        "coffeecreamer_other": "Coffee Creamers",
+        "tea_one": "Tea",
+        "tea_other": "Tea",
+        "clementines_one":"Clementine",
+        "clementines_other":"Clementines"
+        }
 }
 

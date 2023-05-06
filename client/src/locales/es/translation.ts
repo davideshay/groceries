@@ -375,7 +375,9 @@ export const es_translations =
         "hair": "Productos para el Cabello-Shampoo/Acondicionador",
         "auto": "Automotriz",
         "office": "Suministros de Oficina",
-        "beauty": "Productos de Belleza"
+        "beauty": "Productos de Belleza",
+        "breakfast": "Desayuno",
+        "coffeetea": "Café/Té",
     },
     "uom": {
         "EA_one": "Cada uno",
@@ -951,6 +953,14 @@ export const es_translations =
         "maplesyrup_one": "Jarabe de Arce",
         "maplesyrup_other": "Jarabe de Arce",
         "windshieldwiperfluid_one": "Líquido Limpiaparabrisas",
-        "windshieldwiperfluid_other": "Líquido Limpiaparabrisas"
+        "windshieldwiperfluid_other": "Líquido Limpiaparabrisas",
+        "coffee_one": "Café",
+        "coffee_other": "Café",
+        "coffeecreamer_one": "Crema de café",
+        "coffeecreamer_other": "Cremas de cafe",
+        "tea_one": "Té",
+        "tea_other": "Té",
+        "clementines_one":"Clementina",
+        "clementines_other":"Clementinas"
     }
 }
