@@ -1,13 +1,13 @@
 import { IonContent, IonPage, IonList, IonItem, IonLabel,
         IonButton, useIonToast, 
-        IonFab, IonFabButton, IonIcon, IonInput, IonAlert, IonGrid, IonRow, IonCol, IonText } from '@ionic/react';
+        IonFab, IonFabButton, IonIcon, IonInput, IonAlert, IonGrid, IonRow, IonCol, IonText, IonToolbar, IonButtons } from '@ionic/react';
 import { useState, useContext, Fragment, useRef } from 'react';
 import { Clipboard } from '@capacitor/clipboard';
 import { CapacitorHttp, HttpOptions } from '@capacitor/core';
 import { v4 as uuidv4 } from 'uuid';
 import { cloneDeep } from 'lodash';
 import { useCreateGenericDocument, useFriends, UseFriendState, useUpdateGenericDocument} from '../components/Usehooks';
-import { add } from 'ionicons/icons';
+import { add, addCircleOutline, closeCircleOutline } from 'ionicons/icons';
 import './Friends.css';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
 import { FriendRow, ResolvedFriendStatus, HistoryProps} from '../components/DataTypes';
@@ -253,11 +253,15 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
         </IonInput>
       </IonItem>
       <IonItem key="blankspace"></IonItem>
-      <IonItem key="formbuttons">
-        <IonButton key="addbutton" slot="start" onClick={() => submitForm()}>{t("general.add")}</IonButton>
-        <IonButton key="cancelbutton" slot="end" onClick={() => setPageState(prevState => ({...prevState,formError: "",  inAddMode: false, newFriendEmail: "", newFriendName: ""}))}>{t("general.cancel")}</IonButton>
-      </IonItem>
-      <IonItem key="formerrors">{pageState.formError}</IonItem>
+      <IonItem key="formerrors"><IonText color="danger">{pageState.formError}</IonText></IonItem>
+      <IonToolbar>
+        <IonButtons slot="secondary">
+          <IonButton key="cancelbutton" fill="outline" color="secondary" onClick={() => setPageState(prevState => ({...prevState,formError: "",  inAddMode: false, newFriendEmail: "", newFriendName: ""}))}><IonIcon slot="start" icon={closeCircleOutline}></IonIcon>{t("general.cancel")}</IonButton>
+        </IonButtons> 
+        <IonButtons slot="end">
+          <IonButton key="addbutton" fill="solid" color="primary" onClick={() => submitForm()}><IonIcon slot="start" icon={addCircleOutline}></IonIcon>{t("general.add")}</IonButton>
+        </IonButtons>
+      </IonToolbar>
       </Fragment>
       )
   }

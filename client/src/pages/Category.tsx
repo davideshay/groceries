@@ -1,5 +1,5 @@
 import { IonContent, IonPage, IonButton, IonList, IonInput, 
- IonItem, IonLabel, NavContext, IonIcon, useIonAlert, IonToolbar, IonButtons} from '@ionic/react';
+ IonItem, IonLabel, NavContext, IonIcon, useIonAlert, IonToolbar, IonButtons, IonText} from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteCategoryFromItems, useDeleteGenericDocument,
@@ -182,7 +182,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
               <input type="color" value={stateCategoryDoc.color} onChange={(e) => {setStateCategoryDoc((prevState) => ({...prevState,color: e.target.value}))}}></input>
             </IonItem>
           </IonList>
-          <IonItem>{formErrors[ErrorLocation.General].hasError ? formErrors[ErrorLocation.General].errorMessage : <></>}</IonItem>
+          <IonItem lines="none"  key="formerror">{formErrors[ErrorLocation.General].hasError ? <IonText color="danger">{formErrors[ErrorLocation.General].errorMessage}</IonText> : <></>}</IonItem>
           <IonToolbar>
             <IonButtons slot="start">
               <IonButton fill="outline" color="danger" onClick={() => deletePrompt()}><IonIcon slot="start" icon={trashOutline}></IonIcon>{t("general.delete")}</IonButton>

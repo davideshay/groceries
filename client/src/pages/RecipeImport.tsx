@@ -1,5 +1,5 @@
 import { IonContent, IonPage, IonButton, IonList, 
- IonItem, NavContext, IonIcon, IonToolbar, IonButtons, IonSelect, IonSelectOption} from '@ionic/react';
+ IonItem, NavContext, IonIcon, IonToolbar, IonButtons, IonSelect, IonSelectOption, IonText} from '@ionic/react';
 import { useState,  useContext, useRef } from 'react';
 import { useItems } from '../components/Usehooks';
 import { HistoryProps, RowType, RecipeFileTypes } from '../components/DataTypes';
@@ -89,7 +89,7 @@ const RecipeImport: React.FC<HistoryProps> = (props: HistoryProps) => {
               <IonButton onClick={() => pickImportFile()}>{t('general.import_file')}</IonButton>
             </IonItem>
           </IonList>
-          <IonItem>{pageState.formError}</IonItem>
+          <IonItem><IonText color="danger">{pageState.formError}</IonText></IonItem>
           <IonToolbar>
            <IonButtons slot="secondary">
            <IonButton fill="outline" color="secondary" onClick={() => goBack("/recipes")}><IonIcon slot="start" icon={returnDownBackOutline}></IonIcon>{t("general.go_back")}</IonButton>

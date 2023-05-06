@@ -1,5 +1,5 @@
 import { IonContent, IonPage, IonButton, IonList, IonInput, 
- IonItem, NavContext, IonIcon, useIonAlert, IonToolbar, IonButtons, IonItemDivider, IonGrid, IonRow, IonCol} from '@ionic/react';
+ IonItem, NavContext, IonIcon, useIonAlert, IonToolbar, IonButtons, IonItemDivider, IonGrid, IonRow, IonCol, IonText, IonFooter} from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteGenericDocument,
@@ -20,17 +20,27 @@ import { isEmpty } from 'lodash';
 type PageState = {
   uomDoc: UomDoc,
   needInitUomDoc: boolean,
-  formError: string,
   deletingUom: boolean
 }
+
+enum ErrorLocation  {
+   Name, Description, PluralDescription, Alternate, General
+}
+const FormErrorInit = {
+  [ErrorLocation.Name]: {errorMessage:"", hasError: false},
+  [ErrorLocation.Description]: {errorMessage:"", hasError: false},
+  [ErrorLocation.PluralDescription]: {errorMessage:"", hasError: false},
+  [ErrorLocation.Alternate]: {errorMessage:"",hasError: false},
+  [ErrorLocation.General]: {errorMessage:"", hasError: false} }
 
 const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
   if ( mode === "new" ) { routeID = "<new>"};
   const [pageState,setPageState] = useState<PageState>({
     uomDoc: InitUomDoc, needInitUomDoc: (mode === "new") ? true : false,
-    formError: "", deletingUom: false
+    deletingUom: false
   })
+  const [formErrors,setFormErrors] = useState(FormErrorInit);
   const [presentAlert,dismissAlert] = useIonAlert();
   const updateUom  = useUpdateGenericDocument();
   const createUom = useCreateGenericDocument();
@@ -70,17 +80,17 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
   screenLoading.current=false;
 
   async function updateThisUom() {
-    setPageState(prevState=>({...prevState,formError: ""}))
+    setFormErrors(prevState=>(FormErrorInit));
     if (isEmpty(pageState.uomDoc.name)) {
-      setPageState(prevState => ({...prevState,formError:t("error.must_enter_a_name") }))
+      setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.must_enter_a_name"), hasError: true }}));
       return false;
     }
     if (isEmpty(pageState.uomDoc.description)) {
-      setPageState(prevState => ({...prevState,formError:t("error.must_enter_description") }))
+      setFormErrors(prevState => ({...prevState,[ErrorLocation.Description]: {errorMessage: t("error.must_enter_description"), hasError: true }}));
       return false;
     }
     if (isEmpty(pageState.uomDoc.pluralDescription)) {
-      setPageState(prevState => ({...prevState,formError:t("error.must_enter_plural_description") }))
+      setFormErrors(prevState => ({...prevState,[ErrorLocation.PluralDescription]: {errorMessage: t("error.must_enter_plural_description"), hasError: true }}));
       return false;
     }
     let uomDup=false;
@@ -94,7 +104,7 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
       }
     });
     if (uomDup) {
-      setPageState(prevState => ({...prevState,formError:t("error.duplicate_uom_name") }))
+      setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.duplicate_uom_name"), hasError: true }}));
       return false;
     }
 
@@ -103,7 +113,7 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
       if (isEmpty(alt)) { blanks=true};
     })
     if (blanks) {
-      setPageState(prevState => ({...prevState,formError:t("error.blank_alternate_uom") }))
+      setFormErrors(prevState => ({...prevState,[ErrorLocation.Alternate]: {errorMessage: t("error.blank_alternate_uom"), hasError: true }}));
       return false;      
     }
 
@@ -113,7 +123,7 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
     let combinedAlts = upperAlternates.concat(upperCustomAlternates);
     let combinedSet = new Set(combinedAlts);
     if (combinedAlts.length !== combinedSet.size) {
-      setPageState(prevState => ({...prevState,formError:t("error.duplicate_alt_uom") }))
+      setFormErrors(prevState => ({...prevState,[ErrorLocation.Alternate]: {errorMessage: t("error.duplicate_alt_uom"), hasError: true }}));
       return false;
     }
     
@@ -126,7 +136,7 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
     if (result.successful) {
         goBack("/uoms");
     } else {
-        setPageState(prevState => ({...prevState,formError: (t("error.updating_category") as string) + " " + result.errorCode + " : " + result.errorText + ". " + (t("error.please_retry") as string)}))
+        setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.updating_uom")+" " + result.errorCode + " : " + result.errorText + ". " + (t("error.please_retry") as string), hasError: true }}));
     } 
   }
   
@@ -160,17 +170,20 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
   async function deleteUomFromDB() {
     let uomItemDelResponse = await deleteUomFromItems(String(pageState.uomDoc._id));
     if (!uomItemDelResponse.successful) {
-      setPageState(prevState=>({...prevState,deletingUom: false,formError:t("error.unable_remove_uom_items") }))
+      setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.unable_remove_uom_items"), hasError: true }}));
+      setPageState(prevState=>({...prevState,deletingUom: false }))
       return false;
     }
     let uomRecipeDelResponse = await deleteUomFromRecipes(String(pageState.uomDoc._id));
     if (!uomRecipeDelResponse.successful) {
-      setPageState(prevState=>({...prevState,deletingUom: false,formError:t("error.unable_remove_uom_recipes") }))
+      setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.unable_remove_uom_recipes"), hasError: true }}));
+      setPageState(prevState=>({...prevState,deletingUom: false}))
       return false;
     }
    let uomDelResponse = await deleteUom(pageState.uomDoc);
    if (!uomDelResponse.successful) {
-    setPageState(prevState=>({...prevState,deletingUom: false,formError:t("error.unable_delete_uom") }))
+    setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.unable_delete_uom"), hasError: true }}));
+    setPageState(prevState=>({...prevState,deletingUom: false }))
      return false;
    }
     goBack("/uoms");
@@ -221,15 +234,34 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
       <IonContent>
           <IonList>
             <IonItem key="name">
-              <IonInput label={t("general.uom_code") as string} disabled={pageState.uomDoc._id?.startsWith("system:uom")} labelPlacement="stacked" type="text" placeholder={t("general.new_placeholder") as string} onIonInput={(e) => setPageState(prevState=>({...prevState, uomDoc:{...prevState.uomDoc,  name: String(e.detail.value)}}))} value={pageState.uomDoc.name}></IonInput>
+              <IonInput label={t("general.uom_code") as string} disabled={pageState.uomDoc._id?.startsWith("system:uom")}
+                        labelPlacement="stacked" type="text" placeholder={t("general.new_placeholder") as string}
+                        onIonInput={(e) => setPageState(prevState=>({...prevState, uomDoc:{...prevState.uomDoc,  name: String(e.detail.value)}}))}
+                        value={pageState.uomDoc.name}
+                        className={"ion-touched "+(formErrors[ErrorLocation.Name].hasError ? "ion-invalid": "")}
+                        errorText={formErrors[ErrorLocation.Name].errorMessage}>
+            </IonInput>
             </IonItem>
             <IonItem key="description">
-              <IonInput label={t("general.description") as string} disabled={pageState.uomDoc._id?.startsWith("system:uom")} labelPlacement="stacked" type="text" placeholder={t("general.new_placeholder") as string} onIonInput={(e) => setPageState(prevState=>({...prevState, uomDoc:{...prevState.uomDoc,  description: String(e.detail.value)}}))} value={translatedUOMName(String(pageState.uomDoc._id),pageState.uomDoc.description,1)}></IonInput>
+              <IonInput label={t("general.description") as string} disabled={pageState.uomDoc._id?.startsWith("system:uom")}
+                        labelPlacement="stacked" type="text" placeholder={t("general.new_placeholder") as string}
+                        onIonInput={(e) => setPageState(prevState=>({...prevState, uomDoc:{...prevState.uomDoc,  description: String(e.detail.value)}}))}
+                        value={translatedUOMName(String(pageState.uomDoc._id),pageState.uomDoc.description,1)}
+                        className={"ion-touched "+(formErrors[ErrorLocation.Description].hasError ? "ion-invalid": "")}
+                        errorText={formErrors[ErrorLocation.Description].errorMessage}>
+              </IonInput>
             </IonItem>
             <IonItem key="plural_description">
-              <IonInput label={t("general.plural_description") as string} disabled={pageState.uomDoc._id?.startsWith("system:uom")} labelPlacement="stacked" type="text" placeholder={t("general.new_placeholder") as string} onIonInput={(e) => setPageState(prevState=>({...prevState, uomDoc:{...prevState.uomDoc,  pluralDescription: String(e.detail.value)}}))} value={translatedUOMName(String(pageState.uomDoc._id),pageState.uomDoc.pluralDescription,2)}></IonInput>
+              <IonInput label={t("general.plural_description") as string} disabled={pageState.uomDoc._id?.startsWith("system:uom")}
+                        labelPlacement="stacked" type="text" placeholder={t("general.new_placeholder") as string}
+                        onIonInput={(e) => setPageState(prevState=>({...prevState, uomDoc:{...prevState.uomDoc,  pluralDescription: String(e.detail.value)}}))}
+                        value={translatedUOMName(String(pageState.uomDoc._id),pageState.uomDoc.pluralDescription,2)}
+                        className={"ion-touched "+(formErrors[ErrorLocation.PluralDescription].hasError ? "ion-invalid": "")}
+                        errorText={formErrors[ErrorLocation.PluralDescription].errorMessage}>
+             </IonInput>
             </IonItem>
             <IonItemDivider>{t("general.alternate_abbreviations")}</IonItemDivider>
+              {formErrors[ErrorLocation.Alternate].hasError ? <IonItem class="shorter-item-some-padding" lines="none"><IonText color="danger">{formErrors[ErrorLocation.Alternate].errorMessage}</IonText></IonItem> : <></>}
             {
               pageState.uomDoc._id?.startsWith("system:uom") ?
               pageState.uomDoc.alternates?.map((alt,index) => (
@@ -255,7 +287,8 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
               <IonButton onClick={() => addNewCustom()}><IonIcon icon={add}></IonIcon></IonButton>
             </IonItem>
           </IonList>
-          <IonItem>{pageState.formError}</IonItem>
+          <IonFooter class="floating-error-footer">
+            {formErrors[ErrorLocation.General].hasError ? <IonItem class="shorter-item-some-padding" lines="none"><IonText color="danger">{formErrors[ErrorLocation.General].errorMessage}</IonText></IonItem> : <></>}         
           <IonToolbar>
             { pageState.uomDoc._id?.startsWith("system:uom") ? <></> :
             <IonButtons slot="start">
@@ -271,6 +304,7 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
             </IonButton>
           </IonButtons>
           </IonToolbar>
+          </IonFooter>
       </IonContent>
     </IonPage>
   );

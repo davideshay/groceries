@@ -327,7 +327,9 @@ export const de_translations =
         "nothing_to_load": "Nichts zu laden",
         "could_not_import_recipe_dup":"Konnte nicht importieren: {{recipe}} - Duplikat",
         "could_not_match_uom":"Konnte UOM nicht finden. Original war: {{name}} oder {{pluralName}}",
-        "must_enter_a_plural_name":"Es muss ein Pluralname eingegeben werden"
+        "must_enter_a_plural_name":"Es muss ein Pluralname eingegeben werden",
+        "account_creation_disabled":"Kontoerstellung deaktiviert",
+        "updating_uom": "Fehler beim Aktualisieren der Maßeinheit"    
     },
     "itemtext": {
         "item_is_on_these_lists": "Artikel ist auf diesen Listen:",

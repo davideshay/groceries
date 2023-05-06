@@ -334,7 +334,9 @@ export const es_translations =
         "nothing_to_load": "Nada que cargar",
         "could_not_import_recipe_dup":"No se pudo importar: {{recipe}} - Duplicado",
         "could_not_match_uom":"No se pudo encontrar la unidad de medida. Original era: {{name}} o {{pluralName}}",
-        "must_enter_a_plural_name":"Debe ingresar un nombre plural"    
+        "must_enter_a_plural_name":"Debe ingresar un nombre plural",
+        "account_creation_disabled":"creación de cuenta deshabilitada",
+        "updating_uom": "Error al actualizar la unidad de medida"    
     },
      "category": {
         "bakery": "Panadería",

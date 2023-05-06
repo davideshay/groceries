@@ -402,7 +402,7 @@ const Item: React.FC = (props) => {
                       addCategoryPopup={addCategoryPopup} addUOMPopup={addUOMPopup} />
           </IonList>
       </IonContent>
-      <IonFooter id="floating-error">
+      <IonFooter class="floating-error-footer">
         {
           formErrors[ErrorLocation.General].hasError ? <IonItem class="shorter-item-some-padding" color="danger" lines="none">{formErrors[ErrorLocation.General].errorMessage}</IonItem> : <></>
         }  
