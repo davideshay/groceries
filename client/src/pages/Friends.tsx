@@ -1,22 +1,23 @@
 import { IonContent, IonPage, IonList, IonItem, IonLabel,
         IonButton, useIonToast, 
-        IonFab, IonFabButton, IonIcon, IonInput, IonAlert, IonGrid, IonRow, IonCol } from '@ionic/react';
+        IonFab, IonFabButton, IonIcon, IonInput, IonAlert, IonGrid, IonRow, IonCol, IonText, IonToolbar, IonButtons } from '@ionic/react';
 import { useState, useContext, Fragment, useRef } from 'react';
 import { Clipboard } from '@capacitor/clipboard';
 import { CapacitorHttp, HttpOptions } from '@capacitor/core';
 import { v4 as uuidv4 } from 'uuid';
 import { cloneDeep } from 'lodash';
 import { useCreateGenericDocument, useFriends, UseFriendState, useUpdateGenericDocument} from '../components/Usehooks';
-import { add } from 'ionicons/icons';
+import { add, addCircleOutline, closeCircleOutline } from 'ionicons/icons';
 import './Friends.css';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
-import { FriendRow, ResolvedFriendStatus, HistoryProps, LogLevel } from '../components/DataTypes';
+import { FriendRow, ResolvedFriendStatus, HistoryProps} from '../components/DataTypes';
 import { FriendStatus } from '../components/DBSchema';
-import { checkUserByEmailExists, emailPatternValidation, apiConnectTimeout, logger } from '../components/Utilities';
+import { checkUserByEmailExists, emailPatternValidation, apiConnectTimeout } from '../components/Utilities';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
+import log from 'loglevel';
 
 /* 
 
@@ -111,7 +112,7 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
   function ButtonElem(friendRow: FriendRow) {
     if (friendRow.resolvedStatus === ResolvedFriendStatus.WaitingToRegister) {
       return(
-        <IonButton size="small" class="extra-small-button" onClick={() => showURL(friendRow)}>{t("general.URL")}</IonButton> 
+        <IonButton size="small" class="extra-small-button" onClick={() => showURL(friendRow)}>{t("general.url")}</IonButton> 
       )
     }
     else if (friendRow.resolvedStatus === ResolvedFriendStatus.PendingConfirmation)
@@ -125,12 +126,18 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
   function updateFriendsElem() {
     let friendRowsElem: JSX.Element[] = [];
     if (friendRows.length > 0) {
+      let elem=(<IonRow  class="ion-justify-content-center ion-align-items-center friend-row" key={"header"}>
+              <IonCol class="col-minimal-padding" size="6"><IonText color="primary" class="bold-header">Friend Name/Email</IonText></IonCol>
+              <IonCol class="col-minimal-padding" size="3"><IonText color="primary" class="bold-header">Status</IonText></IonCol>
+              <IonCol class="col-minimal-padding" size="3"><IonText color="primary" class="bold-header">Action</IonText></IonCol>
+            </IonRow>)
+      friendRowsElem.push(elem);      
       friendRows.forEach((friendRow: FriendRow) => {
         const itemKey = (friendRow.targetUserName === "" || friendRow.targetUserName === null) ? friendRow.targetEmail : friendRow.targetUserName;
-        let elem=(<IonRow  key={itemKey}>
-              <IonCol class="col-minimal-padding ion-align-items-center" size="3">{ButtonElem(friendRow)}</IonCol>
-              <IonCol class="col-minimal-padding ion-align-items-center" size="4"><IonLabel class="friend-label">{friendRow.friendStatusText}</IonLabel></IonCol>
-              <IonCol class="col-minimal-padding ion-align-items-center" size="5">{friendRow.targetFullName == "" ? friendRow.targetEmail : friendRow.targetFullName}</IonCol>
+        let elem=(<IonRow  class="ion-justify-content-center ion-align-items-center friend-row" key={itemKey}>
+              <IonCol class="col-minimal-padding" size="6">{friendRow.targetFullName === "" ? friendRow.targetEmail : friendRow.targetFullName}</IonCol>
+              <IonCol class="col-minimal-padding" size="3"><IonLabel class="friend-label">{friendRow.friendStatusText}</IonLabel></IonCol>
+              <IonCol class="col-minimal-padding" size="3">{ButtonElem(friendRow)}</IonCol>
             </IonRow>)
         friendRowsElem.push(elem);
       });
@@ -159,10 +166,9 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
 
     }
     let createFriendSuccessful=true;
-    let createResults;
-    try { createResults = await (remoteDB as PouchDB.Database).post(newFriendDoc) } 
-    catch(e) {createFriendSuccessful=false; logger(LogLevel.ERROR,e)}
-    if (!createFriendSuccessful) { logger(LogLevel.ERROR,"ERROR: Creating friend"); return false;}
+    try { await (remoteDB as PouchDB.Database).post(newFriendDoc) } 
+    catch(e) {createFriendSuccessful=false; log.error("SendFriendRequest",e)}
+    if (!createFriendSuccessful) { log.error("Creating friend"); return false;}
 
     const options: HttpOptions = {
       url: String(remoteDBCreds.apiServerURL+"/triggerregemail"),
@@ -175,7 +181,7 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
       };
       
     try {await CapacitorHttp.post(options)}
-    catch(err) {logger(LogLevel.ERROR,"ERROR sending friend email."); return false}
+    catch(err) {log.error("sending friend email."); return false}
 
     let confURL = remoteDBCreds.apiServerURL + "/createaccountui?uuid="+invuid;
     Clipboard.write({string: confURL});
@@ -221,7 +227,7 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
         inviteUUID: "",
         friendStatus: pendfrom1 ? FriendStatus.PendingFrom1 : FriendStatus.PendingFrom2
       }
-      logger(LogLevel.DEBUG,newFriendDoc);
+      log.debug("new friend doc to create:",newFriendDoc);
       let result = await createDoc(newFriendDoc);
       if (result.successful) {
           setPageState(prevState => ({...prevState,formError: "",inAddMode: false, newFriendEmail: ""}))
@@ -247,11 +253,15 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
         </IonInput>
       </IonItem>
       <IonItem key="blankspace"></IonItem>
-      <IonItem key="formbuttons">
-        <IonButton key="addbutton" slot="start" onClick={() => submitForm()}>{t("general.add")}</IonButton>
-        <IonButton key="cancelbutton" slot="end" onClick={() => setPageState(prevState => ({...prevState,formError: "",  inAddMode: false, newFriendEmail: "", newFriendName: ""}))}>{t("general.cancel")}</IonButton>
-      </IonItem>
-      <IonItem key="formerrors">{pageState.formError}</IonItem>
+      <IonItem key="formerrors"><IonText color="danger">{pageState.formError}</IonText></IonItem>
+      <IonToolbar>
+        <IonButtons slot="secondary">
+          <IonButton key="cancelbutton" fill="outline" color="secondary" onClick={() => setPageState(prevState => ({...prevState,formError: "",  inAddMode: false, newFriendEmail: "", newFriendName: ""}))}><IonIcon slot="start" icon={closeCircleOutline}></IonIcon>{t("general.cancel")}</IonButton>
+        </IonButtons> 
+        <IonButtons slot="end">
+          <IonButton key="addbutton" fill="solid" color="primary" onClick={() => submitForm()}><IonIcon slot="start" icon={addCircleOutline}></IonIcon>{t("general.add")}</IonButton>
+        </IonButtons>
+      </IonToolbar>
       </Fragment>
       )
   }

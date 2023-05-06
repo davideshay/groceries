@@ -1,5 +1,5 @@
 import { IonContent, IonPage, IonButton, IonList, IonInput, 
- IonItem, NavContext, IonIcon, useIonAlert, IonToolbar, IonButtons, IonItemDivider, IonGrid, IonRow, IonCol, IonCheckbox, IonSelect, IonSelectOption, IonFooter, IonModal, IonTitle, IonTextarea, useIonLoading} from '@ionic/react';
+ IonItem, NavContext, IonIcon, useIonAlert, IonToolbar, IonButtons, IonItemDivider, IonGrid, IonRow, IonCol, IonCheckbox, IonSelect, IonSelectOption, IonFooter, IonModal, IonTitle, IonTextarea, useIonLoading, IonText} from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteGenericDocument,
@@ -7,17 +7,17 @@ import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteGenericDoc
 import { cloneDeep } from 'lodash';
 import { PouchResponse, HistoryProps, RowType} from '../components/DataTypes';
 import { RecipeDoc, InitRecipeDoc, RecipeItem, UomDoc, ItemDoc, ItemDocInit, GlobalItemDoc, RecipeInstruction } from '../components/DBSchema';
-import { add, addOutline, closeOutline, pencilOutline, returnDownBackOutline, saveOutline, trashBinOutline, trashOutline } from 'ionicons/icons';
+import { add, addCircleOutline, closeCircleOutline, pencilOutline, returnDownBackOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
 import { GlobalStateContext } from '../components/GlobalState';
 import PageHeader from '../components/PageHeader';
-import RecipeItemSearch, { RecipeSearchData, RecipeSearchRow } from '../components/RecipeItemSearch';
+import RecipeItemSearch, { RecipeSearchData } from '../components/RecipeItemSearch';
 import { useTranslation } from 'react-i18next';
 import { translatedItemName, translatedUOMName } from '../components/translationUtilities';
 import './Recipe.css';
-import { findMatchingGlobalItem } from '../components/importUtiliites';
+import { findMatchingGlobalItem } from '../components/importUtilities';
 import { createNewItemFromRecipeItem, isRecipeItemOnList, updateItemFromRecipeItem } from '../components/recipeUtilities';
 import { usePouch } from 'use-pouchdb';
 import { RecipeItemInit } from '../components/DBSchema';
@@ -26,7 +26,6 @@ let fracty = require('fracty');
 type PageState = {
   recipeDoc: RecipeDoc,
   needInitDoc: boolean,
-  formError: string,
   deletingRecipe: boolean,
   selectedListOrGroupID: string | null
   selectedItemIdx: number,
@@ -34,14 +33,22 @@ type PageState = {
   addingInProcess: boolean,
 }
 
+enum ErrorLocation  {
+   Name, General
+}
+const FormErrorInit = { [ErrorLocation.Name]:       {errorMessage:"", hasError: false},
+                        [ErrorLocation.General]:    {errorMessage:"", hasError: false}
+                    }
+
 const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
   if ( mode === "new" ) { routeID = "<new>"};
   const [pageState, setPageState] = useState<PageState>({
       recipeDoc: cloneDeep(InitRecipeDoc),needInitDoc: (mode === "new") ? true: false,
-      formError: "",deletingRecipe: false, selectedListOrGroupID: null, selectedItemIdx: 0,
+      deletingRecipe: false, selectedListOrGroupID: null, selectedItemIdx: 0,
       modalOpen: false, addingInProcess: false
   })
+  const [formErrors,setFormErrors] = useState(FormErrorInit);
   const db = usePouch();
   const [presentAlert,dismissAlert] = useIonAlert();
   const [presentLoading, dismissLoading] = useIonLoading();
@@ -50,7 +57,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
   const deleteRecipe = useDeleteGenericDocument();
   const { doc: recipeDoc, loading: recipeLoading, dbError: recipeError} = useGetOneDoc(routeID);
   const { recipeDocs, recipesLoading, recipesError } = useRecipes();
-  const { dbError: itemError, itemRowsLoaded, itemRows } = useItems({selectedListGroupID: null, isReady: true, 
+  const { dbError: itemError, itemRowsLoaded } = useItems({selectedListGroupID: null, isReady: true, 
         needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const {goBack} = useContext(NavContext);
   const screenLoading = useRef(true);
@@ -90,9 +97,9 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
   screenLoading.current=false;
 
   async function updateThisRecipe() {
-    setPageState(prevState=>({...prevState,formError:""}))
+    setFormErrors(prevState=>(FormErrorInit));
     if (pageState.recipeDoc.name === undefined || pageState.recipeDoc.name === "" || pageState.recipeDoc.name === null) {
-      setPageState(prevState=>({...prevState,formError:t("error.must_enter_a_name") as string}))
+      setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.must_enter_a_name"), hasError: true }}));
       return false;
     }
     let recipeDup=false;
@@ -102,7 +109,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
       }
     });
     if (recipeDup) {
-      setPageState(prevState=>({...prevState,formError:t("error.duplicate_recipe_name") as string}))
+      setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.duplicate_recipe_name"), hasError: true }}));
       return
     }
     let result: PouchResponse;
@@ -114,14 +121,16 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
     if (result.successful) {
         goBack("/recipes");
     } else {
-        setPageState(prevState=>({...prevState,formError:(t("error.updating_recipe") as string) + " " + result.errorCode + " : " + result.errorText + ". " + (t("error.please_retry") as string)}))
+        setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: (t("error.updating_recipe") as string) + " " + result.errorCode + " : " + result.errorText + ". " + (t("error.please_retry") as string), hasError: true }}));
     } 
   }
   
   async function deleteRecipeFromDB() {
    let catDelResponse = await deleteRecipe(pageState.recipeDoc);
    if (!catDelResponse.successful) {
-    setPageState(prevState=>({...prevState,formError:t("error.unable_delete_recipe") as string, deletingRecipe: false}))
+    setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.unable_delete_recipe"), hasError: true }}));
+
+    setPageState(prevState=>({...prevState,deletingRecipe: false}))
      return;
    }
     goBack("/recipes");
@@ -233,11 +242,11 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
       if (inList && itemID !== null) {
         let status=await updateItemFromRecipeItem({itemID: itemID, listOrGroupID: pageState.selectedListOrGroupID,
               recipeItem: item, globalData: globalData, settings: globalState.settings, db: db})
-        if (status != "") {statusComplete = statusComplete + "\n" + status};   
+        if (status !== "") {statusComplete = statusComplete + "\n" + status};   
       } else {
         let status=await createNewItemFromRecipeItem({listOrGroupID: pageState.selectedListOrGroupID,
               recipeItem: item, globalData: globalData, settings: globalState.settings, db: db})
-        if (status != "") {statusComplete = statusComplete + "\n" + status};     
+        if (status !== "") {statusComplete = statusComplete + "\n" + status};     
       }
     }
     dismissLoading();
@@ -257,7 +266,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
     let itemChecked = item.addToList;
     let itemName = translatedItemName(item.globalItemID,item.name,item.recipeQuantity)
     let uomDesc = "";
-    if (item.recipeUOMName != null && item.recipeUOMName != "") {
+    if (item.recipeUOMName !== null && item.recipeUOMName !== "") {
         const uomDoc = globalData.uomDocs.find((el: UomDoc) => (el.name === item.recipeUOMName));
         if (uomDoc !== undefined) {
             uomDesc = t("uom."+item.recipeUOMName,{ count: item.recipeQuantity});
@@ -274,7 +283,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
         <IonCol size="2"><IonCheckbox aria-label="" checked={itemChecked} onIonChange={(ev) => checkItemOnList(ev.detail.checked,index)}></IonCheckbox></IonCol>
         <IonCol size="8">{fullItemName}</IonCol>
         <IonCol size="1"><IonButton fill="clear" onClick={() => editItemModal(index)}><IonIcon icon={pencilOutline}/></IonButton></IonCol>
-        <IonCol size="1"><IonButton fill="clear" onClick={() => deleteItemFromList(index)}><IonIcon icon={trashBinOutline} /></IonButton></IonCol>
+        <IonCol size="1"><IonButton fill="clear" onClick={() => deleteItemFromList(index)}><IonIcon icon={trashOutline} /></IonButton></IonCol>
       </IonRow>
     )
   })
@@ -350,7 +359,13 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
       {modalRecipeItem}
           <IonList>
             <IonItem key="name">
-              <IonInput label={t("general.name") as string} labelPlacement="stacked" type="text" placeholder={t("general.new_placeholder") as string} onIonInput={(e) => setPageState(prevState=>({...prevState, recipeDoc: {...prevState.recipeDoc,name: String(e.detail.value)}}))} value={pageState.recipeDoc.name}></IonInput>
+              <IonInput label={t("general.name") as string} labelPlacement="stacked" type="text"
+                        placeholder={t("general.new_placeholder") as string}
+                        onIonInput={(e) => setPageState(prevState=>({...prevState, recipeDoc: {...prevState.recipeDoc,name: String(e.detail.value)}}))}
+                        value={pageState.recipeDoc.name}
+                        className={"ion-touched "+(formErrors[ErrorLocation.Name].hasError ? "ion-invalid": "")}
+                        errorText={formErrors[ErrorLocation.Name].errorMessage}>
+              </IonInput>
             </IonItem>
             <IonItemDivider class="category-divider">{t("general.items_in_recipe")}</IonItemDivider>
             <IonItem key="items-in-recipe">
@@ -369,7 +384,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
                 { pageState.recipeDoc.instructions.map((step,index) => (
                   <IonRow key={"step-"+index}>
                     <IonCol size="11"><IonTextarea autoGrow={true} aria-label="" class="recipe-step" value={step.stepText} onIonInput={(ev) => updateRecipeStep(index,String(ev.detail.value))}></IonTextarea></IonCol>
-                    <IonCol size="1"><IonButton onClick={() => deleteRecipeStep(index)} fill="clear"><IonIcon icon={trashBinOutline}/></IonButton></IonCol>
+                    <IonCol size="1"><IonButton onClick={() => deleteRecipeStep(index)} fill="clear"><IonIcon icon={trashOutline}/></IonButton></IonCol>
                   </IonRow>
                   ))
                 }
@@ -379,15 +394,15 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
               </IonGrid>
             </IonItem>
           </IonList>
-          <IonItem>{pageState.formError}</IonItem>
           </IonContent>
           <IonFooter>
+            {formErrors[ErrorLocation.General].hasError ? <IonItem class="shorter-item-some-padding" lines="none"><IonText color="danger">{formErrors[ErrorLocation.General].errorMessage}</IonText></IonItem> : <></>}
             <IonGrid>
-              <IonRow>
-                <IonCol size="4">
-                  <IonButton onClick={() => addItemsToList()}>{t("general.add_items_to")}</IonButton>
+              <IonRow class="ion-justify-content-center ion-align-items-center">
+                <IonCol size="5">
+                  <IonButton size="small" className='extra-small-button'  onClick={() => addItemsToList()}>{t("general.add_items_to")}</IonButton>
                 </IonCol>
-                <IonCol size="8">
+                <IonCol size="7">
                 <IonSelect class="select-list-selector" aria-label="" interface="popover" onIonChange={(ev) => (setPageState(prevState=>({...prevState,selectedListOrGroupID: ev.detail.value})))} value={pageState.selectedListOrGroupID}>
                   { globalData.listCombinedRows.map(lcr => (
                   <IonSelectOption disabled={lcr.rowKey==="G-null"} className={lcr.rowType === RowType.list ? "indented" : ""} key={lcr.listOrGroupID} value={lcr.listOrGroupID}>
@@ -404,11 +419,11 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
                 <IonButton fill="outline" color="danger" onClick={() => deletePrompt()}><IonIcon slot="start" icon={trashOutline}></IonIcon>{t("general.delete")}</IonButton>
             </IonButtons>
             <IonButtons slot="secondary">
-            <IonButton fill="outline" color="secondary" onClick={() => goBack("/recipes")}><IonIcon slot="start" icon={closeOutline}></IonIcon>{t("general.cancel")}</IonButton>
+            <IonButton fill="outline" color="secondary" onClick={() => goBack("/recipes")}><IonIcon slot="start" icon={closeCircleOutline}></IonIcon>{t("general.cancel")}</IonButton>
             </IonButtons>
             <IonButtons slot="end">
             <IonButton fill="solid" color="primary" onClick={() => updateThisRecipe()}>
-                <IonIcon slot="start" icon={(mode === "new" ? addOutline : saveOutline)}></IonIcon>
+                <IonIcon slot="start" icon={(mode === "new" ? addCircleOutline : saveOutline)}></IonIcon>
                 {(mode === "new") ? t("general.add") : t("general.save")}
               </IonButton>
             </IonButtons>

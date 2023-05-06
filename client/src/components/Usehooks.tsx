@@ -3,16 +3,17 @@ import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { usePouch, useFind } from 'use-pouchdb'
 import { cloneDeep, pull } from 'lodash';
 import { RemoteDBStateContext } from './RemoteDBState';
-import { FriendRow,InitFriendRow, ResolvedFriendStatus, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType, UsersInfo, LogLevel } from './DataTypes';
+import { FriendRow,InitFriendRow, ResolvedFriendStatus, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType, UsersInfo } from './DataTypes';
 import { FriendDocs,FriendStatus, ListDoc, ListDocs, ItemDocs, ItemDoc, ItemList, ItemListInit, ConflictDocs, RecipeDoc} from './DBSchema';
 import { GlobalStateContext } from './GlobalState';
-import { adaptResultToBase64, getUsersInfo, logger } from './Utilities';
+import { adaptResultToBase64, getUsersInfo} from './Utilities';
 import { getCommonKey } from './ItemUtilities';
 import { GlobalDataContext } from './GlobalDataProvider';
 import { isPlatform } from '@ionic/core';
 import { fromBlob } from 'image-resize-compress';
 import { useTranslation } from 'react-i18next';
 import { translatedItemName } from './translationUtilities';
+import log from 'loglevel';
 
 const imageQuality = 80;
 export const imageWidth = 200;
@@ -63,7 +64,7 @@ export function useUpdateGenericDocument() {
           updatedDoc.updatedAt = curDateStr;
           let response: PouchResponse = cloneDeep(PouchResponseInit);
           try { response.pouchData = await db.put(updatedDoc); }
-          catch(err) { response.successful = false; response.fullError = err; logger(LogLevel.ERROR,"ERROR:",err);}
+          catch(err) { response.successful = false; response.fullError = err; log.error("updating doc, generic:",err);}
           if (!response.pouchData.ok) { response.successful = false;}
       return response
     },[db])

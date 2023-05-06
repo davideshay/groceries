@@ -5,13 +5,15 @@ export const couchKey = process.env.COUCHDB_HMAC_KEY;
 export const couchAdminUser = process.env.COUCHDB_ADMIN_USER;
 export const couchAdminPassword = process.env.COUCHDB_ADMIN_PASSWORD;
 export const refreshTokenExpires = (process.env.REFRESH_TOKEN_EXPIRES == undefined) ? "30d" : process.env.REFRESH_TOKEN_EXPIRES;
-export const accessTokenExpires = (process.env.ACCESS_TOKEN_EXPIRES == undefined) ? "5m" : process.env.ACCESS_TOKEN_EXPIRES;
-export const enableScheduling = (process.env.ENABLE_SCHEDULING == undefined) ? true : Boolean(process.env.ENABLE_SCHEDULING);
+export const accessTokenExpires = (process.env.ACCESS_TOKEN_EXPIRES == undefined) ? "15m" : process.env.ACCESS_TOKEN_EXPIRES;
+export const enableScheduling = (process.env.ENABLE_SCHEDULING == undefined) ? true : getBooleanFromText(process.env.ENABLE_SCHEDULING);
 export const resolveConflictsFrequencyMinutes = (process.env.RESOLVE_CONFLICTS_FREQUENCY_MINUTES == undefined) ? 15 : process.env.RESOLVE_CONFLICTS_FREQUENCY_MINUTES;
 export const expireJWTFrequencyMinutes = (process.env.EXPIRE_JWT_FREQUENCY_MINUTES == undefined) ? 10 : process.env.EXPIRE_JWT_FREQUENCY_MINUTES;
 export const groceryUrl = (process.env.GROCERY_URL == undefined) ? "" : process.env.GROCERY_URL.endsWith("/") ? process.env.GROCERY_URL.slice(0,-1): process.env.GROCERY_URL;
 export const groceryAPIUrl = (process.env.GROCERY_API_URL == undefined) ? "" : process.env.GROCERY_API_URL.endsWith("/") ? process.env.GROCERY_API_URL.slice(0,-1): process.env.GROCERY_API_URL;
 export const groceryAPIPort = (process.env.GROCERY_API_PORT == undefined) ? "3333" : process.env.GROCERY_API_PORT;
+export const disableAccountCreation = (process.env.DISABLE_ACCOUNT_CREATION == undefined) ? false : getBooleanFromText(process.env.DISABLE_ACCOUNT_CREATION);
+export const logLevel = (process.env.LOG_LEVEL == undefined) ? "INFO" : process.env.LOG_LEVEL.toUpperCase();
 const smtpHost = process.env.SMTP_HOST;
 const smtpPort = Number(process.env.SMTP_PORT);
 const smtpSecure = Boolean(process.env.SMTP_SECURE);
@@ -49,6 +51,13 @@ import { NextFunction, Request, Response } from 'express';
 import { CheckUseEmailReqBody, CheckUserExistsReqBody, CustomRequest, NewUserReqBody, RefreshTokenResponse, checkUserByEmailExistsResponse } from './datatypes';
 import { ConflictDoc, FriendDoc, UserDoc } from './DBSchema';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
+import log, { LogLevelDesc } from 'loglevel';
+
+export function getBooleanFromText(val: string | boolean) {
+    if (val === true) {return true}; if (val === false) {return false};
+    let trueStrings=["TRUE","YES","1"];                                 
+    return trueStrings.includes(String(val).toUpperCase());
+}
 
 export async function checkUserExists(req: CustomRequest<CheckUserExistsReqBody>, res: Response) {
     const { username } = req.body;
@@ -58,7 +67,7 @@ export async function checkUserExists(req: CustomRequest<CheckUserExistsReqBody>
     }
     let userResponse = await getUserDoc(username);
     response.userExists = !userResponse.error;
-    console.log("STATUS: Checking if user exists: ", response.username, " : ", response.userExists)
+    log.info("Checking if user exists: ", response.username, " : ", response.userExists)
     return (response);
 }
 
@@ -97,7 +106,7 @@ export async function authenticateJWT(req: Request,res: Response,next: NextFunct
 
 export async function issueToken(req: Request, res: Response) {
     const { username, password, deviceUUID } = req.body;
-    console.log("STATUS: issuing token for device ID:", JSON.stringify(deviceUUID));
+    log.info("issuing token for device ID:", JSON.stringify(deviceUUID));
     let response = {
         loginSuccessful: false,
         email: "",
@@ -110,7 +119,7 @@ export async function issueToken(req: Request, res: Response) {
     }
     let loginResponse = await couchLogin(username,password);
     if (!loginResponse.loginSuccessful) {
-         console.log("STATUS: Authentication failed for device: ",deviceUUID, " user: ",username);
+         log.info("Authentication failed for device: ",deviceUUID, " user: ",username);
          return (response);
         }     
     let userDoc: UserResponse = await getUserDoc(username);
@@ -128,14 +137,14 @@ export async function issueToken(req: Request, res: Response) {
      }
      (userDoc.fullDoc.refreshJWTs as any)[deviceUUID] = response.refreshJWT;
      try {let userUpd = usersDBAsAdmin.insert(userDoc.fullDoc);}
-     catch(err) {console.log("ERROR: Could not update user: ",username,":",err); response.loginSuccessful=false;}
+     catch(err) {log.error("Could not update user: ",username,":",err); response.loginSuccessful=false;}
     return(response);
 
 }
 
 export async function refreshToken(req: Request, res: Response) : Promise<{status: number, response: RefreshTokenResponse}> {
     const { refreshJWT, deviceUUID } = req.body;
-    console.log("Refreshing token for deviceUUID:",deviceUUID);
+    log.info("Refreshing token for deviceUUID:",deviceUUID);
     // validate incoming refresh token
     //      valid by signature and expiration date
     //      matches most recent in user DB
@@ -155,13 +164,13 @@ export async function refreshToken(req: Request, res: Response) : Promise<{statu
         return({status, response});
     }
     if (tokenDecode.payload.deviceUUID !== deviceUUID) {
-        console.log("SECURITY: Attempt to use refresh token with mis-matched device UUIDs. Invalidating all JWTs for ",tokenDecode.payload.sub);
+        log.warn("SECURITY: Attempt to use refresh token with mis-matched device UUIDs. Invalidating all JWTs for ",tokenDecode.payload.sub);
         invalidateToken(String(tokenDecode.payload.sub),deviceUUID,true)
         status = 403;
         return({status, response});
     }
     if (! (await JWTMatchesUserDB(refreshJWT,deviceUUID, String(tokenDecode.payload.sub)))) {
-        console.log("SECURITY: Login for user ",tokenDecode.payload.sub,"  didn't match stored database JWT. Invalidating this device.");
+        log.warn("SECURITY: Login for user ",tokenDecode.payload.sub,"  didn't match stored database JWT. Invalidating this device.");
         status = 403;
         await invalidateToken(String(tokenDecode.payload.sub), deviceUUID, false);
         return ({status, response});
@@ -175,13 +184,13 @@ export async function refreshToken(req: Request, res: Response) : Promise<{statu
     }
     (userResponse.fullDoc.refreshJWTs as any)[deviceUUID] = response.refreshJWT;
     try {let update = await usersDBAsAdmin.insert(userResponse.fullDoc);}
-    catch(err) {console.log("ERROR: Could not update user(refresh token):",err); response.valid=false;}
+    catch(err) {log.error("ERROR: Could not update user(refresh token):",err); response.valid=false;}
     return ({status, response});
 }
 
 export async function logout(req: Request, res: Response) {
     const { refreshJWT, deviceUUID, username } = req.body;
-    console.log("logging out user: ", username, " for device: ",deviceUUID);
+    log.info("Logging out user: ", username, " for device: ",deviceUUID);
     let userResponse: UserResponse = await getUserDoc(username);
     if (userResponse == null || userResponse.fullDoc == null) {
         res.sendStatus(404);
@@ -190,16 +199,17 @@ export async function logout(req: Request, res: Response) {
     (userResponse.fullDoc.refreshJWTs as any)[deviceUUID] = ""; 
     let update = null;
     try { update = await usersDBAsAdmin.insert(userResponse.fullDoc); res.sendStatus(200);}
-    catch(err) { console.log("ERROR: problem logging out user: ",err); res.sendStatus(404); }
+    catch(err) { log.error("Problem logging out user: ",err); res.sendStatus(404); }
 }
 
 export async function registerNewUser(req: CustomRequest<NewUserReqBody>, res: Response) {
     const {username, password, email, fullname, deviceUUID} = req.body;
-    console.log("STATUS: Registering New User: ",username);
+    log.info("Registering New User: ",username);
     const registerResponse = {
         invalidData: false,
         userAlreadyExists: false,
         createdSuccessfully: false,
+        creationDisabled: false,
         idCreated: "",
         refreshJWT: "",
         accessJWT: "",
@@ -209,15 +219,20 @@ export async function registerNewUser(req: CustomRequest<NewUserReqBody>, res: R
         fullname: fullname
     }
 
+    if (disableAccountCreation) {
+        registerResponse.creationDisabled=true;
+        log.warn("Trying to register user "+username+ " but account creation disabled");
+        return (registerResponse)
+    }
     if (isNothing(username) || isNothing(password) || isNothing(email) || isNothing(fullname)) {
         registerResponse.invalidData = true;
         return (registerResponse);
     }
-
     let userDoc = await getUserDoc(username);
     if (!userDoc.error) {
         registerResponse.userAlreadyExists = true;
     } 
+    log.debug("user already exists:",registerResponse.userAlreadyExists);
     if (!registerResponse.userAlreadyExists)  {
         let createResponse = await createNewUser({username: username, password: password, email: email, fullname: fullname}, deviceUUID);
         registerResponse.createdSuccessfully = !createResponse.error;
@@ -250,7 +265,7 @@ export async function getUsersInfo (req: Request, res: Response) : Promise<GetUs
     req.body.userIDs.forEach((uid: string) => { requestData.keys.push(String(couchUserPrefix)+":"+String(uid)) });
     let userRes: DocumentListResponse<UserDoc> | null = null;
     try { userRes = (await usersDBAsAdmin.list(requestData) as DocumentListResponse<UserDoc>);}
-    catch(err) { console.log("ERROR: problem retrieving users: ",err); getResponse.error= true }
+    catch(err) { log.error("Problem retrieving users: ",err); getResponse.error= true }
     if (!getResponse.error && !(userRes == null)) {
         userRes.rows.forEach(el => {
             getResponse.users.push({name: String(el.doc?.name), email: String(el.doc?.email), fullname: String(el.doc?.fullname)})
@@ -274,7 +289,7 @@ export async function updateUserInfo(req: Request, res: Response): Promise<Updat
     userDoc.fullDoc.fullname = req.body.fullname;
     let updateSuccessful = true;
     try { await usersDBAsAdmin.insert(userDoc.fullDoc); }
-    catch(e) {updateSuccessful = false;console.log(e);}
+    catch(e) {updateSuccessful = false;log.error("Could not update user info:",e);}
     userResp.success = updateSuccessful;
     return userResp;
 }
@@ -304,7 +319,7 @@ export async function createAccountUIGet(req: Request, res: Response) {
     }
     let foundFriendDocs: MangoResponse<FriendDoc> | null = null;
     try {foundFriendDocs =  (await todosDBAsAdmin.find(uuidq) as MangoResponse<FriendDoc>);}
-    catch(err) {console.log("ERROR: Could not find friend documents:",err);
+    catch(err) {log.error("Could not find friend documents:",err);
                 respObj.formError="Database Error Encountered";
                 return respObj;}
     let foundFriendDoc;
@@ -342,6 +357,10 @@ export async function createAccountUIPost(req: Request,res: Response) {
         createdSuccessfully: false
     }
 
+    if (disableAccountCreation) {
+        respObj.formError = "Account Creation is Disabled For this Service. Contact Administrator."
+        return (respObj);
+    }
     if (req.body.fullname.length < 2 ) {
         respObj.formError = "Please enter a full name 3 characters or longer";
         return (respObj);} 
@@ -398,7 +417,7 @@ export async function createAccountUIPost(req: Request,res: Response) {
     }
     let foundFriendDocs : MangoResponse<FriendDoc>;
     try {foundFriendDocs =  (await todosDBAsAdmin.find(emailq) as MangoResponse<FriendDoc>);}
-    catch(err) {console.log("ERROR: Could not find friend by email:",err); 
+    catch(err) {log.error("Could not find friend by email:",err); 
                 respObj.formError="Database error finding friend by email";
                 return respObj;}
     foundFriendDoc = null;
@@ -530,7 +549,7 @@ export async function resetPasswordUIPost(req: Request, res: Response) {
         newDoc.password=req.body.password;
         let newDocFiltered = _.pick(newDoc,['_id','_rev','name','email','fullname','roles','type','password','refreshJWTs']);
         try {let docupdate = await usersDBAsAdmin.insert(newDocFiltered);}
-        catch(err) {console.log("ERROR: Couldn't update user/reset password:",err);
+        catch(err) {log.error("Couldn't update user/reset password:",err);
                     respObj.formError="Database error resetting password";
                     respObj.resetSuccessfully=false;
                     return respObj;}
@@ -542,15 +561,15 @@ export async function resetPasswordUIPost(req: Request, res: Response) {
 export async function resolveConflicts() {
     let conflicts;
     try {conflicts = await todosDBAsAdmin.view(conflictsViewID,conflictsViewName);}
-    catch(err) {console.log("ERROR: Couldn't create conflicts view:",err); return false;}
-    console.log("STATUS: Resolving all conflicts started...");
+    catch(err) {log.error("Couldn't create conflicts view:",err); return false;}
+    log.info("Resolving all conflicts started...");
     let resolveFailure=false;
-    if (conflicts.rows?.length <= 0) {console.log("STATUS: no conflicts found"); return};
+    if (conflicts.rows?.length <= 0) {log.info("No conflicts found"); return};
     outerloop: for (let i = 0; i < conflicts.rows.length; i++) {
         const conflict = conflicts.rows[i];
         let curWinner: any;
         try { curWinner = await todosDBAsAdmin.get(conflict.id, {conflicts: true});}
-        catch(err) { console.log("ERROR: Error resolving conflicts:",err); resolveFailure = true;}
+        catch(err) { log.error("Error resolving conflicts:",err); resolveFailure = true;}
         if (curWinner == undefined || curWinner == null) { resolveFailure = true;}
         if (resolveFailure) {continue};
         let latestDocTime = curWinner.updatedAt; 
@@ -563,7 +582,7 @@ export async function resolveConflicts() {
             const losingRev = curWinner._conflicts[j];
             let curLoser: any;
             try { curLoser = await todosDBAsAdmin.get(conflict.id,{ rev: losingRev})}
-            catch(err) {console.log("ERROR: Error resolving conflicts:",err); resolveFailure=true;}
+            catch(err) {log.error("Error resolving conflicts:",err); resolveFailure=true;}
             if ( curLoser == null || curLoser == undefined) { resolveFailure = true;}
             if (resolveFailure) {continue outerloop};
             if (curLoser.updatedAt >= latestDocTime) {
@@ -586,11 +605,11 @@ export async function resolveConflicts() {
         }
         let bulkResult;
         try { bulkResult = await todosDBAsAdmin.bulk(bulkObj) }
-        catch(err) {console.log("ERROR: Error updating bulk docs on conflict resolve"); resolveFailure=true;}
-        console.log("STATUS: Bulk Update to resolve doc id : ",conflict.id, " succeeded");
+        catch(err) {log.error("Error updating bulk docs on conflict resolve"); resolveFailure=true;}
+        log.info("Bulk Update to resolve doc id : ",conflict.id, " succeeded");
         let logResult;
         try { logResult = await todosDBAsAdmin.insert(logObj as MaybeDocument)}
-        catch(err) { console.log("ERROR: creating conflict log document failed: ",err)};
+        catch(err) { log.error("ERROR: creating conflict log document failed: ",err)};
     }
 }
 

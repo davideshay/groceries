@@ -1,12 +1,12 @@
 import {initItemRow, ItemRow, ItemSearch, ListCombinedRow, ListCombinedRows,
-     ListRow, RowType, ItemSearchType, LogLevel} from '../components/DataTypes';
+     ListRow, RowType, ItemSearchType} from '../components/DataTypes';
 import { GlobalState } from "./GlobalState";
 import { AddListOptions, GlobalSettings } from './DBSchema';
 import { UomDoc, ItemDoc, ItemDocs, ItemList, ListDocs, ListDoc, CategoryDoc, GlobalItemDocs } from './DBSchema';
 import { cloneDeep } from 'lodash';
 import { t } from 'i18next';
-import { translatedCategoryName, translatedItemName } from './translationUtilities';
-import { logger } from './Utilities';
+import { translatedCategoryName, translatedItemName, translatedUOMShortName } from './translationUtilities';
+import log from 'loglevel';
 
 export function getGroupIDForList(listID: string, listDocs: ListDocs): string | null {
     let retGID = null;
@@ -170,13 +170,7 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
         }
         itemRow.quantity =  list.hasOwnProperty("quantity") ? list.quantity : 0;
         const uomName = list.hasOwnProperty("uomName") ? list.uomName : null;
-        let uomDesc = "";
-        if (uomName != null) {
-            const uomDoc = uomDocs.find((el: UomDoc) => (el.name === uomName));
-            if (uomDoc !== undefined) {
-                uomDesc = t("uom."+uomName,{ count: itemRow.quantity});
-            }
-        }
+        let uomDesc=translatedUOMShortName(uomName,uomDocs)
         itemRow.uomDesc = uomDesc;
 
         let quantityUOMDesc = "";
@@ -281,6 +275,7 @@ export function getCommonKey(stateItemDoc: ItemDoc, key: string, listDocs: ListD
     let newItemDoc: ItemDoc ={
       type: "item",
       name: String(globalState.newItemName),
+      pluralName: String(globalState.newItemName),
       globalItemID: globalState.newItemGlobalItemID,
       listGroupID: String(listGroupID),
       imageID: null,
@@ -327,9 +322,9 @@ export async function checkNameInGlobal(db: PouchDB.Database, name: string) {
     let nameExists=false;
     let globalItemDocs = null;
     try { globalItemDocs = await db.query('_utilities/ucase-globalitems',{ key: name.toUpperCase()}) }
-    catch(e) {logger(LogLevel.ERROR,e)};
+    catch(e) {log.error("checkNameInGlobal query error:",e)};
     if (globalItemDocs !== null && globalItemDocs.hasOwnProperty("rows") && globalItemDocs.rows.length > 0) {
-        logger(LogLevel.DEBUG,globalItemDocs);
+        log.debug(globalItemDocs);
         if (globalItemDocs.rows[0].key === name.toUpperCase()) {nameExists = true}
     }
     return nameExists;

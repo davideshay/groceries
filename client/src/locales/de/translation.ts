@@ -327,7 +327,9 @@ export const de_translations =
         "nothing_to_load": "Nichts zu laden",
         "could_not_import_recipe_dup":"Konnte nicht importieren: {{recipe}} - Duplikat",
         "could_not_match_uom":"Konnte UOM nicht finden. Original war: {{name}} oder {{pluralName}}",
-        "must_enter_a_plural_name":"Es muss ein Pluralname eingegeben werden"
+        "must_enter_a_plural_name":"Es muss ein Pluralname eingegeben werden",
+        "account_creation_disabled":"Kontoerstellung deaktiviert",
+        "updating_uom": "Fehler beim Aktualisieren der Maßeinheit"    
     },
     "itemtext": {
         "item_is_on_these_lists": "Artikel ist auf diesen Listen:",
@@ -374,7 +376,9 @@ export const de_translations =
         "hair": "Haarprodukte",
         "auto": "Auto",
         "office": "Bürobedarf",
-        "beauty": "Schönheitsprodukte"
+        "beauty": "Schönheitsprodukte",
+        "breakfast": "Frühstück (anderes)",
+        "coffeetea": "Kaffee/Tee",
     },
     "uom": {
         "EA_one": "Jedes",
@@ -921,7 +925,16 @@ export const de_translations =
         "maplesyrup_one": "Ahornsirup",
         "maplesyrup_other": "Ahornsirup",
         "windshieldwiperfluid_one": "Scheibenwischwasser",
-        "windshieldwiperfluid_other": "Scheibenwischwasser"
+        "windshieldwiperfluid_other": "Scheibenwischwasser",
+        "coffee_one": "Kaffee",
+        "coffee_other": "Kaffee",
+        "coffeecreamer_one": "Kaffeeweißer",
+        "coffeecreamer_other": "Kaffeeweißer",
+        "tea_one": "Tee",
+        "tea_other": "Tee",
+        "clementines_one":"Clementine",
+        "clementines_other":"Clementinen"
+
     }
 }
 

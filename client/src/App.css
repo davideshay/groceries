@@ -10,7 +10,7 @@ ion-item.list-button::part(native) {
 }
 
 ion-item-divider.category-divider {
-    --color: var(--ion-color-medium-shade)
+    --color: var(--ion-color-medium-shade);
 }
 
 ion-item.shorter-item-no-padding::part(native) {
@@ -32,3 +32,9 @@ ion-input.shorter-input.shorter-input2{
 ion-select.shorter-select.shorter-select2 {
     min-height: 42px;
 }
+
+.floating-error-footer {
+    border: none;
+    outline: none;
+    box-shadow: 0 0 15px 10px var(--ion-item-background,#ffffff);
+  }

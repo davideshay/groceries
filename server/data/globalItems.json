@@ -1,5 +1,5 @@
 [
-    { "name": "Bananas", "defaultUOM" : "BN", "defaultCategoryID": "system:cat:produce", "_id": "system:item:bananas"},
+    { "name": "Bananas", "defaultUOM" : "X2", "defaultCategoryID": "system:cat:produce", "_id": "system:item:bananas"},
     { "name": "Cosmic Crisp Apples", "defaultUOM": null, "defaultCategoryID": "system:cat:produce", "_id": "system:item:cosmiccrisp"},
     { "name": "Blueberries", "defaultUOM": null, "defaultCategoryID": "system:cat:produce","_id": "system:item:blueberries"},
     { "name": "Blackberries", "defaultUOM": null, "defaultCategoryID": "system:cat:produce","_id": "system:item:blackberries"},
@@ -237,6 +237,11 @@
     { "name": "Tortillas","defaultUOM": null, "defaultCategoryID": "system:cat:mexican","_id": "system:item:tortillas"},
     { "name": "Raisin Bran", "defaultUOM": "BX", "defaultCategoryID": "system:cat:cereal","_id": "system:item:raisinbran"},
     { "name": "Maple Syrup", "defaultUOM": "BX", "defaultCategoryID": "system:cat:cereal","_id": "system:item:maplesyrup"},
-    { "name": "Windshield Wiper Fluid", "defaultUOM": "BO", "defaultCategoryID": "system:cat:auto","_id": "system:item:windshieldwiperfluid"}
+    { "name": "Windshield Wiper Fluid", "defaultUOM": "BO", "defaultCategoryID": "system:cat:auto","_id": "system:item:windshieldwiperfluid"},
+    
+    { "name": "Coffee","defaultUOM":"CN","defaultCategoryID":"system:cat:coffeetea","_id": "system:item:coffee"},
+    { "name": "Coffee Creamer","defaultUOM":"JR","defaultCategoryID":"system:cat:dairy","_id":"system:item:coffeecreamer"},
+    { "name": "Tea","defaultUOM":"BX","defaultCategoryID":"system:cat:coffeetea","_id":"system:item:tea"},
+    { "name": "Clementines","defaultUOM":"BG","defaultCategoryID":"system:cat:produce","_id":"system:item:clementines"}
 
 ]

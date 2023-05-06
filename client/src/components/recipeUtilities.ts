@@ -2,12 +2,13 @@ import { cloneDeep } from "lodash";
 import { ItemDoc, ItemDocInit, ItemList, ItemListInit, RecipeItem } from "./DBSchema";
 import { GlobalDataState } from "./GlobalDataProvider";
 import { AddListOptions, GlobalSettings } from "./DBSchema";
-import { getListGroupIDFromListOrGroupID, getRowTypeFromListOrGroupID, logger } from "./Utilities";
+import { getListGroupIDFromListOrGroupID, getRowTypeFromListOrGroupID} from "./Utilities";
 import { translatedItemName, translatedUOMShortName } from "./translationUtilities";
-import { LogLevel, RowType } from "./DataTypes";
+import { RowType } from "./DataTypes";
 import { getCommonKey } from "./ItemUtilities";
 import { isEmpty } from "lodash";
 import { t } from 'i18next';
+import log from 'loglevel';
 
 export async function isRecipeItemOnList({ recipeItem, listOrGroupID,globalData, db} : 
     {recipeItem: RecipeItem, listOrGroupID: string | null,
@@ -35,11 +36,11 @@ export async function isRecipeItemOnList({ recipeItem, listOrGroupID,globalData,
             } else {
                 item.pluralName = item.name;
             }
-            if (translatedItemName(item.globalItemID,item.name,1).toLocaleUpperCase() == recipeItem.name.toLocaleUpperCase() ||
-                translatedItemName(item.globalItemID,item.name,2).toLocaleUpperCase() == recipeItem.name.toLocaleUpperCase() ||
-                translatedItemName(item.globalItemID,item.pluralName!,1).toLocaleUpperCase() == recipeItem.name.toLocaleUpperCase() ||
-                translatedItemName(item.globalItemID,item.pluralName!,2).toLocaleUpperCase() == recipeItem.name.toLocaleUpperCase() ||
-                (item.globalItemID !== null && (item.globalItemID == recipeItem.globalItemID) )) {
+            if (translatedItemName(item.globalItemID,item.name,1).toLocaleUpperCase() === recipeItem.name.toLocaleUpperCase() ||
+                translatedItemName(item.globalItemID,item.name,2).toLocaleUpperCase() === recipeItem.name.toLocaleUpperCase() ||
+                translatedItemName(item.globalItemID,item.pluralName!,1).toLocaleUpperCase() === recipeItem.name.toLocaleUpperCase() ||
+                translatedItemName(item.globalItemID,item.pluralName!,2).toLocaleUpperCase() === recipeItem.name.toLocaleUpperCase() ||
+                (item.globalItemID !== null && (item.globalItemID === recipeItem.globalItemID) )) {
                     foundItem = cloneDeep(item);
             } 
         }
@@ -62,20 +63,20 @@ export async function updateItemFromRecipeItem({itemID,listOrGroupID,recipeItem,
     let foundItem = null;
     let itemExists=true;
     try {foundItem = await db.get(itemID)}
-    catch(err) {logger(LogLevel.ERROR,"ERROR: ",err);itemExists=false};
+    catch(err) {log.error("Could not retrieve item",err);itemExists=false};
     if (itemExists && foundItem == null) {itemExists =false}
     if (!itemExists) {return t("error.no_item_found_update_recipe",{itemName: recipeItem.name}) as string};
     let rowType: RowType | null = getRowTypeFromListOrGroupID(listOrGroupID as string,globalData.listCombinedRows)
     let updItem: ItemDoc = cloneDeep(foundItem);
     updItem.lists.forEach(itemList => {
         if (!itemList.stockedAt) {return}
-        if (settings.addListOption == AddListOptions.dontAddAutomatically && 
-            rowType == RowType.list &&
+        if (settings.addListOption === AddListOptions.dontAddAutomatically && 
+            rowType === RowType.list &&
             itemList.listID !== listOrGroupID) { return }
         itemList.active = true;
         itemList.completed = false;
-        if (recipeItem.note != "") {
-            if (itemList.note = "") {
+        if (recipeItem.note !== "") {
+            if (itemList.note === "") {
                 itemList.note = recipeItem.note;
             } else {
                 overwroteNote = true;
@@ -89,18 +90,18 @@ export async function updateItemFromRecipeItem({itemID,listOrGroupID,recipeItem,
             uomMismatch = true;
 //            itemList.quantity = recipeItem.shoppingQuantity  -- May not want to update if different
             if (itemList.note === "") {
-                itemList.note = t("error.uom_mismatch_recipe_import_note",{quantity: recipeItem.shoppingQuantity, uom: translatedUOMShortName(recipeItem.shoppingUOMName,globalData) });
+                itemList.note = t("error.uom_mismatch_recipe_import_note",{quantity: recipeItem.shoppingQuantity, uom: translatedUOMShortName(recipeItem.shoppingUOMName,globalData.uomDocs) });
             }
         }
     })
     try {await db.put(updItem)}
-    catch(err) {logger(LogLevel.ERROR,"ERROR updating item:",err); updateError = true;}
+    catch(err) {log.error("Updating item:",err); updateError = true;}
     if (updateError) {
         status = t("error.updating_item_x",{name: updItem.name});
     } else {
         status = t("general.updated_item_successfully",{name: updItem.name});
         if (uomMismatch && (!isEmpty(recipeItem.shoppingUOMName) || !isEmpty(existingUOM))) {
-            status=status+ "\n"+t("error.uom_mismatch_recipe_import_status",{name: updItem.name, shoppingUom: translatedUOMShortName(recipeItem.shoppingUOMName,globalData), listUom: translatedUOMShortName(String(existingUOM),globalData)});
+            status=status+ "\n"+t("error.uom_mismatch_recipe_import_status",{name: updItem.name, shoppingUom: translatedUOMShortName(recipeItem.shoppingUOMName,globalData.uomDocs), listUom: translatedUOMShortName(String(existingUOM),globalData.uomDocs)});
         }
         if (overwroteNote) {
             status=status+"\n"+t("error.recipe_note_overwritten")
@@ -124,8 +125,8 @@ export async function createNewItemFromRecipeItem({listOrGroupID,recipeItem,glob
     newItem.name = recipeItem.name;
     globalData.listRows.filter(lr => lr.listGroupID === newItem.listGroupID).forEach(lr => {
         let newItemList :ItemList = cloneDeep(ItemListInit);
-        if (settings.addListOption == AddListOptions.dontAddAutomatically && 
-            rowType == RowType.list &&
+        if (settings.addListOption === AddListOptions.dontAddAutomatically && 
+            rowType === RowType.list &&
             lr.listDoc._id !== listOrGroupID) {
                 newItemList.active = false
             } else {
@@ -149,7 +150,7 @@ export async function createNewItemFromRecipeItem({listOrGroupID,recipeItem,glob
         newItem.lists.push(newItemList);
     })
     try {await db.post(newItem)}
-    catch(err) {logger(LogLevel.ERROR,"ERROR adding item:",err); addError = true;}
+    catch(err) {log.error("Adding item:",err); addError = true;}
     if (addError) {
         status = t("general.error_adding_item_x",{name: newItem.name});
     } else {

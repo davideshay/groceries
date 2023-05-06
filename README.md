@@ -204,6 +204,7 @@ RESOLVE_CONFLICTS_FREQUENCY_MINUTES: How often to resolve couchDB conflicts and 
 EXPIRE_JWT_FREQUENCY_MINUTES: Sweep the database and expire old JWT tokens. These would not be able to be used for logins, but this is still good practice and a back-stop.
 REFRESH_TOKEN_EXPIRES: A string such as "30d" for 30 days, or "24h" for 24 hours. Can be reasonably long since re-use detection is applied.
 ACCESS_TOKEN_EXPIRES: Same type of string, typically shorter as it will be renewed prior to expiration automatically by the refresh token. Could be "1d" or "12h" for example.
+DISABLE_ACCOUNT_CREATION: Set to "true" to disable new user account creation in the backend
 
 ```
 

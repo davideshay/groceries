@@ -16,35 +16,12 @@
                     "samples": []
                 },
                 {
-                    "name": "HelloWorldIntent",
-                    "slots": [],
-                    "samples": [
-                        "hello",
-                        "how are you",
-                        "say hi world",
-                        "say hi",
-                        "hi",
-                        "say hello world",
-                        "say hello"
-                    ]
-                },
-                {
                     "name": "AMAZON.NavigateHomeIntent",
                     "samples": []
                 },
                 {
                     "name": "AMAZON.FallbackIntent",
                     "samples": []
-                },
-                {
-                    "name": "AskWeatherIntent",
-                    "slots": [],
-                    "samples": [
-                        "How is the weather",
-                        "What is the weather",
-                        "How's the weather",
-                        "What's the weather"
-                    ]
                 },
                 {
                     "name": "ListsIntent",
@@ -58,9 +35,2203 @@
                         "What lists do I have",
                         "What are my lists"
                     ]
+                },
+                {
+                    "name": "ChangeListGroupIntent",
+                    "slots": [
+                        {
+                            "name": "listgroup",
+                            "type": "listgroup",
+                            "samples": [
+                                "Change to the default list group"
+                            ],
+                            "multipleValues": {
+                                "enabled": false
+                            }
+                        }
+                    ],
+                    "samples": [
+                        "change list group to {listgroup}",
+                        "change to my list group {listgroup}",
+                        "switch to {listgroup}",
+                        "change to {listgroup}",
+                        "switch to the list group {listgroup}",
+                        "change to the {listgroup} list group",
+                        "switch the list group to {listgroup}",
+                        "change the list group to {listgroup}",
+                        "switch the default list group to {listgroup}",
+                        "change the default list group to {listgroup}",
+                        "change to {listgroup} list group",
+                        "switch to list group {listgroup}",
+                        "switch to {listgroup} list group",
+                        "switch to my {listgroup} list group",
+                        "change to my {listgroup} list group",
+                        "change to list group {listgroup}"
+                    ]
+                },
+                {
+                    "name": "ListGroupsIntent",
+                    "slots": [],
+                    "samples": [
+                        "What are the list groups",
+                        "Which list groups are there",
+                        "What list groups do I have",
+                        "What are my list groups"
+                    ]
+                },
+                {
+                    "name": "ChangeListIntent",
+                    "slots": [
+                        {
+                            "name": "list",
+                            "type": "list"
+                        }
+                    ],
+                    "samples": [
+                        "change list to {list}",
+                        "change to my {list} list",
+                        "switch to my {list} list",
+                        "switch to {list} list",
+                        "switch to lhe list {list}",
+                        "change to {list} list",
+                        "change the default list to {list}",
+                        "switch the default list to {list}",
+                        "change the list to {list}",
+                        "switch the list to {list}",
+                        "change to the {list} list",
+                        "change to {list}",
+                        "switch to {list}",
+                        "switch to list {list}",
+                        "change to my list {list}",
+                        "change to list {list}"
+                    ]
+                },
+                {
+                    "name": "DefaultListGroupIntent",
+                    "slots": [],
+                    "samples": [
+                        "What is my current list group ",
+                        "What is the current group",
+                        "What is the current list group",
+                        "What is the default group",
+                        "What is the default list group",
+                        "What is my current group",
+                        "Which is my default list group",
+                        "What is my default group",
+                        "What is my default list group"
+                    ]
+                },
+                {
+                    "name": "AddItemToListIntent",
+                    "slots": [
+                        {
+                            "name": "item",
+                            "type": "AMAZON.Food",
+                            "samples": [
+                                "Add {item}",
+                                "Please add {item}",
+                                "I would like to add {item}",
+                                "{item}"
+                            ]
+                        },
+                        {
+                            "name": "list",
+                            "type": "list"
+                        },
+                        {
+                            "name": "listgroup",
+                            "type": "listgroup"
+                        },
+                        {
+                            "name": "addnomatch",
+                            "type": "yesno",
+                            "samples": [
+                                "no",
+                                "yes"
+                            ]
+                        }
+                    ],
+                    "samples": [
+                        "Add {item} to my list group",
+                        "Add {item} to my {listgroup} list group",
+                        "Add {item} to {listgroup}",
+                        "Add {item} to the {listgroup} list group",
+                        "Add {item} to {listgroup} list group",
+                        "Add {item} to {list} list",
+                        "Add {item} to the {list} list",
+                        "Add {item} to the list group",
+                        "Add {item} to the list",
+                        "Add {item} to {list}",
+                        "Add {item} to my {list} list",
+                        "Add {item} to my list"
+                    ]
+                },
+                {
+                    "name": "DefaultListIntent",
+                    "slots": [],
+                    "samples": [
+                        "Which is the current list",
+                        "Which is my current list",
+                        "What is the current list",
+                        "What is my current list",
+                        "Which list is my default",
+                        "Which list is the default",
+                        "What is the default list",
+                        "What is my default list"
+                    ]
                 }
             ],
-            "types": []
-        }
+            "types": [
+                {
+                    "name": "listgroup",
+                    "values": [
+                        {
+                            "id": "sys:listgroup:default",
+                            "name": {
+                                "value": "default",
+                                "synonyms": [
+                                    "current",
+                                    "standard"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "list",
+                    "values": [
+                        {
+                            "id": "sys:list:default",
+                            "name": {
+                                "value": "default",
+                                "synonyms": [
+                                    "current",
+                                    "standard"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "AMAZON.Food",
+                    "values": [
+                        {
+                            "id": "system:item:bananas",
+                            "name": {
+                                "value": "Banana",
+                                "synonyms": [
+                                    "Bananas"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:cosmiccrisp",
+                            "name": {
+                                "value": "Cosmic Crisp Apple",
+                                "synonyms": [
+                                    "Cosmic Crisp Apples"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:blueberries",
+                            "name": {
+                                "value": "Blueberry",
+                                "synonyms": [
+                                    "Blueberries"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:blackberries",
+                            "name": {
+                                "value": "Blackberry",
+                                "synonyms": [
+                                    "Blackberries"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:strawberries",
+                            "name": {
+                                "value": "Strawberry",
+                                "synonyms": [
+                                    "Strawberries"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:raspberries",
+                            "name": {
+                                "value": "Raspberry",
+                                "synonyms": [
+                                    "Raspberries"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:apples",
+                            "name": {
+                                "value": "Apple",
+                                "synonyms": [
+                                    "Apples"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:redpeppers",
+                            "name": {
+                                "value": "Red Pepper",
+                                "synonyms": [
+                                    "Red Peppers"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:greenpeppers",
+                            "name": {
+                                "value": "Green Pepper",
+                                "synonyms": [
+                                    "Green Peppers"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:orangepeppers",
+                            "name": {
+                                "value": "Orange Pepper",
+                                "synonyms": [
+                                    "Orange Peppers"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:potatoes",
+                            "name": {
+                                "value": "Potato",
+                                "synonyms": [
+                                    "Potatoes"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:sweetpotatoes",
+                            "name": {
+                                "value": "Sweet Potato",
+                                "synonyms": [
+                                    "Sweet Potatoes"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:babyspinach",
+                            "name": {
+                                "value": "Baby Spinach"
+                            }
+                        },
+                        {
+                            "id": "system:item:iceberglettuce",
+                            "name": {
+                                "value": "Iceberg Lettuce"
+                            }
+                        },
+                        {
+                            "id": "system:item:mixedgreens",
+                            "name": {
+                                "value": "Mixed Greens Lettuce"
+                            }
+                        },
+                        {
+                            "id": "system:item:redseedlessgrapes",
+                            "name": {
+                                "value": "Red Seedless Grapes"
+                            }
+                        },
+                        {
+                            "id": "system:item:greenseedlessgrapes",
+                            "name": {
+                                "value": "Green Seedless Grapes"
+                            }
+                        },
+                        {
+                            "id": "system:item:avocado",
+                            "name": {
+                                "value": "Avocado",
+                                "synonyms": [
+                                    "Avocados"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:mandarins",
+                            "name": {
+                                "value": "Mandarin",
+                                "synonyms": [
+                                    "Mandarins"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:tangerines",
+                            "name": {
+                                "value": "Tangerine",
+                                "synonyms": [
+                                    "Tangerines"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:orangesseedless",
+                            "name": {
+                                "value": "Orange Seedless",
+                                "synonyms": [
+                                    "Oranges Seedless"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:lemon",
+                            "name": {
+                                "value": "Lemon",
+                                "synonyms": [
+                                    "Lemons"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:lime",
+                            "name": {
+                                "value": "Lime",
+                                "synonyms": [
+                                    "Limes"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:canteloupe",
+                            "name": {
+                                "value": "Canteloupe",
+                                "synonyms": [
+                                    "Canteloupes"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:honeydewmelon",
+                            "name": {
+                                "value": "Honeydew Melon",
+                                "synonyms": [
+                                    "Honeydew Melons"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:watermelon",
+                            "name": {
+                                "value": "Watermelon",
+                                "synonyms": [
+                                    "Watermelons"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:seedlesswatermelon",
+                            "name": {
+                                "value": "Seedless Watermelon",
+                                "synonyms": [
+                                    "Seedless Watermelons"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:cherries",
+                            "name": {
+                                "value": "Cherry",
+                                "synonyms": [
+                                    "Cherries"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:pineapple",
+                            "name": {
+                                "value": "Pineapple",
+                                "synonyms": [
+                                    "Pineapples"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:mango",
+                            "name": {
+                                "value": "Mango",
+                                "synonyms": [
+                                    "Mangos"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:kiwi",
+                            "name": {
+                                "value": "Kiwi Fruit",
+                                "synonyms": [
+                                    "Kiwi Fruits"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:pear",
+                            "name": {
+                                "value": "Pear",
+                                "synonyms": [
+                                    "Pears"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:peaches",
+                            "name": {
+                                "value": "Peach",
+                                "synonyms": [
+                                    "Peaches"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:plum",
+                            "name": {
+                                "value": "Plum",
+                                "synonyms": [
+                                    "Plums"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:onion",
+                            "name": {
+                                "value": "Onion",
+                                "synonyms": [
+                                    "Onions"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:celery",
+                            "name": {
+                                "value": "Celery"
+                            }
+                        },
+                        {
+                            "id": "system:item:babycarrots",
+                            "name": {
+                                "value": "Baby Carrot",
+                                "synonyms": [
+                                    "Baby Carrots"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:tomatoes",
+                            "name": {
+                                "value": "Tomato",
+                                "synonyms": [
+                                    "Tomatoes"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:grapetomatoes",
+                            "name": {
+                                "value": "Grape Tomato",
+                                "synonyms": [
+                                    "Grape Tomatoes"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:cucumber",
+                            "name": {
+                                "value": "Cucumber",
+                                "synonyms": [
+                                    "Cucumbers"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:carrots",
+                            "name": {
+                                "value": "Carrot",
+                                "synonyms": [
+                                    "Carrots"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:broccoli",
+                            "name": {
+                                "value": "Broccoli"
+                            }
+                        },
+                        {
+                            "id": "system:item:mushrooms",
+                            "name": {
+                                "value": "Mushroom",
+                                "synonyms": [
+                                    "Mushrooms"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:asparagus",
+                            "name": {
+                                "value": "Asparagus"
+                            }
+                        },
+                        {
+                            "id": "system:item:garlic",
+                            "name": {
+                                "value": "Garlic"
+                            }
+                        },
+                        {
+                            "id": "system:item:cilantro",
+                            "name": {
+                                "value": "Cilantro"
+                            }
+                        },
+                        {
+                            "id": "system:item:corn",
+                            "name": {
+                                "value": "Corn"
+                            }
+                        },
+                        {
+                            "id": "system:item:cauliflower",
+                            "name": {
+                                "value": "Cauliflower"
+                            }
+                        },
+                        {
+                            "id": "system:item:jalapenopepper",
+                            "name": {
+                                "value": "Jalapeno Pepper",
+                                "synonyms": [
+                                    "Jalapeno Peppers"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:brusselsprouts",
+                            "name": {
+                                "value": "Brussel Sprout",
+                                "synonyms": [
+                                    "Brussel Sprouts"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:parsley",
+                            "name": {
+                                "value": "Parsley",
+                                "synonyms": [
+                                    "Parsleys"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:ginger",
+                            "name": {
+                                "value": "Ginger"
+                            }
+                        },
+                        {
+                            "id": "system:item:greenbeans",
+                            "name": {
+                                "value": "Green Beans"
+                            }
+                        },
+                        {
+                            "id": "system:item:squash",
+                            "name": {
+                                "value": "Squash"
+                            }
+                        },
+                        {
+                            "id": "system:item:zucchini",
+                            "name": {
+                                "value": "Zucchini",
+                                "synonyms": [
+                                    "Zucchinis"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:kale",
+                            "name": {
+                                "value": "Kale"
+                            }
+                        },
+                        {
+                            "id": "system:item:basil",
+                            "name": {
+                                "value": "Basil"
+                            }
+                        },
+                        {
+                            "id": "system:item:radishes",
+                            "name": {
+                                "value": "Radish",
+                                "synonyms": [
+                                    "Radishes"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:cabbage",
+                            "name": {
+                                "value": "Cabbage",
+                                "synonyms": [
+                                    "Cabbages"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:eggplant",
+                            "name": {
+                                "value": "Eggplant",
+                                "synonyms": [
+                                    "Eggplants"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:spinach",
+                            "name": {
+                                "value": "Spinach"
+                            }
+                        },
+                        {
+                            "id": "system:item:beets",
+                            "name": {
+                                "value": "Beet",
+                                "synonyms": [
+                                    "Beets"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:serranopeppers",
+                            "name": {
+                                "value": "Serrano Pepper",
+                                "synonyms": [
+                                    "Serrano Peppers"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:romainelettuce",
+                            "name": {
+                                "value": "Romaine Lettuce",
+                                "synonyms": [
+                                    "Romaine Lettuces"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:coleslaw",
+                            "name": {
+                                "value": "Cole Slaw"
+                            }
+                        },
+                        {
+                            "id": "system:item:shreddedlettuce",
+                            "name": {
+                                "value": "Shredded Lettuce"
+                            }
+                        },
+                        {
+                            "id": "system:item:salami",
+                            "name": {
+                                "value": "Salami"
+                            }
+                        },
+                        {
+                            "id": "system:item:pepperoni",
+                            "name": {
+                                "value": "Pepperoni"
+                            }
+                        },
+                        {
+                            "id": "system:item:deliham",
+                            "name": {
+                                "value": "Deli Ham"
+                            }
+                        },
+                        {
+                            "id": "system:item:slicedswisscheese",
+                            "name": {
+                                "value": "Sliced Swiss Cheese"
+                            }
+                        },
+                        {
+                            "id": "system:item:bologna",
+                            "name": {
+                                "value": "Bologna"
+                            }
+                        },
+                        {
+                            "id": "system:item:slicedturkey",
+                            "name": {
+                                "value": "Sliced Turkey"
+                            }
+                        },
+                        {
+                            "id": "system:item:slicedprovolone",
+                            "name": {
+                                "value": "Sliced Provolone"
+                            }
+                        },
+                        {
+                            "id": "system:item:rotisseriechicken",
+                            "name": {
+                                "value": "Rotisserie Chicken",
+                                "synonyms": [
+                                    "Rotisserie Chickens"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:wholemilk",
+                            "name": {
+                                "value": "Whole Milk"
+                            }
+                        },
+                        {
+                            "id": "system:item:1percentmilk",
+                            "name": {
+                                "value": "1% Milk"
+                            }
+                        },
+                        {
+                            "id": "system:item:2percentmilk",
+                            "name": {
+                                "value": "2% Milk"
+                            }
+                        },
+                        {
+                            "id": "system:item:skimmilk",
+                            "name": {
+                                "value": "Skim Milk"
+                            }
+                        },
+                        {
+                            "id": "system:item:orangejuice",
+                            "name": {
+                                "value": "Orange Juice",
+                                "synonyms": [
+                                    "Orange Juices"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:freshlemonade",
+                            "name": {
+                                "value": "Fresh Lemonade",
+                                "synonyms": [
+                                    "Fresh Lemonades"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:butter",
+                            "name": {
+                                "value": "Butter"
+                            }
+                        },
+                        {
+                            "id": "system:item:eggs",
+                            "name": {
+                                "value": "Egg",
+                                "synonyms": [
+                                    "Eggs"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:sourcream",
+                            "name": {
+                                "value": "Sour Cream",
+                                "synonyms": [
+                                    "Sour Creams"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:cottagecheese",
+                            "name": {
+                                "value": "Cottage Cheese"
+                            }
+                        },
+                        {
+                            "id": "system:item:whippedcream",
+                            "name": {
+                                "value": "Whipped Cream"
+                            }
+                        },
+                        {
+                            "id": "system:item:whitebread",
+                            "name": {
+                                "value": "White Bread",
+                                "synonyms": [
+                                    "White Breads"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:wheatbread",
+                            "name": {
+                                "value": "Wheat Bread",
+                                "synonyms": [
+                                    "Wheat Breads"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:cinnamonraisinbread",
+                            "name": {
+                                "value": "Cinnamon Raisin Bread",
+                                "synonyms": [
+                                    "Cinnamon Raisin Breads"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:englishmuffins",
+                            "name": {
+                                "value": "English Muffins Plain",
+                                "synonyms": [
+                                    "English Muffins Plains"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:englishmuffinscinnamonraisin",
+                            "name": {
+                                "value": "English Muffins Cinnamon Raisin"
+                            }
+                        },
+                        {
+                            "id": "system:item:frenchbread",
+                            "name": {
+                                "value": "French Bread",
+                                "synonyms": [
+                                    "French Breads"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:italianbread",
+                            "name": {
+                                "value": "Italian Bread",
+                                "synonyms": [
+                                    "Italian Breads"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:blueberrymuffins",
+                            "name": {
+                                "value": "Blueberry Muffin",
+                                "synonyms": [
+                                    "Blueberry Muffins"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:cinnamonmuffins",
+                            "name": {
+                                "value": "Cinnamon Muffin",
+                                "synonyms": [
+                                    "Cinnamon Muffins"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:chocolatechipmuffins",
+                            "name": {
+                                "value": "Chocolate Chip Muffin",
+                                "synonyms": [
+                                    "Chocolate Chip Muffins"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:groundbeef",
+                            "name": {
+                                "value": "Ground Beef"
+                            }
+                        },
+                        {
+                            "id": "system:item:filetmignon",
+                            "name": {
+                                "value": "Filet Mignon",
+                                "synonyms": [
+                                    "Filet Mignons"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:stripsteak",
+                            "name": {
+                                "value": "Strip Steak",
+                                "synonyms": [
+                                    "Strip Steaks"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:chickenbreasts",
+                            "name": {
+                                "value": "Chicken Breast",
+                                "synonyms": [
+                                    "Chicken Breasts"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:chickendrumsticks",
+                            "name": {
+                                "value": "Chicken Drumstick",
+                                "synonyms": [
+                                    "Chicken Drumsticks"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:italiansausage",
+                            "name": {
+                                "value": "Italian Sausage",
+                                "synonyms": [
+                                    "Italian Sausages"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:salmon",
+                            "name": {
+                                "value": "Salmon"
+                            }
+                        },
+                        {
+                            "id": "system:item:freshshrimp",
+                            "name": {
+                                "value": "Fresh Shrimp"
+                            }
+                        },
+                        {
+                            "id": "system:item:chips",
+                            "name": {
+                                "value": "Chips"
+                            }
+                        },
+                        {
+                            "id": "system:item:bbqchips",
+                            "name": {
+                                "value": "BBQ Chips"
+                            }
+                        },
+                        {
+                            "id": "system:item:sourcreamonionchips",
+                            "name": {
+                                "value": "Sour Cream & Onion Chips"
+                            }
+                        },
+                        {
+                            "id": "system:item:tortillachips",
+                            "name": {
+                                "value": "Tortilla Chips"
+                            }
+                        },
+                        {
+                            "id": "system:item:pretzels",
+                            "name": {
+                                "value": "Pretzel",
+                                "synonyms": [
+                                    "Pretzels"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:minipretzels",
+                            "name": {
+                                "value": "Mini Pretzels"
+                            }
+                        },
+                        {
+                            "id": "system:item:saltines",
+                            "name": {
+                                "value": "Saltine",
+                                "synonyms": [
+                                    "Saltines"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:almonds",
+                            "name": {
+                                "value": "Almond",
+                                "synonyms": [
+                                    "Almonds"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:peanuts",
+                            "name": {
+                                "value": "Peanut",
+                                "synonyms": [
+                                    "Peanuts"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:honeyroastedpeanuts",
+                            "name": {
+                                "value": "Honey Roasted Peanut",
+                                "synonyms": [
+                                    "Honey Roasted Peanuts"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:mixednuts",
+                            "name": {
+                                "value": "Mixed Nut",
+                                "synonyms": [
+                                    "Mixed Nuts"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:walnuts",
+                            "name": {
+                                "value": "Walnut",
+                                "synonyms": [
+                                    "Walnuts"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:pistachios",
+                            "name": {
+                                "value": "Pistachio",
+                                "synonyms": [
+                                    "Pistachios"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:cannedcorn",
+                            "name": {
+                                "value": "Canned Corn"
+                            }
+                        },
+                        {
+                            "id": "system:item:cannedcreamcorn",
+                            "name": {
+                                "value": "Canned Cream Corn"
+                            }
+                        },
+                        {
+                            "id": "system:item:cannedgreenbeans",
+                            "name": {
+                                "value": "Canned Green Bean"
+                            }
+                        },
+                        {
+                            "id": "system:item:cannedpeas",
+                            "name": {
+                                "value": "Canned Pea",
+                                "synonyms": [
+                                    "Canned Peas"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:cannedmushroomssliced",
+                            "name": {
+                                "value": "Canned Mushrooms (sliced)"
+                            }
+                        },
+                        {
+                            "id": "system:item:cannedmushrooms",
+                            "name": {
+                                "value": "Canned Mushrooms"
+                            }
+                        },
+                        {
+                            "id": "system:item:cannedtomatosauce",
+                            "name": {
+                                "value": "Canned Tomato Sauce"
+                            }
+                        },
+                        {
+                            "id": "system:item:cannedtomatopaste",
+                            "name": {
+                                "value": "Canned Tomato Paste"
+                            }
+                        },
+                        {
+                            "id": "system:item:cannedpetitedicedtomatoes",
+                            "name": {
+                                "value": "Canned Petite Diced Tomato",
+                                "synonyms": [
+                                    "Canned Petite Diced Tomatoes"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:tomatosoup",
+                            "name": {
+                                "value": "Tomato Soup",
+                                "synonyms": [
+                                    "Tomato Soups"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:chickennoodlesoup",
+                            "name": {
+                                "value": "Chicken Noodle Soup",
+                                "synonyms": [
+                                    "Chicken Noodle Soups"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:creamofmushroomsoup",
+                            "name": {
+                                "value": "Cream of Mushroom Soup",
+                                "synonyms": [
+                                    "Cream of Mushroom Soups"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:creamofchickensoup",
+                            "name": {
+                                "value": "Cream of Chicken Soup",
+                                "synonyms": [
+                                    "Cream of Chicken Soups"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:vegetablesoup",
+                            "name": {
+                                "value": "Vegetable Soup",
+                                "synonyms": [
+                                    "Vegetable Soups"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:bluecheesedressing",
+                            "name": {
+                                "value": "Blue Cheese Salad Dressing"
+                            }
+                        },
+                        {
+                            "id": "system:item:ranchdressing",
+                            "name": {
+                                "value": "Ranch Salad Dressing"
+                            }
+                        },
+                        {
+                            "id": "system:item:balsalmicvinaigrettedressing",
+                            "name": {
+                                "value": "Balsamic Vinaigrette Salad Dressing"
+                            }
+                        },
+                        {
+                            "id": "system:item:worcestershiresauce",
+                            "name": {
+                                "value": "Worcestershire Sauce",
+                                "synonyms": [
+                                    "Worcestershire Sauces"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:soysauce",
+                            "name": {
+                                "value": "Soy Sauce",
+                                "synonyms": [
+                                    "Soy Sauces"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:applejuice",
+                            "name": {
+                                "value": "Apple Juice",
+                                "synonyms": [
+                                    "Apple Juices"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:whitegrapejuice",
+                            "name": {
+                                "value": "White Grape Juice",
+                                "synonyms": [
+                                    "White Grape Juices"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:grapejuice",
+                            "name": {
+                                "value": "Grape Juice",
+                                "synonyms": [
+                                    "Grape Juices"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:tomatojuice",
+                            "name": {
+                                "value": "Tomato Juice",
+                                "synonyms": [
+                                    "Tomato Juices"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:cranberryjuice",
+                            "name": {
+                                "value": "Cranberry Juice",
+                                "synonyms": [
+                                    "Cranberry Juices"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:coke",
+                            "name": {
+                                "value": "Coke",
+                                "synonyms": [
+                                    "Cokes"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:dietcoke",
+                            "name": {
+                                "value": "Diet Coke",
+                                "synonyms": [
+                                    "Diet Cokes"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:pepsi",
+                            "name": {
+                                "value": "Pepsi",
+                                "synonyms": [
+                                    "Pepsis"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:dietpepsi",
+                            "name": {
+                                "value": "Diet Pepsi",
+                                "synonyms": [
+                                    "Diet Pepsis"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:bottledwater",
+                            "name": {
+                                "value": "Bottled Water",
+                                "synonyms": [
+                                    "Bottled Waters"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:seltzerwater",
+                            "name": {
+                                "value": "Seltzer Water",
+                                "synonyms": [
+                                    "Seltzer Waters"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:sparklingwater",
+                            "name": {
+                                "value": "Sparkling Water",
+                                "synonyms": [
+                                    "Sparkling Waters"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:vanillaicecream",
+                            "name": {
+                                "value": "Vanilla Ice Cream",
+                                "synonyms": [
+                                    "Vanilla Ice Creams"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:chocolateicecream",
+                            "name": {
+                                "value": "Chocolate Ice Cream",
+                                "synonyms": [
+                                    "Chocolate Ice Creams"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:neopolitanicecream",
+                            "name": {
+                                "value": "Neopolitan Ice Cream",
+                                "synonyms": [
+                                    "Neopolitan Ice Creams"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:frozenspinach",
+                            "name": {
+                                "value": "Frozen Spinach"
+                            }
+                        },
+                        {
+                            "id": "system:item:frozenbroccoli",
+                            "name": {
+                                "value": "Frozen Broccoli"
+                            }
+                        },
+                        {
+                            "id": "system:item:frozenpetitebroccoliflorets",
+                            "name": {
+                                "value": "Frozen Broccoli Petite Floret",
+                                "synonyms": [
+                                    "Frozen Broccoli Petite Florets"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:frozencorn",
+                            "name": {
+                                "value": "Frozen Corn",
+                                "synonyms": [
+                                    "Frozen Corns"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:frozengreenbeans",
+                            "name": {
+                                "value": "Frozen Green Beans"
+                            }
+                        },
+                        {
+                            "id": "system:item:frozenpeas",
+                            "name": {
+                                "value": "Frozen Peas"
+                            }
+                        },
+                        {
+                            "id": "system:item:frozenstrawberries",
+                            "name": {
+                                "value": "Frozen Strawberry",
+                                "synonyms": [
+                                    "Frozen Strawberries"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:frozenblueberries",
+                            "name": {
+                                "value": "Frozen Blueberry",
+                                "synonyms": [
+                                    "Frozen Blueberries"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:frozenwaffles",
+                            "name": {
+                                "value": "Frozen Waffle",
+                                "synonyms": [
+                                    "Frozen Waffles"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:frozenpancakes",
+                            "name": {
+                                "value": "Frozen Pancake",
+                                "synonyms": [
+                                    "Frozen Pancakes"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:frozentatertots",
+                            "name": {
+                                "value": "Frozen Tater Tot",
+                                "synonyms": [
+                                    "Frozen Tater Tots"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:frozenfrenchfries",
+                            "name": {
+                                "value": "Frozen French Fry",
+                                "synonyms": [
+                                    "Frozen French Fries"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:pierogies",
+                            "name": {
+                                "value": "Pierogies"
+                            }
+                        },
+                        {
+                            "id": "system:item:ketchup",
+                            "name": {
+                                "value": "Ketchup"
+                            }
+                        },
+                        {
+                            "id": "system:item:bbqsauce",
+                            "name": {
+                                "value": "BBQ Sauce",
+                                "synonyms": [
+                                    "BBQ Sauces"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:blackolives",
+                            "name": {
+                                "value": "Black Olive",
+                                "synonyms": [
+                                    "Black Olives"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:vegetableoil",
+                            "name": {
+                                "value": "Vegetable Oil"
+                            }
+                        },
+                        {
+                            "id": "system:item:oliveoil",
+                            "name": {
+                                "value": "Olive Oil"
+                            }
+                        },
+                        {
+                            "id": "system:item:semisweetchocchips",
+                            "name": {
+                                "value": "Semi-Sweet Chocolate Chips"
+                            }
+                        },
+                        {
+                            "id": "system:item:darkchocchips",
+                            "name": {
+                                "value": "Dark Chocolate Chips"
+                            }
+                        },
+                        {
+                            "id": "system:item:marshmallows",
+                            "name": {
+                                "value": "Marshmallow",
+                                "synonyms": [
+                                    "Marshmallows"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:cornbreadmix",
+                            "name": {
+                                "value": "Cornbread Mix",
+                                "synonyms": [
+                                    "Cornbread Mixes"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:flour",
+                            "name": {
+                                "value": "Flour"
+                            }
+                        },
+                        {
+                            "id": "system:item:chiaseeds",
+                            "name": {
+                                "value": "Chia Seed",
+                                "synonyms": [
+                                    "Chia Seeds"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:flaxseed",
+                            "name": {
+                                "value": "Flaxseed"
+                            }
+                        },
+                        {
+                            "id": "system:item:bakingsoda",
+                            "name": {
+                                "value": "Baking Soda"
+                            }
+                        },
+                        {
+                            "id": "system:item:bakingpowder",
+                            "name": {
+                                "value": "Baking Powder",
+                                "synonyms": [
+                                    "Baking Powders"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:wheatflour",
+                            "name": {
+                                "value": "Wheat Flour"
+                            }
+                        },
+                        {
+                            "id": "system:item:sugar",
+                            "name": {
+                                "value": "Sugar"
+                            }
+                        },
+                        {
+                            "id": "system:item:confectionerssugar",
+                            "name": {
+                                "value": "Confectioners Sugar"
+                            }
+                        },
+                        {
+                            "id": "system:item:cinnamon",
+                            "name": {
+                                "value": "Cinnamon"
+                            }
+                        },
+                        {
+                            "id": "system:item:salt",
+                            "name": {
+                                "value": "Salt"
+                            }
+                        },
+                        {
+                            "id": "system:item:groundpepper",
+                            "name": {
+                                "value": "Ground Pepper",
+                                "synonyms": [
+                                    "Ground Peppers"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:chilipowder",
+                            "name": {
+                                "value": "Chili Powder",
+                                "synonyms": [
+                                    "Chili Powders"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:basildried",
+                            "name": {
+                                "value": "Basil (dried)"
+                            }
+                        },
+                        {
+                            "id": "system:item:oregano",
+                            "name": {
+                                "value": "Oregano"
+                            }
+                        },
+                        {
+                            "id": "system:item:nutmeg",
+                            "name": {
+                                "value": "Nutmeg"
+                            }
+                        },
+                        {
+                            "id": "system:item:groundginger",
+                            "name": {
+                                "value": "Ground Ginger"
+                            }
+                        },
+                        {
+                            "id": "system:item:spaghettisauce",
+                            "name": {
+                                "value": "Spaghetti Sauce",
+                                "synonyms": [
+                                    "Spaghetti Sauces"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:pizzasauce",
+                            "name": {
+                                "value": "Pizza Sauce",
+                                "synonyms": [
+                                    "Pizza Sauces"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:spaghetti",
+                            "name": {
+                                "value": "Spaghetti"
+                            }
+                        },
+                        {
+                            "id": "system:item:pastashells",
+                            "name": {
+                                "value": "Pasta - Shell",
+                                "synonyms": [
+                                    "Pasta - Shells"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:pastabowtie",
+                            "name": {
+                                "value": "Pasta - Bowtie",
+                                "synonyms": [
+                                    "Pasta - Bowties"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:pastarotini",
+                            "name": {
+                                "value": "Pasta - Rotini",
+                                "synonyms": [
+                                    "Pasta - Rotinis"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:pastatricolorrotini",
+                            "name": {
+                                "value": "Pasta - Tricolor-Rotini",
+                                "synonyms": [
+                                    "Pasta - Tricolor-Rotinis"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:cannedtunawater",
+                            "name": {
+                                "value": "Canned Tuna in Water"
+                            }
+                        },
+                        {
+                            "id": "system:item:cannedtunaoil",
+                            "name": {
+                                "value": "Canned Tuna in Oil"
+                            }
+                        },
+                        {
+                            "id": "system:item:cannedsalmon",
+                            "name": {
+                                "value": "Canned Salmon",
+                                "synonyms": [
+                                    "Canned Salmons"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:salmonpouch",
+                            "name": {
+                                "value": "Salmon Pouch",
+                                "synonyms": [
+                                    "Salmon Pouches"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:dishwashingliquid",
+                            "name": {
+                                "value": "Dishwashing Liquid"
+                            }
+                        },
+                        {
+                            "id": "system:item:dishwashingdetergent",
+                            "name": {
+                                "value": "Dishwashing Detergent"
+                            }
+                        },
+                        {
+                            "id": "system:item:sponges",
+                            "name": {
+                                "value": "Sponge",
+                                "synonyms": [
+                                    "Sponges"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:toiletbowlcleaner",
+                            "name": {
+                                "value": "Toilet Bowl Cleaner",
+                                "synonyms": [
+                                    "Toilet Bowl Cleaners"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:handsoap",
+                            "name": {
+                                "value": "Hand Soap",
+                                "synonyms": [
+                                    "Hand Soaps"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:bleachcleaner",
+                            "name": {
+                                "value": "Bleach Cleaner",
+                                "synonyms": [
+                                    "Bleach Cleaners"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:bleach",
+                            "name": {
+                                "value": "Bleach",
+                                "synonyms": [
+                                    "Bleaches"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:laundrydetergent",
+                            "name": {
+                                "value": "Laundry Detergent",
+                                "synonyms": [
+                                    "Laundry Detergents"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:fabricsoftener",
+                            "name": {
+                                "value": "Fabric Softener",
+                                "synonyms": [
+                                    "Fabric Softeners"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:colorbleach",
+                            "name": {
+                                "value": "Color Bleach",
+                                "synonyms": [
+                                    "Color Bleaches"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:laundrypods",
+                            "name": {
+                                "value": "Laundry Pods"
+                            }
+                        },
+                        {
+                            "id": "system:item:disinfectingwipes",
+                            "name": {
+                                "value": "Disinfecting Wipe",
+                                "synonyms": [
+                                    "Disinfecting Wipes"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:steelwoolpads",
+                            "name": {
+                                "value": "Steel Wool Pad",
+                                "synonyms": [
+                                    "Steel Wool Pads"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:drainclogremover",
+                            "name": {
+                                "value": "Drain Clog Remover",
+                                "synonyms": [
+                                    "Drain Clog Removers"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:bandaids",
+                            "name": {
+                                "value": "Band Aids"
+                            }
+                        },
+                        {
+                            "id": "system:item:cottonballs",
+                            "name": {
+                                "value": "Cotton Balls"
+                            }
+                        },
+                        {
+                            "id": "system:item:nailpolishremover",
+                            "name": {
+                                "value": "Nail Polish Remover",
+                                "synonyms": [
+                                    "Nail Polish Removers"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:notebook",
+                            "name": {
+                                "value": "Notebook",
+                                "synonyms": [
+                                    "Notebooks"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:scotchtape",
+                            "name": {
+                                "value": "Scotch Tape",
+                                "synonyms": [
+                                    "Scotch Tapes"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:maskingtape",
+                            "name": {
+                                "value": "Masking Tape",
+                                "synonyms": [
+                                    "Masking Tapes"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:packagingtape",
+                            "name": {
+                                "value": "Packaging Tape",
+                                "synonyms": [
+                                    "Packaging Tapes"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:copypaper",
+                            "name": {
+                                "value": "Copy Paper"
+                            }
+                        },
+                        {
+                            "id": "system:item:superglue",
+                            "name": {
+                                "value": "Super Glue",
+                                "synonyms": [
+                                    "Super Glues"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:glue",
+                            "name": {
+                                "value": "Glue",
+                                "synonyms": [
+                                    "Glues"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:crayons",
+                            "name": {
+                                "value": "Crayon",
+                                "synonyms": [
+                                    "Crayons"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:pencils",
+                            "name": {
+                                "value": "Pencil",
+                                "synonyms": [
+                                    "Pencils"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:pens",
+                            "name": {
+                                "value": "Pen",
+                                "synonyms": [
+                                    "Pens"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:envelopes",
+                            "name": {
+                                "value": "Envelope",
+                                "synonyms": [
+                                    "Envelopes"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:paperclips",
+                            "name": {
+                                "value": "Paper Clip",
+                                "synonyms": [
+                                    "Paper Clips"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:rubberbands",
+                            "name": {
+                                "value": "Rubber Bands"
+                            }
+                        },
+                        {
+                            "id": "system:item:scissors",
+                            "name": {
+                                "value": "Scissors"
+                            }
+                        },
+                        {
+                            "id": "system:item:papertowels",
+                            "name": {
+                                "value": "Paper Towel",
+                                "synonyms": [
+                                    "Paper Towels"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:toiletpaper",
+                            "name": {
+                                "value": "Toilet Paper"
+                            }
+                        },
+                        {
+                            "id": "system:item:tacoshells",
+                            "name": {
+                                "value": "Taco Shell",
+                                "synonyms": [
+                                    "Taco Shells"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:salsajar",
+                            "name": {
+                                "value": "Salsa (Jar)"
+                            }
+                        },
+                        {
+                            "id": "system:item:tacoseasoning",
+                            "name": {
+                                "value": "Taco Seasoning"
+                            }
+                        },
+                        {
+                            "id": "system:item:tortillas",
+                            "name": {
+                                "value": "Tortilla",
+                                "synonyms": [
+                                    "Tortillas"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:raisinbran",
+                            "name": {
+                                "value": "Raisin Bran"
+                            }
+                        },
+                        {
+                            "id": "system:item:maplesyrup",
+                            "name": {
+                                "value": "Maple Syrup",
+                                "synonyms": [
+                                    "Maple Syrups"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "system:item:windshieldwiperfluid",
+                            "name": {
+                                "value": "Windshield Wiper Fluid"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "yesno",
+                    "values": [
+                        {
+                            "id": "sys:no",
+                            "name": {
+                                "value": "no",
+                                "synonyms": [
+                                    "i don't think so",
+                                    "not good",
+                                    "not ok",
+                                    "nope"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "sys:yes",
+                            "name": {
+                                "value": "yes",
+                                "synonyms": [
+                                    "i think so",
+                                    "that works",
+                                    "sure",
+                                    "ok",
+                                    "yup",
+                                    "yeah"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        "dialog": {
+            "intents": [
+                {
+                    "name": "ChangeListGroupIntent",
+                    "confirmationRequired": false,
+                    "prompts": {},
+                    "slots": [
+                        {
+                            "name": "listgroup",
+                            "type": "listgroup",
+                            "confirmationRequired": false,
+                            "elicitationRequired": true,
+                            "prompts": {
+                                "elicitation": "Elicit.Slot.884807289469.1330193626341"
+                            },
+                            "validations": [
+                                {
+                                    "type": "hasEntityResolutionMatch",
+                                    "prompt": "Slot.Validation.884807289469.1330193626341.1481318621108"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "AddItemToListIntent",
+                    "delegationStrategy": "SKILL_RESPONSE",
+                    "confirmationRequired": false,
+                    "prompts": {},
+                    "slots": [
+                        {
+                            "name": "item",
+                            "type": "AMAZON.Food",
+                            "confirmationRequired": false,
+                            "elicitationRequired": true,
+                            "prompts": {
+                                "elicitation": "Elicit.Slot.491944527102.1494013943233"
+                            }
+                        },
+                        {
+                            "name": "list",
+                            "type": "list",
+                            "confirmationRequired": false,
+                            "elicitationRequired": false,
+                            "prompts": {}
+                        },
+                        {
+                            "name": "listgroup",
+                            "type": "listgroup",
+                            "confirmationRequired": false,
+                            "elicitationRequired": false,
+                            "prompts": {}
+                        },
+                        {
+                            "name": "addnomatch",
+                            "type": "yesno",
+                            "confirmationRequired": false,
+                            "elicitationRequired": true,
+                            "prompts": {
+                                "elicitation": "Elicit.Slot.1425353049936.430837866682"
+                            }
+                        }
+                    ]
+                }
+            ],
+            "delegationStrategy": "ALWAYS"
+        },
+        "prompts": [
+            {
+                "id": "Elicit.Slot.884807289469.1330193626341",
+                "variations": [
+                    {
+                        "type": "PlainText",
+                        "value": "What list group do you want me to change to?"
+                    }
+                ]
+            },
+            {
+                "id": "Slot.Validation.884807289469.1330193626341.1481318621108",
+                "variations": [
+                    {
+                        "type": "PlainText",
+                        "value": "Please enter the name of an existing list group, or say default"
+                    }
+                ]
+            },
+            {
+                "id": "Elicit.Slot.491944527102.1494013943233",
+                "variations": [
+                    {
+                        "type": "PlainText",
+                        "value": "What item would you like to add"
+                    }
+                ]
+            },
+            {
+                "id": "Elicit.Slot.1425353049936.430837866682",
+                "variations": [
+                    {
+                        "type": "PlainText",
+                        "value": "Do you want to add even though it's not in the extensive Alexa Database?"
+                    }
+                ]
+            }
+        ]
     }
 }

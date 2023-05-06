@@ -1,6 +1,6 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput,
    IonItem, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonSelectOption,
-  IonButtons, IonMenuButton, useIonToast, IonIcon, useIonAlert } from '@ionic/react';
+  IonButtons, IonMenuButton, useIonToast, IonIcon, useIonAlert, IonFooter, IonText } from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext, useRef } from 'react';
@@ -8,7 +8,7 @@ import { useUpdateGenericDocument, useCreateGenericDocument, useFriends,
   UseFriendState, useDeleteGenericDocument, useDeleteItemsInListGroup, useGetOneDoc } from '../components/Usehooks';
 import { cloneDeep, isEmpty, isEqual } from 'lodash';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
-import { initUserIDList, initUsersInfo, PouchResponse, ResolvedFriendStatus, UserIDList, UsersInfo, HistoryProps, ListCombinedRow, RowType, FriendRow } from '../components/DataTypes'
+import { initUserIDList, initUsersInfo, PouchResponse, ResolvedFriendStatus, UserIDList, UsersInfo, HistoryProps, ListCombinedRow, RowType, FriendRow, ListCombinedRows } from '../components/DataTypes'
 import { ListGroupDoc, ListGroupDocInit } from '../components/DBSchema';
 import SyncIndicator from '../components/SyncIndicator';
 import { getUsersInfo } from '../components/Utilities';
@@ -24,11 +24,17 @@ interface PageState {
   listGroupDoc: ListGroupDoc,
   selectedListGroupID: string | null,
   changesMade: Boolean,
-  formError: string,
   usersLoaded: boolean,
   usersInfo: UsersInfo,
   deletingDoc: boolean
-}  
+}
+
+enum ErrorLocation  {
+   Name, General
+}
+const FormErrorInit = { [ErrorLocation.Name]:       {errorMessage:"", hasError: false},
+                        [ErrorLocation.General]:    {errorMessage:"", hasError: false}
+                    }
 
 const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
@@ -38,11 +44,11 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
     listGroupDoc: ListGroupDocInit,
     selectedListGroupID: (routeID === "<new>" ? null : routeID),
     changesMade: false,
-    formError: "",
     usersLoaded: false,
     usersInfo: [],
     deletingDoc: false
   })
+  const [formErrors,setFormErrors] = useState(FormErrorInit);
   const updateListGroupWhole  = useUpdateGenericDocument();
   const createListGroup = useCreateGenericDocument();
   const deleteListGroup = useDeleteGenericDocument();
@@ -118,8 +124,9 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   screenLoading.current=false;
 
   async function updateThisItem() {
+    setFormErrors(prevState=>(FormErrorInit))
     if (pageState.listGroupDoc.name === "" || pageState.listGroupDoc.name === undefined || pageState.listGroupDoc.name === null) {
-      setPageState(prevState => ({...prevState,formError: t("error.must_enter_a_name")}));
+      setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.must_enter_a_name"), hasError: true }}));
       return false;
     }
     let response: PouchResponse;
@@ -241,17 +248,20 @@ async function deleteListGroupFromDB() {
       props.history.goBack(); // back to "list"
     } else {
       dismissAlert()
-      setPageState(prevState => ({...prevState,formError: t("error.could_not_delete_listgroup"), deletingDoc: false}));
+      setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.could_not_delete_listgroup"), hasError: true }}));
+      setPageState(prevState => ({...prevState, deletingDoc: false}));
     }
   } else {
     dismissAlert();
-    setPageState(prevState => ({...prevState,formError: t("error.unable_remove_listgroup_items"), deletingDoc: false}));
+    setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.unable_remove_listgroup_items"), hasError: true }}));
+    setPageState(prevState => ({...prevState, deletingDoc: false}));
   }
   return delSuccess;
 }
 
 function deletePrompt() {
-  setPageState(prevState => ({...prevState,deletingDoc: true, formError: ""}));
+  setPageState(prevState => ({...prevState,deletingDoc: true}));
+  setFormErrors(prevState=>(FormErrorInit));
   let ownListGroupsCount=0;
   for (let i = 0; i < listCombinedRows.length; i++) {
     if (listCombinedRows[i].rowType === RowType.listGroup && 
@@ -278,14 +288,14 @@ function deletePrompt() {
     })
   }              
 }
-
+  let groupOnlyRows: ListCombinedRows = cloneDeep(listCombinedRows);
+  groupOnlyRows.filter(lg => (lg.rowType === RowType.listGroup))
   let selectOptionListElem = (
-    listCombinedRows.map((list: ListCombinedRow) => { 
-      if (list.rowType === RowType.listGroup) { return (
+    groupOnlyRows.map((list: ListCombinedRow) => (
       <IonSelectOption key={list.rowKey} value={list.listGroupID}>
         {list.listGroupName}
-      </IonSelectOption>) }
-      }))
+      </IonSelectOption>) 
+      ))
 
   let selectElem=[];
   if (pageState.changesMade) {
@@ -348,7 +358,10 @@ function deletePrompt() {
               <IonInput label="Name" labelPlacement='stacked'  type="text" placeholder="<New>"
                   onIonInput={(e) => updateName(String(e.detail.value))}
                   value={pageState.listGroupDoc.name}
-                  readonly={iAmListOwner ? false: true}></IonInput>
+                  readonly={iAmListOwner ? false: true}
+                  className={"ion-touched "+(formErrors[ErrorLocation.Name].hasError ? "ion-invalid": "")}
+                  errorText={formErrors[ErrorLocation.Name].errorMessage}>
+              </IonInput>
             </IonItem>
             <IonItem key="defaultlistgroup">
               <IonCheckbox labelPlacement="end" justify='start'
@@ -363,18 +376,22 @@ function deletePrompt() {
             {usersElem}
             </IonItemGroup>
           </IonList>
-          <IonItem key="formerror"><IonLabel>{pageState.formError}</IonLabel></IonItem> 
-          <IonToolbar>
-          <IonButtons slot="start">
-            {deleteButton}
-          </IonButtons>
-          <IonButtons slot="secondary">
-            <IonButton color="secondary" key="back" fill="outline" onClick={() => props.history.goBack()}>{t("general.cancel")}<IonIcon slot="start" icon={closeCircleOutline}></IonIcon></IonButton>  
-          </IonButtons>
-          <IonButtons slot="end">
-            {updateButton}
-          </IonButtons>
-          </IonToolbar>
+          <IonFooter class="floating-error-footer">
+              {
+                formErrors[ErrorLocation.General].hasError ? <IonItem class="shorter-item-some-padding" lines="none"><IonText color="danger">{formErrors[ErrorLocation.General].errorMessage}</IonText></IonItem> : <></>
+              }  
+            <IonToolbar>
+            <IonButtons slot="start">
+              {deleteButton}
+            </IonButtons>
+            <IonButtons slot="secondary">
+              <IonButton color="secondary" key="back" fill="outline" onClick={() => props.history.goBack()}>{t("general.cancel")}<IonIcon slot="start" icon={closeCircleOutline}></IonIcon></IonButton>  
+            </IonButtons>
+            <IonButtons slot="end">
+              {updateButton}
+            </IonButtons>
+            </IonToolbar>
+          </IonFooter>
       </IonContent>
     </IonPage>
   );

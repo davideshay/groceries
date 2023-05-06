@@ -1,6 +1,6 @@
 import { todosNanoAsAdmin, usersNanoAsAdmin, couchDatabase, couchAdminPassword, couchAdminUser, couchdbUrl, couchdbInternalUrl, couchStandardRole,
 couchAdminRole, conflictsViewID, conflictsViewName, utilitiesViewID, refreshTokenExpires, accessTokenExpires,
-enableScheduling, resolveConflictsFrequencyMinutes,expireJWTFrequencyMinutes } from "./apicalls";
+enableScheduling, resolveConflictsFrequencyMinutes,expireJWTFrequencyMinutes, disableAccountCreation, logLevel } from "./apicalls";
 import { resolveConflicts } from "./apicalls";
 import { expireJWTs } from './jwt'
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
@@ -9,14 +9,16 @@ import { v4 as uuidv4} from 'uuid';
 import { uomContent, categories, globalItems, totalDocCount } from "./utilities";
 import { DocumentScope, MangoResponse, MangoQuery } from "nano";
 import { CategoryDoc, GlobalItemDoc, ItemDoc, ListDoc, ListGroupDoc, UUIDDoc, UomDoc, UserDoc, appVersion, maxAppSupportedSchemaVersion } from "./DBSchema";
+import log, { LogLevelDesc } from "loglevel";
+import prefix from "loglevel-plugin-prefix";
 
 
 let uomContentVersion = 0;
-const targetUomContentVersion = 4;
+const targetUomContentVersion = 5;
 let categoriesVersion = 0;
-const targetCategoriesVersion = 1;
+const targetCategoriesVersion = 2;
 let globalItemVersion = 0;
-const targetGlobalItemVersion = 1;
+const targetGlobalItemVersion = 2;
 let schemaVersion = 0;
 const targetSchemaVersion = 3;
 
@@ -59,7 +61,7 @@ export async function doesDBExist() {
     try { res = await todosNanoAsAdmin.db.get(couchDatabase)}
     catch(err) { retrieveError = true }
     if (retrieveError || res == null) {
-        console.log("ERROR: could not retrieve database info.");
+        log.error("could not retrieve database info.");
         return (false);
     } else {
         return (true)
@@ -71,7 +73,7 @@ async function createDB() {
     try { await todosNanoAsAdmin.db.create(couchDatabase)}
     catch(err) {  createError = true }
     if (createError) return (false);
-    console.log("STATUS: Initiatialization, Database "+couchDatabase+" created.");
+    log.info("Initiatialization, Database "+couchDatabase+" created.");
     return (createError);
 }
 
@@ -97,7 +99,7 @@ async function setDBSecurity() {
     }
     let res: AxiosResponse | null = null;
     try { res = await axios(config)}
-    catch(err) { console.log("ERROR setting security:",err); errorSettingSecurity= true }
+    catch(err) { log.error("Setting security:",err); errorSettingSecurity= true }
     if (errorSettingSecurity || res == null) return (false);
     let newSecurity = cloneDeep(res.data);
     let securityNeedsUpdated = false;
@@ -120,7 +122,7 @@ async function setDBSecurity() {
         }
     }
     if (!securityNeedsUpdated) {
-        console.log("STATUS: Security roles set correctly");
+        log.info("Security roles set correctly");
         return (true);
     }
     let configSec: any = {
@@ -132,11 +134,11 @@ async function setDBSecurity() {
     }
     errorSettingSecurity = false;
     try { res = await axios(configSec)}
-    catch(err) { console.log("ERROR setting security:", err); errorSettingSecurity = true }
+    catch(err) { log.error("Setting security:", err); errorSettingSecurity = true }
     if (errorSettingSecurity) {
-        console.log("ERROR: Problem setting database security")
+        log.error("Problem setting database security")
     } else {
-        console.log("STATUS: Database security roles added");
+        log.error("STATUS: Database security roles added");
     }
     return (!errorSettingSecurity);
 }
@@ -147,7 +149,7 @@ async function getLatestDBUUIDDoc(): Promise<UUIDDoc | null> {
     }
     let foundIDDocs: MangoResponse<unknown> | null = null;
     try {foundIDDocs =  await todosDBAsAdmin.find(dbidq);}
-    catch(err) {console.log("ERROR: could not read dbUUID record"); return null;}
+    catch(err) {log.error("ERROR: could not read dbUUID record"); return null;}
     let foundIDDoc: UUIDDoc | null = null;
     if (foundIDDocs && foundIDDocs.hasOwnProperty('docs')) {
         if (foundIDDocs.docs.length > 0) {foundIDDoc = (foundIDDocs.docs[0] as UUIDDoc)}
@@ -159,7 +161,7 @@ async function updateDBUUIDDoc(dbuuidDoc: UUIDDoc) {
     dbuuidDoc.updatedAt = (new Date()).toISOString();
     let dbResp = null;
     try {dbResp = await todosDBAsAdmin.insert(dbuuidDoc);}
-    catch(err) {console.log("ERROR: could not update dbUUID record:",JSON.stringify(err)); return null;}
+    catch(err) {log.error("ERROR: could not update dbUUID record:",JSON.stringify(err)); return null;}
     return dbResp;
 }
 
@@ -177,17 +179,17 @@ async function addDBIdentifier() {
             updatedAt: (new Date()).toISOString()
         }
         let dbResp=await updateDBUUIDDoc(newDoc);
-        if (dbResp != null) {console.log("STATUS: UUID created in DB: ", newDoc.uuid)}  
+        if (dbResp != null) {log.info("UUID created in DB: ", newDoc.uuid)}  
     } else {
         if (!foundIDDoc.hasOwnProperty("uuid")) {
-            console.log("ERROR: Database UUID doc exists without uuid. Please correct and restart.");
+            log.error("Database UUID doc exists without uuid. Please correct and restart.");
             return false;
         }
         if (!foundIDDoc.hasOwnProperty("uomContentVersion")) {
             foundIDDoc.uomContentVersion = 0;
             let dbResp = await updateDBUUIDDoc(foundIDDoc);
-            if (dbResp == null) { console.log("ERROR: updating UUID record with uomContentVersion");  } 
-            else { console.log("STATUS: Updated UOM Content Version, was missing.") }
+            if (dbResp == null) { log.error("Updating UUID record with uomContentVersion");  } 
+            else { log.info("Updated UOM Content Version, was missing.") }
         } else {
             uomContentVersion = foundIDDoc.uomContentVersion;
         }
@@ -196,8 +198,8 @@ async function addDBIdentifier() {
         if (!foundIDDoc.hasOwnProperty("categoriesVersion")) {
             foundIDDoc.categoriesVersion = 0;
             let dbResp = await updateDBUUIDDoc(foundIDDoc);
-            if (dbResp == null) { console.log("ERROR: updating UUID record with categoriesVersion: ",dbResp);  } 
-            else { console.log("STATUS: Updated Categories Content Version, was missing.") }
+            if (dbResp == null) { log.error("Updating UUID record with categoriesVersion: ",dbResp);  } 
+            else { log.info("Updated Categories Content Version, was missing.") }
         } else {
             categoriesVersion = foundIDDoc.categoriesVersion;
         }
@@ -206,8 +208,8 @@ async function addDBIdentifier() {
         if (!foundIDDoc.hasOwnProperty("globalItemVersion")) {
             foundIDDoc.globalItemVersion = 0;
             let dbResp = await updateDBUUIDDoc(foundIDDoc);
-            if (dbResp == null) { console.log("ERROR: updating UUID record with globalItemVersion");  } 
-            else { console.log("STATUS: Updated global Item Content Version, was missing."); }
+            if (dbResp == null) { log.error("Updating UUID record with globalItemVersion");  } 
+            else { log.info("Updated global Item Content Version, was missing."); }
         } else {
             globalItemVersion = foundIDDoc.globalItemVersion;
         }
@@ -216,8 +218,8 @@ async function addDBIdentifier() {
         if (!foundIDDoc.hasOwnProperty("schemaVersion")) {
             foundIDDoc.schemaVersion = 0;
             let dbResp = await updateDBUUIDDoc(foundIDDoc);
-            if (dbResp == null) { console.log("ERROR: updating UUID record with schemaVersion") } 
-            else { console.log("STATUS: Updated Categories Content Version, was missing.");  }
+            if (dbResp == null) { log.error("Updating UUID record with schemaVersion") } 
+            else { log.info("Updated Categories Content Version, was missing.");  }
         } else {
             schemaVersion = foundIDDoc.schemaVersion;
         }
@@ -237,7 +239,7 @@ async function createUOMContent() {
         if (docIdx !== -1) {
             let thisDoc: UomDoc = foundUOMDocs.docs[docIdx];
             if (thisDoc._id === uom._id) {
-                console.log("STATUS: UOM ",uom.name," already exists...checking equality...");
+                log.info("UOM ",uom.name," already exists...checking equality...");
                 needsAdded=false;
                 let filteredDoc=omit(thisDoc,["updatedAt","_rev"])
                 if (!isEqual(filteredDoc,uom)) {
@@ -248,35 +250,35 @@ async function createUOMContent() {
                     if (uom.hasOwnProperty("alternates")) {
                         thisDoc.alternates = cloneDeep(uom.alternates)
                     }
-                    console.log("STATUS: UOM ",uom.name," exists but needs updating...");
+                    log.info("UOM ",uom.name," exists but needs updating...");
                     let dbResp = null;
                     try { dbResp = await todosDBAsAdmin.insert(thisDoc)}
-                    catch(err) {console.log("ERROR updating existing UOM", "err")}
+                    catch(err) {log.error("updating existing UOM", "err")}
                 }
             } else {
                 let dbResp = null;
                 try { dbResp = await todosDBAsAdmin.destroy(thisDoc._id!,thisDoc._rev!)}
-                catch(err) {console.log("ERROR deleting / replacing existing UOM: ", err);}
+                catch(err) {log.error("Deleting / replacing existing UOM: ", err);}
             }
         }
         if (needsAdded) {
-            console.log("STATUS: Adding uom ",uom.name, " ", uom.description);
+            log.info("Adding uom ",uom.name, " ", uom.description);
             let dbResp = null;
             try { dbResp = await todosDBAsAdmin.insert(uom);}
-            catch(err) { console.log("ERROR: adding uom ",uom.name, " error: ",err);}
+            catch(err) { log.error("Adding uom ",uom.name, " error: ",err);}
         } else if (needsUpdated) {
-            console.log("STATUS: UOM ",uom.name," already exists...updated with new content");
+            log.info("UOM ",uom.name," already exists...updated with new content");
         }
     };
-    console.log("STATUS: Finished adding units of measure, updating to UOM Content Version:",targetUomContentVersion);
+    log.info("Finished adding units of measure, updating to UOM Content Version:",targetUomContentVersion);
     let foundIDDoc = await getLatestDBUUIDDoc();
     if (foundIDDoc == undefined) {
-        console.log("ERROR: Couldn't update database content version record.");
+        log.error("Couldn't update database content version record.");
     } else {
         foundIDDoc.uomContentVersion = targetUomContentVersion;
         let dbResp = await updateDBUUIDDoc(foundIDDoc);
-        if (dbResp == null) { console.log("ERROR Couldn't update UOM target version.")}
-        else { console.log("STATUS: Updated UOM Target Version successfully."); }
+        if (dbResp == null) { log.error("Couldn't update UOM target version.")}
+        else { log.info("Updated UOM Target Version successfully."); }
     }
 }
 
@@ -296,31 +298,31 @@ async function createCategoriesContent() {
         if (docIdx !== -1) {
             let thisDoc = foundCategoryDocs.docs[docIdx]
             if (thisDoc._id === category._id) {
-                console.log("STATUS: Category ",category.name," already exists...skipping");
+                log.info("Category ",category.name," already exists...skipping");
                 needsAdded=false;
             } else {
                 let dbResp = null;
                 try { dbResp = await todosDBAsAdmin.destroy(thisDoc._id,thisDoc._rev)}
-                catch(err) { console.log("ERROR: deleting category for replacement:", err);}
+                catch(err) { log.error("Deleting category for replacement:", err);}
             }
         }
         if (needsAdded) {
-            console.log("STATUS: Adding category ",category.name);
+            log.info("Adding category ",category.name);
             let dbResp = null;
             try { dbResp = await todosDBAsAdmin.insert(category);}
-            catch(err) { console.log("ERROR: adding category ",category.name, " error: ",err);}
+            catch(err) { log.error("Adding category ",category.name, " error: ",err);}
         } 
     };
-    console.log("STATUS: Finished adding categories, updating to category Version:",targetCategoriesVersion);
+    log.info("Finished adding categories, updating to category Version:",targetCategoriesVersion);
     let foundIDDoc = await getLatestDBUUIDDoc();
     if (foundIDDoc == undefined) {
-        console.log("ERROR: Couldn't update database content version record.");
+        log.error("Couldn't update database content version record.");
     } else {
         foundIDDoc.categoriesVersion = targetCategoriesVersion;
         let dbResp = null;
         try { dbResp = await todosDBAsAdmin.insert(foundIDDoc)}
-        catch(err) { console.log("ERROR: Couldn't update Categories target version.")};
-        console.log("STATUS: Updated Categories Target Version successfully.");
+        catch(err) { log.error("Couldn't update Categories target version.")};
+        log.info("Updated Categories Target Version successfully.");
     }
 }
 
@@ -335,68 +337,88 @@ async function createGlobalItemContent() {
         globalItem.type = "globalitem";
         const docIdx=foundGlobalItemDocs.docs.findIndex((el) => el.name === globalItem.name );
         if (docIdx == -1) {
-            console.log("STATUS: Adding global item ",globalItem.name);
+            log.info("Adding global item ",globalItem.name);
             let dbResp = null;
             try { dbResp = await todosDBAsAdmin.insert(globalItem);}
-            catch(err) { console.log("ERROR: adding global item ",globalItem.name, " error: ",err);}
+            catch(err) { log.error("Adding global item ",globalItem.name, " error: ",err);}
         } else {
-            console.log("STATUS: Global Item ",globalItem.name," already exists...skipping");
+            log.info("Global Item ",globalItem.name," already exists...comparing values...");
+            let needsChanged=false;
+            let compareDoc=foundGlobalItemDocs.docs[docIdx];
+            if (globalItem.name !== compareDoc.name) {
+                compareDoc.name = globalItem.name;
+                needsChanged = true;
+            }
+            if (globalItem.defaultUOM !== compareDoc.defaultUOM) {
+                compareDoc.defaultUOM = globalItem.defaultUOM;
+                needsChanged = true;
+            }
+            if (globalItem.defaultCategoryID !== compareDoc.defaultCategoryID) {
+                compareDoc.defaultCategoryID = globalItem.defaultCategoryID;
+                needsChanged = true;
+            }
+            if (needsChanged) {
+                log.info("Item "+globalItem.name+ " had changed values. Reverting to original...");
+                let dbResp = null;
+                try {dbResp = await todosDBAsAdmin.insert(compareDoc)}
+                catch(err) {log.error("Error reverting values on doc "+globalItem.name,"error:",err)}
+            }
         }
     };
-    console.log("STATUS: Finished adding global Items, updating to Global Item Version:",targetGlobalItemVersion);
+    log.info("Finished adding global Items, updating to Global Item Version:",targetGlobalItemVersion);
     let foundIDDoc = await getLatestDBUUIDDoc();
     if (foundIDDoc == undefined) {
-        console.log("ERROR: Couldn't update database content version record.");
+        log.error("Couldn't update database content version record.");
     } else {
         foundIDDoc.globalItemVersion = targetGlobalItemVersion;
         let dbResp = await updateDBUUIDDoc(foundIDDoc);
-        if (dbResp == null) { console.log("ERROR: Couldn't update Global Item target version.") }
-        else {console.log("STATUS: Updated Global Item Target Version successfully.");}
+        if (dbResp == null) { log.error("Couldn't update Global Item target version.") }
+        else {log.info("Updated Global Item Target Version successfully.");}
     }
 }
 
 async function checkAndCreateContent() {
-    console.log("STATUS: Current UOM Content Version:",uomContentVersion," Target Version:",targetUomContentVersion);
+    log.info("Current UOM Content Version:",uomContentVersion," Target Version:",targetUomContentVersion);
     if (uomContentVersion === targetUomContentVersion) {
-        console.log("STATUS: At current version, skipping UOM Content creation");
+        log.info("At current version, skipping UOM Content creation");
     } else {
-        console.log("STATUS: Creating UOM Content...");
+        log.info("Creating UOM Content...");
         await createUOMContent();
     }
-    console.log("STATUS: Current Category Content Version:",categoriesVersion," Target Version:", targetCategoriesVersion);
+    log.info("Current Category Content Version:",categoriesVersion," Target Version:", targetCategoriesVersion);
     if (categoriesVersion === targetCategoriesVersion) {
-        console.log("STATUS: At current category version, skipping category creation");
+        log.info("At current category version, skipping category creation");
     } else {
-        console.log("STATUS: Creating category Content...");
+        log.info("Creating category Content...");
         await createCategoriesContent();
     }
-    console.log("STATUS: Current Global Item Content Version:",globalItemVersion," Target Version:", targetGlobalItemVersion);
+    log.info("Current Global Item Content Version:",globalItemVersion," Target Version:", targetGlobalItemVersion);
     if (globalItemVersion === targetGlobalItemVersion) {
-        console.log("STATUS: At current Global item version, skipping global item creation");
+        log.info("At current Global item version, skipping global item creation");
     } else {
-        console.log("STATUS: Creating Global Item Content...");
+        log.info("Creating Global Item Content...");
         await createGlobalItemContent();
     }
 }
 
 async function addStockedAtIndicatorToSchema() {
     let updateSuccess = true;
-    console.log("STATUS: Upgrading schema to support stocked at indicators.");
+    log.info("Upgrading schema to support stocked at indicators.");
     const itemq = { selector: { type: { "$eq": "item"}},
                     limit: await totalDocCount(todosDBAsAdmin)};
     let foundItemDocs: MangoResponse<ItemDoc>;
     try {foundItemDocs = (await todosDBAsAdmin.find(itemq) as MangoResponse<ItemDoc>);}                
-    catch(err) {console.log("ERROR: Could not find item docs to update during schema update"); return false;}
-    console.log("STATUS: Found items to update :", foundItemDocs.docs.length)
+    catch(err) {log.error("Could not find item docs to update during schema update"); return false;}
+    log.info("Found items to update :", foundItemDocs.docs.length)
     for (let i = 0; i < foundItemDocs.docs.length; i++) {
         const foundItemDoc = foundItemDocs.docs[i];
-        console.log("Processing item: ", foundItemDoc.name);
+        log.debug("Processing item: ", foundItemDoc.name);
         let docChanged = false;
         if (foundItemDoc.hasOwnProperty("lists")) {
             for (let j = 0; j < foundItemDoc.lists.length; j++) {
-                console.log("list: ",JSON.stringify(foundItemDoc.lists[j]));
+                log.debug("list: ",JSON.stringify(foundItemDoc.lists[j]));
                 if (!foundItemDoc.lists[j].hasOwnProperty("stockedAt")) {
-                    console.log("Didn't have stockedAt property, adding...");
+                    log.debug("Didn't have stockedAt property, adding...");
                     foundItemDoc.lists[j].stockedAt = true;
                     docChanged = true;
                 }
@@ -405,7 +427,7 @@ async function addStockedAtIndicatorToSchema() {
         if (docChanged) {
             let dbResp = null;
             try { dbResp = await todosDBAsAdmin.insert(foundItemDoc)}
-            catch(err) { console.log("ERROR: Couldn't update item with stocked indicator.");
+            catch(err) { log.error("Couldn't update item with stocked indicator.");
                          updateSuccess = false;}
         }
     }
@@ -414,33 +436,33 @@ async function addStockedAtIndicatorToSchema() {
 
 async function restructureListGroupSchema() {
     let updateSuccess = true;
-    console.log("STATUS: Upgrading schema to support listGroups. Most data will be lost in this upgrade.");
+    log.info("Upgrading schema to support listGroups. Most data will be lost in this upgrade.");
     // Delete both lists and items because of structure changes and because categories in list are most likely
     // completely replaced with new Category content/system IDs at same time
     const delq: MangoQuery = { selector: { type : { "$in": ["list","item","category"]}}, limit: await totalDocCount(todosDBAsAdmin)};
     let foundDelDocs: MangoResponse<ListDoc | ItemDoc>;
     try { foundDelDocs = (await todosDBAsAdmin.find(delq) as MangoResponse<ListDoc | ItemDoc>)}
-    catch(err) { console.log("ERROR: Could not find items/lists/categories to delete:",err); return false;}
-    console.log("Found items/lists/categories to delete:",foundDelDocs.docs.length);
+    catch(err) { log.error("Could not find items/lists/categories to delete:",err); return false;}
+    log.debug("Found items/lists/categories to delete:",foundDelDocs.docs.length);
     for (let i = 0; i < foundDelDocs.docs.length; i++) {
         let dbResp=null;
         try { dbResp=await todosDBAsAdmin.destroy(foundDelDocs.docs[i]._id,foundDelDocs.docs[i]._rev)}
-        catch(err) {console.log("ERROR deleting list/item:",err);}        
+        catch(err) {log.error("ERROR deleting list/item:",err);}        
     }
-    console.log("STATUS: Finished deleting lists, items, and categories.");
-    console.log("STATUS: Creating default listgroups for all users");
+    log.info("Finished deleting lists, items, and categories.");
+    log.info("Creating default listgroups for all users");
     const userq: MangoQuery = { selector: { type: "user", name: {$exists: true}}, limit: await totalDocCount(usersDBAsAdmin)};
     let foundUserDocs: MangoResponse<UserDoc>;
     try {foundUserDocs = (await usersDBAsAdmin.find(userq) as MangoResponse<UserDoc>);}
-    catch(err) {console.log("ERROR: Could not find user list during schema update:",err); return false;}
-    console.log("STATUS: Found users to create listgroups: ", foundUserDocs.docs.length);
+    catch(err) {log.error("Could not find user list during schema update:",err); return false;}
+    log.info("Found users to create listgroups: ", foundUserDocs.docs.length);
     for (let i = 0; i < foundUserDocs.docs.length; i++) {
         const foundUserDoc = foundUserDocs.docs[i];
         const listgroupq = { selector: { type: "listgroup", listGroupOwner: foundUserDoc.name, default: true},
                              limit: await totalDocCount(todosDBAsAdmin)};
         let foundListGroupDocs = await todosDBAsAdmin.find(listgroupq);
         if (foundListGroupDocs.docs.length == 0) {
-            console.log("STATUS: No default listgroup found for :",foundUserDoc.name," ... creating...");
+            log.info("No default listgroup found for :",foundUserDoc.name," ... creating...");
             let newCurDateStr = (new Date()).toISOString()
             const newListGroupDoc: ListGroupDoc = {
                 type: "listgroup", name: (foundUserDoc.name + " (default)"),
@@ -448,41 +470,41 @@ async function restructureListGroupSchema() {
             }
             let dbResp = null;
             try { dbResp = await todosDBAsAdmin.insert(newListGroupDoc)}
-            catch(err) { console.log("ERROR: Couldn't create new list group:",newListGroupDoc.name, "err:",JSON.stringify(err))
+            catch(err) { log.error("Couldn't create new list group:",newListGroupDoc.name, "err:",JSON.stringify(err))
                          updateSuccess = false;}
         } else {
-            console.log("STATUS: Default List Group already exists for : ", foundUserDoc.name);
+            log.info("Default List Group already exists for : ", foundUserDoc.name);
         }
     }
     return updateSuccess;
 }    
 
 async function setSchemaVersion(updSchemaVersion: number) {
-    console.log("STATUS: Finished schema updates, updating database to :",updSchemaVersion);
+    log.info("Finished schema updates, updating database to :",updSchemaVersion);
     let foundIDDoc = await getLatestDBUUIDDoc();
     if (foundIDDoc == undefined) {
-        console.log("ERROR: Couldn't update database schema version record.");
+        log.error("Couldn't update database schema version record.");
     } else {
         foundIDDoc.schemaVersion = updSchemaVersion;
         let dbResp = updateDBUUIDDoc(foundIDDoc);
-        if (dbResp == null) {console.log("ERROR: Couldn't update schema target version.")}
-        else {console.log("STATUS: Updated schema target version successfully.")}
+        if (dbResp == null) {log.error("Couldn't update schema target version.")}
+        else {log.info("Updated schema target version successfully.")}
     }
 }
 
 async function checkAndUpdateSchema() {
-    console.log("STATUS: Current Schema Version:",schemaVersion," Target Version:",targetSchemaVersion);
+    log.info("Current Schema Version:",schemaVersion," Target Version:",targetSchemaVersion);
     if (schemaVersion === targetSchemaVersion) {
-        console.log("STATUS: At current schema version, skipping schema update");
+        log.info("At current schema version, skipping schema update");
         return true;
     }
     if (schemaVersion < 2) {
-        console.log("STATUS: Updating schema to rev. 2: Changes for 'stocked at' indicator on item/list.");
+        log.info("Updating schema to rev. 2: Changes for 'stocked at' indicator on item/list.");
         let schemaUpgradeSuccess = await addStockedAtIndicatorToSchema();
         if (schemaUpgradeSuccess) { schemaVersion = 2; await setSchemaVersion(schemaVersion);}
     }
     if (schemaVersion < 3) {
-        console.log("STATUS: Updating schema to rev. 3: Changes for restructuring/listgroups ");
+        log.info("Updating schema to rev. 3: Changes for restructuring/listgroups ");
         let schemaUpgradeSuccess = await restructureListGroupSchema();
         if (schemaUpgradeSuccess) { schemaVersion = 3; await setSchemaVersion(schemaVersion);}
     }
@@ -502,8 +524,8 @@ async function createConflictsView() {
         try {
             await todosDBAsAdmin.insert(viewDoc as any,"_design/"+conflictsViewID)
         }
-        catch(err) {console.log("ERROR: View not created:",{err}); viewCreated=false;}
-        console.log("STATUS: View created/ updated");
+        catch(err) {log.error("View not created:",{err}); viewCreated=false;}
+        log.info("View created/ updated");
     }
 }
 
@@ -526,12 +548,12 @@ async function createUtilitiesViews() {
         try {
             await todosDBAsAdmin.insert(viewDoc as any,"_design/"+utilitiesViewID)
         }
-        catch(err) {console.log("ERROR: Utilities View not created:",{err}); viewCreated=false;}
-        console.log("STATUS: Utilities View created/ updated");
+        catch(err) {log.error("Utilities View not created:",{err}); viewCreated=false;}
+        log.info("Utilities View created/ updated");
     }
 }
 
-async function  checkAndCreateViews() {
+async function checkAndCreateViews() {
     await createConflictsView();
     await createUtilitiesViews();
 }
@@ -540,24 +562,46 @@ function isInteger(str: string) {
     return /^\+?(0|[1-9]\d*)$/.test(str);
 }
 
+function convertLogLevel(level: string) : LogLevelDesc {
+    let uLevel=level.toUpperCase();
+    if (["0","TRACE","T"].includes(level)) {
+        return "TRACE" 
+    } else if (["1","DEBUG","D"].includes(level)) {
+        return "DEBUG"
+    } else if (["2","INFO","INFORMATION","I"].includes(level)) {
+        return "INFO"
+    } else if (["3","WARN","WARNING","W"].includes(level)) {
+        return "WARN"
+    } else if (["4","ERROR","E"].includes(level)) {
+        return "ERROR"
+    } else if (["5","SILENT","S","NONE","N"].includes(level)) {
+        return "SILENT"
+    }
+    return "INFO"    
+}
+
 export async function dbStartup() {
-    console.log("STATUS: Starting up auth server for couchdb...");
-    console.log("STATUS: App Version: ",appVersion);
-    console.log("STATUS: Database Schema Version:",maxAppSupportedSchemaVersion);
-    if (couchdbUrl == "") {console.log("ERROR: No environment variable for CouchDB URL"); return false;}
-    if (couchdbInternalUrl == "") {console.log("ERROR: No environment variable for internal CouchDB URL"); return false;}
-    console.log("STATUS: Database URL: ",couchdbUrl);
-    console.log("STATUS: Internal Database URL: ",couchdbInternalUrl);
-    if (couchDatabase == "") { console.log("ERROR: No CouchDatabase environment variable."); return false;}
-    console.log("STATUS: Using database: ",couchDatabase);
-    console.log("STATUS: Refresh token expires in ",refreshTokenExpires);
-    console.log("STATUS: Access token expires in ",accessTokenExpires);
+    prefix.reg(log);
+    prefix.apply(log);
+    log.setLevel(convertLogLevel(logLevel));
+    log.info("Starting up auth server for couchdb...");
+    log.info("App Version: ",appVersion);
+    log.info("Database Schema Version:",maxAppSupportedSchemaVersion);
+    if (couchdbUrl == "") {log.error("No environment variable for CouchDB URL"); return false;}
+    if (couchdbInternalUrl == "") {log.error("No environment variable for internal CouchDB URL"); return false;}
+    log.info("Database URL: ",couchdbUrl);
+    log.info("Internal Database URL: ",couchdbInternalUrl);
+    if (couchDatabase == "") { log.error("No CouchDatabase environment variable."); return false;}
+    log.info("Using database:",couchDatabase);
+    log.info("Refresh token expires in ",refreshTokenExpires);
+    log.info("STATUS: Access token expires in ",accessTokenExpires);
+    log.info("STATUS: User Account Creation is: ",disableAccountCreation ? "DISABLED" : "ENABLED");
     await createDBIfNotExists();
     await setDBSecurity();
     try {todosDBAsAdmin = todosNanoAsAdmin.use(couchDatabase);}
-    catch(err) {console.log("ERROR: Could not open todo database:",err); return false;}
+    catch(err) {log.error("Could not open todo database:",err); return false;}
     try {usersDBAsAdmin = usersNanoAsAdmin.use("_users");}
-    catch(err) {console.log("ERROR: Could not open users database:", err); return false;}
+    catch(err) {log.error("Could not open users database:", err); return false;}
     await addDBIdentifier();
     await checkAndUpdateSchema();
     await checkAndCreateContent();
@@ -565,17 +609,17 @@ export async function dbStartup() {
     if (enableScheduling) {
         if(isInteger(String(resolveConflictsFrequencyMinutes))) {
             setInterval(() => {resolveConflicts()},60000*Number(resolveConflictsFrequencyMinutes));
-            console.log("STATUS: Conflict resolution scheduled every ",resolveConflictsFrequencyMinutes, " minutes.")
+            log.info("Conflict resolution scheduled every ",resolveConflictsFrequencyMinutes, " minutes.")
             resolveConflicts();
         } else {
-            console.log("ERROR: Invalid environment variable for scheduling conflict resolution -- not started.");
+            log.error("Invalid environment variable for scheduling conflict resolution -- not started.");
         }
         if (isInteger(String(expireJWTFrequencyMinutes))) {
             setInterval(() => {expireJWTs()},60000*Number(expireJWTFrequencyMinutes));
-            console.log("STATUS: JWT expiry scheduled every ",expireJWTFrequencyMinutes," minutes.");
+            log.info("JWT expiry scheduled every ",expireJWTFrequencyMinutes," minutes.");
             expireJWTs();
         } else {
-            console.log("ERROR: Invalid environment variable for scheduling JWT expiry -- not started")
+            log.error("Invalid environment variable for scheduling JWT expiry -- not started")
         }
     }
 }

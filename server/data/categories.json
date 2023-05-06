@@ -37,8 +37,8 @@
     { "_id" : "system:cat:hair", "name": "Hair Products - Shampoo/Conditioner" },
     { "_id" : "system:cat:auto", "name": "Automotive" },
     { "_id" : "system:cat:office", "name": "Office Supplies" },
-    { "_id" : "system:cat:beauty", "name": "Beauty Supplies" }
+    { "_id" : "system:cat:beauty", "name": "Beauty Supplies" },
 
-
-
+    { "_id" : "system:cat:breakfast","name":"Other Breakfast"},
+    { "_id" : "system:cat:coffeetea","name":"Coffee/Tea"}
 ]

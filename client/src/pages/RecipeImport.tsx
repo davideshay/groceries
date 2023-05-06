@@ -1,5 +1,5 @@
 import { IonContent, IonPage, IonButton, IonList, 
- IonItem, NavContext, IonIcon, IonToolbar, IonButtons, IonSelect, IonSelectOption, useIonAlert} from '@ionic/react';
+ IonItem, NavContext, IonIcon, IonToolbar, IonButtons, IonSelect, IonSelectOption, IonText} from '@ionic/react';
 import { useState,  useContext, useRef } from 'react';
 import { useItems } from '../components/Usehooks';
 import { HistoryProps, RowType, RecipeFileTypes } from '../components/DataTypes';
@@ -11,7 +11,7 @@ import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
 import { FilePicker, PickFilesResult } from '@capawesome/capacitor-file-picker';
 import { Filesystem } from '@capacitor/filesystem';
-import {useProcessInputFile } from '../components/importUtiliites';
+import {useProcessInputFile } from '../components/importUtilities';
 
 type PageState = {
   recipeFormat: string,
@@ -89,7 +89,7 @@ const RecipeImport: React.FC<HistoryProps> = (props: HistoryProps) => {
               <IonButton onClick={() => pickImportFile()}>{t('general.import_file')}</IonButton>
             </IonItem>
           </IonList>
-          <IonItem>{pageState.formError}</IonItem>
+          <IonItem><IonText color="danger">{pageState.formError}</IonText></IonItem>
           <IonToolbar>
            <IonButtons slot="secondary">
            <IonButton fill="outline" color="secondary" onClick={() => goBack("/recipes")}><IonIcon slot="start" icon={returnDownBackOutline}></IonIcon>{t("general.go_back")}</IonButton>

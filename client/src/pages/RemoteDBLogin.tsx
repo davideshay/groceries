@@ -10,11 +10,12 @@ import { App } from '@capacitor/app';
 import { createNewUser, getTokenInfo, navigateToFirstListID, errorCheckCreds  } from '../components/RemoteUtilities';
 import { cloneDeep } from 'lodash';
 import { RemoteDBStateContext, SyncStatus, initialRemoteDBState } from '../components/RemoteDBState';
-import { HistoryProps, LogLevel } from '../components/DataTypes';
-import { apiConnectTimeout, logger } from '../components/Utilities';
+import { HistoryProps} from '../components/DataTypes';
+import { apiConnectTimeout } from '../components/Utilities';
 import { useTranslation } from 'react-i18next';
 import PageHeader from '../components/PageHeader';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
+import log from 'loglevel';
 
 export type RemoteState = {
   password: string | undefined,
@@ -96,7 +97,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       dismiss();
       if (remoteDBState.dbUUIDAction !== DBUUIDAction.none) {
         if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_app_schema_mismatch) {
-          logger(LogLevel.ERROR,"ERROR: Schema too new, not supported with this app version. Upgrade.");
+          log.error("Schema too new, not supported with this app version. Upgrade.");
           presentAndExit({
             header: t("error.error") as string,
             message: t("error.app_not_support_newer_schema") as string,
@@ -105,7 +106,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
           return;
         }
         if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_local_remote_schema_mismatch) {
-          logger(LogLevel.ERROR,"ERROR: Local/Remote schema mismatch. Must destroy local Databse.");
+          log.error("Local/Remote schema mismatch. Must destroy local Databse.");
           presentAlert( {
             header: t("error.warning"),
             message: t("error.different_database_schema"),
@@ -117,7 +118,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
           return;
         }
         if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_no_uuid_on_server) {
-          logger(LogLevel.ERROR,"ERROR: No database UUID defined in server todos database. Cannot continue");
+          log.error("No database UUID defined in server todos database. Cannot continue");
           presentAndExit({
             header: t("error.error") as string,
             message: t("error.server_no_unique_id") as string,
@@ -144,7 +145,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       }
       if (globalData.listRowsLoaded && !globalData.listsLoading) {
         if (remoteDBState.connectionStatus === ConnectionStatus.cannotStart) {
-          logger(LogLevel.ERROR,"Detected cannot start, setting initRemoteState");
+          log.error("Detected cannot start, setting initRemoteState");
           setRemoteState(initRemoteState);
         } else if (remoteDBState.connectionStatus === ConnectionStatus.loginComplete && (remoteDBState.initialSyncComplete || remoteDBState.workingOffline)) {
           doNav();
@@ -189,7 +190,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       await dismiss();
       return;
     }
-    logger(LogLevel.DEBUG,"creds check ok... trying to issue token...");
+    log.debug("creds check ok... trying to issue token...");
     let response: HttpResponse;
     const options : HttpOptions = {
         url: String(remoteDBCreds.apiServerURL+"/issuetoken"),
@@ -203,12 +204,12 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       
     };
     try {response = await CapacitorHttp.post(options)}
-    catch(err) {logger(LogLevel.ERROR,"Error logging in...",err)
+    catch(err) {log.error("Error logging in...",err)
                 setRemoteState(prevState => ({...prevState, formError: t("error.could_not_contact_api_server")}));
                 setRemoteDBState({...remoteDBState, serverAvailable: false});
                 await dismiss();
                 return}
-    logger(LogLevel.INFO,"did API /issuetoken : result: ", cloneDeep(response));            
+    log.debug("Did API /issuetoken : result: ", cloneDeep(response));            
     if (!((response?.status === 200) && (response?.data?.loginSuccessful))) {
         setRemoteState(prevState => ({...prevState, formError: t("error.invalid_authentication")}))
         await dismiss();
@@ -229,6 +230,12 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       createResponse = await createNewUser(remoteDBState,remoteDBCreds,String(remoteState.password));
       if (createResponse === undefined) { 
         setRemoteState(prevState => ({...prevState, formError: t("error.creating_user")}));
+        await dismiss();
+        return;
+      }
+      if (createResponse.data.creationDisabled) {
+        credsCheck.errorText=(t("error.account_creation_disabled"));
+        setRemoteState(prevState => ({...prevState, formError: credsCheck.errorText}))
         await dismiss();
         return;
       }
@@ -263,7 +270,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
         connectTimeout: apiConnectTimeout        
     };
     try {await CapacitorHttp.post(options);}
-    catch(err) {logger(LogLevel.ERROR,"ERROR: resetting password",err)}
+    catch(err) {log.error("Resetting password",err)}
 //    presentAlert({
 //      header: "Password Request Sent",
 //      message: "Please check your email for the link to reset your password",
@@ -289,7 +296,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function setWorkingOffline() {
-    logger(LogLevel.DEBUG,"Working Offline Now...");
+    log.debug("Working Offline Now...");
     setRemoteDBState({...remoteDBState,workingOffline: true,connectionStatus: ConnectionStatus.loginComplete, 
         syncStatus: SyncStatus.offline})
     navigateToFirstListID(props.history,remoteDBCreds, globalData.listRows);    
@@ -310,6 +317,16 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
 //    return (<></>)
 //  }
   
+  function switchToCreateMode() {
+    let curCreds=remoteDBCreds;
+    curCreds.dbUsername = "";
+    curCreds.email = "";
+    curCreds.fullName = "";
+    curCreds.refreshJWT = "";
+    setRemoteDBCreds(curCreds);
+    setRemoteState(prevState => ({...prevState,inCreateMode: true, formError: ""}))
+  }
+
   let formElem;
   if (remoteDBState.serverAvailable) {
     if (!remoteState.inCreateMode) {
@@ -372,7 +389,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
         <IonButton size="small" slot="start" onClick={() => submitForm()}>{t("general.login")}</IonButton>
         {/* <IonButton onClick={() => workOffline()}>Work Offline</IonButton> */}        
         <IonButton size="small" onClick={() => resetPassword()}>{t("general.reset_password")}</IonButton>
-        <IonButton size="small" slot="end" onClick={() => setRemoteState(prevState => ({...prevState,inCreateMode: true, formError: ""}))}>{t("general.create_account")}</IonButton>
+        <IonButton size="small" slot="end" onClick={() => switchToCreateMode()}>{t("general.create_account")}</IonButton>
 
       </>
     } else {

@@ -113,8 +113,8 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   screenLoading.current=false;
 
   function updateSearchCriteria(event: CustomEvent) {
-    let toOpen=true;
-    if (event.detail.value.length === 0) {toOpen = false}
+//    let toOpen=true;
+//    if (event.detail.value.length === 0) {toOpen = false}
     setSearchState(prevState => ({...prevState, isFocused: true}));
     filterAndCheckRows(event.detail.value,true)
   }
@@ -247,6 +247,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         newItem.globalItemID = itemSearch.globalItemID;
         newItem.listGroupID = pageState.groupIDforSelectedList;
         newItem.name = itemSearch.itemName;
+        newItem.pluralName = itemSearch.itemName;
         listRows.forEach((lr) => {
           if (lr.listGroupID === pageState.groupIDforSelectedList) {
             let newItemList: ItemList = cloneDeep(ItemListInit); // sets to active true by default
@@ -429,10 +430,11 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   let listContent=[];
 
-  function addCurrentRows(listCont: JSX.Element[], curRows: JSX.Element[], catID: string, catName: string, completed: boolean | null) {
+  function addCurrentRows(listCont: JSX.Element[], curRows: JSX.Element[], catID: string, catName: string, catColor: string, completed: boolean | null) {
+    if (catColor === "primary") {catColor = "#777777"}
     listCont.push(
         <IonItemGroup key={"cat"+catID+Boolean(completed).toString()}>
-        <IonItemDivider class="category-divider" key={"cat"+catID+Boolean(completed).toString()}>{catName}</IonItemDivider>
+        <IonItemDivider class="category-divider" style={{"borderBottom":"4px solid "+catColor}}    key={"cat"+catID+Boolean(completed).toString()}>{catName}</IonItemDivider>
           {curRows}
       </IonItemGroup>
     )
@@ -440,6 +442,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   let lastCategoryID : string | null ="<INITIAL>";
   let lastCategoryName="<INITIAL>";
+  let lastCategoryColor="#ffffff";
   let lastCategoryFinished: boolean | null = null;
   let currentRows=[];
   let createdFinished=false;
@@ -452,11 +455,12 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     const item = pageState.itemRows[i];
     if ((lastCategoryName !== item.categoryName )||(lastCategoryFinished !== item.completed)) {
       if (currentRows.length > 0) {
-        addCurrentRows(listContent,currentRows,String(lastCategoryID),lastCategoryName,lastCategoryFinished);
+        addCurrentRows(listContent,currentRows,String(lastCategoryID),lastCategoryName,lastCategoryColor,lastCategoryFinished);
         currentRows=[];
       }
       lastCategoryID = item.categoryID;
       lastCategoryName=item.categoryName;
+      lastCategoryColor=item.categoryColor;
       lastCategoryFinished=item.completed;
     }
     currentRows.push(
@@ -477,7 +481,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       createdFinished=true;
     }
   }
-  addCurrentRows(listContent,currentRows,String(lastCategoryID),lastCategoryName,lastCategoryFinished);
+  addCurrentRows(listContent,currentRows,String(lastCategoryID),lastCategoryName,lastCategoryColor,lastCategoryFinished);
   if (!createdFinished) {listContent.push(completedDivider)};
   let contentElem=(<IonList lines="full">{listContent}</IonList>)
 

@@ -334,7 +334,9 @@ export const es_translations =
         "nothing_to_load": "Nada que cargar",
         "could_not_import_recipe_dup":"No se pudo importar: {{recipe}} - Duplicado",
         "could_not_match_uom":"No se pudo encontrar la unidad de medida. Original era: {{name}} o {{pluralName}}",
-        "must_enter_a_plural_name":"Debe ingresar un nombre plural"    
+        "must_enter_a_plural_name":"Debe ingresar un nombre plural",
+        "account_creation_disabled":"creación de cuenta deshabilitada",
+        "updating_uom": "Error al actualizar la unidad de medida"    
     },
      "category": {
         "bakery": "Panadería",
@@ -375,7 +377,9 @@ export const es_translations =
         "hair": "Productos para el Cabello-Shampoo/Acondicionador",
         "auto": "Automotriz",
         "office": "Suministros de Oficina",
-        "beauty": "Productos de Belleza"
+        "beauty": "Productos de Belleza",
+        "breakfast": "Desayuno",
+        "coffeetea": "Café/Té",
     },
     "uom": {
         "EA_one": "Cada uno",
@@ -951,6 +955,14 @@ export const es_translations =
         "maplesyrup_one": "Jarabe de Arce",
         "maplesyrup_other": "Jarabe de Arce",
         "windshieldwiperfluid_one": "Líquido Limpiaparabrisas",
-        "windshieldwiperfluid_other": "Líquido Limpiaparabrisas"
+        "windshieldwiperfluid_other": "Líquido Limpiaparabrisas",
+        "coffee_one": "Café",
+        "coffee_other": "Café",
+        "coffeecreamer_one": "Crema de café",
+        "coffeecreamer_other": "Cremas de cafe",
+        "tea_one": "Té",
+        "tea_other": "Té",
+        "clementines_one":"Clementina",
+        "clementines_other":"Clementinas"
     }
 }

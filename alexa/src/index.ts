@@ -15,6 +15,7 @@ import { LaunchRequestHandler,
           LocalizationInterceptor,
           } from './intents';
 import { dbStartup } from './dbstartup';
+import log from 'loglevel';
 
 export const alexaPort = (process.env.ALEXA_PORT == undefined) ? 3000 : process.env.ALEXA_PORT;
 
@@ -42,4 +43,4 @@ const adapter = new ExpressAdapter(skill, true, true);
 dbStartup()
 
 app.post('/', adapter.getRequestHandlers());
-app.listen(alexaPort, () => {console.log("Listening on port "+alexaPort+" ...")});
+app.listen(alexaPort, () => {log.info("Listening on port "+alexaPort+" ...")});

@@ -1,6 +1,6 @@
 import { IonTitle,  IonButton, IonList, IonInput, IonItem, IonSelect, IonCheckbox, IonIcon,
     IonSelectOption, IonTextarea, IonGrid, IonRow, IonCol, IonText, IonModal, IonToolbar, IonButtons } from '@ionic/react';
-import { addOutline, closeCircleOutline, saveOutline } from 'ionicons/icons';    
+import { addCircleOutline, closeCircleOutline, saveOutline } from 'ionicons/icons';    
 import { SetStateAction, useContext } from 'react';    
 import {  ModalState, ModalStateInit } from '../components/DataTypes';
 import {  ItemDoc, ItemList} from '../components/DBSchema';
@@ -63,7 +63,7 @@ const ItemListsModal: React.FC<ModalProps> = (props: ModalProps) => {
                   )})}
           </IonSelect>
           <IonButton slot="end" fill="default" onClick={() => {props.addCategoryPopup()}}>
-            <IonIcon slot="end" icon={addOutline} ></IonIcon>
+            <IonIcon slot="end" icon={addCircleOutline} ></IonIcon>
           </IonButton>  
         </IonItem>
         <IonItem>
@@ -76,7 +76,7 @@ const ItemListsModal: React.FC<ModalProps> = (props: ModalProps) => {
                       </IonSelectOption>
                     ))}
           </IonSelect>
-          <IonButton fill="default" onClick={(e) => {props.addUOMPopup()}}><IonIcon icon={addOutline}></IonIcon></IonButton>
+          <IonButton fill="default" onClick={(e) => {props.addUOMPopup()}}><IonIcon icon={addCircleOutline}></IonIcon></IonButton>
         </IonItem>
         <IonItem><IonText>{t('itemtext.item_was_purchased_from_here')} {props.modalState.itemList.boughtCount} {t('general.times')}</IonText><IonButton slot="end" onClick={() => props.setModalState(prevState => ({...prevState, itemList: {...prevState.itemList, boughtCount: 0}}))}>{t('general.reset')}</IonButton></IonItem>
         <IonItem><IonTextarea label={t('general.note') as string} labelPlacement='stacked' value={props.modalState.itemList.note} onIonChange={(e) => props.setModalState(prevState => ({...prevState,itemList: {...prevState.itemList,note: String(e.detail.value)}}))}></IonTextarea></IonItem>

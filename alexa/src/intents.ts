@@ -23,6 +23,7 @@ import { de_translations } from './locales/de/translation';
 import { es_translations } from './locales/es/translation';
 import { getSlotValueV2 } from 'ask-sdk-core';
 import { isEmpty } from 'lodash';
+import log from 'loglevel';
 const i18n = require('i18next');
 const sprintf = require('i18next-sprintf-postprocessor');
 
@@ -123,14 +124,14 @@ export const ChangeListGroupIntentHandler: RequestHandler = {
     let listGroupSlot = getSlot(requestEnvelope,"listgroup");
     if (listGroupSlot !== null) {
       let [slotType,selectedListGroup] = getSelectedSlotInfo(listGroupSlot);
-      console.log("listgroup selected:",slotType,selectedListGroup);
+      log.debug("listgroup selected:",slotType,selectedListGroup);
       if (slotType == SlotType.Static && selectedListGroup.id == "sys:listgroup:default") {
         let foundListGroup = listGroups.find(l => (l._id === sessionAttributes.currentListGroupID))
         if (foundListGroup === undefined) {
           speechText = "The current list group is invalid"
         } else { speechText = "The current list group is already "+foundListGroup.name }
       } else if (selectedListGroup.id !== null) {
-        console.log("trying to find listgroup in listgroups: ", listGroups);
+        log.debug("trying to find listgroup in listgroups: ", listGroups);
         let foundListGroup = listGroups.find((lg) => (lg._id === selectedListGroup.id));
         if (foundListGroup !== undefined) {
           speechText = "Changing list group to "+foundListGroup.name;
@@ -165,7 +166,7 @@ export const ChangeListIntentHandler: RequestHandler = {
     let listSlot = getSlot(requestEnvelope,"list");
     if (listSlot !== null) {
       let [slotType,selectedList] = getSelectedSlotInfo(listSlot);
-      console.log("list selected:",slotType,selectedList);
+      log.debug("list selected:",slotType,selectedList);
       if (selectedList.id !== null) {
         if (slotType == SlotType.Static && selectedList.id == "sys:list:default") {
           let foundList = lists.find(l => (l._id === sessionAttributes.currentListID))
@@ -200,7 +201,7 @@ export const AddItemToListIntentHandler: RequestHandler = {
   },
   async handle(handlerInput : HandlerInput) : Promise<Response> {
     let { attributesManager, requestEnvelope } = handlerInput;
-    console.log("Request:",JSON.stringify((requestEnvelope.request as IntentRequest).intent,null,2));
+    log.debug("Request:",JSON.stringify((requestEnvelope.request as IntentRequest).intent,null,2));
     let sessionAttributes = attributesManager.getSessionAttributes();
     let requestAttributes:RequestAttributes = attributesManager.getRequestAttributes();
     let speechText = "";
@@ -210,7 +211,7 @@ export const AddItemToListIntentHandler: RequestHandler = {
     let itemSlotValueV2 = getSlotValueV2(requestEnvelope,"item");
     let addNoMatchSlot = getSlot(requestEnvelope,"addnomatch");
     let [addNoMatchSlotType,addNoMatchItem] = getSelectedSlotInfo(addNoMatchSlot);
-    console.log("item slot value:",itemSlotValue," v2:",itemSlotValueV2);
+    log.debug("item slot value:",itemSlotValue," v2:",itemSlotValueV2);
     if (itemSlotType == SlotType.None && !isEmpty(itemSlotValue) && addNoMatchSlotType !== SlotType.Static && addNoMatchItem.id !== "sys:yes") {
         speechText="Do you really want to add "+itemSlotValue+" to the list?";
         return handlerInput.responseBuilder
@@ -219,7 +220,7 @@ export const AddItemToListIntentHandler: RequestHandler = {
         .withSimpleCard("Really?", speechText)
         .getResponse();
     }
-    console.log("addNoMatchSlotType",addNoMatchSlotType,"id",addNoMatchItem.id);
+    log.debug("addNoMatchSlotType",addNoMatchSlotType,"id",addNoMatchItem.id);
     if (addNoMatchSlotType === SlotType.Static && addNoMatchItem.id === "sys:no") {
       return handlerInput.responseBuilder
       .speak("OK. Item not added to the list")
@@ -406,7 +407,7 @@ export const SessionEndedRequestHandler : RequestHandler = {
       return request.type === 'SessionEndedRequest';
     },
     handle(handlerInput : HandlerInput) : Response {
-      console.log(`Session ended with reason: ${(handlerInput.requestEnvelope.request as SessionEndedRequest).reason}`);
+      log.info(`Session ended with reason: ${(handlerInput.requestEnvelope.request as SessionEndedRequest).reason}`);
   
       return handlerInput.responseBuilder.getResponse();
     },
@@ -417,8 +418,8 @@ export const AlexaErrorHandler : ErrorHandler = {
       return true;
     },
     handle(handlerInput : HandlerInput, error : Error) : Response {
-      console.log(`Error handled: ${error.message}`);
-      console.log("input:",JSON.stringify(handlerInput,null,4));
+      log.error(`Error handled: ${error.message}`);
+      log.error("input:",JSON.stringify(handlerInput,null,4));
   
       return handlerInput.responseBuilder
         .speak('Sorry, I don\'t understand your command. Please say it again.')

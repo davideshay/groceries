@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useEffect, useState} from "react";
 import { Preferences } from '@capacitor/preferences';
 import { pick,cloneDeep } from "lodash";
-import { isJsonString, logger } from "./Utilities";
-import { LogLevel, RowType } from "./DataTypes";
+import { isJsonString } from "./Utilities";
+import { RowType } from "./DataTypes";
 import { GlobalSettings, AddListOptions, SettingsDoc, InitSettings, InitSettingsDoc } from "./DBSchema";
 import { useCreateGenericDocument, useUpdateGenericDocument } from "./Usehooks";
 import { RemoteDBStateContext } from "./RemoteDBState";

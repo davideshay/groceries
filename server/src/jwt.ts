@@ -6,6 +6,7 @@ import { getUserDoc } from './utilities';
 import { isEqual, isEmpty } from 'lodash';
 import {UserDoc} from './DBSchema'
 import { DocumentListResponse, MangoResponse } from 'nano';
+import log from 'loglevel';
 
 const JWTKey = new TextEncoder().encode(couchKey);
 
@@ -27,6 +28,7 @@ export type TokenReturnType = {
 }
 
 export async function isValidToken(refreshJWT: string) {
+    log.debug("Validating token:",refreshJWT);
     let jwtResponse = null;
     let returnValue: TokenReturnType = {
         isValid: false,
@@ -35,15 +37,18 @@ export async function isValidToken(refreshJWT: string) {
         error : null
     };
     try { jwtResponse = await jose.jwtVerify(refreshJWT, JWTKey); }
-    catch(err) { returnValue.isValid = false; returnValue.error = err;
-            return returnValue;}
+    catch(err) { 
+        returnValue.isValid = false; returnValue.error = err;
+        log.error("JWT Verify error:",err);
+        return returnValue;}
     if (jwtResponse.hasOwnProperty("payload") && jwtResponse.hasOwnProperty("protectedHeader")) {
         if (jwtResponse.payload.hasOwnProperty("sub")) {
             returnValue.isValid = true;
 //            returnValue.protectedHeader = jwtResponse.protectedHeader;
             returnValue.payload = jwtResponse.payload as TokenPayload;
         }
-    }        
+    }
+    log.debug("Returning JWT data:",returnValue);
     return returnValue;
 }
 
@@ -69,7 +74,8 @@ export async function JWTMatchesUserDB(refreshJWT: string, deviceUUID: string, u
     let userDoc: any = await getUserDoc(username);
     if (userDoc.fullDoc === null) { userDoc.error=true; return false };
     if (userDoc.fullDoc.hasOwnProperty('refreshJWTs')) {
-        console.log("STATUS: Refresh JWT matches the database:",userDoc.fullDoc.refreshJWTs[deviceUUID] == refreshJWT);    
+        log.debug("Check JWT for ",deviceUUID,"and user",username);
+        log.info("Refresh JWT matches the database:",userDoc.fullDoc.refreshJWTs[deviceUUID] == refreshJWT);    
     }
     if (userDoc.error) { return false;}
     if (userDoc.fullDoc.name !== username) { return false;}
@@ -79,7 +85,7 @@ export async function JWTMatchesUserDB(refreshJWT: string, deviceUUID: string, u
 }
 
 export async function invalidateToken(username: string, deviceUUID: string, invalidateAll: boolean) {
-    console.log("STATUS: invalidating token now...");
+    log.info("Invalidating token now... user:",username," for device: ",deviceUUID," for all devices? ",invalidateAll);
     let userDoc: any = await getUserDoc(username);
     if (userDoc.error) { return false;}
     if (userDoc.fullDoc.name !== username) { return false;}
@@ -90,22 +96,25 @@ export async function invalidateToken(username: string, deviceUUID: string, inva
         userDoc.fullDoc.refreshJWTs[deviceUUID] = {};
     }    
     try { let res = await usersDBAsAdmin.insert(userDoc.fullDoc); }
-    catch(err) { console.log("ERROR: problem invalidating token: ",err); return false; }
-    console.log("STATUS: token now invalidated");
+    catch(err) { log.error("Problem invalidating token: ",err); return false; }
+    log.info("Token now invalidated");
     return true;
 }
 
 export async function expireJWTs() {
-    console.log("STATUS: Checking for expired JWTs");
+    log.info("Checking for expired JWTs");
     let res: DocumentListResponse<unknown> | null = null;
     try {res = (await usersDBAsAdmin.list({include_docs: true})) ;}
-    catch(err) {console.log("ERROR: Could not find user records to expire JWTs:",err); return false;}
-    if (res == null || !res.hasOwnProperty("rows")) { console.log("ERROR: No user rows found"); return false;}
+    catch(err) {log.error("Could not find user records to expire JWTs:",err); return false;}
+    if (res == null || !res.hasOwnProperty("rows")) { log.error("No user rows found"); return false;}
     for (let i = 0; i < res.rows.length; i++) {
         const userDoc: UserDoc = (res.rows[i].doc as UserDoc);
+        log.debug("Checking JWT for "+userDoc.name)
         if (userDoc.hasOwnProperty("refreshJWTs")) {
+            log.debug("Initial JWTs:",userDoc.refreshJWTs);
             let updateJWTs: any = {};
             for (const [device,jwt] of Object.entries(userDoc.refreshJWTs)) {
+                log.debug("Checking JWT for ",device);
                 if (isEmpty(jwt)) {continue;}
                 let jwtVerify = await isValidToken(String(jwt));
                 if (jwtVerify.isValid) {updateJWTs[device] = jwt}
@@ -113,11 +122,11 @@ export async function expireJWTs() {
             if (!isEqual(updateJWTs,userDoc.refreshJWTs)) {
                 userDoc.refreshJWTs=updateJWTs;
                 try { let response=usersDBAsAdmin.insert(userDoc); }
-                catch(err) {console.log("ERROR updating JWTs for user ", userDoc._id, err)}
-                console.log("STATUS: Expired JWTs for user ",userDoc._id);
+                catch(err) {log.error("Updating JWTs for user ", userDoc._id, err)}
+                log.info("Expired JWTs for user ",userDoc._id);
             } 
         }
     }
-    console.log("STATUS: Finished checking for expired JWTs");
+    log.info("Finished checking for expired JWTs");
 }
 
