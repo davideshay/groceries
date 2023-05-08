@@ -260,7 +260,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         } 
         let refreshResponse = await refreshToken(credsObj as DBCreds,devID);
         if (refreshResponse === undefined) {
-            setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.could_not_contact_api_server") , connectionStatus: ConnectionStatus.navToLoginScreen}));
+            setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.could_not_contact_api_server") , serverAvailable: false  ,connectionStatus: ConnectionStatus.navToLoginScreen}));
             return;
         }
         if (!refreshResponse.data.valid) {
@@ -274,7 +274,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         remoteDBCreds.current.refreshJWT = refreshResponse.data.refreshJWT;
         let JWTCheck = await checkJWT(refreshResponse.data.accessJWT,credsObj as DBCreds);
         if (!JWTCheck.DBServerAvailable) {
-            setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.db_server_not_available") , connectionStatus: ConnectionStatus.navToLoginScreen}))
+            setRemoteDBState(prevState => ({...prevState,credsError: true, serverAvailable: false  ,credsErrorText: t("error.db_server_not_available") , connectionStatus: ConnectionStatus.navToLoginScreen}))
         }
         await setPrefsDBCreds();
         if (!JWTCheck.JWTValid) {

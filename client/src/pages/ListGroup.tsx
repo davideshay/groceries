@@ -89,7 +89,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
       setPageState(prevState => ({...prevState,usersInfo: usersInfo,usersLoaded: true}))
     }
     let newPageState: PageState =cloneDeep(pageState);
-    if (listRowsLoaded && (useFriendState === UseFriendState.rowsLoaded) && !categoryLoading && (!listGroupLoading || mode==="new")) {
+    if (listRowsLoaded && (useFriendState === UseFriendState.rowsLoaded ||  !remoteDBState.serverAvailable) && !categoryLoading && (!listGroupLoading || mode==="new")) {
       if (mode === "new" && pageState.needInitListGroupDoc) {
         let initListGroupDoc = ListGroupDocInit;
         newPageState.listGroupDoc=initListGroupDoc;
@@ -116,7 +116,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
     <ErrorPage errorText={t('error.loading_list_group') as string}></ErrorPage>
   }
 
-  if (!listRowsLoaded || (listGroupLoading && pageState.selectedListGroupID !== null) ||(useFriendState !== UseFriendState.rowsLoaded) || categoryLoading || isEmpty(pageState.listGroupDoc) || !pageState.usersLoaded || pageState.deletingDoc)  {
+  if (!listRowsLoaded || (listGroupLoading && pageState.selectedListGroupID !== null) ||(useFriendState !== UseFriendState.rowsLoaded && !remoteDBState.workingOffline) || categoryLoading || isEmpty(pageState.listGroupDoc) || !pageState.usersLoaded || pageState.deletingDoc)  {
     return ( <Loading isOpen={screenLoading.current} message={t('general.loading_list_group')}  /> )
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   };
@@ -192,7 +192,11 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   usersElem.push(<IonItemDivider key="listuserdivider">{ownerText}</IonItemDivider>)
-  usersElem.push(<IonItemDivider key="listdivider">{t("general.listgroup_shared_with_users")}</IonItemDivider>)
+  if (remoteDBState.workingOffline) {
+    usersElem.push(<IonItem key="offline">{t("general.offline_cant_get_sharing_info")}</IonItem>)
+  } else {
+    usersElem.push(<IonItemDivider key="listdivider">{t("general.listgroup_shared_with_users")}</IonItemDivider>)
+  }  
 
   if (iAmListOwner) {
     for (let i = 0; i < friendRows.length; i++) {

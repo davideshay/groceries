@@ -14,8 +14,10 @@ import log from "loglevel";
 
 export async function navigateToFirstListID(phistory: History,remoteDBCreds: DBCreds, listRows: ListRow[]) {
     let firstListID = null;
-    if (listRows.length > 0) {
-      firstListID = listRows[0].listDoc._id;
+    if (listRows !== undefined) {
+        if (listRows.length > 0) {
+        firstListID = listRows[0].listDoc._id;
+        }
     }
     if (firstListID == null) {
         phistory.push("/lists");

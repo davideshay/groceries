@@ -5,6 +5,8 @@ import { ListCombinedRows, ListRow } from "./DataTypes";
 import { getListRows } from "./GlobalDataUtilities";
 import { RemoteDBStateContext } from "./RemoteDBState";
 import { translatedCategoryName, translatedItemName, translatedUOMName } from "./translationUtilities";
+import log from "loglevel";
+import { cloneDeep } from "lodash";
 
 
 export type GlobalDataState = {
@@ -122,10 +124,12 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
         });
 
     useEffect( () => {
+        log.debug("Global Data change: ",{listsLoading, listDocs, offline: remoteDBState.workingOffline, syncomplete: remoteDBState.initialSyncComplete})
         if (!listsLoading && !listGroupsLoading && 
-                (remoteDBState.initialSyncComplete || remoteDBState.workingOffline)) {
+                (remoteDBState.initialSyncComplete || !remoteDBState.serverAvailable)) {
             setListRowsLoaded(false);
             const { listRows: localListRows, listCombinedRows: localListCombinedRows} = getListRows(listDocs as ListDocs,listGroupDocs as ListGroupDocs,remoteDBCreds)
+            log.debug("Got list rows back:", cloneDeep(localListRows));
             setListRows(localListRows);
             setListCombinedRows(localListCombinedRows);
             setListRowsLoaded(true);

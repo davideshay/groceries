@@ -207,7 +207,8 @@ export const en_translations =
         "shopping_quantity":"Shopping Quantity",
         "shopping_uom": "Shopping UoM",
         "update_user_info": "Update User Info",
-        "include_globalitems_in_search": "Include Global Items in Search"
+        "include_globalitems_in_search": "Include Global Items in Search",
+        "offline_cant_get_sharing_info": "Working offline, cannot retrieve or edit shared users"
      },
      "error" : {
         "invalid_dbuuid" : "Invalid Database Unique Identifier",
