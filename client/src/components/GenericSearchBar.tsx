@@ -1,9 +1,10 @@
-import { IonItem, IonIcon, IonInput, IonPopover, IonContent, IonList } from "@ionic/react"
-import { searchOutline } from "ionicons/icons"
+import { IonItem,  IonPopover, IonContent, IonList, IonSearchbar } from "@ionic/react"
 import { cloneDeep } from "lodash"
 import { useEffect, useState, KeyboardEvent, forwardRef, useImperativeHandle, Ref, MutableRefObject, useId } from "react"
 import { useTranslation } from "react-i18next"
+import { Keyboard } from '@capacitor/keyboard';
 import "./GenericSearchBar.css"
+
 
 export type SearchRow = {
     id: string,
@@ -67,6 +68,10 @@ function  GenericSearchBar(props: SearchBarProps,ref: Ref<SearchRefType>) {
         }
     }
     
+    function searchInputChange(event: CustomEvent) {
+        props.addItemWithoutRow(searchState.searchCriteria)
+    }
+
     function updateSearchCriteria(event: CustomEvent) {
         setSearchState(prevState => ({...prevState, searchCriteria: event.detail.value}));
     }
@@ -82,7 +87,7 @@ function  GenericSearchBar(props: SearchBarProps,ref: Ref<SearchRefType>) {
 
     return (
         <IonItem key="searchbar" class="generic-search-item">
-        <IonPopover side="bottom" trigger={componentID} isOpen={searchState.isOpen} keyboardClose={false} onDidDismiss={(e) => {leaveSearchBox()}}>
+        <IonPopover side="bottom" trigger={componentID} isOpen={searchState.isOpen} keyboardClose={false} dismissOnSelect={true}  onDidDismiss={(e) => {leaveSearchBox()}}>
             <IonContent>
                 <IonList key="popoverItemList">
                  {searchState.filteredRows.map((sr) => (
@@ -91,15 +96,13 @@ function  GenericSearchBar(props: SearchBarProps,ref: Ref<SearchRefType>) {
                 </IonList>
             </IonContent>
         </IonPopover>
-        <IonIcon icon={searchOutline} />
-        <IonInput id={componentID} aria-label="" class="ion-no-padding generic-input-search generic-input-search-class" debounce={5} value={searchState.searchCriteria} inputmode="text" enterkeyhint="enter"
-           clearInput={true}  placeholder={t("general.search") as string} fill="solid"
-           onKeyDown= {(e) => searchKeyPress(e)}
-           onIonInput={(e) => updateSearchCriteria(e)}
-           onClick={() => enterSearchBox()}
-/*                Not sure why, but when you have this specific setsearchstate, it captures the click on the item in the popover and nothing works /*
-/*               onIonBlur={(e) => { setSearchState(prevState => ({...prevState,isFocused: false}))}} */           >   
-        </IonInput>
+        <IonSearchbar id={componentID} aria-label="" class="ion-no-padding generic-input-search generic-input-search-class"
+                    debounce={5} value={searchState.searchCriteria} inputmode="text" enterkeyhint="enter"
+                    onIonInput={(e: any) => {updateSearchCriteria(e)}}
+//                    onIonChange={(e: any) =>{console.log("search change:",e); searchInputChange(e)}}
+                    onKeyDown={(e) => searchKeyPress(e)}
+                    onClick={() => enterSearchBox()}>
+         </IonSearchbar>           
      </IonItem>
 
 

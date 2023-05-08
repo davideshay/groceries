@@ -280,7 +280,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         if (!JWTCheck.JWTValid) {
             remoteDBCreds.current.refreshJWT = "";
             setPrefsDBCreds();
-            setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error,invalid_jwt_token"), connectionStatus: ConnectionStatus.navToLoginScreen}))
+            setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.invalid_jwt_token"), connectionStatus: ConnectionStatus.navToLoginScreen}))
              return;
         }
         let userIDList: UserIDList = { userIDs: [String(remoteDBCreds.current.dbUsername)] }

@@ -8,13 +8,13 @@ Use the docker-compose.yaml file from the docs directory to start with. This is 
     * File groceries-web-conf -- see file in docs directory for contents. Just sets up some defaults for nginx.
     * Directory ./dbdata -- will have the database files
     * Directory ./dbetclocal -- has configuration files for couchdb. Should start with two files called admin.ini which contains the startup user/password. See admin.ini in docs directory for contents.  Other file should be jwt.ini which you will need to update with your personal HMAC key (base64 encoded) on the line that starts with "hmac:_default".
-* Launch the file with docker-compose up. CouchDB will start, but is not yet configured. You will need to do the following steps after it launches.
-* Go to the following URL: http://localhost:5984/_utils
-* Login with the user (admin/admin in the files).
-* Go to the settings tab (gear on the left) and click on CORS. Enable for all domains (can be more specific if needed)
-* Go to the databases tab (cylinder icon on the left). Create the _users and _replicator system databases.
-* Stop the docker compose stack.
-* Restart the docker compose stack (docker compose up). CouchDB will take a minute or two to start, and then the backend/server should start as well. 
+* Launch the file with docker-compose up. Because it now has the "single_node" key in jwt.ini, CouchDB will setup and automatically create the _users and _replicator system databases.
+* There are two different ways to change the password:
+    * If you are mainly doing a configuration as code type approach, first, you might want to change to bind-mounting the config files mounted to /opt/couchdb/etc/local.d directory, for both admin.ini and jwt.ini. If you do that, you can change the password in admin.ini. You can generate this using techniques such as those that are shown here: https://sleeplessbeastie.eu/2020/03/13/how-to-generate-password-hash-for-couchdb-administrator/  Once you have the value, change the string after admin=-pbkdf2- in the admin.ini file to the value returned.
+    * Alternatively, login at http://localhost:5984/_utils with the user (admin/password) , go to the settings tab and change the admin password.  This will write a new password to jwt.ini. You can then delete the admin.ini file.
+* Regardless of which method was used, in the docker-compose.yml file change the groceries backend environment variable COUCHDB_ADMIN_PASSWORD to match.    
+* Login to the couchDB web UI (http://localhost:5984/_utils) and validate that CORS is set correctly (it should be open). Validate that the _users and _replicator databases have been created.
+* You may need to restart the services with docker compose up/down or restart to apply the password changes and HMAC key changes.
 
 ## Create a user
 
