@@ -12,9 +12,12 @@ services:
       retries: 5
       start_period: 15s
       timeout: 10s  
-    environment:
-      - COUCHDB_USER="admin"
-      - COUCHDB_PASSWORD="admin"
+#    I recommend you use the user id / password in admin.ini rather than here
+#    it is more secure. You shouldn't user both or you could end up with duplicates and issues    
+#    environment:
+#      - COUCHDB_USER="admin"
+#      - COUCHDB_PASSWORD="password"
+#    The default in admin.ini is "admin" / "password", and should be changed after setup
     volumes:
       - ./dbdata:/opt/couchdb/data
       - ./dbetclocal:/opt/couchdb/etc/local.d
@@ -39,9 +42,9 @@ services:
       COUCHDB_URL: http://localhost:5984
       COUCHDB_INTERNAL_URL:  http://couchdb:5984
       COUCHDB_DATABASE: "todos"
-      COUCHDB_HMAC_KEY: "my-plaintext-hmac-key"
+      COUCHDB_HMAC_KEY: "overeager-freedo-wispy-predefine-slug"
       COUCHDB_ADMIN_USER: "admin"
-      COUCHDB_ADMIN_PASSWORD: "mypassword"
+      COUCHDB_ADMIN_PASSWORD: "password"
       GROCERY_URL: "http://localhost:8100"
       GROCERY_API_URL: "http://localhost:3333"
       GROCERY_API_PORT: "3333"
