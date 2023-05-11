@@ -108,6 +108,7 @@ export async function issueToken(req: Request, res: Response) {
     const { username, password, deviceUUID } = req.body;
     log.info("issuing token for device ID:", JSON.stringify(deviceUUID));
     let response = {
+        dbServerAvailable: true,
         loginSuccessful: false,
         email: "",
         fullname: "",
@@ -118,6 +119,11 @@ export async function issueToken(req: Request, res: Response) {
         couchdbDatabase: couchDatabase
     }
     let loginResponse = await couchLogin(username,password);
+    if (!loginResponse.dbServerAvailable) {
+        log.info("Could not contact Database Server. Auth failed:",deviceUUID," user:",username);
+        response.dbServerAvailable = false;
+        return (response);
+    }
     if (!loginResponse.loginSuccessful) {
          log.info("Authentication failed for device: ",deviceUUID, " user: ",username);
          return (response);
@@ -561,7 +567,7 @@ export async function resetPasswordUIPost(req: Request, res: Response) {
 export async function resolveConflicts() {
     let conflicts;
     try {conflicts = await todosDBAsAdmin.view(conflictsViewID,conflictsViewName);}
-    catch(err) {log.error("Couldn't create conflicts view:",err); return false;}
+    catch(err) {log.error("Couldn't access conflicts view:",err); return false;}
     log.info("Resolving all conflicts started...");
     let resolveFailure=false;
     if (conflicts.rows?.length <= 0) {log.info("No conflicts found"); return};

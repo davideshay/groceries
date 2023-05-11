@@ -2,7 +2,7 @@ import { IonHeader, IonPage, IonTitle, IonToolbar, IonLoading, IonContent, IonTe
 import { isPlatform } from '@ionic/core';
 import { useContext, useEffect, useRef} from 'react';
 import { usePouch } from 'use-pouchdb';
-import { ConnectionStatus, RemoteDBStateContext } from '../components/RemoteDBState';
+import { ConnectionStatus, LoginType, RemoteDBStateContext } from '../components/RemoteDBState';
 import { navigateToFirstListID } from '../components/RemoteUtilities';
 import { initialSetupActivities } from '../components/Utilities';
 import ErrorPage from './ErrorPage';
@@ -17,13 +17,19 @@ type InitialLoadProps = {
 }
 
 const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
-    const { remoteDBState, remoteDBCreds, remoteDB,setConnectionStatus} = useContext(RemoteDBStateContext);
+    const { remoteDBState, setRemoteDBState, remoteDBCreds, remoteDB,setConnectionStatus, setLoginType} = useContext(RemoteDBStateContext);
     const { listError ,listRowsLoaded, listRows, listsLoading } = useContext(GlobalDataContext)
     const db=usePouch();
     const screenLoading = useRef(true);
     const { t } = useTranslation();
   
     useEffect(() => {
+        log.debug("setting to auto login from root...");
+        setLoginType(LoginType.autoLoginFromRoot);
+    },[])
+
+    useEffect(() => {
+        log.debug({listRowsLoaded, listsLoading});
         async function initialStartup() {
             await initialSetupActivities(remoteDB as PouchDB.Database, String(remoteDBCreds.dbUsername));
             screenLoading.current=false;

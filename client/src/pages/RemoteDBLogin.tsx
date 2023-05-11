@@ -4,7 +4,7 @@ import { useState, useEffect, useContext } from 'react';
 import { eye, eyeOff } from 'ionicons/icons';
 import { CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
 import { usePouch} from 'use-pouchdb';
-import { ConnectionStatus, DBCreds, DBUUIDAction } from '../components/RemoteDBState';
+import { ConnectionStatus, DBCreds, DBUUIDAction, LoginType } from '../components/RemoteDBState';
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
 import { createNewUser, getTokenInfo, navigateToFirstListID, errorCheckCreds  } from '../components/RemoteUtilities';
@@ -76,7 +76,8 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     const db=usePouch();
     const [remoteState,setRemoteState]=useState<RemoteState>(initRemoteState);
     const [presentAlert] = useIonAlert();
-    const { remoteDBState, remoteDBCreds, setRemoteDBState, setRemoteDBCreds, assignDB, setDBCredsValue} = useContext(RemoteDBStateContext);
+    const { remoteDBState, remoteDBCreds, setRemoteDBState, setRemoteDBCreds,stopSyncAndCloseRemote,
+      assignDB, setDBCredsValue, setLoginType, attemptFullLogin} = useContext(RemoteDBStateContext);
     const globalData = useContext(GlobalDataContext);
     const [ present, dismiss ]= useIonLoading();
     const { t } = useTranslation();
@@ -86,6 +87,8 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       if (remoteDBState.credsError) {
         setRemoteState(prevState => ({...prevState,formError: remoteDBState.credsErrorText}))
       }
+      log.debug("setting login type to from login page");
+      setLoginType(LoginType.loginFromLoginPage);
     },[])
 
     // effect for dbuuidaction not none
@@ -139,19 +142,23 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     },[remoteDBState.dbUUIDAction])
 
     useEffect( () => {
+      log.debug({loggedIn: remoteDBState.loggedIn, connectionStatus: remoteDBState.connectionStatus, isc: remoteDBState.initialSyncComplete, workingOffline: remoteDBState.workingOffline});
       async function doNav() {
         await dismiss()
         navigateToFirstListID(props.history,remoteDBCreds, globalData.listRows);
+        setRemoteDBState({...remoteDBState,connectionStatus: ConnectionStatus.initialNavComplete});
       }
       if (globalData.listRowsLoaded && !globalData.listsLoading) {
         if (remoteDBState.connectionStatus === ConnectionStatus.cannotStart) {
           log.error("Detected cannot start, setting initRemoteState");
           setRemoteState(initRemoteState);
+        } else if (remoteDBState.loggedIn && remoteDBState.connectionStatus === ConnectionStatus.initialNavComplete) {
+          return;
         } else if (remoteDBState.connectionStatus === ConnectionStatus.loginComplete && (remoteDBState.initialSyncComplete || remoteDBState.workingOffline)) {
           doNav();
         }
       }
-    },[remoteDBState.initialSyncComplete , remoteDBState.workingOffline, remoteDBState.connectionStatus, db, globalData.listRows, props.history, remoteDBCreds, globalData.listRowsLoaded, globalData.listsLoading]);
+    },[remoteDBState.initialSyncComplete , remoteDBState.loggedIn, remoteDBState.workingOffline, remoteDBState.connectionStatus, db, globalData.listRows, props.history, remoteDBCreds, globalData.listRowsLoaded, globalData.listsLoading]);
 
     async function destroyAndExit() {
       await db.destroy();
@@ -211,19 +218,25 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
                 return}
     log.debug("Did API /issuetoken : result: ", cloneDeep(response));            
     if (!((response?.status === 200) && (response?.data?.loginSuccessful))) {
-        setRemoteState(prevState => ({...prevState, formError: t("error.invalid_authentication")}))
+        if (response?.data?.dbServerAvailable) {
+            setRemoteState(prevState => ({...prevState, formError: t("error.invalid_authentication")}))
+        } else {
+            setRemoteState(prevState => ({...prevState, formError: t("error.database_server_not_available")}))
+            setRemoteDBState({...remoteDBState, serverAvailable: false});
+        }    
         await dismiss();
         return
     }
     let newCreds=updateDBCredsFromResponse(response);
     let tokenInfo = getTokenInfo(response.data.accessJWT);
     setRemoteDBCreds(newCreds);
-    setRemoteDBState({...remoteDBState, accessJWT: response.data.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate});
+    setRemoteDBState({...remoteDBState, accessJWT: response.data.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate, loggedIn: true});
     await assignDB(response.data.accessJWT);
   }
   
   async function submitCreateForm() {
     await showLoading();
+    setRemoteState(prevState => ({...prevState,formError: ""}));
     let createResponse: HttpResponse | undefined;
     let credsCheck = errorCheckCreds({credsObj: remoteDBCreds,background: false,creatingNewUser: true,password: remoteState.password,verifyPassword: remoteState.verifyPassword});
     if (!credsCheck.credsError) {
@@ -255,7 +268,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     let newCreds=updateDBCredsFromResponse(createResponse);
     setRemoteDBCreds(newCreds);
     let tokenInfo = getTokenInfo(createResponse.data.accessJWT);
-    setRemoteDBState({...remoteDBState,accessJWT: createResponse.data.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate});
+    setRemoteDBState({...remoteDBState,accessJWT: createResponse.data.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate, loggedIn: true});
     await assignDB(createResponse.data.accessJWT);
     await dismiss();
   }
@@ -297,8 +310,9 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   function setWorkingOffline() {
     log.debug("Working Offline Now...");
-    setRemoteDBState({...remoteDBState,workingOffline: true,connectionStatus: ConnectionStatus.loginComplete, 
-        syncStatus: SyncStatus.offline})
+    setRemoteDBState({...remoteDBState,workingOffline: true,loggedIn: true  ,connectionStatus: ConnectionStatus.initialNavComplete, 
+        syncStatus: SyncStatus.offline, credsError: false, credsErrorText:""});
+    setRemoteState(prevState=>({...prevState,formError:""}));
     navigateToFirstListID(props.history,remoteDBCreds, globalData.listRows);    
   }
 
@@ -316,6 +330,45 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
 //  if (remoteDBState.syncStatus === SyncStatus.active || remoteDBState.syncStatus === SyncStatus.paused) {
 //    return (<></>)
 //  }
+
+  async function logout() {
+    await stopSyncAndCloseRemote();
+    let credsStr=JSON.stringify({});
+    await Preferences.set({key: 'dbcreds', value: credsStr})
+    if (!(isPlatform("desktop") || isPlatform("electron"))) {App.exitApp()}
+    setRemoteDBState(initialRemoteDBState);
+    window.location.replace('/');
+    return false;
+  }
+
+  function logoutPopup() {
+    presentAlert({
+      header: t("error.warning"),
+      subHeader: '',
+      message: t("general.remove_saved_credentials"),
+      buttons: [
+        {
+          text: t("general.cancel"),
+          role: 'cancel',
+          handler: () => {}},
+        {
+        text: t("general.remove"),
+        role: 'confirm',
+        handler: () => {logout()}}
+        ]
+    })
+  }
+
+  async function attemptLogin() {
+    setLoginType(LoginType.autoLoginFromRoot);
+    setRemoteState(prevState=>({...prevState,formError: ""}));
+    setRemoteDBState({...remoteDBState,syncStatus: SyncStatus.init, connectionStatus: ConnectionStatus.onLoginScreen, initialSyncStarted: false,
+        initialSyncComplete: false,credsError: false, credsErrorText: "",serverAvailable: true, workingOffline: false, loggedIn: false})
+    const [loginSuccess,loginError] = await attemptFullLogin();
+    if (!loginSuccess) {
+      setRemoteState(prevState=>({...prevState,formError: loginError}))
+    }
+  }
   
   function switchToCreateMode() {
     let curCreds=remoteDBCreds;
@@ -328,7 +381,14 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   let formElem;
-  if (remoteDBState.serverAvailable) {
+  if (remoteDBState.loggedIn) {
+    if (remoteDBState.workingOffline) {
+      formElem=<IonItem>Logged In: Working Offline</IonItem>
+    } else {
+      formElem=<IonItem>Logged In: Online</IonItem>
+    }
+  } 
+  else if (remoteDBState.serverAvailable) {
     if (!remoteState.inCreateMode) {
       formElem = <><IonItem>
       <IonInput label={t("general.api_server_url") as string} labelPlacement="stacked" type="url" inputmode="url" value={remoteDBCreds.apiServerURL} onIonInput={(e) => {setDBCredsValue("apiServerURL",String(e.detail.value))}}>
@@ -382,7 +442,14 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   }
   let buttonsElem
-  if (remoteDBState.serverAvailable) {
+  if (remoteDBState.loggedIn) {
+    if (remoteDBState.workingOffline) {
+      buttonsElem=<IonButton size="small" onClick={() => attemptLogin()}>Attempt Login Again</IonButton>
+    } else {
+      buttonsElem=<IonButton size="small" onClick={() => logoutPopup()}>Logout</IonButton>
+    } 
+  }
+  else if (remoteDBState.serverAvailable) {
     if (!remoteState.inCreateMode) {
       buttonsElem=<>
 

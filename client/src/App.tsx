@@ -80,11 +80,11 @@ const App: React.FC = () => {
   return (
   <IonApp>
     <ErrorBoundary>
+    <IonReactRouter>
     <Provider pouchdb={db}>
     <RemoteDBStateProvider>
     <GlobalStateProvider>
     <GlobalDataProvider>
-    <IonReactRouter>
       <IonSplitPane contentId="main">
       <AppMenu />
         <IonRouterOutlet id="main">
@@ -119,11 +119,11 @@ const App: React.FC = () => {
           {/* <Route component={InitialLoad}></Route>  */}
         </IonRouterOutlet>
       </IonSplitPane>
-    </IonReactRouter>
     </GlobalDataProvider>
     </GlobalStateProvider>
     </RemoteDBStateProvider>
     </Provider>
+    </IonReactRouter>
     </ErrorBoundary>
   </IonApp>
   )

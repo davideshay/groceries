@@ -331,6 +331,7 @@ export const en_translations =
         "must_enter_a_plural_name":"Must Enter a Plural Name",
         "account_creation_disabled":"Account Creation Disabled",
         "updating_uom": "Error updating UoM",
+        "database_server_not_available": "Database Server Not Available"
     },
     "itemtext": {
         "item_is_on_these_lists": "Item is on these lists:",

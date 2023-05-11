@@ -28,6 +28,7 @@ export let usersDBAsAdmin: DocumentScope<unknown>;
 
 export async function couchLogin(username: string, password: string) {
     const loginResponse = {
+        dbServerAvailable: true,
         loginSuccessful: true,
         loginRoles: []
     }
@@ -39,7 +40,9 @@ export async function couchLogin(username: string, password: string) {
     }
     let res: AxiosResponse| null;
     try  {res = await axios(config)}
-    catch(err) {loginResponse.loginSuccessful = false; return loginResponse};
+    catch(err) {loginResponse.loginSuccessful = false;
+                loginResponse.dbServerAvailable = false;
+                return loginResponse};
     if (res == null) {loginResponse.loginSuccessful = false; return loginResponse}
     if (loginResponse.loginSuccessful) {
         if (res.status != 200) {

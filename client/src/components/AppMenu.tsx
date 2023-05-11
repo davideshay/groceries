@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import './AppMenu.css';
 
 const AppMenu: React.FC = () => {
-  const { remoteDBCreds } = useContext(RemoteDBStateContext);
+  const { remoteDBCreds, remoteDBState } = useContext(RemoteDBStateContext);
   const {useFriendState,friendRows} = useFriends(String(remoteDBCreds.dbUsername));
   const { conflictDocs, conflictsLoading } = useConflicts();
   const { t } = useTranslation();
@@ -47,11 +47,10 @@ const AppMenu: React.FC = () => {
               </IonItem></IonMenuToggle>) 
   }
  
-  return (
-  <IonMenu contentId="main" type="overlay">
-    <IonContent className="ion-padding">
-      <IonList>
-        <IonListHeader>{t('general.groceries_menu')}</IonListHeader>
+  let contentElem;
+  if (remoteDBState.loggedIn) {
+    contentElem =
+        <> 
         <IonList>
           {listHeader(t('general.lists'))}
           <ListsAll separatePage={false}/>
@@ -67,6 +66,21 @@ const AppMenu: React.FC = () => {
         {friendItem()}
         {conflictItem()}
         {listItem(t('general.settings'),"/settings")}
+        {listItem(t('general.login'),"/login")}
+      </>
+  } else {
+    contentElem = 
+      <>
+        {listItem(t('general.login'),"/login")}
+      </>  
+  }
+
+  return (
+  <IonMenu contentId="main" type="overlay">
+    <IonContent className="ion-padding">
+      <IonList>
+        <IonListHeader>{t('general.groceries_menu')}</IonListHeader>
+        {contentElem}
       </IonList>
     </IonContent>
   </IonMenu>

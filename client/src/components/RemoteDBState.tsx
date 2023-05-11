@@ -9,11 +9,12 @@ import { useTranslation } from 'react-i18next';
 import { UserIDList } from "./DataTypes";
 import { cloneDeep } from "lodash";
 import log from "loglevel";
+import { useHistory } from "react-router";
 
 const secondsBeforeAccessRefresh = 180;
 
 let globalSync: PouchDB.Replication.Sync<{}>;
-let globalRemoteDB: PouchDB.Database | undefined = undefined;
+let globalRemoteDB: PouchDB.Database<{}> | undefined = undefined;
 
 export type RemoteDBState = {
     sync: PouchDB.Replication.Sync<{}> | null,
@@ -28,18 +29,29 @@ export type RemoteDBState = {
     credsError: boolean,
     credsErrorText: string,
     serverAvailable: boolean,
-    workingOffline: boolean
+    workingOffline: boolean,
+    loggedIn: boolean,
+}
+
+export enum LoginType {
+    unknown = "U",
+    autoLoginFromRoot = "R",
+    autoLoginSpecificURL = "S",
+    loginFromLoginPage = "L"
 }
 
 export interface RemoteDBStateContextType {
     remoteDBState: RemoteDBState,
     remoteDBCreds: DBCreds,
-    remoteDB: PouchDB.Database,
+    remoteDB: PouchDB.Database, 
     setRemoteDBState: React.Dispatch<React.SetStateAction<RemoteDBState>>,
     setRemoteDBCreds: (newCreds: DBCreds) => void,
+    stopSyncAndCloseRemote: () => Promise<boolean>,
     assignDB: (accessJWT: string) => Promise<boolean>,
     setDBCredsValue: (key: string, value: string|null) => void,
-    setConnectionStatus: (value: ConnectionStatus) => void
+    setConnectionStatus: (value: ConnectionStatus) => void,
+    setLoginType: (lType: LoginType) => void,
+    attemptFullLogin: () => Promise<[boolean,string]>
 }
 
 export enum SyncStatus {
@@ -109,7 +121,8 @@ export const initialRemoteDBState: RemoteDBState = {
     credsError: false,
     credsErrorText: "",
     serverAvailable: true,
-    workingOffline: false
+    workingOffline: false,
+    loggedIn: false,
 }
 
 const initialContext = {
@@ -118,9 +131,12 @@ const initialContext = {
     remoteDB: {},
     setRemoteDBState: (state: RemoteDBState ) => {},
     setRemoteDBCreds: (dbCreds: DBCreds) => {},
+    stopSyncAndCloseRemote: async () => {return false},
     assignDB: async (accessJWT: string): Promise<boolean> => {return false},
     setDBCredsValue: (key: string, value: string | null) => {},
     setConnectionStatus: (value: ConnectionStatus) => {},
+    setLoginType: (lType: LoginType) => {},
+    attemptFullLogin: async (): Promise<[boolean,string]> => {return [false,""]}
 }
 
 export const RemoteDBStateContext = createContext(initialContext)
@@ -132,11 +148,17 @@ type RemoteDBStateProviderProps = {
 export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (props: RemoteDBStateProviderProps) => {
     const [remoteDBState,setRemoteDBState] = useState<RemoteDBState>(initialRemoteDBState);
     const loginAttempted = useRef(false);
+    const loginType = useRef<LoginType>(LoginType.autoLoginSpecificURL);
     const remoteDBCreds = useRef<DBCreds>(DBCredsInit);
     const [, forceUpdateState] = React.useState<{}>();
     const forceUpdate = React.useCallback(() => forceUpdateState({}), []);
     const db=usePouch();
     const { t } = useTranslation();
+    const history = useHistory()
+
+    function setLoginType(lType: LoginType) {
+        loginType.current = lType;
+    }
 
     function setSyncStatus(status: number) {
         setRemoteDBState(prevState => ({...prevState,syncStatus: status}))
@@ -207,18 +229,25 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         await Preferences.set({key: 'dbcreds', value: credsStr})  
     }
 
-    async function assignDB(accessJWT: string): Promise<boolean> {
-        log.debug("Assigning Database/setting sync, access Token is:",accessJWT);
-        if (globalRemoteDB !== undefined) {
+    async function stopSyncAndCloseRemote() {
+        let success=true;
+        if (globalRemoteDB !== undefined && globalRemoteDB !== null) {
             log.debug("RemoteDB already exists, closing before assign.");
-            if (!(globalSync === undefined || globalSync === null)) {
-                await globalSync.cancel();
+            if (globalSync !== undefined && globalSync !== null) {
+                globalSync.cancel();
             }
             globalRemoteDB.removeAllListeners();
-            await globalRemoteDB.close();
+            globalRemoteDB.close();
             await new Promise(r => setTimeout(r,2000));
             globalRemoteDB = undefined;
         }
+        return success;
+    }
+
+    async function assignDB(accessJWT: string): Promise<boolean> {
+        log.debug("Assigning Database/setting sync, access Token is:",accessJWT);
+        log.debug("Login Type is : ",loginType.current);
+        stopSyncAndCloseRemote();
         globalRemoteDB = new PouchDB(remoteDBCreds.current.couchBaseURL+"/"+remoteDBCreds.current.database, 
             { fetch: (url, opts) => ( 
                 fetch(url, { ...opts, credentials: 'include', headers:
@@ -244,44 +273,48 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         }
     }
 
-    async function attemptFullLogin() {
+    async function attemptFullLogin() : Promise<[success: boolean,errorText: string]>{
         const devIDInfo = await Device.getId();
+        log.debug("Attempt Full Login: Getting device ID...", cloneDeep(devIDInfo));
         let devID = "";
-        if (devIDInfo.hasOwnProperty('uuid')) {
-            devID = devIDInfo.uuid;
+        if (devIDInfo.hasOwnProperty('identifier')) {
+            devID = devIDInfo.identifier;
         }
         setRemoteDBState(prevState => ({...prevState,deviceUUID: devID}));
         let credsObj = await getPrefsDBCreds(remoteDBCreds.current);
         remoteDBCreds.current = credsObj;
         let credsCheck =  errorCheckCreds({credsObj: credsObj, background: true});
+        log.debug("Attempt Full Login: credsCheck:",credsCheck);
         if (credsCheck.credsError) {
             setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: credsCheck.errorText, connectionStatus: ConnectionStatus.navToLoginScreen}))
-            return;
+            return [false,credsCheck.errorText];
         } 
         let refreshResponse = await refreshToken(credsObj as DBCreds,devID);
+        log.debug("Refresh Token Response:",refreshResponse);
         if (refreshResponse === undefined) {
             setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.could_not_contact_api_server") , serverAvailable: false  ,connectionStatus: ConnectionStatus.navToLoginScreen}));
-            return;
+            return [false,t("error.could_not_contact_api_server")];
         }
         if (!refreshResponse.data.valid) {
             credsObj.refreshJWT = "";
             remoteDBCreds.current = credsObj;
             await setPrefsDBCreds();
             setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.invalid_jwt_token") , connectionStatus: ConnectionStatus.navToLoginScreen}));
-            return;
+            return [false,t("error.invalid_jwt_token")];
         }
         remoteDBCreds.current = credsObj;
         remoteDBCreds.current.refreshJWT = refreshResponse.data.refreshJWT;
         let JWTCheck = await checkJWT(refreshResponse.data.accessJWT,credsObj as DBCreds);
         if (!JWTCheck.DBServerAvailable) {
             setRemoteDBState(prevState => ({...prevState,credsError: true, serverAvailable: false  ,credsErrorText: t("error.db_server_not_available") , connectionStatus: ConnectionStatus.navToLoginScreen}))
+            return [false,t("error.db_server_not_available")];
         }
         await setPrefsDBCreds();
         if (!JWTCheck.JWTValid) {
             remoteDBCreds.current.refreshJWT = "";
             setPrefsDBCreds();
             setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.invalid_jwt_token"), connectionStatus: ConnectionStatus.navToLoginScreen}))
-             return;
+             return [false,t("error.invalid_jwt_token")];
         }
         let userIDList: UserIDList = { userIDs: [String(remoteDBCreds.current.dbUsername)] }
         let userInfo = await getUsersInfo(userIDList,String(remoteDBCreds.current.apiServerURL),refreshResponse?.data.accessJWT)
@@ -290,8 +323,10 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             remoteDBCreds.current.fullName = userInfo[0].fullname;
             setPrefsDBCreds();
         }
-        setRemoteDBState(prevState => ({...prevState, accessJWT: refreshResponse?.data.accessJWT, accessJWTExpirationTime: JWTCheck.JWTExpireDate}));
+        setRemoteDBState(prevState => ({...prevState, accessJWT: refreshResponse?.data.accessJWT, accessJWTExpirationTime: JWTCheck.JWTExpireDate, loggedIn: true}));
         await assignDB(refreshResponse.data.accessJWT);
+        log.debug("assign DB complete : logintype:",loginType.current);
+        return [true,""];
     }
 
      async function retrySync() {
@@ -316,6 +351,8 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         }
     }
 
+    useEffect( () => {console.log("Conn status changed, now:",cloneDeep(remoteDBState.connectionStatus))},[remoteDBState.connectionStatus])
+
     useEffect(() => {
         if (!loginAttempted.current && !(remoteDBState.connectionStatus === ConnectionStatus.navToLoginScreen) && !(remoteDBState.connectionStatus === ConnectionStatus.onLoginScreen)) {
             log.debug("STATUS: about to attempt full login...");
@@ -325,14 +362,27 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
       },[loginAttempted,remoteDBState.connectionStatus])
   
     useEffect(() => {
+        log.debug("Connection Status:",cloneDeep(remoteDBState.connectionStatus));
         if (remoteDBState.connectionStatus === ConnectionStatus.dbAssigned) {
             CheckDBUUIDAndStartSync();
         }
     },[remoteDBState.connectionStatus])
 
+    useEffect( () => {
+        if (remoteDBState.connectionStatus === ConnectionStatus.navToLoginScreen &&
+            loginType.current === LoginType.autoLoginSpecificURL) {
+                history.push("/login");
+            }
+    },[remoteDBState.connectionStatus])
+
     useEffect(() => {
         if (( remoteDBState.initialSyncComplete) && (remoteDBState.connectionStatus !== ConnectionStatus.initialNavComplete)) {
-            setRemoteDBState(prevState => ({...prevState,connectionStatus: ConnectionStatus.loginComplete}));
+            log.debug("setting to login complete after initial sync and not nav complete...");
+            if (loginType.current === LoginType.autoLoginSpecificURL) {
+                setRemoteDBState(prevState => ({...prevState,connectionStatus: ConnectionStatus.initialNavComplete}))
+            } else {
+                setRemoteDBState(prevState => ({...prevState,connectionStatus: ConnectionStatus.loginComplete}));
+            }    
         }
         if (remoteDBState.syncStatus === SyncStatus.error) {
             log.error("ERROR syncing, refreshing access token and retrying...");
@@ -351,7 +401,8 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         return () => clearTimeout(refreshTimer);
     },[remoteDBState.accessJWTExpirationTime])
 
-    let value: RemoteDBStateContextType = {remoteDBState, remoteDBCreds: remoteDBCreds.current, remoteDB: globalRemoteDB as PouchDB.Database<{}> , setRemoteDBState, setRemoteDBCreds, assignDB, setDBCredsValue, setConnectionStatus};
+    let value: RemoteDBStateContextType = {remoteDBState, remoteDBCreds: remoteDBCreds.current, remoteDB: globalRemoteDB as PouchDB.Database<{}> , setRemoteDBState, setRemoteDBCreds,
+            stopSyncAndCloseRemote, assignDB, setDBCredsValue, setConnectionStatus, setLoginType, attemptFullLogin};
     return (
         <RemoteDBStateContext.Provider value={value}>{props.children}</RemoteDBStateContext.Provider>
       );

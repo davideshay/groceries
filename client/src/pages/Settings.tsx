@@ -58,15 +58,6 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   };
 
-  async function stopSync() {
-    let credsStr=JSON.stringify({});
-    await Preferences.set({key: 'dbcreds', value: credsStr})
-    if (!(isPlatform("desktop") || isPlatform("electron"))) {App.exitApp()}
-    setRemoteDBState(initialRemoteDBState);
-    window.location.replace('/');
-    return false;
-  }
-
   async function destroyDB() {
     await db.destroy();
     let credsStr=JSON.stringify({});
@@ -75,24 +66,6 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
     setRemoteDBState(initialRemoteDBState);
     window.location.replace('/');
     return false;
-  }
-
-  function stopSyncPopup() {
-    presentAlert({
-      header: t("error.warning"),
-      subHeader: '',
-      message: t("general.remove_saved_credentials"),
-      buttons: [
-        {
-          text: t("general.cancel"),
-          role: 'cancel',
-          handler: () => {}},
-        {
-        text: t("general.remove"),
-        role: 'confirm',
-        handler: () => {stopSync()}}
-        ]
-    })
   }
 
   function destroyDBPopup() {
@@ -183,9 +156,6 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
           <IonToolbar>
             <IonButtons slot="start">
               <IonButton fill="solid" size="small" color="danger" onClick={() => destroyDBPopup()} key="deletedb">{t("general.delete_local_data")}</IonButton>
-            </IonButtons>
-            <IonButtons slot="secondary">
-              <IonButton  fill="solid" size="small" color="primary" onClick={() => stopSyncPopup()} key="stopitall">{t("general.logout")}</IonButton>
             </IonButtons>
             <IonButtons slot="end">
               <IonButton fill="solid" size="small" color="primary" onClick={() => doUpdateUserInfo()} key="updateuser">{t("general.update_user_info")}</IonButton>

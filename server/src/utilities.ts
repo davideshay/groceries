@@ -51,7 +51,7 @@ export async function getUserDoc(username: string) {
     const userResponse = cloneDeep(UserResponseInit)
     let res: UserDoc | null = null;
     try { res = (await usersDBAsAdmin.get(couchUserPrefix+":"+username) as UserDoc | null)}
-    catch(err) { userResponse.error= true }
+    catch(err) { userResponse.error= true; log.warn("Couldn't retrieve user doc:"+username) }
     if (!userResponse.error) {
         userResponse.email = String(res?.email);
         userResponse.fullname = String(res?.fullname);

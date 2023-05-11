@@ -129,7 +129,6 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
                 (remoteDBState.initialSyncComplete || !remoteDBState.serverAvailable)) {
             setListRowsLoaded(false);
             const { listRows: localListRows, listCombinedRows: localListCombinedRows} = getListRows(listDocs as ListDocs,listGroupDocs as ListGroupDocs,remoteDBCreds)
-            log.debug("Got list rows back:", cloneDeep(localListRows));
             setListRows(localListRows);
             setListCombinedRows(localListCombinedRows);
             setListRowsLoaded(true);
