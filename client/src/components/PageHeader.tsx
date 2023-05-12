@@ -10,8 +10,8 @@ const PageHeader: React.FC<HeaderProps> = (props: HeaderProps) => {
     return (
         <IonHeader>
             <IonToolbar>
-            <IonButtons slot="start"><IonMenuButton class="ion-no-padding small-menu-button" /></IonButtons>
-            <IonTitle class="">{props.title}</IonTitle>
+            <IonButtons slot="start"><IonMenuButton className="ion-no-padding small-menu-button" /></IonButtons>
+            <IonTitle className="">{props.title}</IonTitle>
             <SyncIndicator />
             </IonToolbar>
         </IonHeader>

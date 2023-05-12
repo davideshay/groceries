@@ -96,7 +96,7 @@ function  GenericSearchBar(props: SearchBarProps,ref: Ref<SearchRefType>) {
                 </IonList>
             </IonContent>
         </IonPopover>
-        <IonSearchbar id={componentID} aria-label="" class="ion-no-padding generic-input-search generic-input-search-class"
+        <IonSearchbar id={componentID} aria-label="" className="ion-no-padding generic-input-search generic-input-search-class"
                     debounce={5} value={searchState.searchCriteria} inputmode="text" enterkeyhint="enter"
                     onIonInput={(e: any) => {updateSearchCriteria(e)}}
 //                    onIonChange={(e: any) =>{console.log("search change:",e); searchInputChange(e)}}

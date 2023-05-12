@@ -287,7 +287,7 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
               <IonButton onClick={() => addNewCustom()}><IonIcon icon={add}></IonIcon></IonButton>
             </IonItem>
           </IonList>
-          <IonFooter class="floating-error-footer">
+          <IonFooter className="floating-error-footer">
             {formErrors[ErrorLocation.General].hasError ? <IonItem className="shorter-item-some-padding" lines="none"><IonText color="danger">{formErrors[ErrorLocation.General].errorMessage}</IonText></IonItem> : <></>}         
           <IonToolbar>
             { pageState.uomDoc._id?.startsWith("system:uom") ? <></> :

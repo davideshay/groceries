@@ -310,10 +310,10 @@ function deletePrompt() {
   
   let selectDropDown = [];
     if (mode === "new") {
-      selectDropDown.push(<IonTitle class="ion-no-padding" key="createnew">{t("general.creating_new_list")}</IonTitle>)
+      selectDropDown.push(<IonTitle className="ion-no-padding" key="createnew">{t("general.creating_new_list")}</IonTitle>)
     } else {  
       selectDropDown.push(
-        <IonTitle class="ion-no-padding" key="editexisting">
+        <IonTitle className="ion-no-padding" key="editexisting">
         <IonItem key="editexistingitem">
         {selectElem}
         </IonItem>
@@ -363,7 +363,7 @@ function deletePrompt() {
             </IonItemGroup>
           </IonList>
       </IonContent>
-      <IonFooter class="floating-error-footer">
+      <IonFooter className="floating-error-footer">
         {
           formErrors[ErrorLocation.General].hasError ? <IonItem className="shorter-item-some-padding" lines="none"><IonText color="danger">{formErrors[ErrorLocation.General].errorMessage}</IonText></IonItem> : <></>
         }  

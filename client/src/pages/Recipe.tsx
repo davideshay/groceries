@@ -293,7 +293,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   let modalRecipeItem =  recipeItem !== null && recipeItem !== undefined ? (
     <IonModal id="recipe-item" isOpen={pageState.modalOpen} onDidDismiss={(ev)=>{setPageState(prevState => ({...prevState,modalOpen: false}))}}>
-      <IonTitle class="modal-title">{t('general.item_on_recipe') + translatedItemName(recipeItem.globalItemID,recipeItem.name)}</IonTitle>
+      <IonTitle className="modal-title">{t('general.item_on_recipe') + translatedItemName(recipeItem.globalItemID,recipeItem.name)}</IonTitle>
       <IonList>
         <IonItem key="name">
           <IonInput type="text" label={t("general.name") as string} labelPlacement="stacked" value={translatedItemName(recipeItem.globalItemID,recipeItem.name)} onIonInput={(ev)=>{updateRecipeName(ev.detail.value as string)}}></IonInput>
@@ -367,7 +367,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
                         errorText={formErrors[ErrorLocation.Name].errorMessage}>
               </IonInput>
             </IonItem>
-            <IonItemDivider class="category-divider">{t("general.items_in_recipe")}</IonItemDivider>
+            <IonItemDivider className="category-divider">{t("general.items_in_recipe")}</IonItemDivider>
             <IonItem key="items-in-recipe">
               <IonGrid>
                 <IonRow key="item-header">
@@ -378,12 +378,12 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
               </IonGrid>
             </IonItem>
             <RecipeItemSearch rowSelected={addExistingRecipeItem} addItemWithoutRow={addNewRecipeItem}/>
-            <IonItemDivider class="category-divider">{t("general.recipe_steps")}</IonItemDivider>
+            <IonItemDivider className="category-divider">{t("general.recipe_steps")}</IonItemDivider>
             <IonItem key="recipesteps">
               <IonGrid>
                 { pageState.recipeDoc.instructions.map((step,index) => (
                   <IonRow key={"step-"+index}>
-                    <IonCol size="11"><IonTextarea autoGrow={true} aria-label="" class="recipe-step" value={step.stepText} onIonInput={(ev) => updateRecipeStep(index,String(ev.detail.value))}></IonTextarea></IonCol>
+                    <IonCol size="11"><IonTextarea autoGrow={true} aria-label="" className="recipe-step" value={step.stepText} onIonInput={(ev) => updateRecipeStep(index,String(ev.detail.value))}></IonTextarea></IonCol>
                     <IonCol size="1"><IonButton onClick={() => deleteRecipeStep(index)} fill="clear"><IonIcon icon={trashOutline}/></IonButton></IonCol>
                   </IonRow>
                   ))
@@ -398,12 +398,12 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
           <IonFooter>
             {formErrors[ErrorLocation.General].hasError ? <IonItem className="shorter-item-some-padding" lines="none"><IonText color="danger">{formErrors[ErrorLocation.General].errorMessage}</IonText></IonItem> : <></>}
             <IonGrid>
-              <IonRow class="ion-justify-content-center ion-align-items-center">
+              <IonRow className="ion-justify-content-center ion-align-items-center">
                 <IonCol size="5">
                   <IonButton size="small" className='extra-small-button'  onClick={() => addItemsToList()}>{t("general.add_items_to")}</IonButton>
                 </IonCol>
                 <IonCol size="7">
-                <IonSelect class="select-list-selector" aria-label="" interface="popover" onIonChange={(ev) => (setPageState(prevState=>({...prevState,selectedListOrGroupID: ev.detail.value})))} value={pageState.selectedListOrGroupID}>
+                <IonSelect className="select-list-selector" aria-label="" interface="popover" onIonChange={(ev) => (setPageState(prevState=>({...prevState,selectedListOrGroupID: ev.detail.value})))} value={pageState.selectedListOrGroupID}>
                   { globalData.listCombinedRows.map(lcr => (
                   <IonSelectOption disabled={lcr.rowKey==="G-null"} className={lcr.rowType === RowType.list ? "indented" : ""} key={lcr.listOrGroupID} value={lcr.listOrGroupID}>
                     {lcr.rowName}

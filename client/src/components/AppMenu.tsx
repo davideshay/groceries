@@ -15,7 +15,7 @@ const AppMenu: React.FC = () => {
   const { t } = useTranslation();
  
   const listHeader = (headerName: string) => {
-    return (<IonItemDivider class="category-divider">{headerName}</IonItemDivider>)
+    return (<IonItemDivider className="category-divider">{headerName}</IonItemDivider>)
   }
 
   const listItem = (listItem: string,link: string) => {

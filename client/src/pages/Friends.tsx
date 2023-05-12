@@ -126,18 +126,18 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
   function updateFriendsElem() {
     let friendRowsElem: JSX.Element[] = [];
     if (friendRows.length > 0) {
-      let elem=(<IonRow  class="ion-justify-content-center ion-align-items-center friend-row" key={"header"}>
-              <IonCol class="col-minimal-padding" size="6"><IonText color="primary" class="bold-header">Friend Name/Email</IonText></IonCol>
-              <IonCol class="col-minimal-padding" size="3"><IonText color="primary" class="bold-header">Status</IonText></IonCol>
-              <IonCol class="col-minimal-padding" size="3"><IonText color="primary" class="bold-header">Action</IonText></IonCol>
+      let elem=(<IonRow  className="ion-justify-content-center ion-align-items-center friend-row" key={"header"}>
+              <IonCol className="col-minimal-padding" size="6"><IonText color="primary" className="bold-header">Friend Name/Email</IonText></IonCol>
+              <IonCol className="col-minimal-padding" size="3"><IonText color="primary" className="bold-header">Status</IonText></IonCol>
+              <IonCol className="col-minimal-padding" size="3"><IonText color="primary" className="bold-header">Action</IonText></IonCol>
             </IonRow>)
       friendRowsElem.push(elem);      
       friendRows.forEach((friendRow: FriendRow) => {
         const itemKey = (friendRow.targetUserName === "" || friendRow.targetUserName === null) ? friendRow.targetEmail : friendRow.targetUserName;
-        let elem=(<IonRow  class="ion-justify-content-center ion-align-items-center friend-row" key={itemKey}>
-              <IonCol class="col-minimal-padding" size="6">{friendRow.targetFullName === "" ? friendRow.targetEmail : friendRow.targetFullName}</IonCol>
-              <IonCol class="col-minimal-padding" size="3"><IonLabel class="friend-label">{friendRow.friendStatusText}</IonLabel></IonCol>
-              <IonCol class="col-minimal-padding" size="3">{ButtonElem(friendRow)}</IonCol>
+        let elem=(<IonRow  className="ion-justify-content-center ion-align-items-center friend-row" key={itemKey}>
+              <IonCol className="col-minimal-padding" size="6">{friendRow.targetFullName === "" ? friendRow.targetEmail : friendRow.targetFullName}</IonCol>
+              <IonCol className="col-minimal-padding" size="3"><IonLabel className="friend-label">{friendRow.friendStatusText}</IonLabel></IonCol>
+              <IonCol className="col-minimal-padding" size="3">{ButtonElem(friendRow)}</IonCol>
             </IonRow>)
         friendRowsElem.push(elem);
       });

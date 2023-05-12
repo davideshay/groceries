@@ -392,10 +392,10 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   )
 
   let headerElem=(
-    <IonHeader><IonToolbar><IonButtons slot="start"><IonMenuButton class={"ion-no-padding small-menu-button"} /></IonButtons>
-    <IonTitle class="ion-no-padding item-outer"></IonTitle>
+    <IonHeader><IonToolbar><IonButtons slot="start"><IonMenuButton className={"ion-no-padding small-menu-button"} /></IonButtons>
+    <IonTitle className="ion-no-padding item-outer"></IonTitle>
         <IonItem id="item-list-selector-id" className="item-list-selector" key="listselector">
-        <IonSelect id="select-list-selector-id" class="select-list-selector" label={t("general.items_on") as string} aria-label={t("general.items_on") as string} interface="popover" onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListOrGroupID}  >
+        <IonSelect id="select-list-selector-id" className="select-list-selector" label={t("general.items_on") as string} aria-label={t("general.items_on") as string} interface="popover" onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListOrGroupID}  >
             {listCombinedRows.map((listCombinedRow: ListCombinedRow) => (
                 <IonSelectOption disabled={listCombinedRow.rowKey==="G-null"} className={listCombinedRow.rowType === RowType.list ? "indented" : ""} key={listCombinedRow.listOrGroupID} value={listCombinedRow.listOrGroupID}>
                   {listCombinedRow.rowName}
@@ -406,7 +406,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         </IonItem>
         <IonItem key="searchbar" className="item-search">
            <IonIcon icon={searchOutline} />
-           <IonInput id="item-search-box-id" aria-label="" class="ion-no-padding input-search" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="text" enterkeyhint="enter"
+           <IonInput id="item-search-box-id" aria-label="" className="ion-no-padding input-search" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="text" enterkeyhint="enter"
               clearInput={true}  placeholder={t("general.search") as string} fill="solid"
               onKeyDown= {(e) => searchKeyPress(e)}
               onIonInput={(e) => updateSearchCriteria(e)}
@@ -434,7 +434,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     if (catColor === "primary") {catColor = "#777777"}
     listCont.push(
         <IonItemGroup key={"cat"+catID+Boolean(completed).toString()}>
-        <IonItemDivider class="category-divider" style={{"borderBottom":"4px solid "+catColor}}    key={"cat"+catID+Boolean(completed).toString()}>{catName}</IonItemDivider>
+        <IonItemDivider className="category-divider" style={{"borderBottom":"4px solid "+catColor}}    key={"cat"+catID+Boolean(completed).toString()}>{catName}</IonItemDivider>
           {curRows}
       </IonItemGroup>
     )

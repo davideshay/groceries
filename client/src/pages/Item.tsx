@@ -356,7 +356,7 @@ const Item: React.FC = (props) => {
               <IonText >{t("general.list_group") + ": "}  {thisListGroup?.listGroupName}</IonText>
             </IonItem>
             <IonItem key="photo">
-              {photoExists ? <IonImg class="item-image" src={photoBase64}/> : <></>}
+              {photoExists ? <IonImg className="item-image" src={photoBase64}/> : <></>}
             </IonItem>
             <IonItem key="photobuttons">
               <IonButton onClick={() => getNewPhoto()}>{t("general.take_photo")}</IonButton>
@@ -365,10 +365,10 @@ const Item: React.FC = (props) => {
             <IonCard>
               <IonCardSubtitle>{t("general.change_here_change_all_below")}</IonCardSubtitle>
               <IonItem key="quantity">
-                <IonGrid class="ion-no-padding">
+                <IonGrid className="ion-no-padding">
                 <IonRow>
-                  <IonCol class="ion-no-padding" size="3"><IonInput label={t("general.quantity") as string} labelPlacement="stacked" type="number" min="0" max="9999" onIonInput={(e) => updateAllKey("quantity",Number(e.detail.value))} value={getCommonKey(stateItemDoc,"quantity",globalData.listDocs)}></IonInput></IonCol>
-                  <IonCol class="ion-no-padding" size="8">
+                  <IonCol className="ion-no-padding" size="3"><IonInput label={t("general.quantity") as string} labelPlacement="stacked" type="number" min="0" max="9999" onIonInput={(e) => updateAllKey("quantity",Number(e.detail.value))} value={getCommonKey(stateItemDoc,"quantity",globalData.listDocs)}></IonInput></IonCol>
+                  <IonCol className="ion-no-padding" size="8">
                     <IonSelect label={t("general.uom_abbrev") as string} labelPlacement='stacked' interface="popover" onIonChange={(ev) => updateAllKey("uomName", ev.detail.value)} value={getCommonKey(stateItemDoc,"uomName",globalData.listDocs)}>
                     <IonSelectOption key="uom-undefined" value={null}>{t("general.no_uom")}</IonSelectOption>
                     {(globalData.uomDocs as UomDoc[]).map((uom) => (
@@ -376,7 +376,7 @@ const Item: React.FC = (props) => {
                     ))}
                     </IonSelect>
                   </IonCol>
-                  <IonCol class="ion-no-padding" size="1"><IonButton fill="default" onClick={(e) => {addUOMPopup()}}><IonIcon icon={addCircleOutline}></IonIcon></IonButton></IonCol>
+                  <IonCol className="ion-no-padding" size="1"><IonButton fill="default" onClick={(e) => {addUOMPopup()}}><IonIcon icon={addCircleOutline}></IonIcon></IonButton></IonCol>
                 </IonRow>
                 </IonGrid>
               </IonItem>
@@ -402,7 +402,7 @@ const Item: React.FC = (props) => {
                       addCategoryPopup={addCategoryPopup} addUOMPopup={addUOMPopup} />
           </IonList>
       </IonContent>
-      <IonFooter class="floating-error-footer">
+      <IonFooter className="floating-error-footer">
         {
           formErrors[ErrorLocation.General].hasError ? <IonItem className="shorter-item-some-padding" color="danger" lines="none">{formErrors[ErrorLocation.General].errorMessage}</IonItem> : <></>
         }  

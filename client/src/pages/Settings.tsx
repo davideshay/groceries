@@ -175,7 +175,7 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
           </IonRadioGroup>
           <IonItemDivider>{t("general.other_settings")}</IonItemDivider>
           <IonItem className="shorter-item-no-padding" key="language">
-            <IonSelect class="shorter-select shorter-select2" label={t("general.language") as string} interface="popover" onIonChange={(e) => i18n.changeLanguage(e.detail.value)} value={curLanguage}>
+            <IonSelect className="shorter-select shorter-select2" label={t("general.language") as string} interface="popover" onIonChange={(e) => i18n.changeLanguage(e.detail.value)} value={curLanguage}>
                 {languageDescriptions.map((lng: any) => (
                     <IonSelectOption key={"language-"+lng.key} value={lng.key}>
                       {lng.name}
@@ -193,7 +193,7 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
             <IonCheckbox justify="space-between" labelPlacement="start" checked={localSettings.includeGlobalInSearch} onIonChange={(e) => changeSetting("includeGlobalInSearch",e.detail.checked)}>{t("general.include_globalitems_in_search")}</IonCheckbox>
           </IonItem>
           <IonItem className="shorter-item-no-padding" key="dayslog">
-            <IonInput class="shorter-input shorter-input2" label={t("general.days_conflict_log_to_view") as string} labelPlacement="start" type="number" min="0" max="25" onIonInput={(e) => changeSetting("daysOfConflictLog", Number(e.detail.value))} value={Number(localSettings?.daysOfConflictLog)}></IonInput>
+            <IonInput className="shorter-input shorter-input2" label={t("general.days_conflict_log_to_view") as string} labelPlacement="start" type="number" min="0" max="25" onIonInput={(e) => changeSetting("daysOfConflictLog", Number(e.detail.value))} value={Number(localSettings?.daysOfConflictLog)}></IonInput>
           </IonItem>
         </IonList>
       </IonContent>

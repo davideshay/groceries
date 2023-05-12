@@ -16,7 +16,7 @@ return (
     <IonPage>
         <IonHeader>
             <IonToolbar>
-                <IonButtons slot="start"><IonMenuButton class="ion-no-padding small-menu-button" /></IonButtons>
+                <IonButtons slot="start"><IonMenuButton className="ion-no-padding small-menu-button" /></IonButtons>
                 <IonTitle>{props.message}</IonTitle>
             </IonToolbar>
         </IonHeader> 

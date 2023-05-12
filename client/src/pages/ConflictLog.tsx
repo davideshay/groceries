@@ -40,7 +40,7 @@ const ConflictLog: React.FC<HistoryProps> = (props: HistoryProps) => {
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start"><IonMenuButton /></IonButtons>
-          <IonTitle class="ion-no-padding">{t("general.conflict_log")}</IonTitle>
+          <IonTitle className="ion-no-padding">{t("general.conflict_log")}</IonTitle>
           <IonButton size="small" slot="end" onClick={() => {setConflictsAsViewed()}}>{t("general.set_as_viewed")}</IonButton>
           <SyncIndicator/>
         </IonToolbar>

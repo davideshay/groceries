@@ -71,16 +71,16 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
         let itemActive=(sortedLists[i].active);
         let listName=globalData.listDocs[itemFoundIdx].name;
         listsInnerElem.push(
-          <IonRow key={listID} class={listIsDifferentThanCommon(sortedLists,i) ? "highlighted-row ion-no-padding" : "ion-no-padding"}>
-            <IonCol class="ion-no-padding" size="1"><IonCheckbox aria-label="" onIonChange={(e: CheckboxCustomEvent) => selectList(listID,Boolean(e.detail.checked))} checked={itemActive}></IonCheckbox></IonCol>
-            <IonCol class="ion-no-padding ion-align-self-center" size="9"><IonLabel>{listName}</IonLabel></IonCol>
-            <IonCol class="ion-no-padding" size="2"><IonButton onClick={() => {editListModal(listID)}} ><IonIcon icon={pencilOutline}></IonIcon></IonButton></IonCol>
+          <IonRow key={listID} className={listIsDifferentThanCommon(sortedLists,i) ? "highlighted-row ion-no-padding" : "ion-no-padding"}>
+            <IonCol className="ion-no-padding" size="1"><IonCheckbox aria-label="" onIonChange={(e: CheckboxCustomEvent) => selectList(listID,Boolean(e.detail.checked))} checked={itemActive}></IonCheckbox></IonCol>
+            <IonCol className="ion-no-padding ion-align-self-center" size="9"><IonLabel>{listName}</IonLabel></IonCol>
+            <IonCol className="ion-no-padding" size="2"><IonButton onClick={() => {editListModal(listID)}} ><IonIcon icon={pencilOutline}></IonIcon></IonButton></IonCol>
           </IonRow>
         )
       }
     }
     listsElem.push(<IonItem key="listlist"><IonGrid>{listsInnerElem}</IonGrid></IonItem>)
-    listsElem.push(<IonItem key="diffNote"><IonText class="small-note-text">{t('itemtext.highlighted_lists_diff_values')}</IonText></IonItem>)
+    listsElem.push(<IonItem key="diffNote"><IonText className="small-note-text">{t('itemtext.highlighted_lists_diff_values')}</IonText></IonItem>)
   
     return (
         <Fragment key="itemlists">
