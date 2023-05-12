@@ -89,7 +89,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
       setPageState(prevState => ({...prevState,usersInfo: usersInfo,usersLoaded: true}))
     }
     let newPageState: PageState =cloneDeep(pageState);
-    if (listRowsLoaded && (useFriendState === UseFriendState.rowsLoaded ||  !remoteDBState.serverAvailable) && !categoryLoading && (!listGroupLoading || mode==="new")) {
+    if (listRowsLoaded && (useFriendState === UseFriendState.rowsLoaded ||  !remoteDBState.dbServerAvailable) && !categoryLoading && (!listGroupLoading || mode==="new")) {
       if (mode === "new" && pageState.needInitListGroupDoc) {
         let initListGroupDoc = ListGroupDocInit;
         newPageState.listGroupDoc=initListGroupDoc;

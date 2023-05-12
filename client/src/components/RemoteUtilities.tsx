@@ -37,7 +37,7 @@ export async function isAPIServerAvailable(remoteDBCreds: DBCreds): Promise<bool
         connectTimeout: apiConnectTimeout
     };
     let responseSuccessful = true;
-    try {response = await CapacitorHttp.post(options);}
+    try {response = await CapacitorHttp.get(options);}
     catch(err) {responseSuccessful = false; log.error("http error in contacting API server:",err)}
     return responseSuccessful;
 }

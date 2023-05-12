@@ -208,7 +208,11 @@ export const en_translations =
         "shopping_uom": "Shopping UoM",
         "update_user_info": "Update User Info",
         "include_globalitems_in_search": "Include Global Items in Search",
-        "offline_cant_get_sharing_info": "Working offline, cannot retrieve or edit shared users"
+        "offline_cant_get_sharing_info": "Working offline, cannot retrieve or edit shared users",
+        "logged_in": "Logged In",
+        "working_offline": "Working Offline",
+        "online": "Online",
+        "attempt_login_again": "Attempt Login Again",
      },
      "error" : {
         "invalid_dbuuid" : "Invalid Database Unique Identifier",

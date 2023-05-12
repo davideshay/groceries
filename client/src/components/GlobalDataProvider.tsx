@@ -124,9 +124,9 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
         });
 
     useEffect( () => {
-        log.debug("Global Data change: ",{listsLoading, listDocs, offline: remoteDBState.workingOffline, syncomplete: remoteDBState.initialSyncComplete})
+//        log.debug("Global Data change: ",{listsLoading, listDocs, offline: remoteDBState.workingOffline, syncomplete: remoteDBState.initialSyncComplete})
         if (!listsLoading && !listGroupsLoading && 
-                (remoteDBState.initialSyncComplete || !remoteDBState.serverAvailable)) {
+                (remoteDBState.initialSyncComplete || !remoteDBState.dbServerAvailable)) {
             setListRowsLoaded(false);
             const { listRows: localListRows, listCombinedRows: localListCombinedRows} = getListRows(listDocs as ListDocs,listGroupDocs as ListGroupDocs,remoteDBCreds)
             setListRows(localListRows);

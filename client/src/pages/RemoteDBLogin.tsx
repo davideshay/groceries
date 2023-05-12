@@ -87,7 +87,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       if (remoteDBState.credsError) {
         setRemoteState(prevState => ({...prevState,formError: remoteDBState.credsErrorText}))
       }
-      log.debug("setting login type to from login page");
+//      log.debug("setting login type to from login page");
       setLoginType(LoginType.loginFromLoginPage);
     },[])
 
@@ -142,7 +142,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     },[remoteDBState.dbUUIDAction])
 
     useEffect( () => {
-      log.debug({loggedIn: remoteDBState.loggedIn, connectionStatus: remoteDBState.connectionStatus, isc: remoteDBState.initialSyncComplete, workingOffline: remoteDBState.workingOffline});
+//      log.debug({loggedIn: remoteDBState.loggedIn, connectionStatus: remoteDBState.connectionStatus, isc: remoteDBState.initialSyncComplete, workingOffline: remoteDBState.workingOffline});
       async function doNav() {
         await dismiss()
         navigateToFirstListID(props.history,remoteDBCreds, globalData.listRows);
@@ -213,7 +213,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     try {response = await CapacitorHttp.post(options)}
     catch(err) {log.error("Error logging in...",err)
                 setRemoteState(prevState => ({...prevState, formError: t("error.could_not_contact_api_server")}));
-                setRemoteDBState({...remoteDBState, serverAvailable: false});
+                setRemoteDBState({...remoteDBState, apiServerAvailable: false});
                 await dismiss();
                 return}
     log.debug("Did API /issuetoken : result: ", cloneDeep(response));            
@@ -222,7 +222,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
             setRemoteState(prevState => ({...prevState, formError: t("error.invalid_authentication")}))
         } else {
             setRemoteState(prevState => ({...prevState, formError: t("error.database_server_not_available")}))
-            setRemoteDBState({...remoteDBState, serverAvailable: false});
+            setRemoteDBState({...remoteDBState, dbServerAvailable: false});
         }    
         await dismiss();
         return
@@ -363,7 +363,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     setLoginType(LoginType.autoLoginFromRoot);
     setRemoteState(prevState=>({...prevState,formError: ""}));
     setRemoteDBState({...remoteDBState,syncStatus: SyncStatus.init, connectionStatus: ConnectionStatus.onLoginScreen, initialSyncStarted: false,
-        initialSyncComplete: false,credsError: false, credsErrorText: "",serverAvailable: true, workingOffline: false, loggedIn: false})
+        initialSyncComplete: false,credsError: false, credsErrorText: "",apiServerAvailable: true, dbServerAvailable: true, workingOffline: false, loggedIn: false})
     const [loginSuccess,loginError] = await attemptFullLogin();
     if (!loginSuccess) {
       setRemoteState(prevState=>({...prevState,formError: loginError}))
@@ -383,12 +383,12 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
   let formElem;
   if (remoteDBState.loggedIn) {
     if (remoteDBState.workingOffline) {
-      formElem=<IonItem>Logged In: Working Offline</IonItem>
+      formElem=<IonItem>{t("general.logged_in")+":"+t("general.working_offline")}</IonItem>
     } else {
-      formElem=<IonItem>Logged In: Online</IonItem>
+      formElem=<IonItem>{t("general.logged_in")+":"+t("general.online")}</IonItem>
     }
   } 
-  else if (remoteDBState.serverAvailable) {
+  else if (remoteDBState.apiServerAvailable && remoteDBState.dbServerAvailable) {
     if (!remoteState.inCreateMode) {
       formElem = <><IonItem>
       <IonInput label={t("general.api_server_url") as string} labelPlacement="stacked" type="url" inputmode="url" value={remoteDBCreds.apiServerURL} onIonInput={(e) => {setDBCredsValue("apiServerURL",String(e.detail.value))}}>
@@ -459,27 +459,23 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
   let buttonsElem
   if (remoteDBState.loggedIn) {
     if (remoteDBState.workingOffline) {
-      buttonsElem=<IonButton size="small" onClick={() => attemptLogin()}>Attempt Login Again</IonButton>
+      buttonsElem=<IonButton size="small" onClick={() => attemptLogin()}>{t("general.attempt_login_again")}</IonButton>
     } else {
-      buttonsElem=<IonButton size="small" onClick={() => logoutPopup()}>Logout</IonButton>
+      buttonsElem=<IonButton size="small" onClick={() => logoutPopup()}>{t("general.logout")}</IonButton>
     } 
   }
-  else if (remoteDBState.serverAvailable) {
+  else if (remoteDBState.apiServerAvailable) {
     if (!remoteState.inCreateMode) {
       buttonsElem=<>
-
         <IonButton size="small" slot="start" onClick={() => submitForm()}>{t("general.login")}</IonButton>
         {/* <IonButton onClick={() => workOffline()}>Work Offline</IonButton> */}        
         <IonButton size="small" onClick={() => resetPassword()}>{t("general.reset_password")}</IonButton>
         <IonButton size="small" slot="end" onClick={() => switchToCreateMode()}>{t("general.create_account")}</IonButton>
-
       </>
     } else {
       buttonsElem=<>
-
         <IonButton fill="outline" onClick={() => setRemoteState(prevState => ({...prevState,inCreateMode: false}))}>{t("general.cancel")}</IonButton>
         <IonButton onClick={() => submitCreateForm()}>{t("general.create")}</IonButton>
-
       </>
     }
   } else {
@@ -492,7 +488,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     } else {
         buttonsElem=
           <IonItem>
-            <IonButton size="small" onClick={() => attemptLogin()}>Attempt Login Again</IonButton>
+            <IonButton size="small" onClick={() => attemptLogin()}>{t("general.attempt_login_again")}</IonButton>
           </IonItem>
     }
   }
@@ -509,7 +505,6 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
               {buttonsElem}
             </IonList>
             </IonContent>
-
         </IonPage>
     )
 }

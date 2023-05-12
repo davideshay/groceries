@@ -1,8 +1,8 @@
 import { todosNanoAsAdmin, usersNanoAsAdmin, couchDatabase, couchAdminPassword, couchAdminUser, couchdbUrl, couchdbInternalUrl, couchStandardRole,
 couchAdminRole, conflictsViewID, conflictsViewName, utilitiesViewID, refreshTokenExpires, accessTokenExpires,
-enableScheduling, resolveConflictsFrequencyMinutes,expireJWTFrequencyMinutes, disableAccountCreation, logLevel } from "./apicalls";
+enableScheduling, resolveConflictsFrequencyMinutes,expireJWTFrequencyMinutes, disableAccountCreation, logLevel, couchKey } from "./apicalls";
 import { resolveConflicts } from "./apicalls";
-import { expireJWTs } from './jwt'
+import { expireJWTs, generateJWT } from './jwt'
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { cloneDeep, isEqual, omit } from "lodash";
 import { v4 as uuidv4} from 'uuid';
@@ -523,7 +523,6 @@ async function createConflictsView() {
             "views": { "conflicts_view" : {
                 "map": "function(doc) { if (doc._conflicts) { emit (doc._conflicts, null)}}"
         }}}
-
         try {
             await todosDBAsAdmin.insert(viewDoc as any,"_design/"+conflictsViewID)
         }
@@ -559,6 +558,32 @@ async function createUtilitiesViews() {
 async function checkAndCreateViews() {
     await createConflictsView();
     await createUtilitiesViews();
+}
+
+async function checkJWTKeys() {
+    let keysOK = false;
+    let testAccessJWT = await generateJWT({username:"test",deviceUUID: "test",includeRoles: true, timeString:"5m"});
+    log.debug("Test JWT is : ",testAccessJWT);
+    const config: AxiosRequestConfig = {
+        method: 'get',
+        url: couchdbInternalUrl+"/_session",
+        headers: {
+            "Authorization": "Bearer "+testAccessJWT
+        },
+        responseType: 'json'
+    }
+    let res: AxiosResponse| null;
+    try  {res = await axios(config)}
+    catch(err) {return false;}
+    if (res?.status === 200 && res?.data.hasOwnProperty("ok")) {
+        if (res.data.ok) {keysOK = true;}
+    }
+    return keysOK;
+}
+
+function encodedHMAC() {
+    let base64HMAC = Buffer.from(String(couchKey)).toString("base64");
+    return base64HMAC;
 }
 
 function isInteger(str: string) {
@@ -605,6 +630,14 @@ export async function dbStartup() {
     catch(err) {log.error("Could not open todo database:",err); return false;}
     try {usersDBAsAdmin = usersNanoAsAdmin.use("_users");}
     catch(err) {log.error("Could not open users database:", err); return false;}
+    let keysOK = await checkJWTKeys();
+    log.debug("JWT Encoded HMAC:",encodedHMAC());
+    if (!keysOK) {
+        log.error("Cannot access database with encoded JWT key. Please check HMAC entry in jwt.ini. The hmac:_default value should be: ",encodedHMAC());
+        return false;
+    } else {
+        log.info("JWT Key verified to access database")
+    }
     await addDBIdentifier();
     await checkAndUpdateSchema();
     await checkAndCreateContent();
