@@ -49,7 +49,7 @@ const ConflictLog: React.FC<HistoryProps> = (props: HistoryProps) => {
         <IonList lines="full">
             {(conflictDocs.length === 0) ? (<IonItem>{t("error.no_items_in_conflict_log")}</IonItem>) : <></>}
                {(conflictDocs as ConflictDocs).map((doc) => (
-                  <IonItem class="list-button" button key={doc._id} routerLink={("/conflictitem/" + doc._id)} >{doc.docType} {doc.updatedAt} </IonItem>
+                  <IonItem className="list-button" button key={doc._id} routerLink={("/conflictitem/" + doc._id)} >{doc.docType} {doc.updatedAt} </IonItem>
             ))}
         </IonList>
       </IonContent>

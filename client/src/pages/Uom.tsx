@@ -261,7 +261,7 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
              </IonInput>
             </IonItem>
             <IonItemDivider>{t("general.alternate_abbreviations")}</IonItemDivider>
-              {formErrors[ErrorLocation.Alternate].hasError ? <IonItem class="shorter-item-some-padding" lines="none"><IonText color="danger">{formErrors[ErrorLocation.Alternate].errorMessage}</IonText></IonItem> : <></>}
+              {formErrors[ErrorLocation.Alternate].hasError ? <IonItem className="shorter-item-some-padding" lines="none"><IonText color="danger">{formErrors[ErrorLocation.Alternate].errorMessage}</IonText></IonItem> : <></>}
             {
               pageState.uomDoc._id?.startsWith("system:uom") ?
               pageState.uomDoc.alternates?.map((alt,index) => (
@@ -288,7 +288,7 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
             </IonItem>
           </IonList>
           <IonFooter class="floating-error-footer">
-            {formErrors[ErrorLocation.General].hasError ? <IonItem class="shorter-item-some-padding" lines="none"><IonText color="danger">{formErrors[ErrorLocation.General].errorMessage}</IonText></IonItem> : <></>}         
+            {formErrors[ErrorLocation.General].hasError ? <IonItem className="shorter-item-some-padding" lines="none"><IonText color="danger">{formErrors[ErrorLocation.General].errorMessage}</IonText></IonItem> : <></>}         
           <IonToolbar>
             { pageState.uomDoc._id?.startsWith("system:uom") ? <></> :
             <IonButtons slot="start">

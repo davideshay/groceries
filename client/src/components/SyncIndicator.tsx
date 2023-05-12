@@ -13,13 +13,13 @@ const SyncIndicator: React.FC = () => {
     let iconElem;
     switch (remoteDBState.syncStatus) {
         case SyncStatus.active:
-            iconElem=(<IonIcon slot="end" class="ion-no-margin ion-margin-start" size={iconSize} icon={cloudDownloadOutline} />)
+            iconElem=(<IonIcon slot="end" className="ion-no-margin ion-margin-start" size={iconSize} icon={cloudDownloadOutline} />)
             break;
         case SyncStatus.paused:
-            iconElem=(<IonIcon slot="end" class="ion-no-margin ion-margin-start" size={iconSize} icon={cloudDoneOutline} />)
+            iconElem=(<IonIcon slot="end" className="ion-no-margin ion-margin-start" size={iconSize} icon={cloudDoneOutline} />)
             break;
         default:
-            iconElem=(<IonIcon slot="end" class="ion-no-margin ion-margin-start" size={iconSize} icon={cloudOfflineOutline} />)
+            iconElem=(<IonIcon slot="end" className="ion-no-margin ion-margin-start" size={iconSize} icon={cloudOfflineOutline} />)
             break;
     }
     let conflictElem;

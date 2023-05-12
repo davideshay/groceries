@@ -404,7 +404,7 @@ const Item: React.FC = (props) => {
       </IonContent>
       <IonFooter class="floating-error-footer">
         {
-          formErrors[ErrorLocation.General].hasError ? <IonItem class="shorter-item-some-padding" color="danger" lines="none">{formErrors[ErrorLocation.General].errorMessage}</IonItem> : <></>
+          formErrors[ErrorLocation.General].hasError ? <IonItem className="shorter-item-some-padding" color="danger" lines="none">{formErrors[ErrorLocation.General].errorMessage}</IonItem> : <></>
         }  
       <IonToolbar>
           <IonButtons slot="start">

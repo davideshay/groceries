@@ -86,7 +86,7 @@ function  GenericSearchBar(props: SearchBarProps,ref: Ref<SearchRefType>) {
     }
 
     return (
-        <IonItem key="searchbar" class="generic-search-item">
+        <IonItem key="searchbar" className="generic-search-item">
         <IonPopover side="bottom" trigger={componentID} isOpen={searchState.isOpen} keyboardClose={false} dismissOnSelect={true}  onDidDismiss={(e) => {leaveSearchBox()}}>
             <IonContent>
                 <IonList key="popoverItemList">

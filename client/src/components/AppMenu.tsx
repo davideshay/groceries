@@ -20,7 +20,7 @@ const AppMenu: React.FC = () => {
 
   const listItem = (listItem: string,link: string) => {
     return (<IonMenuToggle key={listItem} autoHide={false}>
-              <IonItem class="app-menu-item" key={"item-"+listItem} routerLink={link}>{listItem}</IonItem>
+              <IonItem className="app-menu-item" key={"item-"+listItem} routerLink={link}>{listItem}</IonItem>
           </IonMenuToggle>)
   }
 
@@ -32,7 +32,7 @@ const AppMenu: React.FC = () => {
       })
     }  
     return (<IonMenuToggle key="Friends" autoHide={false}>
-              <IonItem class="app-menu-item" key={"item-Friends"} routerLink="/friends">
+              <IonItem className="app-menu-item" key={"item-Friends"} routerLink="/friends">
               {(pendingCount > 0) ? <IonBadge slot="start">{pendingCount}</IonBadge> : <></>}
               {t('general.friends')}
               </IonItem></IonMenuToggle>) 
@@ -41,7 +41,7 @@ const AppMenu: React.FC = () => {
     let pendingCount=0;
     if (!conflictsLoading) { pendingCount=conflictDocs.length }
     return (<IonMenuToggle key="ConflictLog" autoHide={false}>
-              <IonItem class="app-menu-item" key={"item-ConflictLog"} routerLink="/conflictlog">
+              <IonItem className="app-menu-item" key={"item-ConflictLog"} routerLink="/conflictlog">
               {(pendingCount > 0) ? <IonBadge slot="start">{pendingCount}</IonBadge> : <></>}
               {t('general.conflict_log')}
               </IonItem></IonMenuToggle>) 

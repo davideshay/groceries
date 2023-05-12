@@ -129,14 +129,14 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
       <PageHeader title={t("general.settings")} />
       <IonContent fullscreen>
         <IonList lines="none">
-          <IonItemDivider class="category-divider">{t("general.app_info")}</IonItemDivider>
-          <IonItem class="shorter-item-some-padding">{t("general.app_version")} : {appVersion}</IonItem>
-          <IonItem class="shorter-item-some-padding">{t("general.database_schema_version")}: {maxAppSupportedSchemaVersion}</IonItem>
-          <IonItemDivider class="category-divider">{t("general.user_info")}</IonItemDivider>
-          <IonItem class="shorter-item-no-padding">
-            <IonInput class="shorter-input shorter-input2" type="text" disabled={true} labelPlacement="stacked" label={t("general.user_id") as string} value={userInfo.name} />
+          <IonItemDivider className="category-divider">{t("general.app_info")}</IonItemDivider>
+          <IonItem className="shorter-item-some-padding">{t("general.app_version")} : {appVersion}</IonItem>
+          <IonItem className="shorter-item-some-padding">{t("general.database_schema_version")}: {maxAppSupportedSchemaVersion}</IonItem>
+          <IonItemDivider className="category-divider">{t("general.user_info")}</IonItemDivider>
+          <IonItem className="shorter-item-no-padding">
+            <IonInput className="shorter-input shorter-input2" type="text" disabled={true} labelPlacement="stacked" label={t("general.user_id") as string} value={userInfo.name} />
           </IonItem>
-          <IonItem class="shorter-item-no-padding">
+          <IonItem className="shorter-item-no-padding">
             <IonInput type="text" labelPlacement="stacked" label={t("general.name") as string}
                       value={userInfo.fullname} errorText={errorInfo.fullNameError}
                       className={(errorInfo.isError ? "ion-invalid": "ion-valid")+(" ion-touched shorter-input shorter-input2") }
@@ -144,7 +144,7 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
                         setUserInfo(prevState=>({...prevState,fullname: String(ev.detail.value)}));
                         setErrorInfo(prevState=>({...prevState,isTouched: true}))}} />
           </IonItem>
-          <IonItem class="shorter-item-no-padding">
+          <IonItem className="shorter-item-no-padding">
             <IonInput type="text" labelPlacement="stacked" label={t("general.email") as string}
                       value={userInfo.email} errorText={errorInfo.emailError}
                       className={(errorInfo.isError ? "ion-invalid": "ion-valid")+(" ion-touched shorter-input shorter-input2") }
@@ -163,18 +163,18 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
           </IonToolbar>
           <IonItemDivider>{t("general.add_other_list_options")}</IonItemDivider> 
           <IonRadioGroup value={localSettings?.addListOption} onIonChange={(e) => changeSetting("addListOption",e.detail.value)}>
-          <IonItem class="shorter-item-some-padding myindented" key="addallauto">
-            <IonRadio class="indent-setting" justify="space-between" labelPlacement="start" value={AddListOptions.addToAllListsAutomatically}>{t("general.add_same_group_auto")}</IonRadio>
+          <IonItem className="shorter-item-some-padding myindented" key="addallauto">
+            <IonRadio className="indent-setting" justify="space-between" labelPlacement="start" value={AddListOptions.addToAllListsAutomatically}>{t("general.add_same_group_auto")}</IonRadio>
           </IonItem>
-          <IonItem class="shorter-item-some-padding" key="addcategoryauto">
-            <IonRadio class="indent-setting" justify="space-between" labelPlacement="start" value={AddListOptions.addToListsWithCategoryAutomatically}>{t("general.add_same_categories_auto")}</IonRadio>
+          <IonItem className="shorter-item-some-padding" key="addcategoryauto">
+            <IonRadio className="indent-setting" justify="space-between" labelPlacement="start" value={AddListOptions.addToListsWithCategoryAutomatically}>{t("general.add_same_categories_auto")}</IonRadio>
           </IonItem>
-          <IonItem class="shorter-item-some-padding" key="dontaddauto">
-            <IonRadio class="indent-setting" justify="space-between" labelPlacement="start" value={AddListOptions.dontAddAutomatically}>{t("general.dont_add_auto")}</IonRadio>
+          <IonItem className="shorter-item-some-padding" key="dontaddauto">
+            <IonRadio className="indent-setting" justify="space-between" labelPlacement="start" value={AddListOptions.dontAddAutomatically}>{t("general.dont_add_auto")}</IonRadio>
           </IonItem>
           </IonRadioGroup>
           <IonItemDivider>{t("general.other_settings")}</IonItemDivider>
-          <IonItem class="shorter-item-no-padding" key="language">
+          <IonItem className="shorter-item-no-padding" key="language">
             <IonSelect class="shorter-select shorter-select2" label={t("general.language") as string} interface="popover" onIonChange={(e) => i18n.changeLanguage(e.detail.value)} value={curLanguage}>
                 {languageDescriptions.map((lng: any) => (
                     <IonSelectOption key={"language-"+lng.key} value={lng.key}>
@@ -183,16 +183,16 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
                 ))}
             </IonSelect>
           </IonItem>
-          <IonItem class="shorter-item-some-padding" key="removesettings">
+          <IonItem className="shorter-item-some-padding" key="removesettings">
             <IonCheckbox justify="space-between" labelPlacement="start" checked={localSettings.removeFromAllLists} onIonChange={(e) => changeSetting("removeFromAllLists",e.detail.checked)}>{t("general.remove_items_all_lists_purchased")}</IonCheckbox>
           </IonItem>
-          <IonItem class="shorter-item-some-padding" key="deletesettings">
+          <IonItem className="shorter-item-some-padding" key="deletesettings">
             <IonCheckbox justify="space-between" labelPlacement="start" checked={localSettings.completeFromAllLists} onIonChange={(e) => changeSetting("completeFromAllLists",e.detail.checked)}>{t("general.delete_all_lists_when_deleting_completed")}</IonCheckbox>
           </IonItem>
-          <IonItem class="shorter-item-some-padding" key="searchsettings">
+          <IonItem className="shorter-item-some-padding" key="searchsettings">
             <IonCheckbox justify="space-between" labelPlacement="start" checked={localSettings.includeGlobalInSearch} onIonChange={(e) => changeSetting("includeGlobalInSearch",e.detail.checked)}>{t("general.include_globalitems_in_search")}</IonCheckbox>
           </IonItem>
-          <IonItem class="shorter-item-no-padding" key="dayslog">
+          <IonItem className="shorter-item-no-padding" key="dayslog">
             <IonInput class="shorter-input shorter-input2" label={t("general.days_conflict_log_to_view") as string} labelPlacement="start" type="number" min="0" max="25" onIonInput={(e) => changeSetting("daysOfConflictLog", Number(e.detail.value))} value={Number(localSettings?.daysOfConflictLog)}></IonInput>
           </IonItem>
         </IonList>

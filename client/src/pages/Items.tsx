@@ -394,7 +394,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   let headerElem=(
     <IonHeader><IonToolbar><IonButtons slot="start"><IonMenuButton class={"ion-no-padding small-menu-button"} /></IonButtons>
     <IonTitle class="ion-no-padding item-outer"></IonTitle>
-        <IonItem id="item-list-selector-id" class="item-list-selector" key="listselector">
+        <IonItem id="item-list-selector-id" className="item-list-selector" key="listselector">
         <IonSelect id="select-list-selector-id" class="select-list-selector" label={t("general.items_on") as string} aria-label={t("general.items_on") as string} interface="popover" onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListOrGroupID}  >
             {listCombinedRows.map((listCombinedRow: ListCombinedRow) => (
                 <IonSelectOption disabled={listCombinedRow.rowKey==="G-null"} className={listCombinedRow.rowType === RowType.list ? "indented" : ""} key={listCombinedRow.listOrGroupID} value={listCombinedRow.listOrGroupID}>
@@ -404,7 +404,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
           </IonSelect>
         <SyncIndicator />
         </IonItem>
-        <IonItem key="searchbar" class="item-search">
+        <IonItem key="searchbar" className="item-search">
            <IonIcon icon={searchOutline} />
            <IonInput id="item-search-box-id" aria-label="" class="ion-no-padding input-search" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="text" enterkeyhint="enter"
               clearInput={true}  placeholder={t("general.search") as string} fill="solid"
@@ -464,15 +464,15 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       lastCategoryFinished=item.completed;
     }
     currentRows.push(
-      <IonItem class="itemrow-outer" key={pageState.itemRows[i].itemID} >
-        <IonGrid class="grid-no-pad"><IonRow>
-        <IonCol class="col-no-pad" size="1">
+      <IonItem className="itemrow-outer" key={pageState.itemRows[i].itemID} >
+        <IonGrid className="grid-no-pad"><IonRow>
+        <IonCol className="col-no-pad" size="1">
         <IonCheckbox aria-label=""
             onIonChange={(e) => completeItemRow(item.itemID,e.detail.checked)}
             checked={Boolean(pageState.itemRows[i].completed)}></IonCheckbox>
         </IonCol>
-        <IonCol class="col-no-pad" size="11">
-          <IonItem class="itemrow-inner" routerLink={"/item/edit/"+item.itemID} key={pageState.itemRows[i].itemID+"mynewbutton"}>{item.itemName + (item.quantityUOMDesc === "" ? "" : " ("+ item.quantityUOMDesc+")")}</IonItem>
+        <IonCol className="col-no-pad" size="11">
+          <IonItem className="itemrow-inner" routerLink={"/item/edit/"+item.itemID} key={pageState.itemRows[i].itemID+"mynewbutton"}>{item.itemName + (item.quantityUOMDesc === "" ? "" : " ("+ item.quantityUOMDesc+")")}</IonItem>
         </IonCol>
         </IonRow></IonGrid>
       </IonItem>);

@@ -26,6 +26,22 @@ export async function navigateToFirstListID(phistory: History,remoteDBCreds: DBC
     }  
   }
 
+export async function isAPIServerAvailable(remoteDBCreds: DBCreds): Promise<boolean> {
+    let response: HttpResponse | undefined;
+    const options: HttpOptions = {
+        url: String(remoteDBCreds.apiServerURL+"/isavailable"),
+        method: "GET",
+        headers: { 'Content-Type': 'application/json',
+                   'Accept': 'application/json',
+                },
+        connectTimeout: apiConnectTimeout
+    };
+    let responseSuccessful = true;
+    try {response = await CapacitorHttp.post(options);}
+    catch(err) {responseSuccessful = false; log.error("http error in contacting API server:",err)}
+    return responseSuccessful;
+}
+
 export async function createNewUser(remoteDBState: RemoteDBState,remoteDBCreds: DBCreds, password: string): Promise<(HttpResponse | undefined)> {
     let response: HttpResponse | undefined;
     const options: HttpOptions = {
@@ -51,7 +67,8 @@ export async function createNewUser(remoteDBState: RemoteDBState,remoteDBCreds: 
 export function getTokenInfo(JWT: string) {
     let tokenResponse = {
         valid : false,
-        expireDate: 0
+        expireDate: 0,
+        username: ""
     }
     let JWTDecode;
     let JWTDecodeValid = true;
@@ -60,6 +77,7 @@ export function getTokenInfo(JWT: string) {
     if (JWTDecodeValid) {
         tokenResponse.valid = true;
         tokenResponse.expireDate = (JWTDecode as any).exp
+        tokenResponse.username = (JWTDecode as any).sub
     }
     return(tokenResponse);
 }

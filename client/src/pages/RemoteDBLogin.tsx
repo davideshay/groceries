@@ -230,7 +230,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     let newCreds=updateDBCredsFromResponse(response);
     let tokenInfo = getTokenInfo(response.data.accessJWT);
     setRemoteDBCreds(newCreds);
-    setRemoteDBState({...remoteDBState, accessJWT: response.data.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate, loggedIn: true});
+    setRemoteDBState({...remoteDBState, accessJWT: response.data.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate, loggedIn: true, credsError: false, credsErrorText: ""});
     await assignDB(response.data.accessJWT);
   }
   
@@ -432,13 +432,28 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       </>
     }
   } else {
-    formElem = <>
-      <IonItem>
-        <IonText>
-          {t("error.database_server_not_available_choose_work_offline")}
-        </IonText>
-      </IonItem>
-    </>
+    if (remoteDBState.offlineJWTMatch) {
+        formElem = <>
+          <IonItem>
+            <IonText>
+              {t("error.database_server_not_available_choose_work_offline")}
+            </IonText>
+          </IonItem>
+          <IonItem>  
+            <IonText>
+              {t("error.press_button_work_offline_as_user")+" "+remoteDBCreds.dbUsername}
+            </IonText>
+          </IonItem>
+          </>
+    } else {
+      formElem = <>
+        <IonItem>
+          <IonText>
+            {t("error.server_not_available_nor_cached_creds")}
+          </IonText>
+        </IonItem>
+      </>
+    }      
 
   }
   let buttonsElem
@@ -468,11 +483,18 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       </>
     }
   } else {
-    buttonsElem=<>
-      <IonItem>
-        <IonButton slot="start" onClick={() => setWorkingOffline()}>{t("general.work_offline")}</IonButton>
-      </IonItem>
-    </>
+    if (remoteDBState.offlineJWTMatch) {
+        buttonsElem=<>
+          <IonItem>
+            <IonButton slot="start" onClick={() => setWorkingOffline()}>{t("general.work_offline")}</IonButton>
+          </IonItem>
+        </>
+    } else {
+        buttonsElem=
+          <IonItem>
+            <IonButton size="small" onClick={() => attemptLogin()}>Attempt Login Again</IonButton>
+          </IonItem>
+    }
   }
 
   return(

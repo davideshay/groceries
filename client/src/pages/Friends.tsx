@@ -112,12 +112,12 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
   function ButtonElem(friendRow: FriendRow) {
     if (friendRow.resolvedStatus === ResolvedFriendStatus.WaitingToRegister) {
       return(
-        <IonButton size="small" class="extra-small-button" onClick={() => showURL(friendRow)}>{t("general.url")}</IonButton> 
+        <IonButton size="small" className="extra-small-button" onClick={() => showURL(friendRow)}>{t("general.url")}</IonButton> 
       )
     }
     else if (friendRow.resolvedStatus === ResolvedFriendStatus.PendingConfirmation)
     {
-      return(<IonButton size="small" class="extra-small-button" onClick={() => confirmFriend(friendRow)}>{t("general.confirm")}</IonButton>);
+      return(<IonButton size="small" className="extra-small-button" onClick={() => confirmFriend(friendRow)}>{t("general.confirm")}</IonButton>);
     }
   }
 

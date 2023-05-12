@@ -34,7 +34,7 @@ const ListGroups: React.FC = () => {
         <IonList lines="full">
                {listCombinedRows.map((row: ListCombinedRow) => { 
                   if (row.rowType === RowType.listGroup) { return (
-                  (<IonItem button class="list-button" key={row.rowKey} routerLink={("/listgroup/edit/" + row.listGroupID)}>{row.rowName}</IonItem>))} }
+                  (<IonItem button className="list-button" key={row.rowKey} routerLink={("/listgroup/edit/" + row.listGroupID)}>{row.rowName}</IonItem>))} }
         )}
         </IonList>
       </IonContent>

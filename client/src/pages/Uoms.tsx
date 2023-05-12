@@ -32,7 +32,7 @@ const Uoms: React.FC<HistoryProps> = (props: HistoryProps) => {
       <IonContent>
         <IonList lines="full">
                {(globalData.uomDocs).map((doc) => (
-                  <IonItem class="list-button" key={doc._id} routerLink={("/uom/edit/" + doc._id)}>
+                  <IonItem className="list-button" key={doc._id} routerLink={("/uom/edit/" + doc._id)}>
                     {translatedUOMName(doc._id as string,doc.description)}
                   </IonItem>
             ))}

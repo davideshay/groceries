@@ -7,7 +7,7 @@ import {
         checkUserByEmailExists, createAccountUIGet, createAccountUIPost,
         triggerRegEmail, resetPassword, resetPasswordUIGet, resetPasswordUIPost,
         triggerResolveConflicts, triggerDBCompact, authenticateJWT,
-        updateUserInfo, logout, groceryAPIPort } from './apicalls';
+        updateUserInfo, logout, groceryAPIPort, isAvailable } from './apicalls';
 
 import { dbStartup } from './dbstartup'
 import { CheckUserExistsReqBody, NewUserReqBody, CustomRequest, CheckUseEmailReqBody } from './datatypes';
@@ -39,8 +39,7 @@ app.get('/resetpasswordui', async(req: Request,res: Response) => res.render("res
 app.post('/resetpasswordui', async(req: Request,res: Response) => res.render("resetpassword", await resetPasswordUIPost(req,res)));
 app.post('/triggerresolveconflicts', authenticateJWT, async (req: Request, res: Response) => res.send(await triggerResolveConflicts(req,res)));
 app.post('/triggerdbcompact', authenticateJWT, async (req: Request,res: Response) => res.send(await triggerDBCompact(req, res)));
-
-//TODO setuserdata (including password)
+app.get('/isavailable', async (req: Request, res: Response) => res.send(isAvailable(req,res)));
 
 dbStartup();
 

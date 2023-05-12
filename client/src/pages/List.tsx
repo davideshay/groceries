@@ -244,7 +244,7 @@ function deletePrompt() {
       log.error("Cat doc not defined: id:",id);
       return(
       <IonItem key={pageState.selectedListID+"-"+actname+"-"+id}>
-          <IonButton fill="clear" class="textButton">{t("general.undefined")}</IonButton>
+          <IonButton fill="clear" className="textButton">{t("general.undefined")}</IonButton>
           <IonReorder slot="end"></IonReorder>
       </IonItem>)
     }
@@ -365,7 +365,7 @@ function deletePrompt() {
       </IonContent>
       <IonFooter class="floating-error-footer">
         {
-          formErrors[ErrorLocation.General].hasError ? <IonItem class="shorter-item-some-padding" lines="none"><IonText color="danger">{formErrors[ErrorLocation.General].errorMessage}</IonText></IonItem> : <></>
+          formErrors[ErrorLocation.General].hasError ? <IonItem className="shorter-item-some-padding" lines="none"><IonText color="danger">{formErrors[ErrorLocation.General].errorMessage}</IonText></IonItem> : <></>
         }  
         <IonToolbar>
           <IonButtons slot="start">

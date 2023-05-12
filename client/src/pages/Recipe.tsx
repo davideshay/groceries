@@ -396,7 +396,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
           </IonList>
           </IonContent>
           <IonFooter>
-            {formErrors[ErrorLocation.General].hasError ? <IonItem class="shorter-item-some-padding" lines="none"><IonText color="danger">{formErrors[ErrorLocation.General].errorMessage}</IonText></IonItem> : <></>}
+            {formErrors[ErrorLocation.General].hasError ? <IonItem className="shorter-item-some-padding" lines="none"><IonText color="danger">{formErrors[ErrorLocation.General].errorMessage}</IonText></IonItem> : <></>}
             <IonGrid>
               <IonRow class="ion-justify-content-center ion-align-items-center">
                 <IonCol size="5">

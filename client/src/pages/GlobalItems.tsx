@@ -44,7 +44,7 @@ const GlobalItems: React.FC<HistoryProps> = (props: HistoryProps) => {
       <IonContent>
         {globalItemDocs.length === 0 ?(<IonList><IonItem>{t("error.no_global_items_available")}</IonItem></IonList>) : <></> }
         {(globalItemDocs as GlobalItemDocs).map(gi => (
-             <IonItem button key={gi._id} class="list-button" routerLink={("/globalitem/edit/" + gi._id)}>{translatedItemName(gi._id!,gi.name,2)}</IonItem>
+             <IonItem button key={gi._id} className="list-button" routerLink={("/globalitem/edit/" + gi._id)}>{translatedItemName(gi._id!,gi.name,2)}</IonItem>
         ))}
       </IonContent>
     </IonPage>

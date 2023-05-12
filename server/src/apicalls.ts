@@ -564,6 +564,13 @@ export async function resetPasswordUIPost(req: Request, res: Response) {
     return(respObj);
 }
 
+export function isAvailable(req: Request, res: Response) {
+    let respObj = {
+        isAvailable : true
+    };
+    return(respObj);
+}
+
 export async function resolveConflicts() {
     let conflicts;
     try {conflicts = await todosDBAsAdmin.view(conflictsViewID,conflictsViewName);}

@@ -4,7 +4,7 @@ import { Preferences } from '@capacitor/preferences';
 import { getUsersInfo, initialSetupActivities } from '../components/Utilities'; 
 import { Device } from '@capacitor/device';
 import PouchDB from 'pouchdb';
-import { getTokenInfo, refreshToken, errorCheckCreds , checkJWT, checkDBUUID, getPrefsDBCreds } from "./RemoteUtilities";
+import { getTokenInfo, refreshToken, errorCheckCreds , checkJWT, checkDBUUID, getPrefsDBCreds, isAPIServerAvailable } from "./RemoteUtilities";
 import { useTranslation } from 'react-i18next';    
 import { UserIDList } from "./DataTypes";
 import { cloneDeep } from "lodash";
@@ -30,6 +30,7 @@ export type RemoteDBState = {
     credsErrorText: string,
     serverAvailable: boolean,
     workingOffline: boolean,
+    offlineJWTMatch: boolean,
     loggedIn: boolean,
 }
 
@@ -122,6 +123,7 @@ export const initialRemoteDBState: RemoteDBState = {
     credsErrorText: "",
     serverAvailable: true,
     workingOffline: false,
+    offlineJWTMatch: false,
     loggedIn: false,
 }
 
@@ -283,6 +285,20 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         setRemoteDBState(prevState => ({...prevState,deviceUUID: devID}));
         let credsObj = await getPrefsDBCreds(remoteDBCreds.current);
         remoteDBCreds.current = credsObj;
+        let apiServerAvailable = await isAPIServerAvailable(remoteDBCreds.current); 
+        if (!apiServerAvailable) {
+            // validate you have a refreshJWT matching userid
+            let validJWTMatch = false;
+            if (credsObj.refreshJWT !== null) {
+                let JWTResponse = getTokenInfo(credsObj.refreshJWT);
+                if (JWTResponse.valid && credsObj.dbUsername === JWTResponse.username) {
+                    validJWTMatch = true;
+                }
+            }            
+            // if you do, present a work offline option
+            setRemoteDBState(prevState => ({...prevState,serverAvailable: false, offlineJWTMatch: validJWTMatch, credsError: true, credsErrorText: t("error.could_not_contact_api_server"), connectionStatus: ConnectionStatus.navToLoginScreen}))
+            return [false,t("error.could_not_contact_api_server")];
+        }
         let credsCheck =  errorCheckCreds({credsObj: credsObj, background: true});
         log.debug("Attempt Full Login: credsCheck:",credsCheck);
         if (credsCheck.credsError) {

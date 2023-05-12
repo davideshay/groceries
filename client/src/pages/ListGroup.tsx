@@ -382,7 +382,7 @@ function deletePrompt() {
           </IonList>
           <IonFooter class="floating-error-footer">
               {
-                formErrors[ErrorLocation.General].hasError ? <IonItem class="shorter-item-some-padding" lines="none"><IonText color="danger">{formErrors[ErrorLocation.General].errorMessage}</IonText></IonItem> : <></>
+                formErrors[ErrorLocation.General].hasError ? <IonItem className="shorter-item-some-padding" lines="none"><IonText color="danger">{formErrors[ErrorLocation.General].errorMessage}</IonText></IonItem> : <></>
               }  
             <IonToolbar>
             <IonButtons slot="start">

@@ -295,7 +295,7 @@ export const en_translations =
         "invalid_data_entered":"Invalid Data Entered",
         "user_already_exists": "User Already Exists",
         "must_enter_username_reset_password":"Must enter username to reset password",
-        "database_server_not_available_choose_work_offline":"The database server is not available. You can choose to work offline and your changes will sync when you start the app again and the server is available. The risk for conflicts increases when working offline.",
+        "database_server_not_available_choose_work_offline":"The database and/or API server is not available. You can choose to work offline and your changes will sync when you start the app again and the server is available. The risk for conflicts increases when working offline.",
         "loading_recipes": "Error Loading Recipes... Restart.",
         "no_recipes_exist": "No Recipes Exist Yet",
         "loading_recipe": "Error Loading Recipe... Restart.",
@@ -331,7 +331,9 @@ export const en_translations =
         "must_enter_a_plural_name":"Must Enter a Plural Name",
         "account_creation_disabled":"Account Creation Disabled",
         "updating_uom": "Error updating UoM",
-        "database_server_not_available": "Database Server Not Available"
+        "database_server_not_available": "Database Server Not Available",
+        "press_button_work_offline_as_user": "Press the button below to work offline as user:",
+        "server_not_available_nor_cached_creds": "The server is not available to login. There are no cached credentials to be able to use the app locally either. Please login again when the server is available.",
     },
     "itemtext": {
         "item_is_on_these_lists": "Item is on these lists:",
