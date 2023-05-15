@@ -185,6 +185,10 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         setRemoteDBState(prevState => ({...prevState, connectionStatus: value}));
     }
 
+    function setDBServerAvailable(value: boolean) {
+        setRemoteDBState(prevState => ({...prevState,dbServerAvailable: value}));
+    }
+
     function startSync() {
         log.debug("Starting sync of database",cloneDeep(globalRemoteDB));
         globalSync = db.sync((globalRemoteDB as PouchDB.Database), {
@@ -196,13 +200,20 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             },
             retry: true,
             live: false,
-            }).on('paused', () => {  log.debug("Initial sync paused"); setSyncStatus(SyncStatus.paused)})
-            .on('active', () => { log.debug("Initial sync active"); setSyncStatus(SyncStatus.active)})
+            }).on('paused', () => {log.debug("Initial sync paused");
+                                    setSyncStatus(SyncStatus.paused);
+                                    setDBServerAvailable(true)})
+            .on('active', () => { log.debug("Initial sync active");
+                                    setSyncStatus(SyncStatus.active);
+                                    setDBServerAvailable(true)})
             .on('complete',() => {log.debug("Initial sync complete"); liveSync()})
-            .on('denied', (err) => { setSyncStatus(SyncStatus.denied); log.debug("Initial sync denied: ",{err})})
+            .on('denied', (err) => { setSyncStatus(SyncStatus.denied);
+                                    setDBServerAvailable(false);
+                                    log.debug("Initial sync denied: ",{err})})
             .on('error', (err) => { log.debug("initial error state",{err}) ; 
                                 globalSync.cancel();
                                 setSyncStatus(SyncStatus.error);
+                                setDBServerAvailable(false);
                                 });
         setRemoteDBState(prevState=>({...prevState,initialSyncStarted: true}))
     }
@@ -214,17 +225,25 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             back_off_function: function(delay) {
                 log.debug("live sync going offline");
                 setSyncStatus(SyncStatus.offline);
+                setDBServerAvailable(false);
                 if (delay===0) {return 1000};
                 if (delay < 60000) {return delay*1.5} else {return 60000};
             },
             retry: true,
             live: true,
-            }).on('paused', () => {  log.debug("live sync paused"); setSyncStatus(SyncStatus.paused)})
-            .on('active', () => { log.debug("live sync active"); setSyncStatus(SyncStatus.active)})
-            .on('denied', (err) => { setSyncStatus(SyncStatus.denied); log.debug("live sync denied: ",{err})})
+            }).on('paused', () => {  log.debug("live sync paused");
+                                    setSyncStatus(SyncStatus.paused);
+                                    setDBServerAvailable(true)})
+            .on('active', () => { log.debug("live sync active");
+                                    setSyncStatus(SyncStatus.active);
+                                    setDBServerAvailable(true)})
+            .on('denied', (err) => { setSyncStatus(SyncStatus.denied);
+                                    setDBServerAvailable(false)
+                                    log.debug("live sync denied: ",{err})})
             .on('error', (err) => { log.debug("live sync error state",{err}) ; 
                                 globalSync.cancel();
                                 setSyncStatus(SyncStatus.error);
+                                setDBServerAvailable(false);
                                 })
     }
 
@@ -289,7 +308,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         setRemoteDBState(prevState => ({...prevState,deviceUUID: devID}));
         let credsObj = await getPrefsDBCreds(remoteDBCreds.current);
         remoteDBCreds.current = credsObj;
-        let apiServerAvailable = await isAPIServerAvailable(remoteDBCreds.current); 
+        let apiServerAvailable = await isAPIServerAvailable(remoteDBCreds.current.apiServerURL); 
         if (!apiServerAvailable) {
             // validate you have a refreshJWT matching userid
             let validJWTMatch = false;

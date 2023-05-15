@@ -26,10 +26,13 @@ export async function navigateToFirstListID(phistory: History,remoteDBCreds: DBC
     }  
   }
 
-export async function isAPIServerAvailable(remoteDBCreds: DBCreds): Promise<boolean> {
+export async function isAPIServerAvailable(apiServerURL: string|null): Promise<boolean> {
+    if (apiServerURL === null || apiServerURL == undefined || apiServerURL == "") {
+        return false;
+    }
     let response: HttpResponse | undefined;
     const options: HttpOptions = {
-        url: String(remoteDBCreds.apiServerURL+"/isavailable"),
+        url: String(apiServerURL+"/isavailable"),
         method: "GET",
         headers: { 'Content-Type': 'application/json',
                    'Accept': 'application/json',

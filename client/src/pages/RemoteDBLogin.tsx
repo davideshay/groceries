@@ -7,7 +7,7 @@ import { usePouch} from 'use-pouchdb';
 import { ConnectionStatus, DBCreds, DBUUIDAction, LoginType } from '../components/RemoteDBState';
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
-import { createNewUser, getTokenInfo, navigateToFirstListID, errorCheckCreds  } from '../components/RemoteUtilities';
+import { createNewUser, getTokenInfo, navigateToFirstListID, errorCheckCreds, isAPIServerAvailable  } from '../components/RemoteUtilities';
 import { cloneDeep } from 'lodash';
 import { RemoteDBStateContext, SyncStatus, initialRemoteDBState } from '../components/RemoteDBState';
 import { HistoryProps} from '../components/DataTypes';
@@ -90,6 +90,17 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
 //      log.debug("setting login type to from login page");
       setLoginType(LoginType.loginFromLoginPage);
     },[])
+
+    async function checkAPIServerAvailable(apiServerURL: string|null) {
+      let apiServerAvailable = await isAPIServerAvailable(apiServerURL);
+      log.debug("API Server Available: ",apiServerAvailable);
+      setRemoteDBState({...remoteDBState,apiServerAvailable: apiServerAvailable})
+    }
+
+    useEffect( () => {
+      log.debug("checking is API server is available in useeffect...");
+      checkAPIServerAvailable(remoteDBCreds.apiServerURL);
+    },[remoteDBCreds.apiServerURL])
 
     // effect for dbuuidaction not none
     useEffect( () => {

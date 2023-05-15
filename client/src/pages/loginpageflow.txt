@@ -1,0 +1,16 @@
+Options:
+
+
+apiServerAvailable
+dbServerAvailable
+loggedIn
+workingOffline -- already set
+offlineJWTMatch -- the offline token matches the user name
+
+api, db available, not working offline:
+normal login
+
+api not available
+    db available? 
+        workingOffline 
+
