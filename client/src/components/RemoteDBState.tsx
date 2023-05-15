@@ -4,7 +4,7 @@ import { Preferences } from '@capacitor/preferences';
 import { getUsersInfo, initialSetupActivities } from '../components/Utilities'; 
 import { Device } from '@capacitor/device';
 import PouchDB from 'pouchdb';
-import { getTokenInfo, refreshToken, errorCheckCreds , checkJWT, checkDBUUID, getPrefsDBCreds, isAPIServerAvailable } from "./RemoteUtilities";
+import { getTokenInfo, refreshToken, errorCheckCreds , checkJWT, checkDBUUID, getPrefsDBCreds, isServerAvailable } from "./RemoteUtilities";
 import { useTranslation } from 'react-i18next';    
 import { UserIDList } from "./DataTypes";
 import { cloneDeep } from "lodash";
@@ -308,8 +308,8 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         setRemoteDBState(prevState => ({...prevState,deviceUUID: devID}));
         let credsObj = await getPrefsDBCreds(remoteDBCreds.current);
         remoteDBCreds.current = credsObj;
-        let apiServerAvailable = await isAPIServerAvailable(remoteDBCreds.current.apiServerURL); 
-        if (!apiServerAvailable) {
+        let serverAvailable = await isServerAvailable(remoteDBCreds.current.apiServerURL); 
+        if (!serverAvailable.apiServerAvailable) {
             // validate you have a refreshJWT matching userid
             let validJWTMatch = false;
             if (credsObj.refreshJWT !== null) {
@@ -319,7 +319,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
                 }
             }            
             // if you do, present a work offline option
-            setRemoteDBState(prevState => ({...prevState,apiServerAvailable: false, offlineJWTMatch: validJWTMatch, credsError: true, credsErrorText: t("error.could_not_contact_api_server"), connectionStatus: ConnectionStatus.navToLoginScreen}))
+            setRemoteDBState(prevState => ({...prevState,apiServerAvailable: false, dbServerAvailable: serverAvailable.dbServerAvailable, offlineJWTMatch: validJWTMatch, credsError: true, credsErrorText: t("error.could_not_contact_api_server"), connectionStatus: ConnectionStatus.navToLoginScreen}))
             return [false,t("error.could_not_contact_api_server")];
         }
         let credsCheck =  errorCheckCreds({credsObj: credsObj, background: true});

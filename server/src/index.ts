@@ -39,7 +39,7 @@ app.get('/resetpasswordui', async(req: Request,res: Response) => res.render("res
 app.post('/resetpasswordui', async(req: Request,res: Response) => res.render("resetpassword", await resetPasswordUIPost(req,res)));
 app.post('/triggerresolveconflicts', authenticateJWT, async (req: Request, res: Response) => res.send(await triggerResolveConflicts(req,res)));
 app.post('/triggerdbcompact', authenticateJWT, async (req: Request,res: Response) => res.send(await triggerDBCompact(req, res)));
-app.get('/isavailable', async (req: Request, res: Response) => res.send(isAvailable(req,res)));
+app.get('/isavailable', async (req: Request, res: Response) => res.send(await isAvailable(req,res)));
 
 dbStartup();
 

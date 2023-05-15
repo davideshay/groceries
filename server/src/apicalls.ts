@@ -45,7 +45,7 @@ import { todosDBAsAdmin, usersDBAsAdmin, couchLogin } from './dbstartup';
 import _ from 'lodash';
 import { cloneDeep, isEmpty, isEqual, isSafeInteger } from 'lodash';
 import { usernamePatternValidation, fullnamePatternValidation, getUserDoc, getUserByEmailDoc,
-    totalDocCount, isNothing, createNewUser, updateUnregisteredFriends, getFriendDocByUUID, UserResponse, CreateResponseType } from './utilities';
+    totalDocCount, isNothing, createNewUser, updateUnregisteredFriends, getFriendDocByUUID, UserResponse, CreateResponseType, checkDBAvailable } from './utilities';
 import { generateJWT, isValidToken, invalidateToken, JWTMatchesUserDB, TokenReturnType } from './jwt'     
 import { NextFunction, Request, Response } from 'express';
 import { CheckUseEmailReqBody, CheckUserExistsReqBody, CustomRequest, NewUserReqBody, RefreshTokenResponse, checkUserByEmailExistsResponse } from './datatypes';
@@ -564,10 +564,12 @@ export async function resetPasswordUIPost(req: Request, res: Response) {
     return(respObj);
 }
 
-export function isAvailable(req: Request, res: Response) {
+export async function isAvailable(req: Request, res: Response) {
     let respObj = {
-        isAvailable : true
+        apiServerAvailable: true,
+        dbServerAvailable : await checkDBAvailable(todosDBAsAdmin)
     };
+    log.debug("Server checking availability:",respObj);
     return(respObj);
 }
 

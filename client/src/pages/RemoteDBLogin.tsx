@@ -7,7 +7,7 @@ import { usePouch} from 'use-pouchdb';
 import { ConnectionStatus, DBCreds, DBUUIDAction, LoginType } from '../components/RemoteDBState';
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
-import { createNewUser, getTokenInfo, navigateToFirstListID, errorCheckCreds, isAPIServerAvailable  } from '../components/RemoteUtilities';
+import { createNewUser, getTokenInfo, navigateToFirstListID, errorCheckCreds, isServerAvailable  } from '../components/RemoteUtilities';
 import { cloneDeep } from 'lodash';
 import { RemoteDBStateContext, SyncStatus, initialRemoteDBState } from '../components/RemoteDBState';
 import { HistoryProps} from '../components/DataTypes';
@@ -16,6 +16,16 @@ import { useTranslation } from 'react-i18next';
 import PageHeader from '../components/PageHeader';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
 import log from 'loglevel';
+
+enum LoginOptions {
+  Unknown = "U",
+  AttemptLogin = "AL",
+  Login = "LI",
+  Logout = "LO",
+  AskOffline = "AO",
+  MustStayOffline = "MSO",
+  NoCachedCreds = "NCC"
+}
 
 export type RemoteState = {
   password: string | undefined,
@@ -92,9 +102,9 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     },[])
 
     async function checkAPIServerAvailable(apiServerURL: string|null) {
-      let apiServerAvailable = await isAPIServerAvailable(apiServerURL);
-      log.debug("API Server Available: ",apiServerAvailable);
-      setRemoteDBState({...remoteDBState,apiServerAvailable: apiServerAvailable})
+      let serverAvailable = await isServerAvailable(apiServerURL);
+      log.debug("API Server Available: ",serverAvailable);
+      setRemoteDBState({...remoteDBState,apiServerAvailable: serverAvailable.apiServerAvailable, dbServerAvailable: serverAvailable.dbServerAvailable})
     }
 
     useEffect( () => {
@@ -391,118 +401,180 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     setRemoteState(prevState => ({...prevState,inCreateMode: true, formError: ""}))
   }
 
-  let formElem;
-  if (remoteDBState.loggedIn) {
-    if (remoteDBState.workingOffline) {
-      formElem=<IonItem>{t("general.logged_in")+":"+t("general.working_offline")}</IonItem>
-    } else {
-      formElem=<IonItem>{t("general.logged_in")+":"+t("general.online")}</IonItem>
-    }
-  } 
-  else if (remoteDBState.apiServerAvailable && remoteDBState.dbServerAvailable) {
-    if (!remoteState.inCreateMode) {
-      formElem = <><IonItem>
-      <IonInput label={t("general.api_server_url") as string} labelPlacement="stacked" type="url" inputmode="url" value={remoteDBCreds.apiServerURL} onIonInput={(e) => {setDBCredsValue("apiServerURL",String(e.detail.value))}}>
-      </IonInput>
-      </IonItem>
-      <IonItem>
-      <IonInput label={t("general.username") as string} labelPlacement="stacked"  type="text" autocomplete="username" value={remoteDBCreds.dbUsername} onIonInput={(e) => {setDBCredsValue("dbUsername",String(e.detail.value))}}>
-      </IonInput>
-      </IonItem>
-      <IonItem>
-      <IonInput label={t("general.password") as string} labelPlacement="stacked" autocomplete="current-password" type={remoteState.showMainPassword ? "text" : "password"} value={remoteState.password} onIonInput={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
-      </IonInput><IonIcon slot="end"  icon={remoteState.showMainPassword ? eyeOff : eye} onClick={() => {setRemoteState((prevState) => ({...prevState,showMainPassword: !prevState.showMainPassword}))}}></IonIcon>
-      </IonItem>
-      </>
-    } else {
-      formElem = <>
-      <IonItem>
-      <IonInput label={t("general.api_server_url") as string} labelPlacement="stacked" type="url" inputmode="url" value={remoteDBCreds.apiServerURL} onIonInput={(e) => {setDBCredsValue("apiServerURL:",String(e.detail.value))}}>
-      </IonInput>
-      </IonItem>
-      <IonItem>
-      <IonInput label={t("general.username") as string} labelPlacement="stacked" type="text" autocomplete="username" value={remoteDBCreds.dbUsername} onIonInput={(e) => {setDBCredsValue("dbUsername",String(e.detail.value))}}>
-      </IonInput>
-      </IonItem>
-      <IonItem>
-      <IonInput label={t("general.email_address") as string} labelPlacement="stacked" type="email" autocomplete="email" value={remoteDBCreds.email} onIonInput={(e) => {setDBCredsValue("email",String(e.detail.value))}}>
-      </IonInput>
-      </IonItem>
-      <IonItem>
-      <IonInput label={t("general.fullname") as string} labelPlacement="stacked"  type="text" value={remoteDBCreds.fullName} onIonInput={(e) => {setDBCredsValue("fullName",String(e.detail.value))}}>
-      </IonInput>
-      </IonItem>
-      <IonItem>
-      <IonInput label={t("general.password") as string} labelPlacement="stacked" autocomplete="current-password" type={remoteState.showMainPassword ? "text" : "password"} value={remoteState.password} onIonInput={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
-      </IonInput><IonIcon slot="end"  icon={remoteState.showMainPassword ? eyeOff : eye} onClick={() => {setRemoteState((prevState) => ({...prevState,showMainPassword: !prevState.showMainPassword}))}}></IonIcon>
-      </IonItem>
-      <IonItem>
-      <IonInput label={t("general.confirm_password") as string} labelPlacement="stacked" autocomplete="current-password" type={remoteState.showVerifyPassword ? "text" : "password"} value={remoteState.verifyPassword} onIonInput={(e) => {setRemoteState(prevstate => ({...prevstate, verifyPassword: String(e.detail.value)}))}}>
-      </IonInput><IonIcon slot="end"  icon={remoteState.showVerifyPassword ? eyeOff : eye} onClick={() => {setRemoteState((prevState) => ({...prevState,showVerifyPassword: !prevState.showVerifyPassword}))}}></IonIcon>
-      </IonItem>
-      </>
-    }
-  } else {
-    if (remoteDBState.offlineJWTMatch) {
-        formElem = <>
-          <IonItem>
-            <IonText>
-              {t("error.database_server_not_available_choose_work_offline")}
-            </IonText>
-          </IonItem>
-          <IonItem>  
-            <IonText>
-              {t("error.press_button_work_offline_as_user")+" "+remoteDBCreds.dbUsername}
-            </IonText>
-          </IonItem>
-          </>
-    } else {
-      formElem = <>
-        <IonItem>
-          <IonText>
-            {t("error.server_not_available_nor_cached_creds")}
-          </IonText>
-        </IonItem>
-      </>
-    }      
+  function getLoginOption() {
+    log.debug(cloneDeep(remoteDBState));
+    let lo : LoginOptions = LoginOptions.Login
+    let decTbl: any =[]
+    for (let a = 0; a < 2; a++) {
+      decTbl[a] = []
+      for (let b = 0; b<2; b++) {
+        decTbl[a][b] = [];
+        for (let c = 0; c<2; c++) {
+          decTbl[a][b][c] = [];
+          for (let d = 0; d<2; d++) {
+            decTbl[a][b][c][d] = []
+            for (let e = 0; e<2; e++) {
+              decTbl[a][b][c][d][e] = LoginOptions.Unknown } } } } }
+    // table dimensions: Api Avail, DB Avail, Logged In, Working Offline, JWT Match
+    //     A  D  L  O  J
+    decTbl[1][1][1][1][1] = LoginOptions.AttemptLogin;
+    decTbl[1][1][1][1][0] = LoginOptions.Login;
+    decTbl[1][1][1][0][1] = LoginOptions.Logout;
+    decTbl[1][1][1][0][0] = LoginOptions.Logout;
+    decTbl[1][1][0][0][1] = LoginOptions.Login;
+    decTbl[1][1][0][0][0] = LoginOptions.Login;
+    decTbl[1][0][1][1][1] = LoginOptions.AttemptLogin;
+    decTbl[1][0][1][1][0] = LoginOptions.Login;
+    decTbl[1][0][1][0][1] = LoginOptions.AskOffline;
+    decTbl[1][0][1][0][0] = LoginOptions.AskOffline;
+    decTbl[1][0][0][0][1] = LoginOptions.AskOffline;
+    decTbl[1][0][0][0][0] = LoginOptions.AskOffline;
+    decTbl[0][1][1][1][1] = LoginOptions.MustStayOffline;
+    decTbl[0][1][1][1][0] = LoginOptions.MustStayOffline;
+    decTbl[0][1][1][0][1] = LoginOptions.AskOffline;
+    decTbl[0][1][1][0][0] = LoginOptions.NoCachedCreds;
+    decTbl[0][1][0][0][1] = LoginOptions.AskOffline;
+    decTbl[0][1][0][0][1] = LoginOptions.NoCachedCreds;
+    decTbl[0][0][1][1][1] = LoginOptions.MustStayOffline;
+    decTbl[0][0][1][1][0] = LoginOptions.MustStayOffline;
+    decTbl[0][0][1][0][1] = LoginOptions.AskOffline;
+    decTbl[0][0][1][0][1] = LoginOptions.NoCachedCreds;
+    decTbl[0][0][0][0][1] = LoginOptions.AskOffline;
+    decTbl[0][0][0][0][0] = LoginOptions.NoCachedCreds;
+    lo = decTbl[+remoteDBState.apiServerAvailable][+remoteDBState.dbServerAvailable][+remoteDBState.loggedIn][+remoteDBState.workingOffline][+remoteDBState.offlineJWTMatch];
+    return lo;
+  }
 
-  }
-  let buttonsElem
-  if (remoteDBState.loggedIn) {
-    if (remoteDBState.workingOffline) {
-      buttonsElem=<IonButton size="small" onClick={() => attemptLogin()}>{t("general.attempt_login_again")}</IonButton>
-    } else {
-      buttonsElem=<IonButton size="small" onClick={() => logoutPopup()}>{t("general.logout")}</IonButton>
-    } 
-  }
-  else if (remoteDBState.apiServerAvailable) {
-    if (!remoteState.inCreateMode) {
-      buttonsElem=<>
-        <IonButton size="small" slot="start" onClick={() => submitForm()}>{t("general.login")}</IonButton>
-        {/* <IonButton onClick={() => workOffline()}>Work Offline</IonButton> */}        
-        <IonButton size="small" onClick={() => resetPassword()}>{t("general.reset_password")}</IonButton>
-        <IonButton size="small" slot="end" onClick={() => switchToCreateMode()}>{t("general.create_account")}</IonButton>
+  let loginOption: LoginOptions = getLoginOption();
+  
+  let formElem;
+  switch (loginOption) {
+    case LoginOptions.Login:
+      if (remoteState.inCreateMode) {
+        formElem = <>
+        <IonItem>
+        <IonInput label={t("general.api_server_url") as string} labelPlacement="stacked" type="url" inputmode="url" value={remoteDBCreds.apiServerURL} onIonInput={(e) => {setDBCredsValue("apiServerURL:",String(e.detail.value))}}>
+        </IonInput>
+        </IonItem>
+        <IonItem>
+        <IonInput label={t("general.username") as string} labelPlacement="stacked" type="text" autocomplete="username" value={remoteDBCreds.dbUsername} onIonInput={(e) => {setDBCredsValue("dbUsername",String(e.detail.value))}}>
+        </IonInput>
+        </IonItem>
+        <IonItem>
+        <IonInput label={t("general.email_address") as string} labelPlacement="stacked" type="email" autocomplete="email" value={remoteDBCreds.email} onIonInput={(e) => {setDBCredsValue("email",String(e.detail.value))}}>
+        </IonInput>
+        </IonItem>
+        <IonItem>
+        <IonInput label={t("general.fullname") as string} labelPlacement="stacked"  type="text" value={remoteDBCreds.fullName} onIonInput={(e) => {setDBCredsValue("fullName",String(e.detail.value))}}>
+        </IonInput>
+        </IonItem>
+        <IonItem>
+        <IonInput label={t("general.password") as string} labelPlacement="stacked" autocomplete="current-password" type={remoteState.showMainPassword ? "text" : "password"} value={remoteState.password} onIonInput={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
+        </IonInput><IonIcon slot="end"  icon={remoteState.showMainPassword ? eyeOff : eye} onClick={() => {setRemoteState((prevState) => ({...prevState,showMainPassword: !prevState.showMainPassword}))}}></IonIcon>
+        </IonItem>
+        <IonItem>
+        <IonInput label={t("general.confirm_password") as string} labelPlacement="stacked" autocomplete="current-password" type={remoteState.showVerifyPassword ? "text" : "password"} value={remoteState.verifyPassword} onIonInput={(e) => {setRemoteState(prevstate => ({...prevstate, verifyPassword: String(e.detail.value)}))}}>
+        </IonInput><IonIcon slot="end"  icon={remoteState.showVerifyPassword ? eyeOff : eye} onClick={() => {setRemoteState((prevState) => ({...prevState,showVerifyPassword: !prevState.showVerifyPassword}))}}></IonIcon>
+        </IonItem>
+        </>
+      } else {
+        formElem = <><IonItem>
+        <IonInput label={t("general.api_server_url") as string} labelPlacement="stacked" type="url" inputmode="url" value={remoteDBCreds.apiServerURL} onIonInput={(e) => {setDBCredsValue("apiServerURL",String(e.detail.value))}}>
+        </IonInput>
+        </IonItem>
+        <IonItem>
+        <IonInput label={t("general.username") as string} labelPlacement="stacked"  type="text" autocomplete="username" value={remoteDBCreds.dbUsername} onIonInput={(e) => {setDBCredsValue("dbUsername",String(e.detail.value))}}>
+        </IonInput>
+        </IonItem>
+        <IonItem>
+        <IonInput label={t("general.password") as string} labelPlacement="stacked" autocomplete="current-password" type={remoteState.showMainPassword ? "text" : "password"} value={remoteState.password} onIonInput={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
+        </IonInput><IonIcon slot="end"  icon={remoteState.showMainPassword ? eyeOff : eye} onClick={() => {setRemoteState((prevState) => ({...prevState,showMainPassword: !prevState.showMainPassword}))}}></IonIcon>
+        </IonItem>
+        </>  
+  
+      }
+      break;
+    case LoginOptions.AskOffline:
+      formElem = <>
+      <IonItem>
+        <IonText>
+          {t("error.database_server_not_available_choose_work_offline")}
+        </IonText>
+      </IonItem>
+      <IonItem>  
+        <IonText>
+          {t("error.press_button_work_offline_as_user")+" "+remoteDBCreds.dbUsername}
+        </IonText>
+      </IonItem>
       </>
-    } else {
+      break;
+    case LoginOptions.NoCachedCreds:
+      formElem = <>
+      <IonItem>
+        <IonText>
+          {t("error.server_not_available_nor_cached_creds")}
+        </IonText>
+      </IonItem>
+      </>    
+      break;
+    case LoginOptions.AttemptLogin:
+      formElem = <>
+        <IonItem>{t("general.logged_in")+":"+t("general.working_offline")}</IonItem>
+        <IonItem><IonText></IonText></IonItem>
+      </>  
+      break;
+    case LoginOptions.Logout:
+      formElem = <IonItem>{t("general.logged_in")+": "+t("general.online")+" "+t("general.as_user")+" "+remoteDBCreds.dbUsername}</IonItem>
+      break;
+    case LoginOptions.MustStayOffline:
+      formElem = <>
+      <IonItem>{t("general.logged_in")+":"+t("general.working_offline")+" "+t("general.as_user")+" "+remoteDBCreds.dbUsername}</IonItem>
+      <IonItem>{t("general.must_stay_offline")}</IonItem>
+      </>
+      break;
+    case LoginOptions.Unknown:
+      formElem = <IonItem><IonText>{t("error.unknown_login_state")}</IonText></IonItem>  
+      break;
+    default:
+      break;
+  }
+
+  let buttonsElem
+  switch (loginOption) {
+    case LoginOptions.AskOffline:
       buttonsElem=<>
+      <IonItem>
+        <IonButton slot="start" onClick={() => setWorkingOffline()}>{t("general.work_offline")}</IonButton>
+      </IonItem>
+      </>
+      break;
+    case LoginOptions.AttemptLogin:
+      buttonsElem=<IonButton size="small" onClick={() => attemptLogin()}>{t("general.attempt_login_again")}</IonButton>
+      break;
+    case LoginOptions.Login:
+      if (remoteState.inCreateMode) {
+        buttonsElem=<>
         <IonButton fill="outline" onClick={() => setRemoteState(prevState => ({...prevState,inCreateMode: false}))}>{t("general.cancel")}</IonButton>
         <IonButton onClick={() => submitCreateForm()}>{t("general.create")}</IonButton>
-      </>
-    }
-  } else {
-    if (remoteDBState.offlineJWTMatch) {
-        buttonsElem=<>
-          <IonItem>
-            <IonButton slot="start" onClick={() => setWorkingOffline()}>{t("general.work_offline")}</IonButton>
-          </IonItem>
         </>
-    } else {
-        buttonsElem=
-          <IonItem>
-            <IonButton size="small" onClick={() => attemptLogin()}>{t("general.attempt_login_again")}</IonButton>
-          </IonItem>
-    }
+      } else {
+        buttonsElem=<>
+        <IonButton size="small" slot="start" onClick={() => submitForm()}>{t("general.login")}</IonButton>
+        <IonButton size="small" onClick={() => resetPassword()}>{t("general.reset_password")}</IonButton>
+        <IonButton size="small" slot="end" onClick={() => switchToCreateMode()}>{t("general.create_account")}</IonButton>
+        </>
+      } 
+      break;
+    case LoginOptions.Logout:
+      buttonsElem=<IonButton size="small" onClick={() => logoutPopup()}>{t("general.logout")}</IonButton>
+      break;  
+    case LoginOptions.NoCachedCreds:
+      break;
+    default:
+      break;
   }
+
+  console.log("login option:",loginOption);
 
   return(
         <IonPage>

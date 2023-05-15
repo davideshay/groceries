@@ -26,9 +26,14 @@ export async function navigateToFirstListID(phistory: History,remoteDBCreds: DBC
     }  
   }
 
-export async function isAPIServerAvailable(apiServerURL: string|null): Promise<boolean> {
+export async function isServerAvailable(apiServerURL: string|null) {
+    log.debug("Checking server availability:",apiServerURL);
+    let respObj = {
+        apiServerAvailable: false,
+        dbServerAvailable: false
+    }
     if (apiServerURL === null || apiServerURL == undefined || apiServerURL == "") {
-        return false;
+        return respObj;
     }
     let response: HttpResponse | undefined;
     const options: HttpOptions = {
@@ -41,8 +46,13 @@ export async function isAPIServerAvailable(apiServerURL: string|null): Promise<b
     };
     let responseSuccessful = true;
     try {response = await CapacitorHttp.get(options);}
-    catch(err) {responseSuccessful = false; log.error("http error in contacting API server:",err)}
-    return responseSuccessful;
+    catch(err) {responseSuccessful = false; log.error("http error in contacting API server:",err); return respObj}
+    log.debug(response)
+    if (response.status === 200 && response.data && response.data.dbServerAvailable) {
+        respObj.apiServerAvailable = true;
+        respObj.dbServerAvailable = response.data.dbServerAvailable;
+    }    
+    return respObj
 }
 
 export async function createNewUser(remoteDBState: RemoteDBState,remoteDBCreds: DBCreds, password: string): Promise<(HttpResponse | undefined)> {

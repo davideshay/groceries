@@ -213,6 +213,8 @@ export const en_translations =
         "working_offline": "Working Offline",
         "online": "Online",
         "attempt_login_again": "Attempt Login Again",
+        "must_stay_offline": "Working offline and API/database are still offline. Continue to work offline and changes will be queued.",
+        "as_user": "as user"
      },
      "error" : {
         "invalid_dbuuid" : "Invalid Database Unique Identifier",
@@ -338,6 +340,7 @@ export const en_translations =
         "database_server_not_available": "Database Server Not Available",
         "press_button_work_offline_as_user": "Press the button below to work offline as user:",
         "server_not_available_nor_cached_creds": "The server is not available to login. There are no cached credentials to be able to use the app locally either. Please login again when the server is available.",
+        "unknown_login_state": "Unknown Login State. Please restart the application.",
     },
     "itemtext": {
         "item_is_on_these_lists": "Item is on these lists:",
