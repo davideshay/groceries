@@ -39,6 +39,13 @@ export function fullnamePatternValidation(fullname: string) {
 }
 
 export async function checkUserByEmailExists(email: string, remoteDBCreds: DBCreds) {
+    let checkResponse = {
+        userExists : false,
+        fullname: "",
+        username: "",
+        email: "",
+        apiError: false
+    }
     let response: HttpResponse | undefined;
     const options: HttpOptions = {
         url: String(remoteDBCreds?.apiServerURL+"/checkuserbyemailexists"),
@@ -52,8 +59,14 @@ export async function checkUserByEmailExists(email: string, remoteDBCreds: DBCre
         connectTimeout: apiConnectTimeout         
     };
     try { response = await CapacitorHttp.post(options);}
-    catch(err) {log.error("CheckUserByEmail: http:",err)};
-    return response?.data;
+    catch(err) {log.error("CheckUserByEmail: http:",err); checkResponse.apiError = true};
+    if ((!checkResponse.apiError) && (response?.data !== undefined)) {
+        checkResponse.userExists = response.data.userExists;
+        checkResponse.email = response.data.email;
+        checkResponse.fullname = response.data.fullname;
+        checkResponse.username = response.data.username;
+    }
+    return checkResponse;
 }
 
 export async function getUsersInfo(userIDList: UserIDList,apiServerURL: string, accessJWT: string): Promise<UsersInfo> {

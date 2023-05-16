@@ -61,7 +61,7 @@ interface PageState {
 }  
               
 const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
-  const { remoteDBCreds, remoteDB } = useContext(RemoteDBStateContext);
+  const { remoteDBCreds, remoteDB, setRemoteDBState, remoteDBState } = useContext(RemoteDBStateContext);
   const uname = remoteDBCreds.dbUsername;
   const {useFriendState,friendRows} = useFriends(String(uname));
   const updateDoc = useUpdateGenericDocument();
@@ -194,7 +194,7 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
   async function submitForm() {
     if (pageState.newFriendEmail === "") {
       setPageState(prevState => ({...prevState, formError: t("error.no_email_entered")}));
-      return
+      return;
     }
     if (!emailPatternValidation(pageState.newFriendEmail)) {
       setPageState(prevState => ({...prevState, formError: t("error.invalid_email_format")}));
@@ -209,6 +209,11 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
       return;
     }
     const response = await checkUserByEmailExists(pageState.newFriendEmail,remoteDBCreds);
+    if (response.apiError) {
+      setPageState(prevState => ({...prevState, formError: t("error.could_not_contact_api_server")}))
+      setRemoteDBState({...remoteDBState,apiServerAvailable: false})
+      return;
+    }
     if (response.userExists) {
       let friend1 = ""; let friend2 = ""; let pendfrom1: boolean = false;
       if (response.username > String(remoteDBCreds.dbUsername)) {
