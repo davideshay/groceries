@@ -4,7 +4,7 @@ import { Preferences } from '@capacitor/preferences';
 import { getUsersInfo, initialSetupActivities } from '../components/Utilities'; 
 import { Device } from '@capacitor/device';
 import PouchDB from 'pouchdb';
-import { getTokenInfo, refreshToken, errorCheckCreds , checkJWT, checkDBUUID, getPrefsDBCreds, isServerAvailable } from "./RemoteUtilities";
+import { getTokenInfo, refreshToken, errorCheckCreds , checkJWT, checkDBUUID, getPrefsDBCreds, isServerAvailable, JWTMatchesUser } from "./RemoteUtilities";
 import { useTranslation } from 'react-i18next';    
 import { UserIDList } from "./DataTypes";
 import { cloneDeep } from "lodash";
@@ -311,13 +311,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         let serverAvailable = await isServerAvailable(remoteDBCreds.current.apiServerURL); 
         if (!serverAvailable.apiServerAvailable) {
             // validate you have a refreshJWT matching userid
-            let validJWTMatch = false;
-            if (credsObj.refreshJWT !== null) {
-                let JWTResponse = getTokenInfo(credsObj.refreshJWT);
-                if (JWTResponse.valid && credsObj.dbUsername === JWTResponse.username) {
-                    validJWTMatch = true;
-                }
-            }            
+            let validJWTMatch = JWTMatchesUser(credsObj.refreshJWT,credsObj.dbUsername);
             // if you do, present a work offline option
             setRemoteDBState(prevState => ({...prevState,apiServerAvailable: false, dbServerAvailable: serverAvailable.dbServerAvailable, offlineJWTMatch: validJWTMatch, credsError: true, credsErrorText: t("error.could_not_contact_api_server"), connectionStatus: ConnectionStatus.navToLoginScreen}))
             return [false,t("error.could_not_contact_api_server")];

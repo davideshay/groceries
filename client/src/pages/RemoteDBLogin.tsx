@@ -7,7 +7,7 @@ import { usePouch} from 'use-pouchdb';
 import { ConnectionStatus, DBCreds, DBUUIDAction, LoginType } from '../components/RemoteDBState';
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
-import { createNewUser, getTokenInfo, navigateToFirstListID, errorCheckCreds, isServerAvailable  } from '../components/RemoteUtilities';
+import { createNewUser, getTokenInfo, navigateToFirstListID, errorCheckCreds, isServerAvailable, JWTMatchesUser  } from '../components/RemoteUtilities';
 import { cloneDeep } from 'lodash';
 import { RemoteDBStateContext, SyncStatus, initialRemoteDBState } from '../components/RemoteDBState';
 import { HistoryProps} from '../components/DataTypes';
@@ -104,7 +104,12 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     async function checkAPIServerAvailable(apiServerURL: string|null) {
       let serverAvailable = await isServerAvailable(apiServerURL);
       log.debug("API Server Available: ",serverAvailable);
-      setRemoteDBState({...remoteDBState,apiServerAvailable: serverAvailable.apiServerAvailable, dbServerAvailable: serverAvailable.dbServerAvailable})
+      let validJWTMatch = JWTMatchesUser(remoteDBCreds.refreshJWT,remoteDBCreds.dbUsername);
+      if (serverAvailable.apiServerAvailable) {
+        setRemoteDBState({...remoteDBState,apiServerAvailable: serverAvailable.apiServerAvailable, dbServerAvailable: serverAvailable.dbServerAvailable, offlineJWTMatch: validJWTMatch})
+      } else {
+        setRemoteDBState({...remoteDBState,apiServerAvailable: serverAvailable.apiServerAvailable, offlineJWTMatch: validJWTMatch})
+      }  
     }
 
     useEffect( () => {
@@ -332,7 +337,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
   function setWorkingOffline() {
     log.debug("Working Offline Now...");
     setRemoteDBState({...remoteDBState,workingOffline: true,loggedIn: true  ,connectionStatus: ConnectionStatus.initialNavComplete, 
-        syncStatus: SyncStatus.offline, credsError: false, credsErrorText:""});
+        syncStatus: SyncStatus.offline, dbServerAvailable: false ,credsError: false, credsErrorText:""});
     setRemoteState(prevState=>({...prevState,formError:""}));
     navigateToFirstListID(props.history,remoteDBCreds, globalData.listRows);    
   }
@@ -421,26 +426,35 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     decTbl[1][1][1][1][0] = LoginOptions.Login;
     decTbl[1][1][1][0][1] = LoginOptions.Logout;
     decTbl[1][1][1][0][0] = LoginOptions.Logout;
+    decTbl[1][1][0][1][1] = LoginOptions.Unknown;
+    decTbl[1][1][0][1][0] = LoginOptions.Unknown;
     decTbl[1][1][0][0][1] = LoginOptions.Login;
     decTbl[1][1][0][0][0] = LoginOptions.Login;
     decTbl[1][0][1][1][1] = LoginOptions.AttemptLogin;
     decTbl[1][0][1][1][0] = LoginOptions.Login;
     decTbl[1][0][1][0][1] = LoginOptions.AskOffline;
     decTbl[1][0][1][0][0] = LoginOptions.AskOffline;
+    decTbl[1][0][0][1][1] = LoginOptions.Unknown;
+    decTbl[1][0][0][1][0] = LoginOptions.Unknown;
     decTbl[1][0][0][0][1] = LoginOptions.AskOffline;
     decTbl[1][0][0][0][0] = LoginOptions.AskOffline;
     decTbl[0][1][1][1][1] = LoginOptions.MustStayOffline;
     decTbl[0][1][1][1][0] = LoginOptions.MustStayOffline;
     decTbl[0][1][1][0][1] = LoginOptions.AskOffline;
     decTbl[0][1][1][0][0] = LoginOptions.NoCachedCreds;
+    decTbl[0][1][0][1][1] = LoginOptions.Unknown;
+    decTbl[0][1][0][1][0] = LoginOptions.Unknown;
     decTbl[0][1][0][0][1] = LoginOptions.AskOffline;
-    decTbl[0][1][0][0][1] = LoginOptions.NoCachedCreds;
+    decTbl[0][1][0][0][0] = LoginOptions.NoCachedCreds;
     decTbl[0][0][1][1][1] = LoginOptions.MustStayOffline;
     decTbl[0][0][1][1][0] = LoginOptions.MustStayOffline;
     decTbl[0][0][1][0][1] = LoginOptions.AskOffline;
-    decTbl[0][0][1][0][1] = LoginOptions.NoCachedCreds;
+    decTbl[0][0][1][0][0] = LoginOptions.NoCachedCreds;
+    decTbl[0][0][0][1][1] = LoginOptions.Unknown;
+    decTbl[0][0][0][1][0] = LoginOptions.Unknown;
     decTbl[0][0][0][0][1] = LoginOptions.AskOffline;
     decTbl[0][0][0][0][0] = LoginOptions.NoCachedCreds;
+    console.table(decTbl);
     lo = decTbl[+remoteDBState.apiServerAvailable][+remoteDBState.dbServerAvailable][+remoteDBState.loggedIn][+remoteDBState.workingOffline][+remoteDBState.offlineJWTMatch];
     return lo;
   }
@@ -519,7 +533,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       break;
     case LoginOptions.AttemptLogin:
       formElem = <>
-        <IonItem>{t("general.logged_in")+":"+t("general.working_offline")}</IonItem>
+        <IonItem>{t("general.logged_in")+":"+t("general.working_offline")+" "+t("general.as_user")+" "+remoteDBCreds.dbUsername}</IonItem>
         <IonItem><IonText></IonText></IonItem>
       </>  
       break;

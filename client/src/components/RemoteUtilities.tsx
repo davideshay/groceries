@@ -55,6 +55,17 @@ export async function isServerAvailable(apiServerURL: string|null) {
     return respObj
 }
 
+export function JWTMatchesUser(refreshJWT: string | null, username: string | null) {
+    let validJWTMatch = false;
+    if (refreshJWT !== null) {
+        let JWTResponse = getTokenInfo(refreshJWT);
+        if (JWTResponse.valid && username === JWTResponse.username) {
+            validJWTMatch = true;
+        }
+    }            
+    return validJWTMatch;
+}
+
 export async function createNewUser(remoteDBState: RemoteDBState,remoteDBCreds: DBCreds, password: string): Promise<(HttpResponse | undefined)> {
     let response: HttpResponse | undefined;
     const options: HttpOptions = {
