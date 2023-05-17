@@ -17,7 +17,7 @@ type InitialLoadProps = {
 }
 
 const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
-    const { remoteDBState, setRemoteDBState, remoteDBCreds, remoteDB,setConnectionStatus, setLoginType} = useContext(RemoteDBStateContext);
+    const { remoteDBState, remoteDBCreds, remoteDB,setConnectionStatus, setLoginType} = useContext(RemoteDBStateContext);
     const { listError ,listRowsLoaded, listRows, listsLoading } = useContext(GlobalDataContext)
     const db=usePouch();
     const screenLoading = useRef(true);

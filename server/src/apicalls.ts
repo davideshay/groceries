@@ -161,6 +161,7 @@ export async function refreshToken(req: Request, res: Response) : Promise<{statu
     let status = 200;
     let response = {
         valid : false,
+        dbError: false,
         refreshJWT: "",
         accessJWT: ""
     }
@@ -185,12 +186,13 @@ export async function refreshToken(req: Request, res: Response) : Promise<{statu
     response.refreshJWT = await generateJWT({username: String(tokenDecode.payload.sub), deviceUUID: deviceUUID, includeRoles: false, timeString: refreshTokenExpires});
     response.accessJWT = await generateJWT({username: String(tokenDecode.payload.sub), deviceUUID: deviceUUID, includeRoles: true, timeString: accessTokenExpires});
     let userResponse: UserResponse = await getUserDoc(String(tokenDecode.payload.sub));
-    if (userResponse == null || userResponse.fullDoc == null) {
+    if (userResponse == null || userResponse.fullDoc == null || userResponse.error) {
+        if (userResponse.error) { response.dbError = true};
         response.valid = false; return {status, response};
     }
     (userResponse.fullDoc.refreshJWTs as any)[deviceUUID] = response.refreshJWT;
     try {let update = await usersDBAsAdmin.insert(userResponse.fullDoc);}
-    catch(err) {log.error("ERROR: Could not update user(refresh token):",err); response.valid=false;}
+    catch(err) {log.error("ERROR: Could not update user(refresh token):",err); response.dbError = true; response.valid=false;}
     return ({status, response});
 }
 

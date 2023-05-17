@@ -66,7 +66,41 @@ export function JWTMatchesUser(refreshJWT: string | null, username: string | nul
     return validJWTMatch;
 }
 
-export async function createNewUser(remoteDBState: RemoteDBState,remoteDBCreds: DBCreds, password: string): Promise<(HttpResponse | undefined)> {
+export type CreateResponse = {
+    invalidData: boolean,
+    userAlreadyExists: boolean,
+    createdSuccessfully: boolean,
+    creationDisabled: boolean,
+    idCreated: string,
+    refreshJWT: string,
+    accessJWT: string,
+    couchdbUrl: string,
+    couchdbDatabase: string,
+    email: string,
+    fullname: string,
+    apiError: boolean,
+    dbError: boolean
+}
+
+export const createResponseInit : CreateResponse = {
+    invalidData: false,
+    userAlreadyExists: false,
+    createdSuccessfully: false,
+    creationDisabled: false,
+    idCreated: "",
+    refreshJWT: "",
+    accessJWT: "",
+    couchdbUrl: "",
+    couchdbDatabase: "",
+    email: "",
+    fullname: "",
+    apiError: false,
+    dbError: false
+}
+
+
+export async function createNewUser(remoteDBState: RemoteDBState,remoteDBCreds: DBCreds, password: string): Promise<CreateResponse> {
+    let createResponse : CreateResponse = cloneDeep(createResponseInit);
     let response: HttpResponse | undefined;
     const options: HttpOptions = {
         url: String(remoteDBCreds.apiServerURL+"/registernewuser"),
@@ -84,8 +118,14 @@ export async function createNewUser(remoteDBState: RemoteDBState,remoteDBCreds: 
         connectTimeout: apiConnectTimeout
     };
     try {response = await CapacitorHttp.post(options);}
-    catch(err) {log.error("http error in creating new user:",err)}
-    return response;
+    catch(err) {log.error("http error in creating new user:",err); createResponse.apiError= true};
+    if (response?.data === undefined) {
+        createResponse.apiError = true;
+    } else {
+        createResponse = Object.assign(createResponse,response.data);        
+    }
+    if (!createResponse.createdSuccessfully) {createResponse.dbError=true;}
+    return createResponse;
 }
 
 export function getTokenInfo(JWT: string) {
@@ -94,6 +134,7 @@ export function getTokenInfo(JWT: string) {
         expireDate: 0,
         username: ""
     }
+    if (JWT === "" || JWT === undefined || JWT === null) { return tokenResponse}
     let JWTDecode;
     let JWTDecodeValid = true;
     try { JWTDecode = jwt_decode(JWT);}
@@ -109,6 +150,13 @@ export function getTokenInfo(JWT: string) {
 export async function refreshToken(remoteDBCreds: DBCreds, devID: string) {
     log.info("Refreshing token, device id: ", devID);
     log.info("Using API Server: ", remoteDBCreds.apiServerURL);
+    let tokenResponse = {
+        valid : false,
+        dbError: false,
+        apiError: false,
+        refreshJWT: "",
+        accessJWT: ""
+    }
     let response: HttpResponse | undefined;
     const options: HttpOptions = {
         url: String(remoteDBCreds.apiServerURL+"/refreshtoken"),
@@ -123,8 +171,14 @@ export async function refreshToken(remoteDBCreds: DBCreds, devID: string) {
         }            
     };
     try { response = await CapacitorHttp.post(options);}
-    catch(err) { log.error("http error refreshing token",err);}
-    return response;
+    catch(err) { log.error("http error refreshing token",err); tokenResponse.apiError = true;}
+    if (!tokenResponse.apiError && response?.status === 200 && response.data !== undefined) {
+        tokenResponse.valid = response.data.valid;
+        tokenResponse.dbError = response.data.dbError;
+        tokenResponse.refreshJWT = response.data.refreshJWT;
+        tokenResponse.accessJWT = response.data.accessJWT;
+    }
+    return tokenResponse;
 }
 
 export function errorCheckCreds({credsObj,background, creatingNewUser = false, password = "", verifyPassword = ""} :

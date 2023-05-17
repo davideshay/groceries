@@ -1,7 +1,8 @@
 import { IonContent, IonPage, IonList, IonItem,
         IonButton, useIonAlert, IonInput,
-        IonRadioGroup, IonRadio, IonCheckbox, isPlatform, IonItemDivider, IonSelect, IonSelectOption, IonButtons, IonToolbar, IonText } from '@ionic/react';
-import { useContext, useEffect, useRef, useState } from 'react';        
+        IonRadioGroup, IonRadio, IonCheckbox, isPlatform, IonItemDivider, IonSelect, IonSelectOption, IonButtons, IonToolbar, IonText, IonIcon, IonGrid, IonRow, IonCol } from '@ionic/react';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';        
+import { closeCircle, checkmarkCircle } from 'ionicons/icons';
 import { usePouch } from 'use-pouchdb';
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
@@ -15,9 +16,11 @@ import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
 import { languageDescriptions } from '../i18n';
 import { isEmpty, isEqual } from 'lodash';
-import { checkUserByEmailExists, emailPatternValidation, fullnamePatternValidation, updateUserInfo } from '../components/Utilities';
+import { checkUserByEmailExists, emailPatternValidation, fullnamePatternValidation, secondsToDHMS, updateUserInfo } from '../components/Utilities';
 import { cloneDeep } from 'lodash';
 import Loading from '../components/Loading';
+import { getTokenInfo, isServerAvailable } from '../components/RemoteUtilities';
+import log from 'loglevel';
 
 type ErrorInfo = {
   isError: boolean,
@@ -44,6 +47,29 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
   const [errorInfo,setErrorInfo] = useState<ErrorInfo>(cloneDeep(ErrorInfoInit));
   const { t, i18n } = useTranslation();
   const screenLoading = useRef(false);
+  const [, forceUpdateState] = useState<{}>();
+  const forceUpdate = useCallback(() => forceUpdateState({}), []);
+
+
+  async function checkAPIServerAvailable(apiServerURL: string|null) {
+    let serverAvailable = await isServerAvailable(apiServerURL);
+    log.debug("API Server Available: ",serverAvailable);
+    if (serverAvailable.apiServerAvailable) {
+      setRemoteDBState(prevState=>({...prevState,apiServerAvailable: serverAvailable.apiServerAvailable, dbServerAvailable: serverAvailable.dbServerAvailable}))
+    } else {
+      setRemoteDBState(prevState=>({...prevState,apiServerAvailable: serverAvailable.apiServerAvailable}))
+    }  
+  }
+
+  useEffect( () => {
+    log.debug("checking is API server is available in useeffect...");
+    checkAPIServerAvailable(remoteDBCreds.apiServerURL);
+  },[remoteDBCreds.apiServerURL])
+
+  useEffect( () => {
+    const refreshInterval = setInterval( () => {forceUpdate()},1000);
+    return () => clearInterval(refreshInterval);
+  },[])
 
   useEffect( () => {
     if (!localSettingsInitialized && globalState.settingsLoaded) {
@@ -123,6 +149,9 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   const curLanguage = i18n.resolvedLanguage;
+  const accessSecondsToExpire = remoteDBState.accessJWTExpirationTime === 0 ? 0 : Number(remoteDBState.accessJWTExpirationTime) - (Math.round(Date.now() / 1000));
+  const refreshJWTInfo = getTokenInfo(String(remoteDBCreds.refreshJWT));
+  const refreshSecondsToExpire = Number(refreshJWTInfo.expireDate) - Math.round(Date.now() / 1000);
 
   return (
     <IonPage>
@@ -132,12 +161,33 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
           <IonItemDivider className="category-divider">{t("general.app_info")}</IonItemDivider>
           <IonItem className="shorter-item-some-padding">{t("general.app_version")} : {appVersion}</IonItem>
           <IonItem className="shorter-item-some-padding">{t("general.database_schema_version")}: {maxAppSupportedSchemaVersion}</IonItem>
+          <IonItem className="shorter-item-some-padding">
+            <IonGrid class="ion-no-padding">
+              <IonRow><IonCol size="4">{t("general.api_server_status")}</IonCol>
+              <IonCol size="1">{remoteDBState.apiServerAvailable ? <IonIcon icon={checkmarkCircle} className="online-indicator"></IonIcon> :
+                                <IonIcon icon={closeCircle} className="offline-indicator"></IonIcon> }</IonCol>
+              <IonCol size="4">{t("general.db_server_status")}:</IonCol>
+              <IonCol size="1">{remoteDBState.dbServerAvailable ? <IonIcon icon={checkmarkCircle} className="online-indicator"></IonIcon> :
+                                <IonIcon icon={closeCircle} className="offline-indicator"></IonIcon> }</IonCol></IonRow>
+              <IonRow><IonCol size="4">{t("general.refresh_token_valid")}</IonCol>
+              <IonCol size="1">{refreshSecondsToExpire > 0 ? <IonIcon icon={checkmarkCircle} className="online-indicator"></IonIcon> :
+                                <IonIcon icon={closeCircle} className="offline-indicator"></IonIcon> }</IonCol>
+              <IonCol size="3">{refreshSecondsToExpire >= 0 ? t("general.expires_in") : t("general.expired_by")}</IonCol>
+              <IonCol size="4">{secondsToDHMS(refreshSecondsToExpire)}</IonCol></IonRow>
+              <IonRow><IonCol size="4">{t("general.access_token_valid")}</IonCol>
+              <IonCol size="1">{accessSecondsToExpire > 0 ? <IonIcon icon={checkmarkCircle} className="online-indicator"></IonIcon> :
+                                <IonIcon icon={closeCircle} className="offline-indicator"></IonIcon> }</IonCol>
+              <IonCol size="3">{accessSecondsToExpire >= 0 ? t("general.expires_in") : t("general.expired_by")}</IonCol>
+              <IonCol size="4">{secondsToDHMS(accessSecondsToExpire)}</IonCol></IonRow>
+            </IonGrid>
+          </IonItem>                                      
           <IonItemDivider className="category-divider">{t("general.user_info")}</IonItemDivider>
           <IonItem className="shorter-item-no-padding">
             <IonInput className="shorter-input shorter-input2" type="text" disabled={true} labelPlacement="stacked" label={t("general.user_id") as string} value={userInfo.name} />
           </IonItem>
           <IonItem className="shorter-item-no-padding">
             <IonInput type="text" labelPlacement="stacked" label={t("general.name") as string}
+                      disabled={!(remoteDBState.apiServerAvailable &&remoteDBState.dbServerAvailable)}
                       value={userInfo.fullname} errorText={errorInfo.fullNameError}
                       className={(errorInfo.isError ? "ion-invalid": "ion-valid")+(" ion-touched shorter-input shorter-input2") }
                       onIonInput={(ev) => {
@@ -146,10 +196,11 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
           </IonItem>
           <IonItem className="shorter-item-no-padding">
             <IonInput type="text" labelPlacement="stacked" label={t("general.email") as string}
+                      disabled={!(remoteDBState.apiServerAvailable &&remoteDBState.dbServerAvailable)}
                       value={userInfo.email} errorText={errorInfo.emailError}
                       className={(errorInfo.isError ? "ion-invalid": "ion-valid")+(" ion-touched shorter-input shorter-input2") }
                       onIonInput={(ev) => {
-                        setUserInfo(prevState=>({...userInfo,email: String(ev.detail.value)}));
+                        setUserInfo(prevState=>({...prevState,email: String(ev.detail.value)}));
                         setErrorInfo(prevState=>({...prevState,isTouched: true})) }} />
           </IonItem>
           <IonItem><IonText>{errorInfo.formError}</IonText></IonItem>

@@ -280,7 +280,7 @@ export enum UseFriendState {
 
 export function useFriends(username: string) : { useFriendState: UseFriendState, friendRows: FriendRow[]} {
   const [friendRows,setFriendRows] = useState<FriendRow[]>([]);
-  const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
+  const { remoteDBState, remoteDBCreds, setRemoteDBState } = useContext(RemoteDBStateContext);
   const [useFriendState,setUseFriendState] = useState(UseFriendState.init);
   const { t }= useTranslation();
   const { docs: friendDocs, state: friendState } = useFind({
@@ -321,7 +321,12 @@ export function useFriends(username: string) : { useFriendState: UseFriendState,
           else {userIDList.userIDs.push(element.friendID1)}
         }
       });
-      const usersInfo: UsersInfo = await getUsersInfo(userIDList,String(remoteDBCreds.apiServerURL), String(remoteDBState.accessJWT));
+      const [apiOnline,usersInfo] = await getUsersInfo(userIDList,String(remoteDBCreds.apiServerURL), String(remoteDBState.accessJWT));
+      if (!apiOnline) {
+        setRemoteDBState(prevState =>({...prevState,apiServerAvailable: false}));
+        setUseFriendState(UseFriendState.error);
+        return;
+      }
       setFriendRows(prevState => ([]));
       if (usersInfo.length > 0) {
         (friendDocs as FriendDocs).forEach((friendDoc) => {

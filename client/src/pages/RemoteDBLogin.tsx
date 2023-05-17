@@ -7,7 +7,7 @@ import { usePouch} from 'use-pouchdb';
 import { ConnectionStatus, DBCreds, DBUUIDAction, LoginType } from '../components/RemoteDBState';
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
-import { createNewUser, getTokenInfo, navigateToFirstListID, errorCheckCreds, isServerAvailable, JWTMatchesUser  } from '../components/RemoteUtilities';
+import { createNewUser, getTokenInfo, navigateToFirstListID, errorCheckCreds, isServerAvailable, JWTMatchesUser, CreateResponse, createResponseInit  } from '../components/RemoteUtilities';
 import { cloneDeep } from 'lodash';
 import { RemoteDBStateContext, SyncStatus, initialRemoteDBState } from '../components/RemoteDBState';
 import { HistoryProps} from '../components/DataTypes';
@@ -106,9 +106,9 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       log.debug("API Server Available: ",serverAvailable);
       let validJWTMatch = JWTMatchesUser(remoteDBCreds.refreshJWT,remoteDBCreds.dbUsername);
       if (serverAvailable.apiServerAvailable) {
-        setRemoteDBState({...remoteDBState,apiServerAvailable: serverAvailable.apiServerAvailable, dbServerAvailable: serverAvailable.dbServerAvailable, offlineJWTMatch: validJWTMatch})
+        setRemoteDBState(prevState =>({...prevState,apiServerAvailable: serverAvailable.apiServerAvailable, dbServerAvailable: serverAvailable.dbServerAvailable, offlineJWTMatch: validJWTMatch}))
       } else {
-        setRemoteDBState({...remoteDBState,apiServerAvailable: serverAvailable.apiServerAvailable, offlineJWTMatch: validJWTMatch})
+        setRemoteDBState(prevState =>({...prevState,apiServerAvailable: serverAvailable.apiServerAvailable, offlineJWTMatch: validJWTMatch}))
       }  
     }
 
@@ -121,7 +121,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     useEffect( () => {
       async function presentAndExit(alertObject: AlertOptions) {
         await presentAlert(alertObject);
-        setRemoteDBState(({...remoteDBState,dbUUIDAction: DBUUIDAction.none}))
+        setRemoteDBState(prevState =>({...prevState,dbUUIDAction: DBUUIDAction.none}))
       };
       dismiss();
       if (remoteDBState.dbUUIDAction !== DBUUIDAction.none) {
@@ -172,7 +172,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       async function doNav() {
         await dismiss()
         navigateToFirstListID(props.history,remoteDBCreds, globalData.listRows);
-        setRemoteDBState({...remoteDBState,connectionStatus: ConnectionStatus.initialNavComplete});
+        setRemoteDBState(prevState =>({...prevState,connectionStatus: ConnectionStatus.initialNavComplete}));
       }
       if (globalData.listRowsLoaded && !globalData.listsLoading) {
         if (remoteDBState.connectionStatus === ConnectionStatus.cannotStart) {
@@ -198,13 +198,13 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       window.location.replace('about:blank');
     }
 
-    function updateDBCredsFromResponse(response: HttpResponse): DBCreds {
+    function updateDBCredsFromResponse(response: CreateResponse): DBCreds {
       let newDBCreds=cloneDeep(remoteDBCreds);
-      newDBCreds.couchBaseURL  = response?.data.couchdbUrl;
-      newDBCreds.database = response?.data.couchdbDatabase;
-      newDBCreds.email = response?.data.email;
-      newDBCreds.fullName = response?.data.fullname;
-      newDBCreds.refreshJWT = response?.data.refreshJWT;
+      newDBCreds.couchBaseURL  = response.couchdbUrl;
+      newDBCreds.database = response.couchdbDatabase;
+      newDBCreds.email = response.email;
+      newDBCreds.fullName = response.fullname;
+      newDBCreds.refreshJWT = response.refreshJWT;
       return newDBCreds;
     }
     
@@ -217,6 +217,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
   async function submitForm() {
     await showLoading();
     setRemoteState(prevState => ({...prevState,formError: ""}));
+    setRemoteDBState(prevState =>({...prevState,credsError: false, credsErrorText: ""}));
     let credsCheck = errorCheckCreds({credsObj: remoteDBCreds,background:false,creatingNewUser:false,password: remoteState.password});
     if (credsCheck.credsError ) {
       setRemoteState(prevState => ({...prevState,formError: String(credsCheck.errorText)}))
@@ -239,7 +240,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     try {response = await CapacitorHttp.post(options)}
     catch(err) {log.error("Error logging in...",err)
                 setRemoteState(prevState => ({...prevState, formError: t("error.could_not_contact_api_server")}));
-                setRemoteDBState({...remoteDBState, apiServerAvailable: false});
+                setRemoteDBState(prevState=>({...prevState, apiServerAvailable: false}));
                 await dismiss();
                 return}
     log.debug("Did API /issuetoken : result: ", cloneDeep(response));            
@@ -248,40 +249,44 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
             setRemoteState(prevState => ({...prevState, formError: t("error.invalid_authentication")}))
         } else {
             setRemoteState(prevState => ({...prevState, formError: t("error.database_server_not_available")}))
-            setRemoteDBState({...remoteDBState, dbServerAvailable: false});
+            setRemoteDBState(prevState=>({...prevState, dbServerAvailable: false}));
         }    
         await dismiss();
         return
     }
-    let newCreds=updateDBCredsFromResponse(response);
+    let newResponse = cloneDeep(createResponseInit);
+    newResponse = Object.assign(newResponse,response.data);
+    let newCreds=updateDBCredsFromResponse(newResponse);
     let tokenInfo = getTokenInfo(response.data.accessJWT);
     setRemoteDBCreds(newCreds);
-    setRemoteDBState({...remoteDBState, accessJWT: response.data.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate, loggedIn: true, credsError: false, credsErrorText: ""});
+    setRemoteDBState(prevState=>({...prevState, accessJWT: response.data.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate, loggedIn: true, credsError: false, credsErrorText: ""}));
     await assignDB(response.data.accessJWT);
   }
   
   async function submitCreateForm() {
     await showLoading();
     setRemoteState(prevState => ({...prevState,formError: ""}));
-    let createResponse: HttpResponse | undefined;
+    setRemoteDBState(prevState=>({...prevState,credsError: false, credsErrorText: ""}));
+    let createResponse: CreateResponse;
     let credsCheck = errorCheckCreds({credsObj: remoteDBCreds,background: false,creatingNewUser: true,password: remoteState.password,verifyPassword: remoteState.verifyPassword});
     if (!credsCheck.credsError) {
       createResponse = await createNewUser(remoteDBState,remoteDBCreds,String(remoteState.password));
-      if (createResponse === undefined) { 
+      if (createResponse.apiError) { 
+        setRemoteDBState(prevState=>({...prevState,apiServerAvailable: false}));
         setRemoteState(prevState => ({...prevState, formError: t("error.creating_user")}));
         await dismiss();
         return;
       }
-      if (createResponse.data.creationDisabled) {
+      if (createResponse.creationDisabled) {
         credsCheck.errorText=(t("error.account_creation_disabled"));
         setRemoteState(prevState => ({...prevState, formError: credsCheck.errorText}))
         await dismiss();
         return;
       }
-      if (!createResponse.data.createdSuccessfully) {
+      if (!createResponse.createdSuccessfully) {
         credsCheck.errorText="";
-        if (createResponse.data.invalidData) {credsCheck.errorText = t("error.invalid_data_entered");} 
-        else if (createResponse.data.userAlreadyExists) {credsCheck.errorText = t("error.user_already_exists");}
+        if (createResponse.invalidData) {credsCheck.errorText = t("error.invalid_data_entered");} 
+        else if (createResponse.userAlreadyExists) {credsCheck.errorText = t("error.user_already_exists");}
         setRemoteState(prevState => ({...prevState, formError: credsCheck.errorText}))
         await dismiss();
         return;
@@ -293,9 +298,9 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
     let newCreds=updateDBCredsFromResponse(createResponse);
     setRemoteDBCreds(newCreds);
-    let tokenInfo = getTokenInfo(createResponse.data.accessJWT);
-    setRemoteDBState({...remoteDBState,accessJWT: createResponse.data.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate, loggedIn: true});
-    await assignDB(createResponse.data.accessJWT);
+    let tokenInfo = getTokenInfo(createResponse.accessJWT);
+    setRemoteDBState(prevState=>({...prevState,accessJWT: createResponse.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate, loggedIn: true}));
+    await assignDB(createResponse.accessJWT);
     await dismiss();
   }
   
@@ -309,7 +314,8 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
         connectTimeout: apiConnectTimeout        
     };
     try {await CapacitorHttp.post(options);}
-    catch(err) {log.error("Resetting password",err)}
+    catch(err) {log.error("Resetting password",err);
+                setRemoteDBState(prevState=>({...prevState,apiServerAvailable: false}))}
 //    presentAlert({
 //      header: "Password Request Sent",
 //      message: "Please check your email for the link to reset your password",
@@ -336,8 +342,8 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   function setWorkingOffline() {
     log.debug("Working Offline Now...");
-    setRemoteDBState({...remoteDBState,workingOffline: true,loggedIn: true  ,connectionStatus: ConnectionStatus.initialNavComplete, 
-        syncStatus: SyncStatus.offline, dbServerAvailable: false ,credsError: false, credsErrorText:""});
+    setRemoteDBState(prevState=>({...prevState,workingOffline: true,loggedIn: true  ,connectionStatus: ConnectionStatus.initialNavComplete, 
+        syncStatus: SyncStatus.offline, dbServerAvailable: false ,credsError: false, credsErrorText:""}));
     setRemoteState(prevState=>({...prevState,formError:""}));
     navigateToFirstListID(props.history,remoteDBCreds, globalData.listRows);    
   }
@@ -388,8 +394,8 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
   async function attemptLogin() {
     setLoginType(LoginType.autoLoginFromRoot);
     setRemoteState(prevState=>({...prevState,formError: ""}));
-    setRemoteDBState({...remoteDBState,syncStatus: SyncStatus.init, connectionStatus: ConnectionStatus.onLoginScreen, initialSyncStarted: false,
-        initialSyncComplete: false,credsError: false, credsErrorText: "",apiServerAvailable: true, dbServerAvailable: true, workingOffline: false, loggedIn: false})
+    setRemoteDBState(prevState=>({...prevState,syncStatus: SyncStatus.init, connectionStatus: ConnectionStatus.onLoginScreen, initialSyncStarted: false,
+        initialSyncComplete: false,credsError: false, credsErrorText: "",apiServerAvailable: true, dbServerAvailable: true, workingOffline: false, loggedIn: false}))
     const [loginSuccess,loginError] = await attemptFullLogin();
     if (!loginSuccess) {
       setRemoteState(prevState=>({...prevState,formError: loginError}))
@@ -403,11 +409,11 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     curCreds.fullName = "";
     curCreds.refreshJWT = "";
     setRemoteDBCreds(curCreds);
-    setRemoteState(prevState => ({...prevState,inCreateMode: true, formError: ""}))
+    setRemoteState(prevState => ({...prevState,inCreateMode: true, formError: ""}));
+    setRemoteDBState(prevState =>({...prevState,credsError: false, credsErrorText: ""}));
   }
 
   function getLoginOption() {
-    log.debug(cloneDeep(remoteDBState));
     let lo : LoginOptions = LoginOptions.Login
     let decTbl: any =[]
     for (let a = 0; a < 2; a++) {
@@ -454,7 +460,6 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     decTbl[0][0][0][1][0] = LoginOptions.Unknown;
     decTbl[0][0][0][0][1] = LoginOptions.AskOffline;
     decTbl[0][0][0][0][0] = LoginOptions.NoCachedCreds;
-    console.table(decTbl);
     lo = decTbl[+remoteDBState.apiServerAvailable][+remoteDBState.dbServerAvailable][+remoteDBState.loggedIn][+remoteDBState.workingOffline][+remoteDBState.offlineJWTMatch];
     return lo;
   }
@@ -587,8 +592,6 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     default:
       break;
   }
-
-  console.log("login option:",loginOption);
 
   return(
         <IonPage>

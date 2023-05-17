@@ -69,11 +69,11 @@ export async function checkUserByEmailExists(email: string, remoteDBCreds: DBCre
     return checkResponse;
 }
 
-export async function getUsersInfo(userIDList: UserIDList,apiServerURL: string, accessJWT: string): Promise<UsersInfo> {
+export async function getUsersInfo(userIDList: UserIDList,apiServerURL: string, accessJWT: string): Promise<[boolean,UsersInfo]> {
     let usersInfo: UsersInfo = cloneDeep(initUsersInfo);
-    if (accessJWT === "") { return(usersInfo); }
+    if (accessJWT === "") { return([false,usersInfo]); }
     const usersUrl = apiServerURL+"/getusersinfo"
-    if (!urlPatternValidation(usersUrl)) {return usersInfo}
+    if (!urlPatternValidation(usersUrl)) {return [false,usersInfo]}
     const options : HttpOptions = {
       url: String(usersUrl),
       data: userIDList,
@@ -85,13 +85,13 @@ export async function getUsersInfo(userIDList: UserIDList,apiServerURL: string, 
     };
     let response:HttpResponse;
     try { response = await CapacitorHttp.post(options); }
-    catch(err) {log.error("GetUsersInfo HTTP Error",err); return usersInfo}
+    catch(err) {log.error("GetUsersInfo HTTP Error",err); return [false,usersInfo]}
     if (response && response.data) {
         if (response.data.hasOwnProperty("users")) {
             usersInfo = response.data.users
         }
     }
-    return usersInfo;
+    return [true,usersInfo];
 }
 
 export async function updateUserInfo(apiServerURL: string, accessJWT: string, userInfo: UserInfo) : Promise<boolean> {
@@ -190,6 +190,18 @@ function startLogging(level: string) {
 //    prefix.reg(log);
 //    prefix.apply(log);
     log.setLevel(targetLevel);
+}
+
+export function secondsToDHMS(seconds: number) : string {
+    let d: number = 0; let h: number = 0; let m: number =0; let s : number = 0;
+    if (seconds < 0) { seconds = seconds * -1;}
+    d = Math.floor(seconds / (3600 * 24))
+    h = Math.floor((seconds % (3600 * 24)) / 3600)
+    m = Math.floor((seconds % 3600) / 60)
+    s = Math.floor(seconds % 60) 
+    let outStr = d>0 ? d + (d == 1 ? " day " : " days ") : "";
+    outStr = outStr + h.toString().padStart(2,"0") + ":" + m.toString().padStart(2,"0") + ":" + s.toString().padStart(2,"0")
+    return outStr;
 }
 
 export const DEFAULT_API_URL=(window as any)._env_.DEFAULT_API_URL

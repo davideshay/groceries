@@ -80,9 +80,11 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
   const screenLoading = useRef(true);
   const { t } = useTranslation();
 
-  if (useFriendState === UseFriendState.error) { return (
-    <ErrorPage errorText={t("error.loading_friend_info") as string}></ErrorPage>
-    )};
+  if ((!(remoteDBState.apiServerAvailable && remoteDBState.dbServerAvailable)) || useFriendState === UseFriendState.error ) {
+    return (<IonPage><PageHeader title={t("general.friends")} />
+    <IonContent><IonItem>{t("error.friends_server_unavailable")}</IonItem></IonContent></IonPage>)
+
+  }
 
   if (useFriendState !== UseFriendState.rowsLoaded) {
     return ( <Loading isOpen={screenLoading.current} message={t("general.loading_friends")}  /> )
@@ -211,7 +213,7 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
     const response = await checkUserByEmailExists(pageState.newFriendEmail,remoteDBCreds);
     if (response.apiError) {
       setPageState(prevState => ({...prevState, formError: t("error.could_not_contact_api_server")}))
-      setRemoteDBState({...remoteDBState,apiServerAvailable: false})
+      setRemoteDBState(prevState => ({...prevState,apiServerAvailable: false}))
       return;
     }
     if (response.userExists) {

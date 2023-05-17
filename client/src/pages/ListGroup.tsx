@@ -54,7 +54,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   const deleteListGroup = useDeleteGenericDocument();
   const deleteList = useDeleteGenericDocument();
   const deleteItemsInListGroup = useDeleteItemsInListGroup();
-  const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
+  const { remoteDBState, remoteDBCreds, setRemoteDBState } = useContext(RemoteDBStateContext);
   const [ presentToast ] = useIonToast();
   const {useFriendState, friendRows} = useFriends(String(remoteDBCreds.dbUsername));
   const { listCombinedRows, listRows, listRowsLoaded, listError } = useContext(GlobalDataContext);
@@ -82,11 +82,15 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   useEffect( () => {
     async function getUI(userIDList: UserIDList) {
       let usersInfo: UsersInfo = cloneDeep(initUsersInfo);
+      let online = true;
       if (userIDList.userIDs.length > 0) {
         setPageState(prevState => ({...prevState,usersInfo:[],usersLoaded:false}));
-        usersInfo = await getUsersInfo(userIDList,String(remoteDBCreds.apiServerURL),String(remoteDBState.accessJWT))  
+        [online,usersInfo] = await getUsersInfo(userIDList,String(remoteDBCreds.apiServerURL),String(remoteDBState.accessJWT))  
       }
-      setPageState(prevState => ({...prevState,usersInfo: usersInfo,usersLoaded: true}))
+      setPageState(prevState => ({...prevState,usersInfo: usersInfo,usersLoaded: true}));
+      if (!online) {
+        setRemoteDBState(prevState => ({...prevState,apiServerAvailable: false}));
+      }
     }
     let newPageState: PageState =cloneDeep(pageState);
     if (listRowsLoaded && (useFriendState === UseFriendState.rowsLoaded ||  !remoteDBState.dbServerAvailable) && !categoryLoading && (!listGroupLoading || mode==="new")) {
