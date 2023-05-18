@@ -58,7 +58,7 @@ export async function isServerAvailable(apiServerURL: string|null) {
 export function JWTMatchesUser(refreshJWT: string | null, username: string | null) {
     let validJWTMatch = false;
     if (refreshJWT !== null) {
-        let JWTResponse = getTokenInfo(refreshJWT);
+        let JWTResponse = getTokenInfo(refreshJWT,true);
         if (JWTResponse.valid && username === JWTResponse.username) {
             validJWTMatch = true;
         }
@@ -128,10 +128,12 @@ export async function createNewUser(remoteDBState: RemoteDBState,remoteDBCreds: 
     return createResponse;
 }
 
-export function getTokenInfo(JWT: string) {
+export function getTokenInfo(JWT: string, logIt: boolean) {
+    if (logIt) {log.debug("Getting Token Info at time: ", new Date().getTime() / 1000);}
     let tokenResponse = {
         valid : false,
         expireDate: 0,
+        expired: true,
         username: ""
     }
     if (JWT === "" || JWT === undefined || JWT === null) { return tokenResponse}
@@ -143,6 +145,9 @@ export function getTokenInfo(JWT: string) {
         tokenResponse.valid = true;
         tokenResponse.expireDate = (JWTDecode as any).exp
         tokenResponse.username = (JWTDecode as any).sub
+        if (tokenResponse.expireDate >= (new Date().getTime() / 1000)) {
+            tokenResponse.expired = false;
+        }
     }
     return(tokenResponse);
 }
@@ -249,7 +254,7 @@ export async function checkJWT(accessJWT: string, remoteDBCreds: DBCreds) {
     catch(err) {log.error("http error getting session error:",err); checkResponse.DBServerAvailable=false}
     if (checkResponse.DBServerAvailable) {
         if ((response?.status === 200) && (response.data?.userCtx?.name !== null)) {
-            let tokenInfo = getTokenInfo(accessJWT);
+            let tokenInfo = getTokenInfo(accessJWT,true);
             if (tokenInfo.valid) {
                 checkResponse.JWTValid = true;
                 checkResponse.JWTExpireDate = tokenInfo.expireDate;

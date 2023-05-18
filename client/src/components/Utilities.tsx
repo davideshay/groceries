@@ -120,9 +120,13 @@ export async function updateUserInfo(apiServerURL: string, accessJWT: string, us
 export async function initialSetupActivities(db: PouchDB.Database, username: string) {
  //  Migration to the new listgroup structure will create for existing users, this is for new users added later, or for offline model
     log.debug("SETUP: Running Initial Setup Activities for :",username);
-    const totalDocs = (await db.info()).doc_count
-    const listGroupDocs = await db.find({ selector: { type: "listgroup", listGroupOwner: username, default: true},
-         limit: totalDocs});
+    let totalDocs: number = 0;
+    try {totalDocs = (await db.info()).doc_count}
+    catch(err) {log.error("Cannot retrieve doc count from local database"); return false;}
+    let listGroupDocs: PouchDB.Find.FindResponse<{}>
+    try {listGroupDocs = await db.find({ selector: { type: "listgroup", listGroupOwner: username, default: true},
+         limit: totalDocs});}
+    catch(err) {log.error("Cannot retrieve list groups from local database"); return false;}
     if (listGroupDocs.docs.length === 0) {
         log.info("No default group found for ",username, "... creating now ...");
         const defaultListGroupDoc : ListGroupDoc = cloneDeep(ListGroupDocInit);

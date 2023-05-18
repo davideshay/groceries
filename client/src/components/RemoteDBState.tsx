@@ -3,6 +3,7 @@ import { usePouch} from 'use-pouchdb';
 import { Preferences } from '@capacitor/preferences';
 import { getUsersInfo, initialSetupActivities } from '../components/Utilities'; 
 import { Device } from '@capacitor/device';
+import { App } from '@capacitor/app';
 import PouchDB from 'pouchdb';
 import { getTokenInfo, refreshToken, errorCheckCreds , checkJWT, checkDBUUID, getPrefsDBCreds, isServerAvailable, JWTMatchesUser } from "./RemoteUtilities";
 import { useTranslation } from 'react-i18next';    
@@ -11,7 +12,9 @@ import { cloneDeep } from "lodash";
 import log from "loglevel";
 import { useHistory } from "react-router";
 
-const secondsBeforeAccessRefresh = 180;
+const secondsBeforeAccessRefresh = 10;
+// const secondsBeforeAccessRefresh = 180;
+const secondsBetweenRefreshRetries = 30;
 
 let globalSync: PouchDB.Replication.Sync<{}>;
 let globalRemoteDB: PouchDB.Database<{}> | undefined = undefined;
@@ -73,6 +76,12 @@ export enum DBUUIDAction {
     exit_no_uuid_on_server = 3,
     destroy_needed = 4
 }  
+
+export enum RefreshTokenResults {
+    Failed = 0,
+    OK = 1,
+    Locked = 2
+}
 
 export type DBUUIDCheck = {
     checkOK: boolean,
@@ -160,7 +169,8 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     const forceUpdate = React.useCallback(() => forceUpdateState({}), []);
     const db=usePouch();
     const { t } = useTranslation();
-    const history = useHistory()
+    const history = useHistory();
+    const refreshTokenLocked = useRef(false);
 
     function setLoginType(lType: LoginType) {
         loginType.current = lType;
@@ -368,37 +378,65 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         return [true,""];
     }
 
-     async function retrySync() {
-         refreshTokenAndUpdate();
-     }
+    async function checkAndRefreshToken() {
+        log.debug("Full remoteDB State:",cloneDeep(remoteDBState));
+        log.debug("In Check And Refresh Token. Logged In: ",remoteDBState.loggedIn)
+        if (remoteDBState.loggedIn) {
+            let tokenInfo = getTokenInfo(remoteDBState.accessJWT,true);
+            log.debug("Token info of current access token:",tokenInfo);
+            if (tokenInfo.expired) {
+                log.debug("Current Access Token is expired. Setting to retry...");
+                setRemoteDBState(prevState => ({...prevState,retryCount: 2}))
+            }
+        }
+    }
 
-    async function refreshTokenAndUpdate() : Promise<boolean> {
+    async function retrySync() {
+        refreshTokenAndUpdate();
+    }
+
+    async function refreshTokenAndUpdate() : Promise<RefreshTokenResults> {
+        if (refreshTokenLocked.current) {
+            log.debug("Token already being updated-locked.");
+            return RefreshTokenResults.Locked;
+        }
+        refreshTokenLocked.current = true;
         log.debug("Refreshing token/update");
         if (remoteDBCreds.current.refreshJWT !== "") {
             let refreshResponse = await refreshToken(remoteDBCreds.current,String(remoteDBState.deviceUUID));
             log.debug("Response from refresh Token:",refreshResponse);
             if (refreshResponse.apiError) {
                 setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.could_not_contact_api_server"),apiServerAvailable: false,connectionStatus: ConnectionStatus.navToLoginScreen}));
-                return false;
+                refreshTokenLocked.current = false;
+                return RefreshTokenResults.Failed;
             }
             if (refreshResponse.dbError) {
                 setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.database_server_not_available"), dbServerAvailable: false, connectionStatus: ConnectionStatus.navToLoginScreen}));
-                return false;
+                refreshTokenLocked.current = false;
+                return RefreshTokenResults.Failed;
             }
             if (refreshResponse.valid) {
-                let tokenInfo = getTokenInfo(refreshResponse.accessJWT)
+                let tokenInfo = getTokenInfo(refreshResponse.accessJWT,true)
                 setRemoteDBState(prevState => ({...prevState, accessJWT: refreshResponse.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate, connectionStatus: ConnectionStatus.retry, apiServerAvailable: true}));
                 setDBCredsValue("refreshJWT",refreshResponse.refreshJWT);
                 let assignOK = await assignDB(refreshResponse.accessJWT);
                 log.debug("re-assigned DB: result:",assignOK);
-                return assignOK;
+                refreshTokenLocked.current = false;
+                if (assignOK) {return RefreshTokenResults.OK} else {return RefreshTokenResults.Failed}
             }
         } else {
             setRemoteDBState(prevState => ({...prevState, syncStatus: SyncStatus.error}));
-            return false;
+            refreshTokenLocked.current = false;
+            return RefreshTokenResults.Failed;
         }
-        return false;
+        refreshTokenLocked.current = false;
+        return RefreshTokenResults.Failed;
     }
+
+    useEffect(() => {
+        App.addListener("appStateChange",() => {log.debug("APP STATE CHANGE, checking & refreshing token");checkAndRefreshToken()});
+        App.addListener("resume", () => {log.debug("APP RESUMING, checking & refreshing token"); checkAndRefreshToken()})
+    },[remoteDBState.loggedIn, remoteDBState.accessJWT])
 
     useEffect(() => {
         if (!loginAttempted.current && !(remoteDBState.connectionStatus === ConnectionStatus.navToLoginScreen) && !(remoteDBState.connectionStatus === ConnectionStatus.onLoginScreen)) {
@@ -443,30 +481,32 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         const secondsToRefresh = Number(remoteDBState.accessJWTExpirationTime) - (Math.round(Date.now() / 1000)) - secondsBeforeAccessRefresh;
         log.info("JWT expires in seconds:",secondsToRefresh);
         refreshTimer = setTimeout(async () => {
-            log.info("Refreshing token now...");
+            log.info("Refreshing token now, on standard expiration timeout");
             let refreshOK = await refreshTokenAndUpdate();
-            if (!refreshOK) {setRemoteDBState(prevState=>({...prevState,retryCount: 1}))}
+            if (refreshOK === RefreshTokenResults.Failed) {setRemoteDBState(prevState=>({...prevState,retryCount: 1}))}
         }, secondsToRefresh*1000);
-        return () => clearTimeout(refreshTimer);
+        return () => {log.debug("Clearing Refresh Timer standard expiration"); clearTimeout(refreshTimer)};
     },[remoteDBState.accessJWTExpirationTime])
 
     useEffect(() => {
         let retryTimer: ReturnType<typeof setInterval>;
-        async function refresh() {
-            log.debug("refreshing Token on timer...")
+        async function refresh(initial: boolean) {
+            log.debug("In refresh: initial:",initial);
+            log.debug("refreshing Token on retry timer...")
             let refreshOK = await refreshTokenAndUpdate();
             log.debug("refresh OK:",refreshOK,refreshOK ? "clearing interval..." : "leaving interval");
-            if (refreshOK) {
+            if (refreshOK === RefreshTokenResults.OK) {
                 clearInterval(retryTimer);
                 setRemoteDBState(prevState=>({...prevState, retryCount: 0}));
             }
         }
         if (remoteDBState.retryCount === 0) {return;}
-        log.debug("Setting retry time for 30 seconds...");
+        log.debug("Kicking off initial refresh retry and setting every 30 second timer...");
+        refresh(true);
         retryTimer = setInterval(() => {
-            refresh();
-        }, 30000);
-        return () => clearInterval(retryTimer)
+            refresh(false);
+        }, secondsBetweenRefreshRetries*1000);
+        return () => {log.debug("Clearing retry refresh on error timer"); clearInterval(retryTimer);}
     },[remoteDBState.retryCount])
 
 

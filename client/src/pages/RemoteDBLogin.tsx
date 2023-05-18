@@ -257,7 +257,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     let newResponse = cloneDeep(createResponseInit);
     newResponse = Object.assign(newResponse,response.data);
     let newCreds=updateDBCredsFromResponse(newResponse);
-    let tokenInfo = getTokenInfo(response.data.accessJWT);
+    let tokenInfo = getTokenInfo(response.data.accessJWT, true);
     setRemoteDBCreds(newCreds);
     setRemoteDBState(prevState=>({...prevState, accessJWT: response.data.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate, loggedIn: true, credsError: false, credsErrorText: ""}));
     await assignDB(response.data.accessJWT);
@@ -298,7 +298,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
     let newCreds=updateDBCredsFromResponse(createResponse);
     setRemoteDBCreds(newCreds);
-    let tokenInfo = getTokenInfo(createResponse.accessJWT);
+    let tokenInfo = getTokenInfo(createResponse.accessJWT,true);
     setRemoteDBState(prevState=>({...prevState,accessJWT: createResponse.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate, loggedIn: true}));
     await assignDB(createResponse.accessJWT);
     await dismiss();

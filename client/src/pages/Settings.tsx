@@ -150,7 +150,7 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   const curLanguage = i18n.resolvedLanguage;
   const accessSecondsToExpire = remoteDBState.accessJWTExpirationTime === 0 ? 0 : Number(remoteDBState.accessJWTExpirationTime) - (Math.round(Date.now() / 1000));
-  const refreshJWTInfo = getTokenInfo(String(remoteDBCreds.refreshJWT));
+  const refreshJWTInfo = getTokenInfo(String(remoteDBCreds.refreshJWT),false);
   const refreshSecondsToExpire = Number(refreshJWTInfo.expireDate) - Math.round(Date.now() / 1000);
 
   return (
