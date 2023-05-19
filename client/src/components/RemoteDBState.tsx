@@ -403,6 +403,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         }
         refreshTokenLocked.current = true;
         log.debug("Refreshing token/update");
+        log.debug("Current state:",cloneDeep(remoteDBState));
         if (remoteDBCreds.current.refreshJWT !== "") {
             let refreshResponse = await refreshToken(remoteDBCreds.current,String(remoteDBState.deviceUUID));
             log.debug("Response from refresh Token:",refreshResponse);
