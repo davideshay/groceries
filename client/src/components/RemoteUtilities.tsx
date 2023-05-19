@@ -27,7 +27,6 @@ export async function navigateToFirstListID(phistory: History,remoteDBCreds: DBC
   }
 
 export async function isServerAvailable(apiServerURL: string|null) {
-    log.debug("Checking server availability:",apiServerURL);
     let respObj = {
         apiServerAvailable: false,
         dbServerAvailable: false
@@ -47,7 +46,6 @@ export async function isServerAvailable(apiServerURL: string|null) {
     let responseSuccessful = true;
     try {response = await CapacitorHttp.get(options);}
     catch(err) {responseSuccessful = false; log.error("http error in contacting API server:",err); return respObj}
-    log.debug(response)
     if (response.status === 200 && response.data && response.data.dbServerAvailable) {
         respObj.apiServerAvailable = true;
         respObj.dbServerAvailable = response.data.dbServerAvailable;
@@ -154,7 +152,6 @@ export function getTokenInfo(JWT: string, logIt: boolean) {
 
 export async function refreshToken(remoteDBCreds: DBCreds, devID: string) {
     log.info("Refreshing token, device id: ", devID);
-    log.info("Using API Server: ", remoteDBCreds.apiServerURL);
     let tokenResponse = {
         valid : false,
         dbError: false,

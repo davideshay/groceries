@@ -29,7 +29,6 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
     },[])
 
     useEffect(() => {
-        log.debug({listRowsLoaded, listsLoading});
         async function initialStartup() {
             await initialSetupActivities(remoteDB as PouchDB.Database, String(remoteDBCreds.dbUsername));
             screenLoading.current=false;
