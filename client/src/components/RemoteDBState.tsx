@@ -171,6 +171,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     const { t } = useTranslation();
     const history = useHistory();
     const refreshTokenLocked = useRef(false);
+    const checkRefreshLocked = useRef(false);
 
     function setLoginType(lType: LoginType) {
         loginType.current = lType;
@@ -180,15 +181,15 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         setRemoteDBState(prevState => ({...prevState,syncStatus: status}))
     }
 
-    function setDBCredsValue(key: string, value: string | null) { 
+    async function setDBCredsValue(key: string, value: string | null) { 
         (remoteDBCreds.current as any)[key] = value;
-        setPrefsDBCreds();
+        await setPrefsDBCreds();
         forceUpdate();
     }
 
-    function setRemoteDBCreds(newCreds: DBCreds) {
+    async function setRemoteDBCreds(newCreds: DBCreds) {
         remoteDBCreds.current = newCreds;
-        setPrefsDBCreds();
+        await setPrefsDBCreds();
         forceUpdate();
     }
 
@@ -294,7 +295,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         globalRemoteDB.setMaxListeners(40);    
         setRemoteDBState(prevState => ({...prevState,connectionStatus: ConnectionStatus.dbAssigned, 
                 accessJWT: accessJWT }));  
-        setPrefsDBCreds(); 
+        await setPrefsDBCreds(); 
         return true;
     }
 
@@ -357,7 +358,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         await setPrefsDBCreds();
         if (!JWTCheck.JWTValid) {
             remoteDBCreds.current.refreshJWT = "";
-            setPrefsDBCreds();
+            await setPrefsDBCreds();
             setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.invalid_jwt_token"), connectionStatus: ConnectionStatus.navToLoginScreen}))
              return [false,t("error.invalid_jwt_token")];
         }
@@ -370,7 +371,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         if (userInfo.length > 0) {
             remoteDBCreds.current.email = userInfo[0].email;
             remoteDBCreds.current.fullName = userInfo[0].fullname;
-            setPrefsDBCreds();
+            await setPrefsDBCreds();
         }
         setRemoteDBState(prevState => ({...prevState, accessJWT: refreshResponse.accessJWT, accessJWTExpirationTime: JWTCheck.JWTExpireDate, loggedIn: true}));
         await assignDB(refreshResponse.accessJWT);
@@ -433,9 +434,18 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         return RefreshTokenResults.Failed;
     }
 
+    async function delayCheckAndRefreshToken() {
+        if (checkRefreshLocked.current) {log.debug("Check/Refresh locked..."); return}
+        checkRefreshLocked.current = true;
+        await new Promise(r => setTimeout(r,1000));
+        await checkAndRefreshToken()
+        checkRefreshLocked.current = false;
+        log.debug("Freeing check refresh lock");
+    }
+
     useEffect(() => {
-        App.addListener("appStateChange",() => {log.debug("APP STATE CHANGE, checking & refreshing token");checkAndRefreshToken()});
-        App.addListener("resume", () => {log.debug("APP RESUMING, checking & refreshing token"); checkAndRefreshToken()})
+//        App.addListener("appStateChange",() => {log.debug("APP STATE CHANGE, checking & refreshing token");delayCheckAndRefreshToken()});
+        App.addListener("resume", () => {log.debug("APP RESUMING, checking & refreshing token"); delayCheckAndRefreshToken()})
     },[remoteDBState.loggedIn, remoteDBState.accessJWT])
 
     useEffect(() => {
