@@ -1,10 +1,7 @@
 import { IonItem,  IonPopover, IonContent, IonList, IonSearchbar } from "@ionic/react"
 import { cloneDeep } from "lodash"
-import { useEffect, useState, KeyboardEvent, forwardRef, useImperativeHandle, Ref, MutableRefObject, useId } from "react"
-import { useTranslation } from "react-i18next"
-import { Keyboard } from '@capacitor/keyboard';
+import { useEffect, useState, KeyboardEvent, forwardRef, useImperativeHandle, Ref, useId } from "react"
 import "./GenericSearchBar.css"
-
 
 export type SearchRow = {
     id: string,
@@ -37,7 +34,6 @@ export type SearchBarProps = {
 }
 
 function  GenericSearchBar(props: SearchBarProps,ref: Ref<SearchRefType>) {
-    const { t } = useTranslation();
     const [searchState, setSearchState] = useState<SearchState>(searchStateInit)
     const componentID = useId()
 
@@ -60,7 +56,7 @@ function  GenericSearchBar(props: SearchBarProps,ref: Ref<SearchRefType>) {
            ))
         let toOpen = newFilteredRows.length > 0 && (searchState.isFocused || searchState.searchCriteria.length > 0)
         setSearchState(prevState=>({...prevState,filteredRows: newFilteredRows, isOpen: toOpen}))   
-    },[props.searchRows,searchState.searchCriteria])
+    },[props.searchRows,searchState.searchCriteria,searchState.isFocused])
 
     function searchKeyPress(event: KeyboardEvent<HTMLElement>) {
         if (event.key === "Enter") {
@@ -68,10 +64,6 @@ function  GenericSearchBar(props: SearchBarProps,ref: Ref<SearchRefType>) {
         }
     }
     
-    function searchInputChange(event: CustomEvent) {
-        props.addItemWithoutRow(searchState.searchCriteria)
-    }
-
     function updateSearchCriteria(event: CustomEvent) {
         setSearchState(prevState => ({...prevState, searchCriteria: event.detail.value}));
     }

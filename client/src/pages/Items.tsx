@@ -3,7 +3,7 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
   IonSelectOption, IonInput, IonPopover, IonAlert,IonMenuButton, useIonToast, IonGrid, IonRow, 
   IonCol, useIonAlert } from '@ionic/react';
 import { add,searchOutline } from 'ionicons/icons';
-import React, { useState, useEffect, useContext, useRef, KeyboardEvent } from 'react';
+import React, { useState, useEffect, useContext, useRef, KeyboardEvent, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { cloneDeep } from 'lodash';
 import './Items.css';
@@ -50,14 +50,14 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { globalState,setStateInfo: setGlobalStateInfo} = useContext(GlobalStateContext);
   const {t} = useTranslation();
 
-  function getGroupIDForList(listID: string): string | null {
+  const getGroupIDForList = useCallback( (listID: string) => {
     if (routeMode === "group") { return pageState.selectedListOrGroupID};
     let retGID = null;
     for (let i = 0; i < listRows.length; i++) {
       if (listRows[i].listDoc._id === listID) { retGID=String(listRows[i].listGroupID); break}
     }
     return retGID;
-  }
+  },[pageState.selectedListOrGroupID,listRows,routeMode])
 
   useEffect( () => {
     setPageState(prevState => ({...prevState,selectedListOrGroupID: routeListID, selectedListType: (routeMode === "group" ? RowType.listGroup : RowType.list)}))
@@ -67,7 +67,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     if (listRowsLoaded) {
       setPageState(prevState => ({...prevState,groupIDforSelectedList: getGroupIDForList(pageState.selectedListOrGroupID)}))
     }
-  },[listRowsLoaded,pageState.selectedListOrGroupID])
+  },[listRowsLoaded,pageState.selectedListOrGroupID,getGroupIDForList])
 
   useEffect( () => {
     if (baseItemRowsLoaded && listRowsLoaded && !categoryLoading && !uomLoading && !globalData.globalItemsLoading) {
@@ -84,9 +84,9 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       setSearchState(prevState => ({...prevState,isOpen: false, isFocused: false}));
       setSearchRows(getAllSearchRows(baseSearchItemDocs as ItemDocs,pageState.selectedListOrGroupID, pageState.selectedListType, listDocs, globalData.globalItemDocs as GlobalItemDocs, globalState.settings));
     }
-  },[baseSearchItemRowsLoaded, globalData.globalItemsLoading, globalData.globalItemDocs, baseSearchItemDocs, pageState.selectedListOrGroupID, pageState.selectedListType, listDocs])
+  },[baseSearchItemRowsLoaded, globalData.globalItemsLoading, globalData.globalItemDocs, baseSearchItemDocs, pageState.selectedListOrGroupID, pageState.selectedListType, listDocs, globalState.settings])
 
-  function filterAndCheckRows(searchCriteria: string, setFocus : boolean) {
+  const filterAndCheckRows = useCallback((searchCriteria: string, setFocus : boolean) => {
     let filterRows=filterSearchRows(searchRows, searchCriteria)
     let toOpen=true;
     if (filterRows.length === 0 || !setFocus) {
@@ -95,11 +95,11 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     let toFocus=setFocus;
     if (toOpen) { toFocus = true};
     setSearchState(prevState => ({...prevState, searchCriteria: searchCriteria, filteredSearchRows: filterRows, isOpen: toOpen, isFocused: toFocus }));
-  }
+  },[searchRows])
 
   useEffect( () => {
     filterAndCheckRows(searchState.searchCriteria,searchState.isFocused);
-  },[searchRows,searchState.isFocused])
+  },[searchRows,searchState.isFocused,searchState.searchCriteria,filterAndCheckRows])
 
   if (baseItemError || baseSearchError || listError || categoryError  || uomError || globalData.globalItemError) {return (
     <ErrorPage errorText={t("general.loading_item_info_restart") as string}></ErrorPage>

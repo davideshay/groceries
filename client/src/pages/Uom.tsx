@@ -37,11 +37,11 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
   if ( mode === "new" ) { routeID = "<new>"};
   const [pageState,setPageState] = useState<PageState>({
-    uomDoc: InitUomDoc, needInitUomDoc: (mode === "new") ? true : false,
+    uomDoc: InitUomDoc, needInitUomDoc: true,
     deletingUom: false
   })
   const [formErrors,setFormErrors] = useState(FormErrorInit);
-  const [presentAlert,dismissAlert] = useIonAlert();
+  const [presentAlert] = useIonAlert();
   const updateUom  = useUpdateGenericDocument();
   const createUom = useCreateGenericDocument();
   const deleteUom = useDeleteGenericDocument();
@@ -56,17 +56,16 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { t } = useTranslation();
 
   useEffect( () => {
-    let newUomDoc = cloneDeep(pageState.uomDoc);
-    if (!uomLoading) {
-      if (mode === "new" && pageState.needInitUomDoc) {
+    if (!uomLoading && pageState.needInitUomDoc) {
+      let newUomDoc: UomDoc 
+      if (mode === "new") {
         newUomDoc = cloneDeep(InitUomDoc);
-        setPageState(prevState => ({...prevState,needInitUomDoc: false}))
       } else {
         newUomDoc = uomDoc;
       }
-      setPageState(prevState => ({...prevState,uomDoc: newUomDoc}))
+      setPageState(prevState => ({...prevState,needInitUomDoc: false, uomDoc: newUomDoc}))
     }
-  },[uomLoading,uomDoc]);
+  },[uomLoading,uomDoc,pageState.needInitUomDoc,mode]);
 
   if ( globalData.listError || recipesError || itemError ) { return (
     <ErrorPage errorText={t("error.loading_uom") as string}></ErrorPage>

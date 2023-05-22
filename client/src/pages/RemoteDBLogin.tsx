@@ -1,6 +1,6 @@
 import { IonContent, IonPage, IonButton, IonList, IonInput, IonItem,
   IonText, useIonAlert, isPlatform, IonIcon, useIonLoading, AlertOptions } from '@ionic/react';
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useCallback } from 'react';
 import { eye, eyeOff } from 'ionicons/icons';
 import { CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
 import { usePouch} from 'use-pouchdb';
@@ -92,6 +92,20 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     const [ present, dismiss ]= useIonLoading();
     const { t } = useTranslation();
 
+
+    const exitApp = useCallback( async () => {
+      if (!(isPlatform("desktop") || isPlatform("electron"))) {App.exitApp()}
+      setRemoteDBState(initialRemoteDBState);
+      window.location.replace('about:blank');
+    },[setRemoteDBState])
+
+    const destroyAndExit = useCallback(async () => {
+      await db.destroy();
+      await Preferences.remove({key: 'dbcreds'});
+      exitApp();
+      
+    },[db,exitApp])  
+
     // useEffect for initial page launch
     useEffect( () => {
       if (remoteDBState.credsError) {
@@ -99,23 +113,23 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       }
 //      log.debug("setting login type to from login page");
       setLoginType(LoginType.loginFromLoginPage);
+// eslint-disable-next-line react-hooks/exhaustive-deps 
     },[])
 
-    async function checkAPIServerAvailable(apiServerURL: string|null) {
-      let serverAvailable = await isServerAvailable(apiServerURL);
-      log.debug("API Server Available: ",serverAvailable);
-      let validJWTMatch = JWTMatchesUser(remoteDBCreds.refreshJWT,remoteDBCreds.dbUsername);
-      if (serverAvailable.apiServerAvailable) {
-        setRemoteDBState(prevState =>({...prevState,apiServerAvailable: serverAvailable.apiServerAvailable, dbServerAvailable: serverAvailable.dbServerAvailable, offlineJWTMatch: validJWTMatch}))
-      } else {
-        setRemoteDBState(prevState =>({...prevState,apiServerAvailable: serverAvailable.apiServerAvailable, offlineJWTMatch: validJWTMatch}))
-      }  
-    }
-
     useEffect( () => {
+      async function checkAPIServerAvailable(apiServerURL: string|null) {
+          let serverAvailable = await isServerAvailable(apiServerURL);
+          log.debug("API Server Available: ",serverAvailable);
+          let validJWTMatch = JWTMatchesUser(remoteDBCreds.refreshJWT,remoteDBCreds.dbUsername);
+          if (serverAvailable.apiServerAvailable) {
+            setRemoteDBState(prevState =>({...prevState,apiServerAvailable: serverAvailable.apiServerAvailable, dbServerAvailable: serverAvailable.dbServerAvailable, offlineJWTMatch: validJWTMatch}))
+          } else {
+            setRemoteDBState(prevState =>({...prevState,apiServerAvailable: serverAvailable.apiServerAvailable, offlineJWTMatch: validJWTMatch}))
+          }  
+      }
       log.debug("checking is API server is available in useeffect...");
       checkAPIServerAvailable(remoteDBCreds.apiServerURL);
-    },[remoteDBCreds.apiServerURL])
+    },[remoteDBCreds.apiServerURL,setRemoteDBState,remoteDBCreds.refreshJWT,remoteDBCreds.dbUsername])
 
     // effect for dbuuidaction not none
     useEffect( () => {
@@ -165,7 +179,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
           })
         }
       }
-    },[remoteDBState.dbUUIDAction])
+    },[remoteDBState.dbUUIDAction,destroyAndExit,dismiss,exitApp,presentAlert,setRemoteDBState,t])
 
     useEffect( () => {
 //      log.debug({loggedIn: remoteDBState.loggedIn, connectionStatus: remoteDBState.connectionStatus, isc: remoteDBState.initialSyncComplete, workingOffline: remoteDBState.workingOffline});
@@ -184,19 +198,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
           doNav();
         }
       }
-    },[remoteDBState.initialSyncComplete , remoteDBState.loggedIn, remoteDBState.workingOffline, remoteDBState.connectionStatus, db, globalData.listRows, props.history, remoteDBCreds, globalData.listRowsLoaded, globalData.listsLoading]);
-
-    async function destroyAndExit() {
-      await db.destroy();
-      await Preferences.remove({key: 'dbcreds'});
-      exitApp();
-    }
-
-    async function exitApp() {
-      if (!(isPlatform("desktop") || isPlatform("electron"))) {App.exitApp()}
-      setRemoteDBState(initialRemoteDBState);
-      window.location.replace('about:blank');
-    }
+    },[remoteDBState.initialSyncComplete , remoteDBState.loggedIn, remoteDBState.workingOffline, remoteDBState.connectionStatus, db, globalData.listRows, props.history, remoteDBCreds, globalData.listRowsLoaded, globalData.listsLoading, dismiss, setRemoteDBState]);
 
     function updateDBCredsFromResponse(response: CreateResponse): DBCreds {
       let newDBCreds=cloneDeep(remoteDBCreds);

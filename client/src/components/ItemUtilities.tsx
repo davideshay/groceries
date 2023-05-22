@@ -312,7 +312,7 @@ export function listIsDifferentThanCommon(sortedLists: ItemList[], listIdx: numb
     }
     // check if max count occurs > 1 in the list, if so all rows should be different
     let maxCheckCount=0;
-    for (const [key, value] of Object.entries(combinedKeys)) {
+    for (const [, value] of Object.entries(combinedKeys)) {
         if (value === maxCnt) { maxCheckCount++;}
     }
     return ((combinedKeys[thisKey] < maxCnt) || (maxCheckCount > 1)) ;

@@ -92,29 +92,27 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
         setRemoteDBState(prevState => ({...prevState,apiServerAvailable: false}));
       }
     }
-    let newPageState: PageState =cloneDeep(pageState);
     if (listRowsLoaded && (useFriendState === UseFriendState.rowsLoaded ||  !remoteDBState.dbServerAvailable) && !categoryLoading && (!listGroupLoading || mode==="new")) {
+      let sharedWith: string[] = [];
       if (mode === "new" && pageState.needInitListGroupDoc) {
-        let initListGroupDoc = ListGroupDocInit;
-        newPageState.listGroupDoc=initListGroupDoc;
-        newPageState.listGroupDoc.listGroupOwner=String(remoteDBCreds.dbUsername);
+        let initListGroupDoc: ListGroupDoc = cloneDeep(ListGroupDocInit);
+        initListGroupDoc.listGroupOwner=String(remoteDBCreds.dbUsername);
         friendRows.forEach((fr: FriendRow) => {
-          newPageState.listGroupDoc.sharedWith.push(fr.targetUserName);
+          initListGroupDoc.sharedWith.push(fr.targetUserName);
         })
-        newPageState.needInitListGroupDoc=false;
+        setPageState(prevState => ({...prevState,listGroupDoc: initListGroupDoc, needInitListGroupDoc: false, changesMade: false}))
       }
       else if (mode !== "new") {
-        newPageState.listGroupDoc = listGroupDoc;
+        sharedWith = (listGroupDoc as ListGroupDoc).sharedWith;
+        setPageState(prevState => ({...prevState,listGroupDoc: listGroupDoc, changesMade: false}))
       }
-      newPageState.changesMade=false;
-      setPageState(newPageState);
       let userIDList: UserIDList = cloneDeep(initUserIDList);
-      newPageState.listGroupDoc.sharedWith.forEach((user: string) => {
+      sharedWith.forEach((user: string) => {
         userIDList.userIDs.push(user);
       });
       getUI(userIDList);
     }
-  },[listGroupLoading, listGroupDoc, listRowsLoaded, mode, useFriendState,friendRows, categoryLoading,categoryDocs,pageState.selectedListGroupID, remoteDBState.accessJWT]);
+  },[listGroupLoading, listGroupDoc, listRowsLoaded, mode, useFriendState,friendRows, categoryLoading,categoryDocs,pageState.selectedListGroupID, remoteDBState.accessJWT, pageState.needInitListGroupDoc,remoteDBCreds.apiServerURL,remoteDBCreds.dbUsername,remoteDBState.dbServerAvailable,setRemoteDBState]);
 
   if (listError || listGroupError  || useFriendState === UseFriendState.error || categoryError) {
     <ErrorPage errorText={t('error.loading_list_group') as string}></ErrorPage>
@@ -312,7 +310,7 @@ function deletePrompt() {
       message: t("general.changing_selected_listgroup_detail")
     }
     selectElem.push(
-      <IonSelect label={t("general.editing_list_group") as string} aria-label={t("general.editing_list_group") as string} key="list-changed" interface="alert" interfaceOptions={alertOptions}
+      <IonSelect label={t("general.editing_listgroup") as string} aria-label={t("general.editing_listgroup") as string} key="list-changed" interface="alert" interfaceOptions={alertOptions}
         onIonChange={(ev) => changeListUpdateState(ev.detail.value)} value={pageState.selectedListGroupID}>
         {selectOptionListElem}
       </IonSelect>
@@ -320,7 +318,7 @@ function deletePrompt() {
   } else {
     let iopts={};
     selectElem.push(
-      <IonSelect label={t("general.editing")+":"} aria-label={t("general.editing")+":"} key="list-notchanged" interface="popover" interfaceOptions={iopts} onIonChange={(ev) => changeListUpdateState(ev.detail.value)} value={pageState.selectedListGroupID}>
+      <IonSelect label={t("general.editing_listgroup")+":"} aria-label={t("general.editing_listgroup")+":"} key="list-notchanged" interface="popover" interfaceOptions={iopts} onIonChange={(ev) => changeListUpdateState(ev.detail.value)} value={pageState.selectedListGroupID}>
         {selectOptionListElem}
       </IonSelect>
     ) 

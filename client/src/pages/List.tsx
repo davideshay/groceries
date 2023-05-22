@@ -65,7 +65,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
     sort: [ "type","name"]
   })
   const { loading: listGroupLoading, doc: listGroupDoc, dbError: listGroupError} = useGetOneDoc(pageState.listGroupID);
-  const [presentAlert,dismissAlert] = useIonAlert();
+  const [presentAlert] = useIonAlert();
   const screenLoading = useRef(true);
   const { t } = useTranslation();
 
@@ -74,33 +74,27 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   },[routeID])
 
   useEffect( () => {
-    let newPageState: PageState=cloneDeep(pageState);
     if (!listsLoading && listRowsLoaded && !categoryLoading) {
       if (mode === "new" && pageState.needInitListDoc) {
         let initCategories=categoryDocs.map(cat => cat._id);
         let initListDoc : ListDoc = cloneDeep(ListDocInit);
+        let newListGroupOwner: string|null = null;
         if (listCombinedRows.length > 0) {
           initListDoc.listGroupID=String(listCombinedRows[0].listGroupID)
-          newPageState.listGroupOwner=listCombinedRows[0].listGroupOwner;
+          newListGroupOwner=listCombinedRows[0].listGroupOwner;
         } else {
           initListDoc.listGroupID=null
         }
         initListDoc.categories = initCategories;
-        newPageState.listDoc=initListDoc;
-        newPageState.listGroupID=initListDoc.listGroupID;
-        newPageState.needInitListDoc=false;
+        setPageState(prevState => ({...prevState,listDoc: initListDoc,listGroupID: initListDoc.listGroupID, listGroupOwner: newListGroupOwner, needInitListDoc: false, changesMade: false}))
       }
       else if (mode !== "new") {
-        let newListRow = cloneDeep(listRows.find((lr: ListRow) => lr.listDoc._id === pageState.selectedListID));
+        let newListRow: ListRow = cloneDeep(listRows.find((lr: ListRow) => lr.listDoc._id === pageState.selectedListID));
         if (newListRow === undefined) {return}
-        newPageState.listDoc = newListRow.listDoc;
-        newPageState.listGroupID = newListRow.listGroupID;
-        newPageState.listGroupOwner = newListRow.listGroupOwner;
+        setPageState(prevState => ({...prevState,listDoc: newListRow.listDoc, listGroupID: newListRow.listGroupID, listGroupOwner: newListRow.listGroupOwner, changesMade: false}))
       }
-      newPageState.changesMade=false;
-      setPageState(newPageState);
     }
-  },[listsLoading, listRowsLoaded, listGroupLoading, listDocs, listCombinedRows, mode, listGroupDoc, categoryLoading,categoryDocs,pageState.selectedListID, remoteDBState.accessJWT]);
+  },[listsLoading, listRowsLoaded, listGroupLoading, listDocs, listRows, pageState.needInitListDoc, listCombinedRows, mode, listGroupDoc, categoryLoading,categoryDocs,pageState.selectedListID, remoteDBState.accessJWT]);
 
   if (listError || listGroupError || categoryError) {
     screenLoading.current=false;

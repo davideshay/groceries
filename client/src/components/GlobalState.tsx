@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState} from "react";
+import React, { createContext, useCallback, useContext, useEffect, useState} from "react";
 import { Preferences } from '@capacitor/preferences';
 import { pick,cloneDeep } from "lodash";
 import { isJsonString } from "./Utilities";
@@ -99,7 +99,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         return [newSettings, updated]
     }
 
-    async function getSettings() {
+    const getSettings = useCallback( async () => {
         let dbSettingsExist = (settingsDocs.length > 0);
         let dbSettingsDoc: SettingsDoc = cloneDeep(settingsDocs[0]);
         let { value: storageSettingsStr } = await Preferences.get({ key: 'settings'});
@@ -112,8 +112,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
             storageSettingsExist = true;
         }
         if (storageSettingsExist) {
-            let storageUpd = false;
-            [storageSettings, storageUpd] = validateSettings(storageSettings);
+            [storageSettings, ] = validateSettings(storageSettings);
         }
         let dbUpdated = false;
         if (dbSettingsExist) {
@@ -152,13 +151,13 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         setSettingsRetrieved(true);
         setGlobalState(prevState => ({...prevState,settingsLoaded: true}));
         return (finalSettings);
-    }
+    },[createSettingDoc,remoteDBCreds.dbUsername,settingsDocs,updateSettingDoc])
 
     useEffect( () => {
         if (!settingsRetrieved && remoteDBState.initialSyncComplete && !settingsLoading && (settingsError === null)) {
             getSettings()
         }
-    },[remoteDBState.initialSyncComplete, settingsLoading, settingsError])
+    },[remoteDBState.initialSyncComplete, settingsLoading, settingsError,getSettings,settingsRetrieved])
 
 
     let value: GlobalStateContextType = {globalState, setGlobalState, setStateInfo, updateSettingKey, settingsLoading: settingsLoading};

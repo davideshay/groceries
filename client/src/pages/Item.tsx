@@ -6,7 +6,7 @@ import { addCircleOutline, closeCircleOutline, trashOutline, saveOutline } from 
 import { usePhotoGallery } from '../components/Usehooks';
 import { useParams } from 'react-router-dom';
 import { usePouch } from 'use-pouchdb';
-import { useState, useEffect, useContext, useRef } from 'react';
+import { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import { useCreateGenericDocument, useUpdateGenericDocument, useDeleteGenericDocument, useGetOneDoc, useItems, pictureSrcPrefix } from '../components/Usehooks';
 import { GlobalStateContext } from '../components/GlobalState';
 import { cloneDeep, isEmpty, remove } from 'lodash';
@@ -57,18 +57,18 @@ const Item: React.FC = (props) => {
   const { dbError: itemsError, itemRowsLoaded, itemRows } = useItems({selectedListGroupID: stateItemDoc.listGroupID, isReady: !itemLoading, needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const { globalState, setStateInfo} = useContext(GlobalStateContext);
   const globalData  = useContext(GlobalDataContext);
-  const [presentAlert, dismissAlert] = useIonAlert();
+  const [presentAlert] = useIonAlert();
   const [presentToast] = useIonToast();
   const { t } = useTranslation();
   
-  function groupIDForList(listID: string): string {
+  const groupIDForList = useCallback((listID: string) => {
     let retGID="";
     let searchList=globalData.listRows.find((el: ListRow) => el.listDoc._id === listID);
     if (searchList) {retGID = String(searchList.listGroupID)}
     return retGID;
-  }
+  },[globalData.listRows])
 
-  function addDeleteLists(itemDoc: ItemDoc) {
+  const addDeleteLists = useCallback((itemDoc: ItemDoc) => {
     let newItemDoc: ItemDoc =cloneDeep(itemDoc);
     // loop through all the lists with the same listgroup. if the list is in the
     // listgroup, but not on the item add it.
@@ -94,7 +94,7 @@ const Item: React.FC = (props) => {
     remove(currentLists, (list: ItemList) => { return groupIDForList(list.listID) !== newItemDoc.listGroupID})
     newItemDoc.lists=currentLists;
     return(newItemDoc);
-  }
+  },[globalData.listRows, globalData.listDocs,groupIDForList])
 
   useEffect( () => {
     if (!itemLoading && mode !== "new" && itemDoc && globalData.listRowsLoaded) {
@@ -108,7 +108,7 @@ const Item: React.FC = (props) => {
       newItemDoc = addDeleteLists(newItemDoc);
       setStateItemDoc(cloneDeep(newItemDoc));
     }
-  },[itemLoading,mode,itemDoc,globalData.listRowsLoaded])
+  },[itemLoading,mode,itemDoc,globalData.listRowsLoaded,addDeleteLists])
 
   useEffect( () => {
     if (!imageLoading && mode !== "new" && imageDoc) {
@@ -123,9 +123,9 @@ const Item: React.FC = (props) => {
         setNeedInitItemDoc(false);
         setStateItemDoc(newItemDoc);
     }
-  },[itemLoading,itemDoc,globalData.listsLoading,globalData.listDocs,globalData.listRowsLoaded, globalData.listRows,globalState.itemMode,globalState.newItemName, globalState.callingListID, needInitItemDoc]);
+  },[globalState,mode,setStateInfo,itemLoading,itemDoc,globalData.listsLoading,globalData.listDocs,globalData.listRowsLoaded, globalData.listRows,globalState.itemMode,globalState.newItemName, globalState.callingListID, needInitItemDoc]);
 
-  if (itemError || globalData.listError || globalData.categoryError || globalData.uomError || itemsError) { log.error("loading item info");return (
+  if (itemError || imageError || globalData.listError || globalData.categoryError || globalData.uomError || itemsError) { log.error("loading item info");return (
     <ErrorPage errorText={t("error.loading_item_info_restart") as string}></ErrorPage>
   )}
 

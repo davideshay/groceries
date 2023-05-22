@@ -26,6 +26,7 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
     useEffect(() => {
         log.debug("setting to auto login from root...");
         setLoginType(LoginType.autoLoginFromRoot);
+// eslint-disable-next-line react-hooks/exhaustive-deps 
     },[])
 
     useEffect(() => {
@@ -41,7 +42,7 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
                 initialStartup();
             } 
         }      
-    },[db, listRows, props.history, remoteDBCreds, remoteDBState.connectionStatus, listRowsLoaded, listsLoading])   
+    },[db, remoteDB, listRows, props.history, remoteDBCreds, remoteDBState.connectionStatus, listRowsLoaded, listsLoading, setConnectionStatus])   
 
     useEffect(() => {
         async function dismissToLogin() {
@@ -52,7 +53,7 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
         if (remoteDBState.connectionStatus === ConnectionStatus.navToLoginScreen) {
             dismissToLogin();
         }
-    },[remoteDBState.connectionStatus])
+    },[remoteDBState.connectionStatus,setConnectionStatus,props.history])
 
     if (listError) {return (
         <ErrorPage errorText={t("error.loading_list_info") as string}></ErrorPage>

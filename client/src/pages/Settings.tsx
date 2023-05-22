@@ -51,25 +51,26 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
   const forceUpdate = useCallback(() => forceUpdateState({}), []);
 
 
-  async function checkAPIServerAvailable(apiServerURL: string|null) {
-    let serverAvailable = await isServerAvailable(apiServerURL);
-    log.debug("API Server Available: ",serverAvailable);
-    if (serverAvailable.apiServerAvailable) {
-      setRemoteDBState(prevState=>({...prevState,apiServerAvailable: serverAvailable.apiServerAvailable, dbServerAvailable: serverAvailable.dbServerAvailable}))
-    } else {
-      setRemoteDBState(prevState=>({...prevState,apiServerAvailable: serverAvailable.apiServerAvailable}))
-    }  
-  }
 
   useEffect( () => {
+    async function checkAPIServerAvailable(apiServerURL: string|null) {
+      let serverAvailable = await isServerAvailable(apiServerURL);
+      log.debug("API Server Available: ",serverAvailable);
+      if (serverAvailable.apiServerAvailable) {
+        setRemoteDBState(prevState=>({...prevState,apiServerAvailable: serverAvailable.apiServerAvailable, dbServerAvailable: serverAvailable.dbServerAvailable}))
+      } else {
+        setRemoteDBState(prevState=>({...prevState,apiServerAvailable: serverAvailable.apiServerAvailable}))
+      }  
+    }
+
     log.debug("checking is API server is available in useeffect...");
     checkAPIServerAvailable(remoteDBCreds.apiServerURL);
-  },[remoteDBCreds.apiServerURL])
+  },[remoteDBCreds.apiServerURL,setRemoteDBState])
 
   useEffect( () => {
     const refreshInterval = setInterval( () => {forceUpdate()},1000);
     return () => clearInterval(refreshInterval);
-  },[])
+  },[forceUpdate])
 
   useEffect( () => {
     if (!localSettingsInitialized && globalState.settingsLoaded) {

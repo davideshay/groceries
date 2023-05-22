@@ -5,9 +5,6 @@ import { ListCombinedRows, ListRow } from "./DataTypes";
 import { getListRows } from "./GlobalDataUtilities";
 import { RemoteDBStateContext } from "./RemoteDBState";
 import { translatedCategoryName, translatedItemName, translatedUOMName } from "./translationUtilities";
-import log from "loglevel";
-import { cloneDeep } from "lodash";
-
 
 export type GlobalDataState = {
     itemDocs: ItemDocs,
@@ -133,7 +130,7 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
             setListCombinedRows(localListCombinedRows);
             setListRowsLoaded(true);
         }
-    },[listsLoading, listDocs, listGroupDocs, listGroupsLoading, remoteDBCreds, remoteDBState.workingOffline, remoteDBState.initialSyncComplete])
+    },[listsLoading, listDocs, listGroupDocs, listGroupsLoading, remoteDBCreds, remoteDBState.workingOffline, remoteDBState.initialSyncComplete, remoteDBState.dbServerAvailable])
 
     let value: GlobalDataState = {
             itemDocs: itemDocs as ItemDocs,

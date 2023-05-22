@@ -19,12 +19,12 @@ export function isJsonString(str: string): boolean {
 }
 
 export function urlPatternValidation(url: string) {
-    const regex = new RegExp('https?:\/\/(?:w{1,3}\.)?[^\s.]+(?:\.[a-z]+)*(?::\d+)?(?![^<]*(?:<\/\w+>|\/?>))')
-    return regex.test(url);
+    try { new URL(url);return true; }
+    catch(err) {return false;}
   };
 
 export function emailPatternValidation(email: string) {
-    const emailRegex=/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+    const emailRegex=/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
     return emailRegex.test(email);
 };
 
@@ -205,13 +205,13 @@ function startLogging(level: string) {
     //   );
     // };
 
-    log.methodFactory = function (methodName, logLevel, loggerName) {
-        const method = originalFactory(methodName, logLevel, loggerName);
-        return function (...message) {;
-          const datetime = new Date().toISOString();
-          method(datetime,message);
-        };
-      };
+//    log.methodFactory = function (methodName, logLevel, loggerName) {
+//        const method = originalFactory(methodName, logLevel, loggerName);
+//        return function (...message) {;
+//          const datetime = new Date().toISOString();
+//          method(datetime,message);
+//        };
+//      };
 
     log.setLevel(targetLevel);    
 }
@@ -223,7 +223,7 @@ export function secondsToDHMS(seconds: number) : string {
     h = Math.floor((seconds % (3600 * 24)) / 3600)
     m = Math.floor((seconds % 3600) / 60)
     s = Math.floor(seconds % 60) 
-    let outStr = d>0 ? d + (d == 1 ? " day " : " days ") : "";
+    let outStr = d>0 ? d + (d === 1 ? " day " : " days ") : "";
     outStr = outStr + h.toString().padStart(2,"0") + ":" + m.toString().padStart(2,"0") + ":" + s.toString().padStart(2,"0")
     return outStr;
 }

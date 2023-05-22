@@ -13,7 +13,6 @@ import { RemoteDBStateContext } from '../components/RemoteDBState';
 import { FriendRow, ResolvedFriendStatus, HistoryProps} from '../components/DataTypes';
 import { FriendStatus } from '../components/DBSchema';
 import { checkUserByEmailExists, emailPatternValidation, apiConnectTimeout } from '../components/Utilities';
-import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';

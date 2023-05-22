@@ -45,7 +45,7 @@ const RecipeImport: React.FC<HistoryProps> = (props: HistoryProps) => {
     setPageState(prevState => ({...prevState,formError:""}));
     const fileType = RecipeFileTypes.find((ft) =>(ft.type === pageState.recipeFormat));
     if (fileType === undefined) return;
-    let permissions = await Filesystem.requestPermissions();
+    await Filesystem.requestPermissions();
     let pickResults: PickFilesResult|undefined = undefined;
     let pickSuccessful = true;
     try {pickResults = await FilePicker.pickFiles({

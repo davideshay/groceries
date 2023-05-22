@@ -31,7 +31,7 @@ export async function isServerAvailable(apiServerURL: string|null) {
         apiServerAvailable: false,
         dbServerAvailable: false
     }
-    if (apiServerURL === null || apiServerURL == undefined || apiServerURL == "") {
+    if (apiServerURL === null || apiServerURL === undefined || apiServerURL === "") {
         return respObj;
     }
     let response: HttpResponse | undefined;
@@ -46,7 +46,7 @@ export async function isServerAvailable(apiServerURL: string|null) {
     let responseSuccessful = true;
     try {response = await CapacitorHttp.get(options);}
     catch(err) {responseSuccessful = false; log.error("http error in contacting API server:",err); return respObj}
-    if (response.status === 200 && response.data && response.data.dbServerAvailable) {
+    if (response.status === 200 && response.data && responseSuccessful && response.data.dbServerAvailable) {
         respObj.apiServerAvailable = true;
         respObj.dbServerAvailable = response.data.dbServerAvailable;
     }    

@@ -70,7 +70,7 @@ const RecipeItemSearch: React.FC<RecipeItemSearchProps> = (props: RecipeItemSear
             })
             setPageState(prevState=>({...prevState,itemsNeedLoaded: false,recipeSearchRows: newSearchRows}))
         }
-    },[pageState.listGroupsNeedInit,itemsLoading,globalData.globalItemsLoading])
+    },[pageState.listGroupsNeedInit,itemsLoading,globalData.globalItemsLoading,globalData.globalItemDocs, itemDocs,pageState.itemsNeedLoaded])
 
     function selectRow(id: string, data: RecipeSearchData) {
         props.rowSelected(id,data);

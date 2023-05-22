@@ -4,7 +4,6 @@ import { useParams } from 'react-router-dom';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteCategoryFromItems, useDeleteGenericDocument,
    useDeleteCategoryFromLists, useGetOneDoc, useItems } from '../components/Usehooks';
-import { cloneDeep } from 'lodash';
 import './Category.css';
 import { PouchResponse, HistoryProps, ListRow, RowType} from '../components/DataTypes';
 import { ItemDoc, ItemList, CategoryDoc, InitCategoryDoc } from '../components/DBSchema';
@@ -27,11 +26,11 @@ const FormErrorInit = {  [ErrorLocation.Name]:       {errorMessage:"", hasError:
 const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
   if ( mode === "new" ) { routeID = "<new>"};
-  const [needInitCategoryDoc,setNeedInitCategoryDoc] = useState((mode === "new") ? true: false);
+  const [needInitCategoryDoc,setNeedInitCategoryDoc] = useState(true);
   const [stateCategoryDoc,setStateCategoryDoc] = useState<CategoryDoc>(InitCategoryDoc);
   const [formErrors,setFormErrors] = useState(FormErrorInit);
   const [deletingCategory,setDeletingCategory] = useState(false)
-  const [presentAlert,dismissAlert] = useIonAlert();
+  const [presentAlert] = useIonAlert();
   const updateCategory  = useUpdateGenericDocument();
   const createCategory = useCreateGenericDocument();
   const deleteCategory = useDeleteGenericDocument();
@@ -45,17 +44,21 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { t } = useTranslation();
 
   useEffect( () => {
-    let newCategoryDoc = cloneDeep(stateCategoryDoc);
-    if (!categoryLoading) {
-      if (mode === "new" && needInitCategoryDoc) {
+    let newCategoryDoc: CategoryDoc;
+    if (!categoryLoading && needInitCategoryDoc) {
+      if (mode === "new") {
         newCategoryDoc = {type: "category", name: "", color:"#888888"}
-        setNeedInitCategoryDoc(false);
       } else {
         newCategoryDoc = categoryDoc;
       }
+      setNeedInitCategoryDoc(false);
       setStateCategoryDoc(newCategoryDoc);
     }
-  },[categoryLoading,categoryDoc]);
+  },[categoryLoading,categoryDoc,mode,needInitCategoryDoc]);
+
+  useEffect( () => {
+    if (categoryDoc !== null) {setStateCategoryDoc(categoryDoc)}
+  },[categoryDoc])
 
   if ( globalData.listError || itemError || globalData.categoryError !== null) { return (
     <ErrorPage errorText={t("error.loading_category_info") as string}></ErrorPage>

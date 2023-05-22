@@ -1,7 +1,7 @@
 import {  IonButton,  IonItem, IonLabel, IonCheckbox, IonIcon, 
     IonGrid, IonRow, IonCol, IonText, CheckboxCustomEvent,  } from '@ionic/react';
 import { pencilOutline } from 'ionicons/icons';
-import { Fragment, useContext, useState, SetStateAction, useTransition } from 'react';
+import { Fragment, useContext, useState, SetStateAction } from 'react';
 import { sortedItemLists, listIsDifferentThanCommon } from './ItemUtilities';
 import { ItemDoc,  ListDoc } from './DBSchema';
 import ItemListsModal from '../components/ItemListsModal';

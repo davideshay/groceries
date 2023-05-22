@@ -61,7 +61,7 @@ setupIonicReact();
 const App: React.FC = () => {
 
   PouchDB.plugin(find);
-  const [db, setDB] = useState(() => new PouchDB('local', {revs_limit: 10, auto_compaction: true, size: 250}))
+  const [db, ] = useState(() => new PouchDB('local', {revs_limit: 10, auto_compaction: true, size: 250}))
 
   if (Capacitor.isNativePlatform()) {
     CapacitorApp.addListener('backButton', ({canGoBack}) => {

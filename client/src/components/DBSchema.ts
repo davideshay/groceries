@@ -20,7 +20,7 @@ export interface CategoryDoc {
     type: string,
     name: string,
     color: string,
-    updatedAt: string
+    updatedAt?: string
   }
   
 export const InitCategoryDoc: CategoryDoc = {

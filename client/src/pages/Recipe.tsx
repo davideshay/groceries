@@ -6,7 +6,7 @@ import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteGenericDoc
    useGetOneDoc, useItems, useRecipes } from '../components/Usehooks';
 import { cloneDeep } from 'lodash';
 import { PouchResponse, HistoryProps, RowType} from '../components/DataTypes';
-import { RecipeDoc, InitRecipeDoc, RecipeItem, UomDoc, ItemDoc, ItemDocInit, GlobalItemDoc, RecipeInstruction } from '../components/DBSchema';
+import { RecipeDoc, InitRecipeDoc, RecipeItem, UomDoc, ItemDoc, ItemDocInit, RecipeInstruction } from '../components/DBSchema';
 import { add, addCircleOutline, closeCircleOutline, pencilOutline, returnDownBackOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
@@ -44,13 +44,13 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
   if ( mode === "new" ) { routeID = "<new>"};
   const [pageState, setPageState] = useState<PageState>({
-      recipeDoc: cloneDeep(InitRecipeDoc),needInitDoc: (mode === "new") ? true: false,
+      recipeDoc: cloneDeep(InitRecipeDoc),needInitDoc: true,
       deletingRecipe: false, selectedListOrGroupID: null, selectedItemIdx: 0,
       modalOpen: false, addingInProcess: false
   })
   const [formErrors,setFormErrors] = useState(FormErrorInit);
   const db = usePouch();
-  const [presentAlert,dismissAlert] = useIonAlert();
+  const [presentAlert] = useIonAlert();
   const [presentLoading, dismissLoading] = useIonLoading();
   const updateRecipe  = useUpdateGenericDocument();
   const createRecipe = useCreateGenericDocument();
@@ -64,26 +64,25 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
   const globalData = useContext(GlobalDataContext);
   const { globalState } =useContext(GlobalStateContext);
   const { t } = useTranslation();
-  const [ present, dismiss] = useIonAlert();
+  const [ present] = useIonAlert();
 
   useEffect( () => {
-    let newRecipeDoc = cloneDeep(pageState.recipeDoc);
     if (!recipeLoading) {
+      let newRecipeDoc: RecipeDoc 
       if (mode === "new" && pageState.needInitDoc) {
         newRecipeDoc = cloneDeep(InitRecipeDoc);
-        setPageState(prevState => ({...prevState,needInitDoc: false}));
       } else {
         newRecipeDoc = recipeDoc;
       }
-      setPageState(prevState => ({...prevState, recipeDoc: newRecipeDoc}))
+      setPageState(prevState => ({...prevState, needInitDoc: false, recipeDoc: newRecipeDoc}))
     }
-  },[recipeLoading,recipeDoc]);
+  },[recipeLoading,recipeDoc,mode,pageState.needInitDoc]);
 
   useEffect( () => {
     if (pageState.selectedListOrGroupID === null && globalData.listRowsLoaded && globalData.listCombinedRows.length > 0) {
       setPageState(prevState=>({...prevState,selectedListOrGroupID:globalData.listCombinedRows[0].listOrGroupID}))
     }
-  },[globalData.listRowsLoaded,globalData.listCombinedRows])
+  },[globalData.listRowsLoaded,globalData.listCombinedRows,pageState.selectedListOrGroupID])
 
   if ( globalData.listError !== null || itemError || ( mode !== "new" && recipeError) || recipesError) { return (
     <ErrorPage errorText={t("error.loading_recipe") as string}></ErrorPage>
@@ -168,9 +167,8 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
   function updateRecipeName(name: string) {
     let updRecipeDoc: RecipeDoc = cloneDeep(pageState.recipeDoc);
     let globalItemID: null | string = null;
-    let matchGlobalItem: GlobalItemDoc;
     let newRecipeName: string = "";
-    [globalItemID,newRecipeName,matchGlobalItem] = findMatchingGlobalItem(name,globalData);  
+    [globalItemID,newRecipeName] = findMatchingGlobalItem(name,globalData);  
     if (globalItemID == null) {
         newRecipeName= name;
     }
