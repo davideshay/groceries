@@ -205,13 +205,13 @@ function startLogging(level: string) {
     //   );
     // };
 
-//    log.methodFactory = function (methodName, logLevel, loggerName) {
-//        const method = originalFactory(methodName, logLevel, loggerName);
-//        return function (...message) {;
-//          const datetime = new Date().toISOString();
-//          method(datetime,message);
-//        };
-//      };
+    log.methodFactory = function (methodName, logLevel, loggerName) {
+        const method = originalFactory(methodName, logLevel, loggerName);
+        return function (...message) {;
+          const datetime = new Date().toISOString();
+          method(datetime,message);
+        };
+      };
 
     log.setLevel(targetLevel);    
 }

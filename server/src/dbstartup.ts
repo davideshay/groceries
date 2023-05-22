@@ -540,11 +540,11 @@ async function createUtilitiesViews() {
         let viewDoc = {
             "views": {
                 "ucase-items" : 
-                    { "map": "function(doc) { if (doc.type=='item') { emit (doc.name.toUpperCase(), doc._id)}}"},
-                "ucase-globalitems" : 
-                   { "map": "function(doc) { if (doc.type=='globalitem') { emit (doc.name.toUpperCase(), doc._id)}}"},
-                "ucase-categories" : 
-                   { "map": "function(doc) { if (doc.type=='category') { emit (doc.name.toUpperCase(), doc._id)}}"}
+                    { "map": 'function(doc) { if (doc.type && doc.name) {if (doc.type==="item") { emit (doc.name.toUpperCase(), doc._id)}}}'},
+                // "ucase-globalitems" : 
+                //    { "map": "function(doc) { if (doc.type=='globalitem') { emit (doc.name.toUpperCase(), doc._id)}}"},
+                // "ucase-categories" : 
+                //    { "map": "function(doc) { if (doc.type=='category') { emit (doc.name.toUpperCase(), doc._id)}}"}
                 }
             }
         try {

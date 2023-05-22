@@ -12,7 +12,8 @@ import { cloneDeep } from "lodash";
 import log from "loglevel";
 import { useHistory } from "react-router";
 
-const secondsBeforeAccessRefresh = 10;
+// const secondsBeforeAccessRefresh = 10;
+const minimumAccessRefreshSeconds = 30;
 // const secondsBeforeAccessRefresh = 180;
 const secondsBetweenRefreshRetries = 30;
 
@@ -36,10 +37,11 @@ export type RemoteDBState = {
     workingOffline: boolean,
     offlineJWTMatch: boolean,
     loggedIn: boolean,
-    retryCount: number
+    retryCount: number,
+    tokenTimerAction: TokenTimerAction
 }
 
-enum TokenTimerState {
+enum TokenTimerAction {
     NotStarted = "N",
     NeedToStart = "NS",
     Started = "S",
@@ -146,7 +148,8 @@ export const initialRemoteDBState: RemoteDBState = {
     workingOffline: false,
     offlineJWTMatch: false,
     loggedIn: false,
-    retryCount: 0
+    retryCount: 0,
+    tokenTimerAction: TokenTimerAction.NeedToStart
 }
 
 const initialContext: RemoteDBStateContextType = {
@@ -181,6 +184,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     const history = useHistory();
     const refreshTokenLocked = useRef(false);
     const checkRefreshLocked = useRef(false);
+    const tokenTimer = useRef<NodeJS.Timeout>();
 
     function setLoginType(lType: LoginType) {
         loginType.current = lType;
@@ -215,7 +219,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         setRemoteDBState(prevState=>({...prevState,initialSyncComplete: true}));
         globalSync = db.sync((globalRemoteDB as PouchDB.Database), {
             back_off_function: function(delay) {
-                log.debug("live sync going offline");
+                log.debug("live sync going offline",db,globalRemoteDB);
                 setSyncStatus(SyncStatus.offline);
                 setDBServerAvailable(false);
                 if (delay===0) {return 1000};
@@ -292,22 +296,23 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
 
     const assignDB = useCallback( async (accessJWT: string): Promise<boolean> => {
         log.debug("Assigning Database/setting sync, access Token is:",accessJWT);
-//        log.debug("Login Type is : ",loginType.current);
         stopSyncAndCloseRemote();
         try {
             globalRemoteDB = new PouchDB(remoteDBCreds.current.couchBaseURL+"/"+remoteDBCreds.current.database, 
-                { fetch: (url, opts) => ( 
-                    fetch(url, { ...opts, credentials: 'include', headers:
-                    { ...opts?.headers, 'Authorization': 'Bearer '+accessJWT, 'Content-type': 'application/json' }})
-                )}) }
+                { fetch: (url, opts) => {                  
+                    try {return fetch(url, { ...opts, credentials: 'include', headers:
+                    { ...opts?.headers, 'Authorization': 'Bearer '+accessJWT, 'Content-type': 'application/json' }}) }
+                    catch(err) {log.error("Error in getch for remote Couch server",err);
+                        let pouchResponse: Response = new Response(null,{status: 503,statusText:"Couch server error"});
+                        let pouchPromise : Promise<Response> = new Promise((resolve,reject)=>(resolve(pouchResponse)))
+                        return pouchPromise}
+                    }}) }
         catch(err) {log.error("Could not assign assign PouchDB Remote Server:",err); return false;}        
-//        log.debug("Initiated GlobalRemoteDB to: ",cloneDeep(globalRemoteDB));
         globalRemoteDB.setMaxListeners(40);    
         setRemoteDBState(prevState => ({...prevState,connectionStatus: ConnectionStatus.dbAssigned, 
                 accessJWT: accessJWT }));  
         await setPrefsDBCreds(); 
         return true;
-
     },[])
 
     const checkDBUUIDAndStartSync = useCallback( async () => {
@@ -324,7 +329,6 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
 
     const attemptFullLogin = useCallback( async (): Promise<[boolean,string]> => {
         const devIDInfo = await Device.getId();
-        console.log("IN ATTEMPT FULL LOGIN");
         log.debug("Attempt Full Login: Getting device ID...", cloneDeep(devIDInfo));
         let devID = "";
         if (devIDInfo.hasOwnProperty('identifier')) {
@@ -397,12 +401,12 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         if (remoteDBState.loggedIn) {
             let tokenInfo = getTokenInfo(remoteDBState.accessJWT,true);
             log.debug("Token info of current access token:",tokenInfo);
-            if (tokenInfo.expired) {
-                log.debug("Current Access Token is expired. Setting to retry...");
-                setRemoteDBState(prevState => ({...prevState,retryCount: 2}))
-            }
-        }
-
+            if (tokenInfo.expired || tokenInfo.expiresInSeconds <= minimumAccessRefreshSeconds) {
+                log.debug("Current Access Token is expired/soon. Setting to retry...",minimumAccessRefreshSeconds," seconds to expiry...");
+                setRemoteDBState(prevState => ({...prevState,retryCount: 2}));
+                return false;
+            } else { return true;}
+        } else {return false;}
     },[remoteDBState.loggedIn, remoteDBState.accessJWT])
 
     
@@ -414,7 +418,6 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         }
         refreshTokenLocked.current = true;
         log.debug("Refreshing token/update");
-        log.debug("Current state:",cloneDeep(remoteDBState));
         if (remoteDBCreds.current.refreshJWT !== "") {
             let refreshResponse = await refreshToken(remoteDBCreds.current,String(remoteDBState.deviceUUID));
             log.debug("Response from refresh Token:",refreshResponse);
@@ -446,24 +449,20 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         return RefreshTokenResults.Failed;
     },[assignDB,remoteDBState.deviceUUID,setDBCredsValue,t])
 
-    const delayCheckAndRefreshToken = useCallback( async () => {
-        if (checkRefreshLocked.current) {log.debug("Check/Refresh locked..."); return}
-        checkRefreshLocked.current = true;
-        await new Promise(r => setTimeout(r,1000));
-        await checkAndRefreshToken()
-        checkRefreshLocked.current = false;
-        log.debug("Freeing check refresh lock");
-
-    },[checkAndRefreshToken])
-
     useEffect(() => {
 //        App.addListener("appStateChange",() => {log.debug("APP STATE CHANGE, checking & refreshing token");delayCheckAndRefreshToken()});
         if (remoteDBState.loggedIn) {
-        log.debug("setting app listeners, logged in = ",remoteDBState.loggedIn);
-        App.addListener("resume", () => {log.debug("APP RESUMING, checking & refreshing token",remoteDBState); delayCheckAndRefreshToken()})
-        }
+            log.debug("setting app listeners, logged in = ",remoteDBState.loggedIn);
+            App.addListener("pause", () => {log.debug("APP PAUSING, clearing timers"); setRemoteDBState(prevState => ({...prevState,tokenTimerAction: TokenTimerAction.NeedToStop}))})
+            App.addListener("resume", async () => {
+                log.debug("APP RESUMING, checking & refreshing token",remoteDBState);
+                if (await checkAndRefreshToken()) {
+                    setRemoteDBState(prevState => ({...prevState,tokenTimerAction: TokenTimerAction.NeedToStart}))
+                }
+            })
+        }    
         return () => {log.debug("removing listeners"); App.removeAllListeners()};
-    },[ remoteDBState.loggedIn, remoteDBState.accessJWT,delayCheckAndRefreshToken])
+    },[ remoteDBState.loggedIn, remoteDBState.accessJWT, checkAndRefreshToken])
 
     useEffect(() => {
         if (!loginAttempted.current && !(remoteDBState.connectionStatus === ConnectionStatus.navToLoginScreen) && !(remoteDBState.connectionStatus === ConnectionStatus.onLoginScreen)) {
@@ -502,18 +501,52 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         }
     },[remoteDBState.initialSyncComplete,remoteDBState.syncStatus,remoteDBState.connectionStatus,refreshTokenAndUpdate])
 
-    useEffect(() => {
-        let refreshTimer: ReturnType<typeof setInterval>;
-        if (remoteDBState.accessJWTExpirationTime === 0 ) {return;}
-        const secondsToRefresh = Number(remoteDBState.accessJWTExpirationTime) - (Math.round(Date.now() / 1000)) - secondsBeforeAccessRefresh;
-        log.info("JWT expires in seconds:",secondsToRefresh);
-        refreshTimer = setTimeout(async () => {
-            log.info("Refreshing token now, on standard expiration timeout");
-            let refreshOK = await refreshTokenAndUpdate();
-            if (refreshOK === RefreshTokenResults.Failed) {setRemoteDBState(prevState=>({...prevState,retryCount: 1}))}
-        }, secondsToRefresh*1000);
-        return () => {log.debug("Clearing Refresh Timer standard expiration"); clearTimeout(refreshTimer)};
-    },[remoteDBState.accessJWTExpirationTime,refreshTokenAndUpdate])
+    useEffect( () => {
+        let curTimer = tokenTimer.current;
+        switch (remoteDBState.tokenTimerAction) {
+            case TokenTimerAction.NeedToStart:
+                if (remoteDBState.accessJWTExpirationTime === 0) {return}
+                if (tokenTimer.current !== null && tokenTimer.current !== undefined) {
+                    clearTimeout(tokenTimer.current);
+                }
+                const secondsToRefresh = (Number(remoteDBState.accessJWTExpirationTime) - (Math.round(Date.now() / 1000))) / 2;
+                log.info("Standard Token Timer started, JWT expires in seconds:",secondsToRefresh);        
+                tokenTimer.current = setTimeout(async () => {
+                    log.debug("standard token timer hit, refreshing ... ")
+                    let refreshOK = await refreshTokenAndUpdate();
+                    if (refreshOK === RefreshTokenResults.Failed) {setRemoteDBState(prevState=>({...prevState,retryCount: 1}))}
+                    else { setRemoteDBState(prevState => ({...prevState,tokenTimerAction: TokenTimerAction.NeedToRestart}))}
+                },secondsToRefresh*1000)
+                setRemoteDBState(prevState => ({...prevState,tokenTimerAction: TokenTimerAction.Started}))
+                break;
+            case TokenTimerAction.NeedToStop:
+                log.debug("Stopping standard token timer");
+                clearTimeout(tokenTimer.current);
+                setRemoteDBState(prevState => ({...prevState,tokenTimerAction: TokenTimerAction.Stopped}))
+                break;
+            case TokenTimerAction.NeedToRestart:
+                log.debug("Restarting Standard Token Timer");
+                clearTimeout(tokenTimer.current);
+                setRemoteDBState(prevState => ({...prevState,tokenTimerAction: TokenTimerAction.NeedToStart}))
+                break;
+            default:
+                break;
+        }
+        return ( () => {log.debug("Clearing out standard token timer"); clearTimeout(curTimer)})
+    },[remoteDBState.tokenTimerAction, remoteDBState.accessJWTExpirationTime,refreshTokenAndUpdate])
+
+    // useEffect(() => {
+    //     let refreshTimer: ReturnType<typeof setInterval>;
+    //     if (remoteDBState.accessJWTExpirationTime === 0 ) {return;}
+    //     const secondsToRefresh = Number(remoteDBState.accessJWTExpirationTime) - (Math.round(Date.now() / 1000)) - secondsBeforeAccessRefresh;
+    //     log.info("JWT expires in seconds:",secondsToRefresh);
+    //     refreshTimer = setTimeout(async () => {
+    //         log.info("Refreshing token now, on standard expiration timeout");
+    //         let refreshOK = await refreshTokenAndUpdate();
+    //         if (refreshOK === RefreshTokenResults.Failed) {setRemoteDBState(prevState=>({...prevState,retryCount: 1}))}
+    //     }, secondsToRefresh*1000);
+    //     return () => {log.debug("Clearing Refresh Timer standard expiration"); clearTimeout(refreshTimer)};
+    // },[remoteDBState.accessJWTExpirationTime,refreshTokenAndUpdate])
 
     useEffect(() => {
         let retryTimer: ReturnType<typeof setInterval>;
@@ -524,7 +557,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             log.debug("refresh OK:",refreshOK,refreshOK ? "clearing interval..." : "leaving interval");
             if (refreshOK === RefreshTokenResults.OK) {
                 clearInterval(retryTimer);
-                setRemoteDBState(prevState=>({...prevState, retryCount: 0}));
+                setRemoteDBState(prevState=>({...prevState, retryCount: 0, tokenTimerAction: TokenTimerAction.NeedToStart}));
             }
         }
         if (remoteDBState.retryCount === 0) {return;}

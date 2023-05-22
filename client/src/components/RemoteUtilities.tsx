@@ -131,6 +131,7 @@ export function getTokenInfo(JWT: string, logIt: boolean) {
     let tokenResponse = {
         valid : false,
         expireDate: 0,
+        expiresInSeconds: 0,
         expired: true,
         username: ""
     }
@@ -142,11 +143,13 @@ export function getTokenInfo(JWT: string, logIt: boolean) {
     if (JWTDecodeValid) {
         tokenResponse.valid = true;
         tokenResponse.expireDate = (JWTDecode as any).exp
+        tokenResponse.expiresInSeconds = (JWTDecode as any).exp - (new Date().getTime() / 1000); 
         tokenResponse.username = (JWTDecode as any).sub
         if (tokenResponse.expireDate >= (new Date().getTime() / 1000)) {
             tokenResponse.expired = false;
         }
     }
+//    log.debug("Got token info:",tokenResponse);
     return(tokenResponse);
 }
 

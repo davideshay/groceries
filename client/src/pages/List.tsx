@@ -58,12 +58,8 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   const addListToAllItems = useAddListToAllItems();
   const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
   const [ presentToast ] = useIonToast();
-  const { listError, listDocs, listsLoading, listRowsLoaded, listRows, listCombinedRows } = useContext(GlobalDataContext);
-  const { docs: categoryDocs, loading: categoryLoading, error: categoryError } = useFind({
-    index: { fields: [ "type","name"] },
-    selector: { type: "category", name: { $exists: true}},
-    sort: [ "type","name"]
-  })
+  const { listError, listDocs, listsLoading, listRowsLoaded, listRows, listCombinedRows,
+          categoryDocs, categoryLoading, categoryError } = useContext(GlobalDataContext);
   const { loading: listGroupLoading, doc: listGroupDoc, dbError: listGroupError} = useGetOneDoc(pageState.listGroupID);
   const [presentAlert] = useIonAlert();
   const screenLoading = useRef(true);
@@ -76,7 +72,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   useEffect( () => {
     if (!listsLoading && listRowsLoaded && !categoryLoading) {
       if (mode === "new" && pageState.needInitListDoc) {
-        let initCategories=categoryDocs.map(cat => cat._id);
+        let initCategories= categoryDocs.length > 0 ? categoryDocs.map(cat => String(cat._id)) : [];
         let initListDoc : ListDoc = cloneDeep(ListDocInit);
         let newListGroupOwner: string|null = null;
         if (listCombinedRows.length > 0) {
@@ -265,9 +261,9 @@ function deletePrompt() {
   categoryElem.push(catItemDivider(true,categoryLines));
   categoryLines=[];
   for (let i = 0; i < categoryDocs.length; i++) {
-    const inList = pageState.listDoc.categories.includes(categoryDocs[i]._id);
+    const inList = pageState.listDoc.categories.includes(String(categoryDocs[i]._id));
     if (!inList) {
-      categoryLines.push(catItem(categoryDocs[i]._id,false))
+      categoryLines.push(catItem(String(categoryDocs[i]._id),false))
     }
   }
   if (categoryLines.length > 0) {
