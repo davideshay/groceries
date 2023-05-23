@@ -92,7 +92,6 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     const [ present, dismiss ]= useIonLoading();
     const { t } = useTranslation();
 
-
     const exitApp = useCallback( async () => {
       if (!(isPlatform("desktop") || isPlatform("electron"))) {App.exitApp()}
       setRemoteDBState(initialRemoteDBState);
