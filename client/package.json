@@ -14,6 +14,7 @@
     "@capacitor/haptics": "^5.0.2",
     "@capacitor/ios": "^5.0.3",
     "@capacitor/keyboard": "^5.0.2",
+    "@capacitor/network": "^5.0.2",
     "@capacitor/preferences": "^5.0.2",
     "@capacitor/status-bar": "^5.0.2",
     "@capawesome/capacitor-file-picker": "^5.0.0",

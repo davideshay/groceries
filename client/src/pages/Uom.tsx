@@ -167,13 +167,13 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   async function deleteUomFromDB() {
-    let uomItemDelResponse = await deleteUomFromItems(String(pageState.uomDoc._id));
+    let uomItemDelResponse = await deleteUomFromItems(String(pageState.uomDoc.name));
     if (!uomItemDelResponse.successful) {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.unable_remove_uom_items"), hasError: true }}));
       setPageState(prevState=>({...prevState,deletingUom: false }))
       return false;
     }
-    let uomRecipeDelResponse = await deleteUomFromRecipes(String(pageState.uomDoc._id));
+    let uomRecipeDelResponse = await deleteUomFromRecipes(String(pageState.uomDoc.name));
     if (!uomRecipeDelResponse.successful) {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.unable_remove_uom_recipes"), hasError: true }}));
       setPageState(prevState=>({...prevState,deletingUom: false}))

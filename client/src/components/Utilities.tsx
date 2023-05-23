@@ -192,7 +192,7 @@ function startLogging(level: string) {
         targetLevel="SILENT"
     } else {targetLevel="INFO"}
 
-    const originalFactory = log.methodFactory;
+    //const originalFactory = log.methodFactory;
     // log.methodFactory = (methodName, level, loggerName) => {
     //   const rawMethod = originalFactory(methodName, level, loggerName);
     //   function dateFormat(): string {
@@ -205,13 +205,13 @@ function startLogging(level: string) {
     //   );
     // };
 
-    log.methodFactory = function (methodName, logLevel, loggerName) {
-        const method = originalFactory(methodName, logLevel, loggerName);
-        return function (...message) {;
-          const datetime = new Date().toISOString();
-          method(datetime,message);
-        };
-      };
+    // log.methodFactory = function (methodName, logLevel, loggerName) {
+    //     const method = originalFactory(methodName, logLevel, loggerName);
+    //     return function (...message) {;
+    //       const datetime = new Date().toISOString();
+    //       method(datetime,message);
+    //     };
+    //   };
 
     log.setLevel(targetLevel);    
 }

@@ -2,30 +2,33 @@ import { useCallback } from "react";
 import { usePouch } from "use-pouchdb";
 import { PouchResponse, PouchResponseInit } from "./DataTypes";
 import { cloneDeep } from "lodash";
-import { ItemDoc } from "./DBSchema";
+import { ItemDoc, RecipeDoc } from "./DBSchema";
+import log from "loglevel";
 
 export function useDeleteUomFromItems() {
     const db=usePouch()
   
     return useCallback(
-      async (listID: string) => {
+      async (uomID: string) => {
         let response: PouchResponse = cloneDeep(PouchResponseInit);
-        let itemResults = await db.find({
-          selector: {
-            type: "item",
-            name: { $exists: true },
-            lists: { $elemMatch: { "listID": listID } }
-          }
-        })
+        let itemResults: PouchDB.Find.FindResponse<{}>
+        try { itemResults = await db.find({
+            selector: {
+              type: "item",
+              name: { $exists: true },
+              lists: { $elemMatch: { "uomName": uomID } }
+            }
+          }) }
+        catch(err) {log.debug("Could not get items in list");
+                    response.successful = false; response.fullError = err;
+                    return response;}  
         for (let i = 0; i < itemResults.docs.length; i++) {
           const itemDoc: ItemDoc = itemResults.docs[i] as ItemDoc;
-          const newLists = []
           for (let j = 0; j < itemDoc.lists.length; j++) {
-            if (itemDoc.lists[j].listID !== listID) {
-              newLists.push(itemDoc.lists[j])
+            if (itemDoc.lists[j].uomName === uomID) {
+              itemDoc.lists[j].uomName = null;
             }
           }
-          itemDoc.lists = newLists;
           try {await db.put(itemDoc)}
           catch(err) {response.successful = false; response.fullError = err; }
         }
@@ -37,25 +40,33 @@ export function useDeleteUomFromItems() {
     const db=usePouch()
   
     return useCallback(
-      async (listID: string) => {
+      async (uomID: string) => {
         let response: PouchResponse = cloneDeep(PouchResponseInit);
-        let itemResults = await db.find({
+        let recipeResults: PouchDB.Find.FindResponse<{}>
+        try { recipeResults = await db.find({
           selector: {
-            type: "item",
+            type: "recipe",
             name: { $exists: true },
-            lists: { $elemMatch: { "listID": listID } }
+            "$or": [
+                  {items: { $elemMatch: { "recipeUOMName": uomID } } },
+                  {items: { $elemMatch: { "shoppingUOMName": uomID}} } ]
           }
-        })
-        for (let i = 0; i < itemResults.docs.length; i++) {
-          const itemDoc: ItemDoc = itemResults.docs[i] as ItemDoc;
-          const newLists = []
-          for (let j = 0; j < itemDoc.lists.length; j++) {
-            if (itemDoc.lists[j].listID !== listID) {
-              newLists.push(itemDoc.lists[j])
+        }) }
+        catch(err) { log.debug("Could not update recipe");
+                    response.successful = false; response.fullError = err;
+                    return response;
+                    }
+        for (let i = 0; i < recipeResults.docs.length; i++) {
+          const recipeDoc: RecipeDoc = recipeResults.docs[i] as RecipeDoc;
+          for (let j = 0; j < recipeDoc.items.length; j++) {
+            if (recipeDoc.items[j].recipeUOMName === uomID) {
+              recipeDoc.items[j].recipeUOMName = null
+            }
+            if (recipeDoc.items[j].shoppingUOMName === uomID) {
+              recipeDoc.items[j].shoppingUOMName = null
             }
           }
-          itemDoc.lists = newLists;
-          try {await db.put(itemDoc)}
+          try {await db.put(recipeDoc)}
           catch(err) {response.successful = false; response.fullError = err; }
         }
         return response;
