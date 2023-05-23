@@ -214,15 +214,41 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     function setDBServerAvailable(value: boolean) {
         setRemoteDBState(prevState => ({...prevState,dbServerAvailable: value}));
     }
+
+    const checkRetryNetworkIsUp = useCallback( async () => {
+        let netOnline = (await Network.getStatus()).connected;
+        log.debug("Network online status:",netOnline);
+        if (netOnline) return true;
+        let retryCount = 0;
+        let maxRetries = 10;
+        let timeBetweenRetries = 2*1000;
+        while (retryCount < maxRetries) {
+            await new Promise(r => setTimeout(r,timeBetweenRetries));
+            netOnline = (await Network.getStatus()).connected;
+            if (netOnline) {
+                log.debug("Network back online, continuing");
+                return true
+            } else {
+                log.debug("Network still not online, retry count:",retryCount);
+                retryCount++;
+            }
+        }
+        return true
+    },[])
+
     const liveSync = useCallback(() => {
         log.debug("Starting live sync of database",cloneDeep(globalRemoteDB));
         setRemoteDBState(prevState=>({...prevState,initialSyncComplete: true}));
         globalSync = db.sync((globalRemoteDB as PouchDB.Database), {
             back_off_function: function(delay) {
-                log.debug("live sync going offline",db,globalRemoteDB);
-                setSyncStatus(SyncStatus.offline);
-                setDBServerAvailable(false);
-                if (delay===0) {return 1000};
+                async function takeAction () {
+                    log.debug("live sync going offline",db,globalRemoteDB);
+                    setSyncStatus(SyncStatus.offline);
+                    setDBServerAvailable(false);
+                    await checkRetryNetworkIsUp();
+                }
+                takeAction();
+                if (delay===0) {return 8000};
                 if (delay < 60000) {return delay*1.5} else {return 60000};
             },
             retry: true,
@@ -247,9 +273,14 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         log.debug("Starting sync of database",cloneDeep(globalRemoteDB));
         globalSync = db.sync((globalRemoteDB as PouchDB.Database), {
             back_off_function: function(delay) {
-                log.debug("Initial sync going offline");
-                setSyncStatus(SyncStatus.offline);
-                if (delay===0) {return 1000};
+                async function takeAction () {
+                    log.debug("initial sync going offline",db,globalRemoteDB);
+                    setSyncStatus(SyncStatus.offline);
+                    setDBServerAvailable(false);
+                    await checkRetryNetworkIsUp();
+                }
+                takeAction();
+                if (delay===0) {return 8000};
                 if (delay < 60000) {return delay*1.5} else {return 60000};
             },
             retry: true,
@@ -283,21 +314,16 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         let success=true;
         if (globalRemoteDB !== undefined && globalRemoteDB !== null) {
             log.debug("RemoteDB already exists, closing before assign.");
+            log.debug("about to close: ",globalRemoteDB);
             if (globalSync !== undefined && globalSync !== null) {
                 globalSync.cancel();
             }
             globalRemoteDB.removeAllListeners();
             await globalRemoteDB.close();
-            await new Promise(r => setTimeout(r,2000));
+//            await new Promise(r => setTimeout(r,1000));
             globalRemoteDB = undefined;
         }
         return success;
-    },[])
-
-    const checkRetryNetworkIsUp = useCallback( async () => {
-        let netOnline = await Network.getStatus();
-        log.debug("Network online status:",netOnline.connected);
-        return true
     },[])
 
     const assignDB = useCallback( async (accessJWT: string): Promise<boolean> => {
