@@ -9,7 +9,6 @@ import ErrorPage from './ErrorPage';
 import { History } from 'history';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
 import { useTranslation } from 'react-i18next';
-import { cloneDeep } from 'lodash';
 import log from 'loglevel';
 
 type InitialLoadProps = {
@@ -41,7 +40,7 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
                 initialStartup();
             } 
         }      
-    },[db, remoteDB, listRows, props.history, remoteDBCreds, remoteDBState.connectionStatus, listRowsLoaded, listsLoading])   
+    },[db, remoteDB, listRows, props.history, remoteDBCreds, remoteDBState.connectionStatus, listRowsLoaded, listsLoading, setRemoteDBState])   
 
     useEffect(() => {
         async function dismissToLogin() {
@@ -52,7 +51,7 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
         if (remoteDBState.connectionStatus === ConnectionStatus.navToLoginScreen) {
             dismissToLogin();
         }
-    },[remoteDBState.connectionStatus,props.history])
+    },[remoteDBState.connectionStatus,props.history,setRemoteDBState])
 
     if (listError) {return (
         <ErrorPage errorText={t("error.loading_list_info") as string}></ErrorPage>

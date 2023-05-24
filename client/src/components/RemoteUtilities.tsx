@@ -127,7 +127,6 @@ export async function createNewUser(remoteDBState: RemoteDBState,remoteDBCreds: 
 }
 
 export function getTokenInfo(JWT: string, logIt: boolean) {
-    if (logIt) {log.debug("Getting Token Info at time: ", new Date().getTime() / 1000);}
     let tokenResponse = {
         valid : false,
         expireDate: 0,
@@ -149,7 +148,7 @@ export function getTokenInfo(JWT: string, logIt: boolean) {
             tokenResponse.expired = false;
         }
     }
-//    log.debug("Got token info:",tokenResponse);
+    if (logIt ) {log.debug("Got token info:",tokenResponse);}
     return(tokenResponse);
 }
 

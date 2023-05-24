@@ -197,7 +197,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
           doNav();
         }
       }
-    },[remoteDBState.initialSyncComplete , remoteDBState.loggedIn, remoteDBState.workingOffline, remoteDBState.connectionStatus, db, globalData.listRows, props.history, remoteDBCreds, globalData.listRowsLoaded, globalData.listsLoading, dismiss, setRemoteDBState]);
+    },[remoteDBState.initialNavComplete, remoteDBState.initialSyncComplete ,remoteDBState.loggedIn, remoteDBState.workingOffline, remoteDBState.connectionStatus, db, globalData.listRows, props.history, remoteDBCreds, globalData.listRowsLoaded, globalData.listsLoading, dismiss, setRemoteDBState]);
 
     function updateDBCredsFromResponse(response: CreateResponse): DBCreds {
       let newDBCreds=cloneDeep(remoteDBCreds);

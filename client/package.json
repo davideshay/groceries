@@ -42,6 +42,7 @@
     "lodash": "^4.17.21",
     "loglevel": "^1.8.1",
     "loglevel-plugin-prefix": "^0.8.4",
+    "p-queue": "^7.3.4",
     "pouchdb": "^8.0.1",
     "pouchdb-core": "^8.0.1",
     "pouchdb-selector-core": "^8.0.1",

@@ -54,7 +54,7 @@ export function getAllSearchRows(allItemDocs: ItemDocs, listID: string,listType:
       let itemExistsInSearchIdx = searchRows.findIndex((sr) => (sr.globalItemID === globalItem._id || sr.itemName === globalItem.name));
       let itemExistsInItem = false;
       if (listType === RowType.list) {
-        let itemNameMatch = allItemDocs.find((item) => (item.name.toUpperCase() === globalItem.name.toUpperCase()));
+        let itemNameMatch = allItemDocs.find((item) => (item.name.toUpperCase() === globalItem.name.toUpperCase() || item.globalItemID === globalItem._id));
         if (itemNameMatch !== undefined) {
             itemNameMatch.lists.forEach((list) => {
                 if (list.active && list.listID===listID) {
