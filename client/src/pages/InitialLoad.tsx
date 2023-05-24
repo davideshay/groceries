@@ -17,7 +17,7 @@ type InitialLoadProps = {
 }
 
 const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
-    const { remoteDBState, remoteDBCreds, remoteDB,setConnectionStatus, setLoginType} = useContext(RemoteDBStateContext);
+    const { remoteDBState, remoteDBCreds, remoteDB, setLoginType, setRemoteDBState} = useContext(RemoteDBStateContext);
     const { listError ,listRowsLoaded, listRows, listsLoading } = useContext(GlobalDataContext)
     const db=usePouch();
     const screenLoading = useRef(true);
@@ -33,27 +33,26 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
         async function initialStartup() {
             await initialSetupActivities(remoteDB as PouchDB.Database, String(remoteDBCreds.dbUsername));
             screenLoading.current=false;
-            log.debug("Calling Nav from initial load",cloneDeep(listRows));
             await navigateToFirstListID(props.history,remoteDBCreds,listRows);
-            setConnectionStatus(ConnectionStatus.initialNavComplete);
+            setRemoteDBState(prevState => ({...prevState,initialNavComplete: true}));
         }
         if (listRowsLoaded && !listsLoading) {
             if ((remoteDBState.connectionStatus === ConnectionStatus.loginComplete)) {
                 initialStartup();
             } 
         }      
-    },[db, remoteDB, listRows, props.history, remoteDBCreds, remoteDBState.connectionStatus, listRowsLoaded, listsLoading, setConnectionStatus])   
+    },[db, remoteDB, listRows, props.history, remoteDBCreds, remoteDBState.connectionStatus, listRowsLoaded, listsLoading])   
 
     useEffect(() => {
         async function dismissToLogin() {
             screenLoading.current = false;
-            setConnectionStatus(ConnectionStatus.onLoginScreen);
+            setRemoteDBState(prevState => ({...prevState,connectionStatus: ConnectionStatus.onLoginScreen}));
             props.history.push("/login");
         }
         if (remoteDBState.connectionStatus === ConnectionStatus.navToLoginScreen) {
             dismissToLogin();
         }
-    },[remoteDBState.connectionStatus,setConnectionStatus,props.history])
+    },[remoteDBState.connectionStatus,props.history])
 
     if (listError) {return (
         <ErrorPage errorText={t("error.loading_list_info") as string}></ErrorPage>

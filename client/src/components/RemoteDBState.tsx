@@ -30,6 +30,7 @@ export type RemoteDBState = {
     connectionStatus: ConnectionStatus,
     initialSyncStarted: boolean,
     initialSyncComplete: boolean,
+    initialNavComplete: boolean,
     dbUUIDAction: DBUUIDAction,
     credsError: boolean,
     credsErrorText: string,
@@ -67,7 +68,6 @@ export interface RemoteDBStateContextType {
     stopSyncAndCloseRemote: () => Promise<boolean>,
     assignDB: (accessJWT: string) => Promise<boolean>,
     setDBCredsValue: (key: string, value: string|null) => void,
-    setConnectionStatus: (value: ConnectionStatus) => void,
     setLoginType: (lType: LoginType) => void,
     attemptFullLogin: () => Promise<[boolean,string]>
 }
@@ -110,10 +110,10 @@ export enum ConnectionStatus {
     cannotStart = 0,
     retry = 1,
     dbAssigned = 2,
+    syncStarted = 3,
     navToLoginScreen = 12,
     onLoginScreen = 13,
     loginComplete = 14,
-    initialNavComplete = 15
 }
 
 export interface DBCreds {
@@ -141,6 +141,7 @@ export const initialRemoteDBState: RemoteDBState = {
     connectionStatus: ConnectionStatus.cannotStart,
     initialSyncStarted: false,
     initialSyncComplete: false,
+    initialNavComplete: false,
     dbUUIDAction: DBUUIDAction.none,
     credsError: false,
     credsErrorText: "",
@@ -162,7 +163,6 @@ const initialContext: RemoteDBStateContextType = {
     stopSyncAndCloseRemote: async () => {return false},
     assignDB: async (accessJWT: string): Promise<boolean> => {return false},
     setDBCredsValue: (key: string, value: string | null) => {},
-    setConnectionStatus: (value: ConnectionStatus) => {},
     setLoginType: (lType: LoginType) => {},
     attemptFullLogin: async (): Promise<[boolean,string]> => {return [false,""]}
 }
@@ -204,11 +204,6 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         remoteDBCreds.current = newCreds;
         await setPrefsDBCreds();
         forceUpdate();
-    }
-
-    function setConnectionStatus(value: ConnectionStatus) {
-        log.debug("Update Connection Status:",value);
-        setRemoteDBState(prevState => ({...prevState, connectionStatus: value}));
     }
 
     function setDBServerAvailable(value: boolean) {
@@ -323,6 +318,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
 //            await new Promise(r => setTimeout(r,1000));
             globalRemoteDB = undefined;
         }
+        setRemoteDBState(prevState => ({...prevState,syncStatus: SyncStatus.offline}));
         return success;
     },[])
 
@@ -344,6 +340,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
                     }}) }
         catch(err) {log.error("Could not assign assign PouchDB Remote Server:",err); return false;}        
         globalRemoteDB.setMaxListeners(40);    
+        log.debug("In assignDB, setting connection status to dbAssigned...");
         setRemoteDBState(prevState => ({...prevState,connectionStatus: ConnectionStatus.dbAssigned, 
                 accessJWT: accessJWT, accessJWTExpirationTime: tokenInfo.expireDate }));  
         await setPrefsDBCreds(); 
@@ -356,6 +353,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             log.debug("Did not pass DB unique ID check.");
             setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.invalid_dbuuid") , dbUUIDAction: DBUUIDCheck.dbUUIDAction, connectionStatus: ConnectionStatus.navToLoginScreen}))
         } else {
+            setRemoteDBState(prevState => ({...prevState,connectionStatus: ConnectionStatus.syncStarted}));
             await initialSetupActivities(globalRemoteDB as PouchDB.Database,remoteDBCreds.current.dbUsername as string)
             log.debug("DB Unique ID check passed. Setup Activities complete. Starting Sync.");
             startSync();
@@ -480,7 +478,11 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
                 if (refreshResults !== RefreshTokenResults.OK) {
                     setRemoteDBState(prevState => ({...prevState,retryCount: 2}));
                 } else {
-                    setRemoteDBState(prevState => ({...prevState,tokenTimerAction: TokenTimerAction.NeedToStart}))
+                    if (tokenInfo.expired) {
+                        setRemoteDBState(prevState => ({...prevState,tokenTimerAction: TokenTimerAction.NeedToStart, syncStatus: SyncStatus.offline}))
+                    } else {
+                        setRemoteDBState(prevState => ({...prevState,tokenTimerAction: TokenTimerAction.NeedToStart}))
+                    }    
                 }
                 return false;
             } else { 
@@ -535,10 +537,10 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     },[remoteDBState.connectionStatus,history])
 
     useEffect(() => {
-        if (( remoteDBState.initialSyncComplete) && (remoteDBState.connectionStatus !== ConnectionStatus.initialNavComplete)) {
-//            log.debug("setting to login complete after initial sync and not nav complete...");
+        if (( remoteDBState.initialSyncComplete) && (!remoteDBState.initialNavComplete)) {
+            log.debug("setting to login complete after initial sync and not nav complete...");
             if (loginType.current === LoginType.autoLoginSpecificURL) {
-                setRemoteDBState(prevState => ({...prevState,connectionStatus: ConnectionStatus.initialNavComplete}))
+                setRemoteDBState(prevState => ({...prevState,initialNavComplete: true}))
             } else {
                 setRemoteDBState(prevState => ({...prevState,connectionStatus: ConnectionStatus.loginComplete}));
             }    
@@ -547,7 +549,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             log.error("ERROR syncing, refreshing access token and retrying...");
             refreshTokenAndUpdate();
         }
-    },[remoteDBState.initialSyncComplete,remoteDBState.syncStatus,remoteDBState.connectionStatus,refreshTokenAndUpdate])
+    },[remoteDBState.initialSyncComplete,remoteDBState.initialNavComplete,remoteDBState.syncStatus,refreshTokenAndUpdate])
 
     useEffect( () => {
         let curTimer = tokenTimer.current;
@@ -606,7 +608,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
 
 
     let value: RemoteDBStateContextType = {remoteDBState, remoteDBCreds: remoteDBCreds.current, remoteDB: globalRemoteDB as PouchDB.Database<{}> , setRemoteDBState, setRemoteDBCreds,
-            stopSyncAndCloseRemote, assignDB, setDBCredsValue, setConnectionStatus, setLoginType, attemptFullLogin};
+            stopSyncAndCloseRemote, assignDB, setDBCredsValue,setLoginType, attemptFullLogin};
     return (
         <RemoteDBStateContext.Provider value={value}>{props.children}</RemoteDBStateContext.Provider>
       );

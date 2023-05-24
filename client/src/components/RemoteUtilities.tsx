@@ -270,10 +270,21 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
         schemaVersion: 0,
         dbUUIDAction: DBUUIDAction.none
     }
+    async function getData() {
+        let results = await remoteDB.find({
+            selector: { "type": { "$eq": "dbuuid"} } })
+        return results;
+    }
     let UUIDResults : PouchDB.Find.FindResponse<{}>
-    try { UUIDResults =  await remoteDB.find({
-        selector: { "type": { "$eq": "dbuuid"} } }) }
-    catch(err) {log.error("Error getting remote DB UUID"); UUIDCheck.checkOK = false; return UUIDCheck;}
+    try { UUIDResults = await getData() }
+    catch(err) {
+                log.error("Error getting remote DB UUID"); 
+                await new Promise(r => setTimeout(r,1000));
+                try { UUIDResults = await getData()}
+                catch(err) {log.error("Retry of DBUUID from remote also failed");
+                            UUIDCheck.checkOK = false;
+                            return UUIDCheck;}
+    }
     let UUIDResult : null|string = null;
     if (UUIDResults.docs.length > 0) {
       UUIDResult = (UUIDResults.docs[0] as UUIDDoc).uuid;
