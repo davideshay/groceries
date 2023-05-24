@@ -267,7 +267,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
                                 setSyncStatus(SyncStatus.error);
                                 setDBServerAvailable(false);
                                 })
-    },[db]);
+    },[db,checkRetryNetworkIsUp]);
 
     const startSync = useCallback( () => {
         log.debug("Starting sync of database",cloneDeep(globalRemoteDB));
@@ -303,7 +303,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
                                 setDBServerAvailable(false);
                                 });
         setRemoteDBState(prevState=>({...prevState,initialSyncStarted: true}))
-    },[db,liveSync]);
+    },[db,liveSync,checkRetryNetworkIsUp]);
     
     async function setPrefsDBCreds() {
         let credsStr = JSON.stringify(remoteDBCreds.current);
