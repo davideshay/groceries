@@ -223,7 +223,7 @@ export function secondsToDHMS(seconds: number) : string {
     h = Math.floor((seconds % (3600 * 24)) / 3600)
     m = Math.floor((seconds % 3600) / 60)
     s = Math.floor(seconds % 60) 
-    let outStr = d>0 ? d + (t("general.day",{count: d})) : "";
+    let outStr = d>0 ? d + (t("general.days",{count: d})) : "";
     outStr = outStr + h.toString().padStart(2,"0") + ":" + m.toString().padStart(2,"0") + ":" + s.toString().padStart(2,"0")
     return outStr;
 }
