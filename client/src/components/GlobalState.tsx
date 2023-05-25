@@ -7,6 +7,7 @@ import { GlobalSettings, AddListOptions, SettingsDoc, InitSettings, InitSettings
 import { useCreateGenericDocument, useUpdateGenericDocument } from "./Usehooks";
 import { RemoteDBStateContext } from "./RemoteDBState";
 import { useFind } from "use-pouchdb";
+import log from "loglevel";
 
 export type GlobalState = {
     itemMode?: string,
@@ -100,6 +101,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
     }
 
     const getSettings = useCallback( async () => {
+        log.debug("getting settings...");
         let dbSettingsExist = (settingsDocs.length > 0);
         let dbSettingsDoc: SettingsDoc = cloneDeep(settingsDocs[0]);
         let { value: storageSettingsStr } = await Preferences.get({ key: 'settings'});
@@ -150,14 +152,15 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         setGlobalState(prevState => ({...prevState,settings: finalSettings}))
         setSettingsRetrieved(true);
         setGlobalState(prevState => ({...prevState,settingsLoaded: true}));
+        log.debug("settings retrieved and set: ",finalSettings);
         return (finalSettings);
     },[createSettingDoc,remoteDBCreds.dbUsername,settingsDocs,updateSettingDoc])
 
     useEffect( () => {
-        if (!settingsRetrieved && remoteDBState.initialSyncComplete && !settingsLoading && (settingsError === null)) {
+        if (!settingsRetrieved && (remoteDBState.initialSyncComplete || remoteDBState.workingOffline) && !settingsLoading && (settingsError === null)) {
             getSettings()
         }
-    },[remoteDBState.initialSyncComplete, settingsLoading, settingsError,getSettings,settingsRetrieved])
+    },[remoteDBState.initialSyncComplete, remoteDBState.workingOffline, settingsLoading, settingsError,getSettings,settingsRetrieved])
 
 
     let value: GlobalStateContextType = {globalState, setGlobalState, setStateInfo, updateSettingKey, settingsLoading: settingsLoading};

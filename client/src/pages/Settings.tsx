@@ -55,6 +55,7 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
   useEffect( () => {
     async function checkAPIServerAvailable(apiServerURL: string|null) {
       let serverAvailable = await isServerAvailable(apiServerURL);
+      log.debug("Server Available response:",serverAvailable);
       if (serverAvailable.apiServerAvailable) {
         setRemoteDBState(prevState=>({...prevState,apiServerAvailable: serverAvailable.apiServerAvailable, dbServerAvailable: serverAvailable.dbServerAvailable}))
       } else {

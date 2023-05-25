@@ -7,7 +7,7 @@ import { usePouch} from 'use-pouchdb';
 import { ConnectionStatus, DBCreds, DBUUIDAction, LoginType } from '../components/RemoteDBState';
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
-import { createNewUser, getTokenInfo, navigateToFirstListID, errorCheckCreds, isServerAvailable, JWTMatchesUser, CreateResponse, createResponseInit  } from '../components/RemoteUtilities';
+import { createNewUser, getTokenInfo, navigateToFirstListID, errorCheckCreds, isServerAvailable, JWTMatchesUser, CreateResponse, createResponseInit, isDBServerAvailable  } from '../components/RemoteUtilities';
 import { cloneDeep } from 'lodash';
 import { RemoteDBStateContext, SyncStatus, initialRemoteDBState } from '../components/RemoteDBState';
 import { HistoryProps} from '../components/DataTypes';
@@ -117,13 +117,15 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
 
     useEffect( () => {
       async function checkAPIServerAvailable(apiServerURL: string|null) {
-          let serverAvailable = await isServerAvailable(apiServerURL);
-          log.debug("API Server Available: ",serverAvailable);
+          let apiServerAvailable = await isServerAvailable(apiServerURL);
+          let dbServerAvailable = await isDBServerAvailable(remoteDBCreds.refreshJWT,remoteDBCreds);
+          log.debug("API Server Available: ",apiServerAvailable);
+          log.debug("dbServer Available:", dbServerAvailable);
           let validJWTMatch = JWTMatchesUser(remoteDBCreds.refreshJWT,remoteDBCreds.dbUsername);
-          if (serverAvailable.apiServerAvailable) {
-            setRemoteDBState(prevState =>({...prevState,apiServerAvailable: serverAvailable.apiServerAvailable, dbServerAvailable: serverAvailable.dbServerAvailable, offlineJWTMatch: validJWTMatch}))
+          if (apiServerAvailable.apiServerAvailable) {
+            setRemoteDBState(prevState =>({...prevState,apiServerAvailable: apiServerAvailable.apiServerAvailable, dbServerAvailable: apiServerAvailable.dbServerAvailable, offlineJWTMatch: validJWTMatch}))
           } else {
-            setRemoteDBState(prevState =>({...prevState,apiServerAvailable: serverAvailable.apiServerAvailable, offlineJWTMatch: validJWTMatch}))
+            setRemoteDBState(prevState =>({...prevState,apiServerAvailable: apiServerAvailable.apiServerAvailable, dbServerAvailable: dbServerAvailable, offlineJWTMatch: validJWTMatch}))
           }  
       }
       log.debug("checking is API server is available in useeffect...");
@@ -437,14 +439,14 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     decTbl[1][1][0][1][0] = LoginOptions.Unknown;
     decTbl[1][1][0][0][1] = LoginOptions.Login;
     decTbl[1][1][0][0][0] = LoginOptions.Login;
-    decTbl[1][0][1][1][1] = LoginOptions.AttemptLogin;
-    decTbl[1][0][1][1][0] = LoginOptions.Login;
+    decTbl[1][0][1][1][1] = LoginOptions.MustStayOffline;
+    decTbl[1][0][1][1][0] = LoginOptions.NoCachedCreds;
     decTbl[1][0][1][0][1] = LoginOptions.AskOffline;
     decTbl[1][0][1][0][0] = LoginOptions.AskOffline;
     decTbl[1][0][0][1][1] = LoginOptions.Unknown;
     decTbl[1][0][0][1][0] = LoginOptions.Unknown;
     decTbl[1][0][0][0][1] = LoginOptions.AskOffline;
-    decTbl[1][0][0][0][0] = LoginOptions.AskOffline;
+    decTbl[1][0][0][0][0] = LoginOptions.NoCachedCreds;
     decTbl[0][1][1][1][1] = LoginOptions.MustStayOffline;
     decTbl[0][1][1][1][0] = LoginOptions.MustStayOffline;
     decTbl[0][1][1][0][1] = LoginOptions.AskOffline;

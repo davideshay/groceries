@@ -543,7 +543,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             App.addListener("resume", async () => {
                 await queue.add( async () => {
                     appStatus.current = AppStatus.resuming;
-                    log.debug("APP RESUMING, checking & refreshing token",remoteDBState);
+                    log.debug("APP RESUMING, checking & refreshing token");
                     await stopSyncAndCloseRemote(); // just in case there was no pause event;
                     if (await checkAndRefreshToken()) {
                         setRemoteDBState(prevState => ({...prevState,tokenTimerAction: TokenTimerAction.NeedToStart}))

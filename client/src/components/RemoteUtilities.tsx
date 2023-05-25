@@ -46,12 +46,24 @@ export async function isServerAvailable(apiServerURL: string|null) {
     let responseSuccessful = true;
     try {response = await CapacitorHttp.get(options);}
     catch(err) {responseSuccessful = false; log.error("http error in contacting API server:",err); return respObj}
-    if (response.status === 200 && response.data && responseSuccessful && response.data.dbServerAvailable) {
+    if (response.status === 200 && response.data && responseSuccessful && response.data.apiServerAvailable) {
         respObj.apiServerAvailable = true;
         respObj.dbServerAvailable = response.data.dbServerAvailable;
     }    
     return respObj
 }
+
+export async function isDBServerAvailable(refreshJWT: string | null, remoteDBCreds: DBCreds) {
+    let response = false;
+    if (refreshJWT === null || refreshJWT === undefined || refreshJWT === "" ||
+        remoteDBCreds === undefined || remoteDBCreds === null ||
+        remoteDBCreds.couchBaseURL === null || remoteDBCreds.couchBaseURL === undefined || remoteDBCreds.couchBaseURL === "" ) {
+        return response;
+    }
+    let checkResponse = checkJWT(refreshJWT,remoteDBCreds);
+    return (await checkResponse).DBServerAvailable;
+}
+
 
 export function JWTMatchesUser(refreshJWT: string | null, username: string | null) {
     let validJWTMatch = false;
