@@ -5,8 +5,8 @@ import { cloneDeep } from 'lodash';
 import { DBCreds} from './RemoteDBState';
 import { PouchResponse, PouchResponseInit } from './DataTypes';
 import log, { LogLevelDesc } from 'loglevel';
-//import prefix from "loglevel-plugin-prefix";
-// import log from 'loglevelnext';
+import { t } from "i18next"
+
 export const apiConnectTimeout = 500;
 
 export function isJsonString(str: string): boolean {
@@ -223,7 +223,7 @@ export function secondsToDHMS(seconds: number) : string {
     h = Math.floor((seconds % (3600 * 24)) / 3600)
     m = Math.floor((seconds % 3600) / 60)
     s = Math.floor(seconds % 60) 
-    let outStr = d>0 ? d + (d === 1 ? " day " : " days ") : "";
+    let outStr = d>0 ? d + (t("general.day",{count: d})) : "";
     outStr = outStr + h.toString().padStart(2,"0") + ":" + m.toString().padStart(2,"0") + ":" + s.toString().padStart(2,"0")
     return outStr;
 }
