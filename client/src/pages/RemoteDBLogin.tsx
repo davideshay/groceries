@@ -118,7 +118,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     useEffect( () => {
       async function checkAPIServerAvailable(apiServerURL: string|null) {
           let apiServerAvailable = await isServerAvailable(apiServerURL);
-          let dbServerAvailable = await isDBServerAvailable(remoteDBCreds.refreshJWT,remoteDBCreds);
+          let dbServerAvailable = await isDBServerAvailable(remoteDBCreds.refreshJWT,remoteDBCreds.couchBaseURL);
           log.debug("API Server Available: ",apiServerAvailable);
           log.debug("dbServer Available:", dbServerAvailable);
           let validJWTMatch = JWTMatchesUser(remoteDBCreds.refreshJWT,remoteDBCreds.dbUsername);
@@ -130,7 +130,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       }
       log.debug("checking is API server is available in useeffect...");
       checkAPIServerAvailable(remoteDBCreds.apiServerURL);
-    },[remoteDBCreds.apiServerURL,setRemoteDBState,remoteDBCreds.refreshJWT,remoteDBCreds.dbUsername])
+    },[remoteDBCreds.apiServerURL,setRemoteDBState,remoteDBCreds.refreshJWT,remoteDBCreds.dbUsername, remoteDBCreds.couchBaseURL])
 
     // effect for dbuuidaction not none
     useEffect( () => {
@@ -183,7 +183,6 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     },[remoteDBState.dbUUIDAction,destroyAndExit,dismiss,exitApp,presentAlert,setRemoteDBState,t])
 
     useEffect( () => {
-      log.debug({loggedIn: remoteDBState.loggedIn, connectionStatus: remoteDBState.connectionStatus, isc: remoteDBState.initialSyncComplete, workingOffline: remoteDBState.workingOffline});
       async function doNav() {
         await dismiss()
         navigateToFirstListID(props.history,remoteDBCreds, globalData.listRows);
@@ -442,13 +441,13 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     decTbl[1][0][1][1][1] = LoginOptions.MustStayOffline;
     decTbl[1][0][1][1][0] = LoginOptions.NoCachedCreds;
     decTbl[1][0][1][0][1] = LoginOptions.AskOffline;
-    decTbl[1][0][1][0][0] = LoginOptions.AskOffline;
+    decTbl[1][0][1][0][0] = LoginOptions.NoCachedCreds;
     decTbl[1][0][0][1][1] = LoginOptions.Unknown;
     decTbl[1][0][0][1][0] = LoginOptions.Unknown;
     decTbl[1][0][0][0][1] = LoginOptions.AskOffline;
     decTbl[1][0][0][0][0] = LoginOptions.NoCachedCreds;
     decTbl[0][1][1][1][1] = LoginOptions.MustStayOffline;
-    decTbl[0][1][1][1][0] = LoginOptions.MustStayOffline;
+    decTbl[0][1][1][1][0] = LoginOptions.NoCachedCreds;
     decTbl[0][1][1][0][1] = LoginOptions.AskOffline;
     decTbl[0][1][1][0][0] = LoginOptions.NoCachedCreds;
     decTbl[0][1][0][1][1] = LoginOptions.Unknown;
@@ -456,7 +455,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     decTbl[0][1][0][0][1] = LoginOptions.AskOffline;
     decTbl[0][1][0][0][0] = LoginOptions.NoCachedCreds;
     decTbl[0][0][1][1][1] = LoginOptions.MustStayOffline;
-    decTbl[0][0][1][1][0] = LoginOptions.MustStayOffline;
+    decTbl[0][0][1][1][0] = LoginOptions.NoCachedCreds;
     decTbl[0][0][1][0][1] = LoginOptions.AskOffline;
     decTbl[0][0][1][0][0] = LoginOptions.NoCachedCreds;
     decTbl[0][0][0][1][1] = LoginOptions.Unknown;

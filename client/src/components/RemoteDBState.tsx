@@ -431,7 +431,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         }
         remoteDBCreds.current = credsObj;
         remoteDBCreds.current.refreshJWT = refreshResponse.refreshJWT;
-        let JWTCheck = await checkJWT(refreshResponse.accessJWT,credsObj as DBCreds);
+        let JWTCheck = await checkJWT(refreshResponse.accessJWT,credsObj.couchBaseURL);
         if (!JWTCheck.DBServerAvailable) {
             setRemoteDBState(prevState => ({...prevState,credsError: true, dbServerAvailable: false  ,credsErrorText: t("error.db_server_not_available") , connectionStatus: ConnectionStatus.navToLoginScreen}))
             return [false,String(t("error.db_server_not_available"))];

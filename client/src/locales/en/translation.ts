@@ -347,7 +347,7 @@ export const en_translations =
         "updating_uom": "Error updating UoM",
         "database_server_not_available": "Database Server Not Available",
         "press_button_work_offline_as_user": "Press the button below to work offline as user:",
-        "server_not_available_nor_cached_creds": "The server is not available to login. There are no cached credentials to be able to use the app locally either. Please login again when the server is available.",
+        "server_not_available_nor_cached_creds": "The server is not available to login. There are no cached credentials (or the credentials were invalid) to be able to use the app locally either. Please login again when the server is available.",
         "unknown_login_state": "Unknown Login State. Please restart the application.",
         "friends_server_unavailable": "Cannot display or update Friends data. API and/or Database is unavailable."
     },

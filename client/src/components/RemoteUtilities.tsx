@@ -53,14 +53,13 @@ export async function isServerAvailable(apiServerURL: string|null) {
     return respObj
 }
 
-export async function isDBServerAvailable(refreshJWT: string | null, remoteDBCreds: DBCreds) {
+export async function isDBServerAvailable(refreshJWT: string | null, couchBaseURL: string | null) {
     let response = false;
     if (refreshJWT === null || refreshJWT === undefined || refreshJWT === "" ||
-        remoteDBCreds === undefined || remoteDBCreds === null ||
-        remoteDBCreds.couchBaseURL === null || remoteDBCreds.couchBaseURL === undefined || remoteDBCreds.couchBaseURL === "" ) {
+        couchBaseURL === null || couchBaseURL === undefined || couchBaseURL === "" ) {
         return response;
     }
-    let checkResponse = checkJWT(refreshJWT,remoteDBCreds);
+    let checkResponse = checkJWT(refreshJWT,couchBaseURL);
     return (await checkResponse).DBServerAvailable;
 }
 
@@ -245,16 +244,17 @@ export function errorCheckCreds({credsObj,background, creatingNewUser = false, p
     return credsCheck;
 }
 
-export async function checkJWT(accessJWT: string, remoteDBCreds: DBCreds) {
+export async function checkJWT(accessJWT: string, couchBaseURL: string | null) {
     let checkResponse = {
         JWTValid: false,
         DBServerAvailable: true,
         JWTExpireDate: 0
     }
+    if (couchBaseURL === null) {checkResponse.DBServerAvailable = false; return checkResponse}
     let response: HttpResponse | undefined;
     checkResponse.DBServerAvailable = true;
     const options: HttpOptions = {
-        url: String(remoteDBCreds.couchBaseURL+"/_session"),
+        url: String(couchBaseURL+"/_session"),
         method: "GET",
         headers: { 'Content-Type': 'application/json',
                    'Accept': 'application/json',

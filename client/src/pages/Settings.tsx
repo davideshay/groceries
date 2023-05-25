@@ -19,7 +19,7 @@ import { isEmpty, isEqual } from 'lodash';
 import { checkUserByEmailExists, emailPatternValidation, fullnamePatternValidation, secondsToDHMS, updateUserInfo } from '../components/Utilities';
 import { cloneDeep } from 'lodash';
 import Loading from '../components/Loading';
-import { getTokenInfo, isServerAvailable } from '../components/RemoteUtilities';
+import { getTokenInfo, isDBServerAvailable, isServerAvailable } from '../components/RemoteUtilities';
 import log from 'loglevel';
 
 type ErrorInfo = {
@@ -54,18 +54,20 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   useEffect( () => {
     async function checkAPIServerAvailable(apiServerURL: string|null) {
-      let serverAvailable = await isServerAvailable(apiServerURL);
-      log.debug("Server Available response:",serverAvailable);
-      if (serverAvailable.apiServerAvailable) {
-        setRemoteDBState(prevState=>({...prevState,apiServerAvailable: serverAvailable.apiServerAvailable, dbServerAvailable: serverAvailable.dbServerAvailable}))
+      let apiServerAvailable = await isServerAvailable(apiServerURL);
+      let dbServerAvailable = await isDBServerAvailable(remoteDBCreds.refreshJWT,remoteDBCreds.couchBaseURL);
+      log.debug("API Server Available response:",apiServerAvailable);
+      log.debug("DB Server Available response:",dbServerAvailable);
+      if (apiServerAvailable.apiServerAvailable) {
+        setRemoteDBState(prevState=>({...prevState,apiServerAvailable: apiServerAvailable.apiServerAvailable, dbServerAvailable: apiServerAvailable.dbServerAvailable}))
       } else {
-        setRemoteDBState(prevState=>({...prevState,apiServerAvailable: serverAvailable.apiServerAvailable}))
+        setRemoteDBState(prevState=>({...prevState,apiServerAvailable: apiServerAvailable.apiServerAvailable, dbServerAvailable: dbServerAvailable}))
       }  
     }
 
     log.debug("checking is API server is available in useeffect...");
     checkAPIServerAvailable(remoteDBCreds.apiServerURL);
-  },[remoteDBCreds.apiServerURL,setRemoteDBState])
+  },[remoteDBCreds.apiServerURL,remoteDBCreds.refreshJWT,remoteDBCreds.couchBaseURL,setRemoteDBState])
 
   useEffect( () => {
     const refreshInterval = setInterval( () => {forceUpdate()},1000);
