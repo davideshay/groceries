@@ -5,8 +5,8 @@ import { cloneDeep } from 'lodash';
 import { DBCreds} from './RemoteDBState';
 import { PouchResponse, PouchResponseInit } from './DataTypes';
 import log, { LogLevelDesc } from 'loglevel';
-import prefix from "loglevel-plugin-prefix";
-
+//import prefix from "loglevel-plugin-prefix";
+// import log from 'loglevelnext';
 export const apiConnectTimeout = 500;
 
 export function isJsonString(str: string): boolean {
@@ -19,12 +19,12 @@ export function isJsonString(str: string): boolean {
 }
 
 export function urlPatternValidation(url: string) {
-    const regex = new RegExp('https?:\/\/(?:w{1,3}\.)?[^\s.]+(?:\.[a-z]+)*(?::\d+)?(?![^<]*(?:<\/\w+>|\/?>))')
-    return regex.test(url);
+    try { new URL(url);return true; }
+    catch(err) {return false;}
   };
 
 export function emailPatternValidation(email: string) {
-    const emailRegex=/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+    const emailRegex=/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
     return emailRegex.test(email);
 };
 
@@ -39,6 +39,13 @@ export function fullnamePatternValidation(fullname: string) {
 }
 
 export async function checkUserByEmailExists(email: string, remoteDBCreds: DBCreds) {
+    let checkResponse = {
+        userExists : false,
+        fullname: "",
+        username: "",
+        email: "",
+        apiError: false
+    }
     let response: HttpResponse | undefined;
     const options: HttpOptions = {
         url: String(remoteDBCreds?.apiServerURL+"/checkuserbyemailexists"),
@@ -52,15 +59,21 @@ export async function checkUserByEmailExists(email: string, remoteDBCreds: DBCre
         connectTimeout: apiConnectTimeout         
     };
     try { response = await CapacitorHttp.post(options);}
-    catch(err) {log.error("CheckUserByEmail: http:",err)};
-    return response?.data;
+    catch(err) {log.error("CheckUserByEmail: http:",err); checkResponse.apiError = true};
+    if ((!checkResponse.apiError) && (response?.data !== undefined)) {
+        checkResponse.userExists = response.data.userExists;
+        checkResponse.email = response.data.email;
+        checkResponse.fullname = response.data.fullname;
+        checkResponse.username = response.data.username;
+    }
+    return checkResponse;
 }
 
-export async function getUsersInfo(userIDList: UserIDList,apiServerURL: string, accessJWT: string): Promise<UsersInfo> {
+export async function getUsersInfo(userIDList: UserIDList,apiServerURL: string, accessJWT: string): Promise<[boolean,UsersInfo]> {
     let usersInfo: UsersInfo = cloneDeep(initUsersInfo);
-    if (accessJWT === "") { return(usersInfo); }
+    if (accessJWT === "") { return([false,usersInfo]); }
     const usersUrl = apiServerURL+"/getusersinfo"
-    if (!urlPatternValidation(usersUrl)) {return usersInfo}
+    if (!urlPatternValidation(usersUrl)) {return [false,usersInfo]}
     const options : HttpOptions = {
       url: String(usersUrl),
       data: userIDList,
@@ -72,13 +85,13 @@ export async function getUsersInfo(userIDList: UserIDList,apiServerURL: string, 
     };
     let response:HttpResponse;
     try { response = await CapacitorHttp.post(options); }
-    catch(err) {log.error("GetUsersInfo HTTP Error",err); return usersInfo}
+    catch(err) {log.error("GetUsersInfo HTTP Error",err); return [false,usersInfo]}
     if (response && response.data) {
         if (response.data.hasOwnProperty("users")) {
             usersInfo = response.data.users
         }
     }
-    return usersInfo;
+    return [true,usersInfo];
 }
 
 export async function updateUserInfo(apiServerURL: string, accessJWT: string, userInfo: UserInfo) : Promise<boolean> {
@@ -107,9 +120,13 @@ export async function updateUserInfo(apiServerURL: string, accessJWT: string, us
 export async function initialSetupActivities(db: PouchDB.Database, username: string) {
  //  Migration to the new listgroup structure will create for existing users, this is for new users added later, or for offline model
     log.debug("SETUP: Running Initial Setup Activities for :",username);
-    const totalDocs = (await db.info()).doc_count
-    const listGroupDocs = await db.find({ selector: { type: "listgroup", listGroupOwner: username, default: true},
-         limit: totalDocs});
+    let totalDocs: number = 0;
+    try {totalDocs = (await db.info()).doc_count}
+    catch(err) {log.error("Cannot retrieve doc count from local database"); return false;}
+    let listGroupDocs: PouchDB.Find.FindResponse<{}>
+    try {listGroupDocs = await db.find({ selector: { type: "listgroup", listGroupOwner: username, default: true},
+         limit: totalDocs});}
+    catch(err) {log.error("Cannot retrieve list groups from local database"); return false;}
     if (listGroupDocs.docs.length === 0) {
         log.info("No default group found for ",username, "... creating now ...");
         const defaultListGroupDoc : ListGroupDoc = cloneDeep(ListGroupDocInit);
@@ -174,9 +191,41 @@ function startLogging(level: string) {
     } else if (["5","SILENT","S","NONE","N"].includes(uLevel)) {
         targetLevel="SILENT"
     } else {targetLevel="INFO"}
-//    prefix.reg(log);
-//    prefix.apply(log);
-    log.setLevel(targetLevel);
+
+    //const originalFactory = log.methodFactory;
+    // log.methodFactory = (methodName, level, loggerName) => {
+    //   const rawMethod = originalFactory(methodName, level, loggerName);
+    //   function dateFormat(): string {
+    //     const d = new Date();
+    //     return d.getMilliseconds().toString();
+    //     }
+    //   return rawMethod.bind(
+    //       console,
+    //       new Date().getMilliseconds()
+    //   );
+    // };
+
+    // log.methodFactory = function (methodName, logLevel, loggerName) {
+    //     const method = originalFactory(methodName, logLevel, loggerName);
+    //     return function (...message) {;
+    //       const datetime = new Date().toISOString();
+    //       method(datetime,message);
+    //     };
+    //   };
+
+    log.setLevel(targetLevel);    
+}
+
+export function secondsToDHMS(seconds: number) : string {
+    let d: number = 0; let h: number = 0; let m: number =0; let s : number = 0;
+    if (seconds < 0) { seconds = seconds * -1;}
+    d = Math.floor(seconds / (3600 * 24))
+    h = Math.floor((seconds % (3600 * 24)) / 3600)
+    m = Math.floor((seconds % 3600) / 60)
+    s = Math.floor(seconds % 60) 
+    let outStr = d>0 ? d + (d === 1 ? " day " : " days ") : "";
+    outStr = outStr + h.toString().padStart(2,"0") + ":" + m.toString().padStart(2,"0") + ":" + s.toString().padStart(2,"0")
+    return outStr;
 }
 
 export const DEFAULT_API_URL=(window as any)._env_.DEFAULT_API_URL

@@ -32,10 +32,8 @@ const ListGroups: React.FC = () => {
       <PageHeader title={t('general.listgroups')} />
       <IonContent>
         <IonList lines="full">
-               {listCombinedRows.map((row: ListCombinedRow) => { 
-                  if (row.rowType === RowType.listGroup) { return (
-                  (<IonItem button class="list-button" key={row.rowKey} routerLink={("/listgroup/edit/" + row.listGroupID)}>{row.rowName}</IonItem>))} }
-        )}
+               { listCombinedRows.filter((lcr) => (lcr.rowType === RowType.listGroup)).map((row: ListCombinedRow) =>  
+                  (<IonItem button className="list-button" key={row.rowKey} routerLink={("/listgroup/edit/" + row.listGroupID)}>{row.rowName}</IonItem>))}
         </IonList>
       </IonContent>
       <IonFab slot="fixed" vertical="bottom" horizontal="end">

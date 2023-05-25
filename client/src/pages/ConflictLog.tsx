@@ -40,7 +40,7 @@ const ConflictLog: React.FC<HistoryProps> = (props: HistoryProps) => {
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start"><IonMenuButton /></IonButtons>
-          <IonTitle class="ion-no-padding">{t("general.conflict_log")}</IonTitle>
+          <IonTitle className="ion-no-padding">{t("general.conflict_log")}</IonTitle>
           <IonButton size="small" slot="end" onClick={() => {setConflictsAsViewed()}}>{t("general.set_as_viewed")}</IonButton>
           <SyncIndicator/>
         </IonToolbar>
@@ -49,7 +49,7 @@ const ConflictLog: React.FC<HistoryProps> = (props: HistoryProps) => {
         <IonList lines="full">
             {(conflictDocs.length === 0) ? (<IonItem>{t("error.no_items_in_conflict_log")}</IonItem>) : <></>}
                {(conflictDocs as ConflictDocs).map((doc) => (
-                  <IonItem class="list-button" button key={doc._id} routerLink={("/conflictitem/" + doc._id)} >{doc.docType} {doc.updatedAt} </IonItem>
+                  <IonItem className="list-button" button key={doc._id} routerLink={("/conflictitem/" + doc._id)} >{doc.docType} {doc.updatedAt} </IonItem>
             ))}
         </IonList>
       </IonContent>

@@ -5,3 +5,11 @@ label.radio-wrapper {
 /* .indent-setting {
     margin-left: 2em;
 } */
+
+ion-icon.offline-indicator {
+    color: red;
+}
+
+ion-icon.online-indicator {
+    color: green;
+}

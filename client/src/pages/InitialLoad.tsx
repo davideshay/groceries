@@ -2,14 +2,13 @@ import { IonHeader, IonPage, IonTitle, IonToolbar, IonLoading, IonContent, IonTe
 import { isPlatform } from '@ionic/core';
 import { useContext, useEffect, useRef} from 'react';
 import { usePouch } from 'use-pouchdb';
-import { ConnectionStatus, RemoteDBStateContext } from '../components/RemoteDBState';
+import { ConnectionStatus, LoginType, RemoteDBStateContext } from '../components/RemoteDBState';
 import { navigateToFirstListID } from '../components/RemoteUtilities';
 import { initialSetupActivities } from '../components/Utilities';
 import ErrorPage from './ErrorPage';
 import { History } from 'history';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
 import { useTranslation } from 'react-i18next';
-import { cloneDeep } from 'lodash';
 import log from 'loglevel';
 
 type InitialLoadProps = {
@@ -17,37 +16,42 @@ type InitialLoadProps = {
 }
 
 const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
-    const { remoteDBState, remoteDBCreds, remoteDB,setConnectionStatus} = useContext(RemoteDBStateContext);
+    const { remoteDBState, remoteDBCreds, remoteDB, setLoginType, setRemoteDBState} = useContext(RemoteDBStateContext);
     const { listError ,listRowsLoaded, listRows, listsLoading } = useContext(GlobalDataContext)
     const db=usePouch();
     const screenLoading = useRef(true);
     const { t } = useTranslation();
   
     useEffect(() => {
+        log.debug("setting to auto login from root...");
+        setLoginType(LoginType.autoLoginFromRoot);
+// eslint-disable-next-line react-hooks/exhaustive-deps 
+    },[])
+
+    useEffect(() => {
         async function initialStartup() {
             await initialSetupActivities(remoteDB as PouchDB.Database, String(remoteDBCreds.dbUsername));
             screenLoading.current=false;
-            log.debug("Calling Nav from initial load",cloneDeep(listRows));
             await navigateToFirstListID(props.history,remoteDBCreds,listRows);
-            setConnectionStatus(ConnectionStatus.initialNavComplete);
+            setRemoteDBState(prevState => ({...prevState,initialNavComplete: true}));
         }
         if (listRowsLoaded && !listsLoading) {
             if ((remoteDBState.connectionStatus === ConnectionStatus.loginComplete)) {
                 initialStartup();
             } 
         }      
-    },[db, listRows, props.history, remoteDBCreds, remoteDBState.connectionStatus, listRowsLoaded, listsLoading])   
+    },[db, remoteDB, listRows, props.history, remoteDBCreds, remoteDBState.connectionStatus, listRowsLoaded, listsLoading, setRemoteDBState])   
 
     useEffect(() => {
         async function dismissToLogin() {
             screenLoading.current = false;
-            setConnectionStatus(ConnectionStatus.onLoginScreen);
+            setRemoteDBState(prevState => ({...prevState,connectionStatus: ConnectionStatus.onLoginScreen}));
             props.history.push("/login");
         }
         if (remoteDBState.connectionStatus === ConnectionStatus.navToLoginScreen) {
             dismissToLogin();
         }
-    },[remoteDBState.connectionStatus])
+    },[remoteDBState.connectionStatus,props.history,setRemoteDBState])
 
     if (listError) {return (
         <ErrorPage errorText={t("error.loading_list_info") as string}></ErrorPage>

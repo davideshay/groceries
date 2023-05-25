@@ -45,7 +45,7 @@ import { todosDBAsAdmin, usersDBAsAdmin, couchLogin } from './dbstartup';
 import _ from 'lodash';
 import { cloneDeep, isEmpty, isEqual, isSafeInteger } from 'lodash';
 import { usernamePatternValidation, fullnamePatternValidation, getUserDoc, getUserByEmailDoc,
-    totalDocCount, isNothing, createNewUser, updateUnregisteredFriends, getFriendDocByUUID, UserResponse, CreateResponseType } from './utilities';
+    totalDocCount, isNothing, createNewUser, updateUnregisteredFriends, getFriendDocByUUID, UserResponse, CreateResponseType, checkDBAvailable } from './utilities';
 import { generateJWT, isValidToken, invalidateToken, JWTMatchesUserDB, TokenReturnType } from './jwt'     
 import { NextFunction, Request, Response } from 'express';
 import { CheckUseEmailReqBody, CheckUserExistsReqBody, CustomRequest, NewUserReqBody, RefreshTokenResponse, checkUserByEmailExistsResponse } from './datatypes';
@@ -108,6 +108,7 @@ export async function issueToken(req: Request, res: Response) {
     const { username, password, deviceUUID } = req.body;
     log.info("issuing token for device ID:", JSON.stringify(deviceUUID));
     let response = {
+        dbServerAvailable: true,
         loginSuccessful: false,
         email: "",
         fullname: "",
@@ -118,6 +119,11 @@ export async function issueToken(req: Request, res: Response) {
         couchdbDatabase: couchDatabase
     }
     let loginResponse = await couchLogin(username,password);
+    if (!loginResponse.dbServerAvailable) {
+        log.info("Could not contact Database Server. Auth failed:",deviceUUID," user:",username);
+        response.dbServerAvailable = false;
+        return (response);
+    }
     if (!loginResponse.loginSuccessful) {
          log.info("Authentication failed for device: ",deviceUUID, " user: ",username);
          return (response);
@@ -155,6 +161,7 @@ export async function refreshToken(req: Request, res: Response) : Promise<{statu
     let status = 200;
     let response = {
         valid : false,
+        dbError: false,
         refreshJWT: "",
         accessJWT: ""
     }
@@ -179,12 +186,13 @@ export async function refreshToken(req: Request, res: Response) : Promise<{statu
     response.refreshJWT = await generateJWT({username: String(tokenDecode.payload.sub), deviceUUID: deviceUUID, includeRoles: false, timeString: refreshTokenExpires});
     response.accessJWT = await generateJWT({username: String(tokenDecode.payload.sub), deviceUUID: deviceUUID, includeRoles: true, timeString: accessTokenExpires});
     let userResponse: UserResponse = await getUserDoc(String(tokenDecode.payload.sub));
-    if (userResponse == null || userResponse.fullDoc == null) {
+    if (userResponse == null || userResponse.fullDoc == null || userResponse.error) {
+        if (userResponse.error) { response.dbError = true};
         response.valid = false; return {status, response};
     }
     (userResponse.fullDoc.refreshJWTs as any)[deviceUUID] = response.refreshJWT;
     try {let update = await usersDBAsAdmin.insert(userResponse.fullDoc);}
-    catch(err) {log.error("ERROR: Could not update user(refresh token):",err); response.valid=false;}
+    catch(err) {log.error("ERROR: Could not update user(refresh token):",err); response.dbError = true; response.valid=false;}
     return ({status, response});
 }
 
@@ -558,10 +566,19 @@ export async function resetPasswordUIPost(req: Request, res: Response) {
     return(respObj);
 }
 
+export async function isAvailable(req: Request, res: Response) {
+    let respObj = {
+        apiServerAvailable: true,
+        dbServerAvailable : await checkDBAvailable(todosDBAsAdmin)
+    };
+    log.debug("Server checking availability:",respObj);
+    return(respObj);
+}
+
 export async function resolveConflicts() {
     let conflicts;
     try {conflicts = await todosDBAsAdmin.view(conflictsViewID,conflictsViewName);}
-    catch(err) {log.error("Couldn't create conflicts view:",err); return false;}
+    catch(err) {log.error("Couldn't access conflicts view:",err); return false;}
     log.info("Resolving all conflicts started...");
     let resolveFailure=false;
     if (conflicts.rows?.length <= 0) {log.info("No conflicts found"); return};

@@ -3,7 +3,6 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonLis
    IonReorder, IonReorderGroup,ItemReorderEventDetail, IonButtons, IonMenuButton, 
    useIonToast, IonFooter, IonIcon, useIonAlert, IonText } from '@ionic/react';
 import { useParams } from 'react-router-dom';
-import { useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useGetOneDoc,
    useDeleteGenericDocument, useDeleteListFromItems, useAddListToAllItems } from '../components/Usehooks';
@@ -58,14 +57,10 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   const addListToAllItems = useAddListToAllItems();
   const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
   const [ presentToast ] = useIonToast();
-  const { listError, listDocs, listsLoading, listRowsLoaded, listRows, listCombinedRows } = useContext(GlobalDataContext);
-  const { docs: categoryDocs, loading: categoryLoading, error: categoryError } = useFind({
-    index: { fields: [ "type","name"] },
-    selector: { type: "category", name: { $exists: true}},
-    sort: [ "type","name"]
-  })
+  const { listError, listDocs, listsLoading, listRowsLoaded, listRows, listCombinedRows,
+          categoryDocs, categoryLoading, categoryError } = useContext(GlobalDataContext);
   const { loading: listGroupLoading, doc: listGroupDoc, dbError: listGroupError} = useGetOneDoc(pageState.listGroupID);
-  const [presentAlert,dismissAlert] = useIonAlert();
+  const [presentAlert] = useIonAlert();
   const screenLoading = useRef(true);
   const { t } = useTranslation();
 
@@ -74,33 +69,27 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   },[routeID])
 
   useEffect( () => {
-    let newPageState: PageState=cloneDeep(pageState);
     if (!listsLoading && listRowsLoaded && !categoryLoading) {
       if (mode === "new" && pageState.needInitListDoc) {
-        let initCategories=categoryDocs.map(cat => cat._id);
+        let initCategories= categoryDocs.length > 0 ? categoryDocs.map(cat => String(cat._id)) : [];
         let initListDoc : ListDoc = cloneDeep(ListDocInit);
+        let newListGroupOwner: string|null = null;
         if (listCombinedRows.length > 0) {
           initListDoc.listGroupID=String(listCombinedRows[0].listGroupID)
-          newPageState.listGroupOwner=listCombinedRows[0].listGroupOwner;
+          newListGroupOwner=listCombinedRows[0].listGroupOwner;
         } else {
           initListDoc.listGroupID=null
         }
         initListDoc.categories = initCategories;
-        newPageState.listDoc=initListDoc;
-        newPageState.listGroupID=initListDoc.listGroupID;
-        newPageState.needInitListDoc=false;
+        setPageState(prevState => ({...prevState,listDoc: initListDoc,listGroupID: initListDoc.listGroupID, listGroupOwner: newListGroupOwner, needInitListDoc: false, changesMade: false}))
       }
       else if (mode !== "new") {
-        let newListRow = cloneDeep(listRows.find((lr: ListRow) => lr.listDoc._id === pageState.selectedListID));
+        let newListRow: ListRow = cloneDeep(listRows.find((lr: ListRow) => lr.listDoc._id === pageState.selectedListID));
         if (newListRow === undefined) {return}
-        newPageState.listDoc = newListRow.listDoc;
-        newPageState.listGroupID = newListRow.listGroupID;
-        newPageState.listGroupOwner = newListRow.listGroupOwner;
+        setPageState(prevState => ({...prevState,listDoc: newListRow.listDoc, listGroupID: newListRow.listGroupID, listGroupOwner: newListRow.listGroupOwner, changesMade: false}))
       }
-      newPageState.changesMade=false;
-      setPageState(newPageState);
     }
-  },[listsLoading, listRowsLoaded, listGroupLoading, listDocs, listCombinedRows, mode, listGroupDoc, categoryLoading,categoryDocs,pageState.selectedListID, remoteDBState.accessJWT]);
+  },[listsLoading, listRowsLoaded, listGroupLoading, listDocs, listRows, pageState.needInitListDoc, listCombinedRows, mode, listGroupDoc, categoryLoading,categoryDocs,pageState.selectedListID, remoteDBState.accessJWT]);
 
   if (listError || listGroupError || categoryError) {
     screenLoading.current=false;
@@ -244,7 +233,7 @@ function deletePrompt() {
       log.error("Cat doc not defined: id:",id);
       return(
       <IonItem key={pageState.selectedListID+"-"+actname+"-"+id}>
-          <IonButton fill="clear" class="textButton">{t("general.undefined")}</IonButton>
+          <IonButton fill="clear" className="textButton">{t("general.undefined")}</IonButton>
           <IonReorder slot="end"></IonReorder>
       </IonItem>)
     }
@@ -271,9 +260,9 @@ function deletePrompt() {
   categoryElem.push(catItemDivider(true,categoryLines));
   categoryLines=[];
   for (let i = 0; i < categoryDocs.length; i++) {
-    const inList = pageState.listDoc.categories.includes(categoryDocs[i]._id);
+    const inList = pageState.listDoc.categories.includes(String(categoryDocs[i]._id));
     if (!inList) {
-      categoryLines.push(catItem(categoryDocs[i]._id,false))
+      categoryLines.push(catItem(String(categoryDocs[i]._id),false))
     }
   }
   if (categoryLines.length > 0) {
@@ -310,10 +299,10 @@ function deletePrompt() {
   
   let selectDropDown = [];
     if (mode === "new") {
-      selectDropDown.push(<IonTitle class="ion-no-padding" key="createnew">{t("general.creating_new_list")}</IonTitle>)
+      selectDropDown.push(<IonTitle className="ion-no-padding" key="createnew">{t("general.creating_new_list")}</IonTitle>)
     } else {  
       selectDropDown.push(
-        <IonTitle class="ion-no-padding" key="editexisting">
+        <IonTitle className="ion-no-padding" key="editexisting">
         <IonItem key="editexistingitem">
         {selectElem}
         </IonItem>
@@ -363,9 +352,9 @@ function deletePrompt() {
             </IonItemGroup>
           </IonList>
       </IonContent>
-      <IonFooter class="floating-error-footer">
+      <IonFooter className="floating-error-footer">
         {
-          formErrors[ErrorLocation.General].hasError ? <IonItem class="shorter-item-some-padding" lines="none"><IonText color="danger">{formErrors[ErrorLocation.General].errorMessage}</IonText></IonItem> : <></>
+          formErrors[ErrorLocation.General].hasError ? <IonItem className="shorter-item-some-padding" lines="none"><IonText color="danger">{formErrors[ErrorLocation.General].errorMessage}</IonText></IonItem> : <></>
         }  
         <IonToolbar>
           <IonButtons slot="start">

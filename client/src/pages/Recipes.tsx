@@ -33,7 +33,7 @@ const Recipes: React.FC<HistoryProps> = (props: HistoryProps) => {
         <IonList lines="full">
             {recipeDocs.length === 0 ? <IonItem key="none">{t("error.no_recipes_exist")}</IonItem> : 
                recipeDocs.map((doc) => (
-                  <IonItem class="list-button" key={doc._id} routerLink={("/recipe/edit/" + doc._id)}>
+                  <IonItem className="list-button" key={doc._id} routerLink={("/recipe/edit/" + doc._id)}>
                     {doc.name}
                   </IonItem>
             ))}

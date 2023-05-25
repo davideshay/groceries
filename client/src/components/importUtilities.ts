@@ -15,7 +15,7 @@ import log from 'loglevel';
 export function useProcessInputFile() {
     const db = usePouch();
     const globalData = useContext(GlobalDataContext);
-    const [ presentAlert, dismissAlert ] = useIonAlert();
+    const [ presentAlert ] = useIonAlert();
     const [ presentLoading,dismissLoading] = useIonLoading();
     const { t } = useTranslation();
     return useCallback(
@@ -56,7 +56,7 @@ export function useProcessInputFile() {
             }
             return [success,errorMessage]
         }
-    ,[globalData,db])
+    ,[globalData,db,dismissLoading,presentAlert,presentLoading,t])
 }
 
 function getTandoorAlertInputs(recipeObjs: TandoorRecipe[]): AlertInput[] {
@@ -88,7 +88,7 @@ async function processTandoorZip(inputFile: PickFilesResult) : Promise<TandoorRe
     let rzip = new zip();
     try { await rzip.loadAsync(inputFile.files[0].data!,{base64: true});}
     catch(err) {response.success=false;response.errorMessage=t("error.invalid_zip_file");return response}
-    for (const [key, value] of Object.entries(rzip.files)) {
+    for (const [, value] of Object.entries(rzip.files)) {
         let indivZip = new zip();
         await indivZip.loadAsync(value.async("base64"),{base64: true});
         let zipObj = indivZip.files["recipe.json"];
@@ -117,7 +117,7 @@ async function loadTandoorRecipes(alertData: string[],recipeObjs: TandoorRecipe[
             statusFull=statusFull+"\n"+t("error.could_not_import_recipe_dup",{recipe:alertData[i]});
             continue;
         }
-        const [success,statusMessage] = await createTandoorRecipe(recipe,db,globalData);
+        const [,statusMessage] = await createTandoorRecipe(recipe,db,globalData);
         statusFull=statusFull+"\n"+statusMessage
     }
     return statusFull;
@@ -210,7 +210,7 @@ export function findMatchingGlobalItem(foodName: string|null, globalData: Global
     let sysItemKey = "system:item";
     let returnInitGlobalItem = cloneDeep(InitGlobalItem)
     if (foodName === null) {return [null,"",returnInitGlobalItem]}
-    let globalItem = globalData.globalItemDocs.find(gi => (gi.name.toUpperCase() == foodName.toUpperCase()));
+    let globalItem = globalData.globalItemDocs.find(gi => (gi.name.toUpperCase() === foodName.toUpperCase()));
     if (globalItem === undefined) {
         let translatedGlobal = globalData.globalItemDocs.find(git =>{
         return(

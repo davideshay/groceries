@@ -206,8 +206,12 @@ export const de_translations =
         "shopping_quantity":"Einkaufsmenge",
         "shopping_uom": "Einkaufsmaßeinheit",
         "update_user_info": "Benutzerinformationen aktualisieren",
-        "include_globalitems_in_search": "Globale Elemente in die Suche einbeziehen"
-
+        "include_globalitems_in_search": "Globale Elemente in die Suche einbeziehen",
+        "offline_cant_get_sharing_info": "Arbeiten offline, kann geteilte Benutzer nicht abrufen oder bearbeiten",
+        "logged_in": "Angemeldet",
+        "working_offline": "Offline arbeiten",
+        "online": "Online",
+        "attempt_login_again": "Erneut anmelden versuchen",
     },
     "error": {
         "invalid_dbuuid" : "Ungültiger Datenbank-Identifier",
@@ -329,7 +333,10 @@ export const de_translations =
         "could_not_match_uom":"Konnte UOM nicht finden. Original war: {{name}} oder {{pluralName}}",
         "must_enter_a_plural_name":"Es muss ein Pluralname eingegeben werden",
         "account_creation_disabled":"Kontoerstellung deaktiviert",
-        "updating_uom": "Fehler beim Aktualisieren der Maßeinheit"    
+        "updating_uom": "Fehler beim Aktualisieren der Maßeinheit",
+        "database_server_not_available": "Datenbankserver nicht verfügbar",
+        "press_button_work_offline_as_user": "Drücken Sie die Schaltfläche unten, um als Benutzer offline zu arbeiten:",
+        "server_not_available_nor_cached_creds": "Der Server ist nicht verfügbar, um sich anzumelden. Es sind auch keine zwischengespeicherten Anmeldeinformationen vorhanden, um die App lokal nutzen zu können. Bitte melden Sie sich erneut an, wenn der Server verfügbar ist.",    
     },
     "itemtext": {
         "item_is_on_these_lists": "Artikel ist auf diesen Listen:",

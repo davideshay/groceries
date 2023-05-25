@@ -5,9 +5,6 @@ import { ListCombinedRows, ListRow } from "./DataTypes";
 import { getListRows } from "./GlobalDataUtilities";
 import { RemoteDBStateContext } from "./RemoteDBState";
 import { translatedCategoryName, translatedItemName, translatedUOMName } from "./translationUtilities";
-import log from "loglevel";
-import { cloneDeep } from "lodash";
-
 
 export type GlobalDataState = {
     itemDocs: ItemDocs,
@@ -124,17 +121,16 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
         });
 
     useEffect( () => {
-        log.debug("Global Data change: ",{listsLoading, listDocs, offline: remoteDBState.workingOffline, syncomplete: remoteDBState.initialSyncComplete})
+//        log.debug("Global Data change: ",{listsLoading, listDocs, offline: remoteDBState.workingOffline, syncomplete: remoteDBState.initialSyncComplete})
         if (!listsLoading && !listGroupsLoading && 
-                (remoteDBState.initialSyncComplete || !remoteDBState.serverAvailable)) {
+                (remoteDBState.initialSyncComplete || !remoteDBState.dbServerAvailable)) {
             setListRowsLoaded(false);
             const { listRows: localListRows, listCombinedRows: localListCombinedRows} = getListRows(listDocs as ListDocs,listGroupDocs as ListGroupDocs,remoteDBCreds)
-            log.debug("Got list rows back:", cloneDeep(localListRows));
             setListRows(localListRows);
             setListCombinedRows(localListCombinedRows);
             setListRowsLoaded(true);
         }
-    },[listsLoading, listDocs, listGroupDocs, listGroupsLoading, remoteDBCreds, remoteDBState.workingOffline, remoteDBState.initialSyncComplete])
+    },[listsLoading, listDocs, listGroupDocs, listGroupsLoading, remoteDBCreds, remoteDBState.workingOffline, remoteDBState.initialSyncComplete, remoteDBState.dbServerAvailable])
 
     let value: GlobalDataState = {
             itemDocs: itemDocs as ItemDocs,

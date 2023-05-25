@@ -61,7 +61,7 @@ setupIonicReact();
 const App: React.FC = () => {
 
   PouchDB.plugin(find);
-  const [db, setDB] = useState(() => new PouchDB('local', {revs_limit: 10, auto_compaction: true, size: 250}))
+  const [db, ] = useState(() => new PouchDB('local', {revs_limit: 10, auto_compaction: true, size: 250}))
 
   if (Capacitor.isNativePlatform()) {
     CapacitorApp.addListener('backButton', ({canGoBack}) => {
@@ -80,11 +80,11 @@ const App: React.FC = () => {
   return (
   <IonApp>
     <ErrorBoundary>
+    <IonReactRouter>
     <Provider pouchdb={db}>
     <RemoteDBStateProvider>
     <GlobalStateProvider>
     <GlobalDataProvider>
-    <IonReactRouter>
       <IonSplitPane contentId="main">
       <AppMenu />
         <IonRouterOutlet id="main">
@@ -119,11 +119,11 @@ const App: React.FC = () => {
           {/* <Route component={InitialLoad}></Route>  */}
         </IonRouterOutlet>
       </IonSplitPane>
-    </IonReactRouter>
     </GlobalDataProvider>
     </GlobalStateProvider>
     </RemoteDBStateProvider>
     </Provider>
+    </IonReactRouter>
     </ErrorBoundary>
   </IonApp>
   )

@@ -13,7 +13,6 @@ import { RemoteDBStateContext } from '../components/RemoteDBState';
 import { FriendRow, ResolvedFriendStatus, HistoryProps} from '../components/DataTypes';
 import { FriendStatus } from '../components/DBSchema';
 import { checkUserByEmailExists, emailPatternValidation, apiConnectTimeout } from '../components/Utilities';
-import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
@@ -61,7 +60,7 @@ interface PageState {
 }  
               
 const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
-  const { remoteDBCreds, remoteDB } = useContext(RemoteDBStateContext);
+  const { remoteDBCreds, remoteDB, setRemoteDBState, remoteDBState } = useContext(RemoteDBStateContext);
   const uname = remoteDBCreds.dbUsername;
   const {useFriendState,friendRows} = useFriends(String(uname));
   const updateDoc = useUpdateGenericDocument();
@@ -80,9 +79,11 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
   const screenLoading = useRef(true);
   const { t } = useTranslation();
 
-  if (useFriendState === UseFriendState.error) { return (
-    <ErrorPage errorText={t("error.loading_friend_info") as string}></ErrorPage>
-    )};
+  if ((!(remoteDBState.apiServerAvailable && remoteDBState.dbServerAvailable)) || useFriendState === UseFriendState.error ) {
+    return (<IonPage><PageHeader title={t("general.friends")} />
+    <IonContent><IonItem>{t("error.friends_server_unavailable")}</IonItem></IonContent></IonPage>)
+
+  }
 
   if (useFriendState !== UseFriendState.rowsLoaded) {
     return ( <Loading isOpen={screenLoading.current} message={t("general.loading_friends")}  /> )
@@ -112,12 +113,12 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
   function ButtonElem(friendRow: FriendRow) {
     if (friendRow.resolvedStatus === ResolvedFriendStatus.WaitingToRegister) {
       return(
-        <IonButton size="small" class="extra-small-button" onClick={() => showURL(friendRow)}>{t("general.url")}</IonButton> 
+        <IonButton size="small" className="extra-small-button" onClick={() => showURL(friendRow)}>{t("general.url")}</IonButton> 
       )
     }
     else if (friendRow.resolvedStatus === ResolvedFriendStatus.PendingConfirmation)
     {
-      return(<IonButton size="small" class="extra-small-button" onClick={() => confirmFriend(friendRow)}>{t("general.confirm")}</IonButton>);
+      return(<IonButton size="small" className="extra-small-button" onClick={() => confirmFriend(friendRow)}>{t("general.confirm")}</IonButton>);
     }
   }
 
@@ -126,18 +127,18 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
   function updateFriendsElem() {
     let friendRowsElem: JSX.Element[] = [];
     if (friendRows.length > 0) {
-      let elem=(<IonRow  class="ion-justify-content-center ion-align-items-center friend-row" key={"header"}>
-              <IonCol class="col-minimal-padding" size="6"><IonText color="primary" class="bold-header">Friend Name/Email</IonText></IonCol>
-              <IonCol class="col-minimal-padding" size="3"><IonText color="primary" class="bold-header">Status</IonText></IonCol>
-              <IonCol class="col-minimal-padding" size="3"><IonText color="primary" class="bold-header">Action</IonText></IonCol>
+      let elem=(<IonRow  className="ion-justify-content-center ion-align-items-center friend-row" key={"header"}>
+              <IonCol className="col-minimal-padding" size="6"><IonText color="primary" className="bold-header">Friend Name/Email</IonText></IonCol>
+              <IonCol className="col-minimal-padding" size="3"><IonText color="primary" className="bold-header">Status</IonText></IonCol>
+              <IonCol className="col-minimal-padding" size="3"><IonText color="primary" className="bold-header">Action</IonText></IonCol>
             </IonRow>)
       friendRowsElem.push(elem);      
       friendRows.forEach((friendRow: FriendRow) => {
         const itemKey = (friendRow.targetUserName === "" || friendRow.targetUserName === null) ? friendRow.targetEmail : friendRow.targetUserName;
-        let elem=(<IonRow  class="ion-justify-content-center ion-align-items-center friend-row" key={itemKey}>
-              <IonCol class="col-minimal-padding" size="6">{friendRow.targetFullName === "" ? friendRow.targetEmail : friendRow.targetFullName}</IonCol>
-              <IonCol class="col-minimal-padding" size="3"><IonLabel class="friend-label">{friendRow.friendStatusText}</IonLabel></IonCol>
-              <IonCol class="col-minimal-padding" size="3">{ButtonElem(friendRow)}</IonCol>
+        let elem=(<IonRow  className="ion-justify-content-center ion-align-items-center friend-row" key={itemKey}>
+              <IonCol className="col-minimal-padding" size="6">{friendRow.targetFullName === "" ? friendRow.targetEmail : friendRow.targetFullName}</IonCol>
+              <IonCol className="col-minimal-padding" size="3"><IonLabel className="friend-label">{friendRow.friendStatusText}</IonLabel></IonCol>
+              <IonCol className="col-minimal-padding" size="3">{ButtonElem(friendRow)}</IonCol>
             </IonRow>)
         friendRowsElem.push(elem);
       });
@@ -194,7 +195,7 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
   async function submitForm() {
     if (pageState.newFriendEmail === "") {
       setPageState(prevState => ({...prevState, formError: t("error.no_email_entered")}));
-      return
+      return;
     }
     if (!emailPatternValidation(pageState.newFriendEmail)) {
       setPageState(prevState => ({...prevState, formError: t("error.invalid_email_format")}));
@@ -209,6 +210,11 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
       return;
     }
     const response = await checkUserByEmailExists(pageState.newFriendEmail,remoteDBCreds);
+    if (response.apiError) {
+      setPageState(prevState => ({...prevState, formError: t("error.could_not_contact_api_server")}))
+      setRemoteDBState(prevState => ({...prevState,apiServerAvailable: false}))
+      return;
+    }
     if (response.userExists) {
       let friend1 = ""; let friend2 = ""; let pendfrom1: boolean = false;
       if (response.username > String(remoteDBCreds.dbUsername)) {

@@ -3,7 +3,7 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
   IonSelectOption, IonInput, IonPopover, IonAlert,IonMenuButton, useIonToast, IonGrid, IonRow, 
   IonCol, useIonAlert } from '@ionic/react';
 import { add,searchOutline } from 'ionicons/icons';
-import React, { useState, useEffect, useContext, useRef, KeyboardEvent } from 'react';
+import React, { useState, useEffect, useContext, useRef, KeyboardEvent, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { cloneDeep } from 'lodash';
 import './Items.css';
@@ -50,14 +50,14 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { globalState,setStateInfo: setGlobalStateInfo} = useContext(GlobalStateContext);
   const {t} = useTranslation();
 
-  function getGroupIDForList(listID: string): string | null {
+  const getGroupIDForList = useCallback( (listID: string) => {
     if (routeMode === "group") { return pageState.selectedListOrGroupID};
     let retGID = null;
     for (let i = 0; i < listRows.length; i++) {
       if (listRows[i].listDoc._id === listID) { retGID=String(listRows[i].listGroupID); break}
     }
     return retGID;
-  }
+  },[pageState.selectedListOrGroupID,listRows,routeMode])
 
   useEffect( () => {
     setPageState(prevState => ({...prevState,selectedListOrGroupID: routeListID, selectedListType: (routeMode === "group" ? RowType.listGroup : RowType.list)}))
@@ -67,7 +67,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     if (listRowsLoaded) {
       setPageState(prevState => ({...prevState,groupIDforSelectedList: getGroupIDForList(pageState.selectedListOrGroupID)}))
     }
-  },[listRowsLoaded,pageState.selectedListOrGroupID])
+  },[listRowsLoaded,pageState.selectedListOrGroupID,getGroupIDForList])
 
   useEffect( () => {
     if (baseItemRowsLoaded && listRowsLoaded && !categoryLoading && !uomLoading && !globalData.globalItemsLoading) {
@@ -84,9 +84,9 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       setSearchState(prevState => ({...prevState,isOpen: false, isFocused: false}));
       setSearchRows(getAllSearchRows(baseSearchItemDocs as ItemDocs,pageState.selectedListOrGroupID, pageState.selectedListType, listDocs, globalData.globalItemDocs as GlobalItemDocs, globalState.settings));
     }
-  },[baseSearchItemRowsLoaded, globalData.globalItemsLoading, globalData.globalItemDocs, baseSearchItemDocs, pageState.selectedListOrGroupID, pageState.selectedListType, listDocs])
+  },[baseSearchItemRowsLoaded, globalData.globalItemsLoading, globalData.globalItemDocs, baseSearchItemDocs, pageState.selectedListOrGroupID, pageState.selectedListType, listDocs, globalState.settings])
 
-  function filterAndCheckRows(searchCriteria: string, setFocus : boolean) {
+  const filterAndCheckRows = useCallback((searchCriteria: string, setFocus : boolean) => {
     let filterRows=filterSearchRows(searchRows, searchCriteria)
     let toOpen=true;
     if (filterRows.length === 0 || !setFocus) {
@@ -95,11 +95,11 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     let toFocus=setFocus;
     if (toOpen) { toFocus = true};
     setSearchState(prevState => ({...prevState, searchCriteria: searchCriteria, filteredSearchRows: filterRows, isOpen: toOpen, isFocused: toFocus }));
-  }
+  },[searchRows])
 
   useEffect( () => {
     filterAndCheckRows(searchState.searchCriteria,searchState.isFocused);
-  },[searchRows,searchState.isFocused])
+  },[searchRows,searchState.isFocused,searchState.searchCriteria,filterAndCheckRows])
 
   if (baseItemError || baseSearchError || listError || categoryError  || uomError || globalData.globalItemError) {return (
     <ErrorPage errorText={t("general.loading_item_info_restart") as string}></ErrorPage>
@@ -392,10 +392,10 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   )
 
   let headerElem=(
-    <IonHeader><IonToolbar><IonButtons slot="start"><IonMenuButton class={"ion-no-padding small-menu-button"} /></IonButtons>
-    <IonTitle class="ion-no-padding item-outer"></IonTitle>
-        <IonItem id="item-list-selector-id" class="item-list-selector" key="listselector">
-        <IonSelect id="select-list-selector-id" class="select-list-selector" label={t("general.items_on") as string} aria-label={t("general.items_on") as string} interface="popover" onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListOrGroupID}  >
+    <IonHeader><IonToolbar><IonButtons slot="start"><IonMenuButton className={"ion-no-padding small-menu-button"} /></IonButtons>
+    <IonTitle className="ion-no-padding item-outer"></IonTitle>
+        <IonItem id="item-list-selector-id" className="item-list-selector" key="listselector">
+        <IonSelect id="select-list-selector-id" className="select-list-selector" label={t("general.items_on") as string} aria-label={t("general.items_on") as string} interface="popover" onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListOrGroupID}  >
             {listCombinedRows.map((listCombinedRow: ListCombinedRow) => (
                 <IonSelectOption disabled={listCombinedRow.rowKey==="G-null"} className={listCombinedRow.rowType === RowType.list ? "indented" : ""} key={listCombinedRow.listOrGroupID} value={listCombinedRow.listOrGroupID}>
                   {listCombinedRow.rowName}
@@ -404,9 +404,9 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
           </IonSelect>
         <SyncIndicator />
         </IonItem>
-        <IonItem key="searchbar" class="item-search">
+        <IonItem key="searchbar" className="item-search">
            <IonIcon icon={searchOutline} />
-           <IonInput id="item-search-box-id" aria-label="" class="ion-no-padding input-search" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="text" enterkeyhint="enter"
+           <IonInput id="item-search-box-id" aria-label="" className="ion-no-padding input-search" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="text" enterkeyhint="enter"
               clearInput={true}  placeholder={t("general.search") as string} fill="solid"
               onKeyDown= {(e) => searchKeyPress(e)}
               onIonInput={(e) => updateSearchCriteria(e)}
@@ -434,7 +434,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     if (catColor === "primary") {catColor = "#777777"}
     listCont.push(
         <IonItemGroup key={"cat"+catID+Boolean(completed).toString()}>
-        <IonItemDivider class="category-divider" style={{"borderBottom":"4px solid "+catColor}}    key={"cat"+catID+Boolean(completed).toString()}>{catName}</IonItemDivider>
+        <IonItemDivider className="category-divider" style={{"borderBottom":"4px solid "+catColor}}    key={"cat"+catID+Boolean(completed).toString()}>{catName}</IonItemDivider>
           {curRows}
       </IonItemGroup>
     )
@@ -464,15 +464,15 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       lastCategoryFinished=item.completed;
     }
     currentRows.push(
-      <IonItem class="itemrow-outer" key={pageState.itemRows[i].itemID} >
-        <IonGrid class="grid-no-pad"><IonRow>
-        <IonCol class="col-no-pad" size="1">
+      <IonItem className="itemrow-outer" key={pageState.itemRows[i].itemID} >
+        <IonGrid className="grid-no-pad"><IonRow>
+        <IonCol className="col-no-pad" size="1">
         <IonCheckbox aria-label=""
             onIonChange={(e) => completeItemRow(item.itemID,e.detail.checked)}
             checked={Boolean(pageState.itemRows[i].completed)}></IonCheckbox>
         </IonCol>
-        <IonCol class="col-no-pad" size="11">
-          <IonItem class="itemrow-inner" routerLink={"/item/edit/"+item.itemID} key={pageState.itemRows[i].itemID+"mynewbutton"}>{item.itemName + (item.quantityUOMDesc === "" ? "" : " ("+ item.quantityUOMDesc+")")}</IonItem>
+        <IonCol className="col-no-pad" size="11">
+          <IonItem className="itemrow-inner" routerLink={"/item/edit/"+item.itemID} key={pageState.itemRows[i].itemID+"mynewbutton"}>{item.itemName + (item.quantityUOMDesc === "" ? "" : " ("+ item.quantityUOMDesc+")")}</IonItem>
         </IonCol>
         </IonRow></IonGrid>
       </IonItem>);

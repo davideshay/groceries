@@ -3,7 +3,7 @@ import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { usePouch, useFind } from 'use-pouchdb'
 import { cloneDeep, pull } from 'lodash';
 import { RemoteDBStateContext } from './RemoteDBState';
-import { FriendRow,InitFriendRow, ResolvedFriendStatus, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType, UsersInfo } from './DataTypes';
+import { FriendRow,InitFriendRow, ResolvedFriendStatus, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType } from './DataTypes';
 import { FriendDocs,FriendStatus, ListDoc, ListDocs, ItemDocs, ItemDoc, ItemList, ItemListInit, ConflictDocs, RecipeDoc} from './DBSchema';
 import { GlobalStateContext } from './GlobalState';
 import { adaptResultToBase64, getUsersInfo} from './Utilities';
@@ -30,7 +30,7 @@ export function useGetOneDoc(docID: string | null, attachments: boolean = false)
   const [, forceUpdateState] = useState<{}>();
   const forceUpdate = useCallback(() => forceUpdateState({}), []);
 
-  async function getDoc(id: string | null) {
+  const getDoc = useCallback(async (id: string | null) => {
       if (id == null) { loadingRef.current = false; return};
       loadingRef.current = true;
       changesRef.current = db.changes({since: 'now', live: true, include_docs: true, attachments: attachments,doc_ids: [id]})
@@ -47,12 +47,13 @@ export function useGetOneDoc(docID: string | null, attachments: boolean = false)
       if (success) {setDoc(docRet)};
       if (attSuccess) {setAttachBlob(docAtt as Blob);}
       forceUpdate();
-    }
+  },[attachments,db,forceUpdate])
     
   useEffect( () => {
       getDoc(docID)
       return ( () => { if (changesRef.current) {changesRef.current.cancel()};})  
-  },[docID])  
+  },[docID,getDoc])  
+
   return {dbError, loading: loadingRef.current, doc, attachBlob };
 }
 
@@ -173,7 +174,7 @@ export function useDeleteCategoryFromItems() {
         }  
       }
       return response;
-    },[db]) 
+    },[db,t]) 
 }
 
 export function useDeleteCategoryFromLists() {
@@ -203,7 +204,7 @@ export function useDeleteCategoryFromLists() {
         }  
       }
       return response;
-    },[db]) 
+    },[db,t]) 
 }
 
 export function useItems({selectedListGroupID,isReady, needListGroupID, activeOnly = false, selectedListID = null, selectedListType = RowType.list,} :
@@ -215,7 +216,8 @@ export function useItems({selectedListGroupID,isReady, needListGroupID, activeOn
   const [dbError, setDBError] = useState(false);
   const { listError: listDBError, listCombinedRows, listRowsLoaded, listDocs, itemsLoading, itemDocs, itemError } = useContext(GlobalDataContext)
   
-  function buildItemRows() {
+
+  const buildItemRows = useCallback( () => {
     let curItemDocs: ItemDocs = cloneDeep(itemDocs);
     let newItemRows: ItemDocs = [];
     curItemDocs.forEach((itemDoc: ItemDoc) => {
@@ -246,10 +248,11 @@ export function useItems({selectedListGroupID,isReady, needListGroupID, activeOn
       return translatedItemName(a.globalItemID,a.name,2).toLocaleUpperCase().localeCompare(translatedItemName(b.globalItemID,b.name,2).toLocaleUpperCase())
     });
     setItemRows(newItemRows);
-  }
 
-  function checkAndBuild() {
-    if (itemsLoading || !listRowsLoaded || !isReady || (isReady && selectedListGroupID === null && needListGroupID)) { setItemRowsLoaded(false); return };
+  },[activeOnly,itemDocs,listCombinedRows,listDocs,selectedListGroupID,selectedListID,selectedListType])
+
+  const checkAndBuild = useCallback( () => {
+  if (itemsLoading || !listRowsLoaded || !isReady || (isReady && selectedListGroupID === null && needListGroupID)) { setItemRowsLoaded(false); return };
     if (itemError !== null || listDBError) { setDBError(true); return;}
     setDBError(false);
     if ( !itemsLoading && listRowsLoaded)  {
@@ -259,11 +262,11 @@ export function useItems({selectedListGroupID,isReady, needListGroupID, activeOn
       setItemRowsLoading(false)
       setItemRowsLoaded(true);
     }
-  }
+  },[isReady,itemError, listDBError,itemsLoading,listRowsLoaded, selectedListGroupID, needListGroupID,buildItemRows])
 
   useEffect( () => {
     checkAndBuild();
-  },[isReady,itemError, listDBError,itemsLoading,listRowsLoaded,itemDocs, listCombinedRows, selectedListGroupID, selectedListID, selectedListType, needListGroupID])
+  },[checkAndBuild])
 
   return ({dbError, itemsLoading, itemRowsLoading, itemRowsLoaded, itemRows});
 }
@@ -280,7 +283,7 @@ export enum UseFriendState {
 
 export function useFriends(username: string) : { useFriendState: UseFriendState, friendRows: FriendRow[]} {
   const [friendRows,setFriendRows] = useState<FriendRow[]>([]);
-  const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
+  const { remoteDBState, remoteDBCreds, setRemoteDBState } = useContext(RemoteDBStateContext);
   const [useFriendState,setUseFriendState] = useState(UseFriendState.init);
   const { t }= useTranslation();
   const { docs: friendDocs, state: friendState } = useFind({
@@ -296,24 +299,7 @@ export function useFriends(username: string) : { useFriendState: UseFriendState,
 //    fields: [ "type", "friendID1", "friendID2", "friendStatus"]
     })
 
-    useEffect( () => {
-      if (useFriendState === UseFriendState.baseFriendsLoaded) {
-        if ( remoteDBState.initialSyncComplete ) {
-          setUseFriendState((prevState) => UseFriendState.rowsLoading);
-          loadFriendRows();
-        }  
-      }
-    },[useFriendState,remoteDBState.initialSyncComplete])
-
-    useEffect( () => {
-      if (friendState === "error") {setUseFriendState((prevState) => UseFriendState.error); return};
-      if (friendState === "loading") {setUseFriendState((prevState) => UseFriendState.baseFriendsLoading)};
-      if (friendState === "done" && useFriendState === UseFriendState.baseFriendsLoading) {
-        setUseFriendState((prevState) => UseFriendState.baseFriendsLoaded);
-      } 
-    },[friendState] )
-
-    async function loadFriendRows() {
+    const loadFriendRows = useCallback( async () => {
       let userIDList : { userIDs: string[]} = { userIDs: []};
       (friendDocs as FriendDocs).forEach((element) => {
         if (element.friendStatus !== FriendStatus.Deleted) {
@@ -321,7 +307,12 @@ export function useFriends(username: string) : { useFriendState: UseFriendState,
           else {userIDList.userIDs.push(element.friendID1)}
         }
       });
-      const usersInfo: UsersInfo = await getUsersInfo(userIDList,String(remoteDBCreds.apiServerURL), String(remoteDBState.accessJWT));
+      const [apiOnline,usersInfo] = await getUsersInfo(userIDList,String(remoteDBCreds.apiServerURL), String(remoteDBState.accessJWT));
+      if (!apiOnline) {
+        setRemoteDBState(prevState =>({...prevState,apiServerAvailable: false}));
+        setUseFriendState(UseFriendState.error);
+        return;
+      }
       setFriendRows(prevState => ([]));
       if (usersInfo.length > 0) {
         (friendDocs as FriendDocs).forEach((friendDoc) => {
@@ -359,7 +350,26 @@ export function useFriends(username: string) : { useFriendState: UseFriendState,
         })
       }
       setUseFriendState((prevState) => UseFriendState.rowsLoaded);
-    }
+    },[friendDocs,remoteDBCreds.apiServerURL,remoteDBCreds.dbUsername,remoteDBState.accessJWT,setRemoteDBState,t,username])
+
+
+    useEffect( () => {
+      if (useFriendState === UseFriendState.baseFriendsLoaded) {
+        if ( remoteDBState.initialSyncComplete ) {
+          setUseFriendState((prevState) => UseFriendState.rowsLoading);
+          loadFriendRows();
+        }  
+      }
+    },[useFriendState,remoteDBState.initialSyncComplete,loadFriendRows])
+
+    useEffect( () => {
+      if (friendState === "error") {setUseFriendState((prevState) => UseFriendState.error); return};
+      if (friendState === "loading") {setUseFriendState((prevState) => UseFriendState.baseFriendsLoading)};
+      if (friendState === "done" && useFriendState === UseFriendState.baseFriendsLoading) {
+        setUseFriendState((prevState) => UseFriendState.baseFriendsLoaded);
+      } 
+    },[friendState,useFriendState] )
+
 
     return({useFriendState: useFriendState, friendRows});
 }

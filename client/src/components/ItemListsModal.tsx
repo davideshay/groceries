@@ -39,7 +39,7 @@ const ItemListsModal: React.FC<ModalProps> = (props: ModalProps) => {
     
      return ( 
     <IonModal key="item-modal" id="item-list" isOpen={props.modalState.isOpen}>
-     <IonTitle class="modal-title">{t('general.editing')} {props.modalState.selectedListName} {t('itemtext.list_values')}</IonTitle>
+     <IonTitle className="modal-title">{t('general.editing')} {props.modalState.selectedListName} {t('itemtext.list_values')}</IonTitle>
      <IonList>
         <IonGrid>
           <IonRow>

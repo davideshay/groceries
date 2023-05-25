@@ -54,7 +54,7 @@ export function getAllSearchRows(allItemDocs: ItemDocs, listID: string,listType:
       let itemExistsInSearchIdx = searchRows.findIndex((sr) => (sr.globalItemID === globalItem._id || sr.itemName === globalItem.name));
       let itemExistsInItem = false;
       if (listType === RowType.list) {
-        let itemNameMatch = allItemDocs.find((item) => (item.name.toUpperCase() === globalItem.name.toUpperCase()));
+        let itemNameMatch = allItemDocs.find((item) => (item.name.toUpperCase() === globalItem.name.toUpperCase() || item.globalItemID === globalItem._id));
         if (itemNameMatch !== undefined) {
             itemNameMatch.lists.forEach((list) => {
                 if (list.active && list.listID===listID) {
@@ -312,7 +312,7 @@ export function listIsDifferentThanCommon(sortedLists: ItemList[], listIdx: numb
     }
     // check if max count occurs > 1 in the list, if so all rows should be different
     let maxCheckCount=0;
-    for (const [key, value] of Object.entries(combinedKeys)) {
+    for (const [, value] of Object.entries(combinedKeys)) {
         if (value === maxCnt) { maxCheckCount++;}
     }
     return ((combinedKeys[thisKey] < maxCnt) || (maxCheckCount > 1)) ;

@@ -26,7 +26,90 @@ export async function navigateToFirstListID(phistory: History,remoteDBCreds: DBC
     }  
   }
 
-export async function createNewUser(remoteDBState: RemoteDBState,remoteDBCreds: DBCreds, password: string): Promise<(HttpResponse | undefined)> {
+export async function isServerAvailable(apiServerURL: string|null) {
+    let respObj = {
+        apiServerAvailable: false,
+        dbServerAvailable: false
+    }
+    if (apiServerURL === null || apiServerURL === undefined || apiServerURL === "") {
+        return respObj;
+    }
+    let response: HttpResponse | undefined;
+    const options: HttpOptions = {
+        url: String(apiServerURL+"/isavailable"),
+        method: "GET",
+        headers: { 'Content-Type': 'application/json',
+                   'Accept': 'application/json',
+                },
+        connectTimeout: apiConnectTimeout
+    };
+    let responseSuccessful = true;
+    try {response = await CapacitorHttp.get(options);}
+    catch(err) {responseSuccessful = false; log.error("http error in contacting API server:",err); return respObj}
+    if (response.status === 200 && response.data && responseSuccessful && response.data.apiServerAvailable) {
+        respObj.apiServerAvailable = true;
+        respObj.dbServerAvailable = response.data.dbServerAvailable;
+    }    
+    return respObj
+}
+
+export async function isDBServerAvailable(refreshJWT: string | null, couchBaseURL: string | null) {
+    let response = false;
+    if (refreshJWT === null || refreshJWT === undefined || refreshJWT === "" ||
+        couchBaseURL === null || couchBaseURL === undefined || couchBaseURL === "" ) {
+        return response;
+    }
+    let checkResponse = checkJWT(refreshJWT,couchBaseURL);
+    return (await checkResponse).DBServerAvailable;
+}
+
+
+export function JWTMatchesUser(refreshJWT: string | null, username: string | null) {
+    let validJWTMatch = false;
+    if (refreshJWT !== null) {
+        let JWTResponse = getTokenInfo(refreshJWT,true);
+        if (JWTResponse.valid && username === JWTResponse.username) {
+            validJWTMatch = true;
+        }
+    }            
+    return validJWTMatch;
+}
+
+export type CreateResponse = {
+    invalidData: boolean,
+    userAlreadyExists: boolean,
+    createdSuccessfully: boolean,
+    creationDisabled: boolean,
+    idCreated: string,
+    refreshJWT: string,
+    accessJWT: string,
+    couchdbUrl: string,
+    couchdbDatabase: string,
+    email: string,
+    fullname: string,
+    apiError: boolean,
+    dbError: boolean
+}
+
+export const createResponseInit : CreateResponse = {
+    invalidData: false,
+    userAlreadyExists: false,
+    createdSuccessfully: false,
+    creationDisabled: false,
+    idCreated: "",
+    refreshJWT: "",
+    accessJWT: "",
+    couchdbUrl: "",
+    couchdbDatabase: "",
+    email: "",
+    fullname: "",
+    apiError: false,
+    dbError: false
+}
+
+
+export async function createNewUser(remoteDBState: RemoteDBState,remoteDBCreds: DBCreds, password: string): Promise<CreateResponse> {
+    let createResponse : CreateResponse = cloneDeep(createResponseInit);
     let response: HttpResponse | undefined;
     const options: HttpOptions = {
         url: String(remoteDBCreds.apiServerURL+"/registernewuser"),
@@ -44,15 +127,25 @@ export async function createNewUser(remoteDBState: RemoteDBState,remoteDBCreds: 
         connectTimeout: apiConnectTimeout
     };
     try {response = await CapacitorHttp.post(options);}
-    catch(err) {log.error("http error in creating new user:",err)}
-    return response;
+    catch(err) {log.error("http error in creating new user:",err); createResponse.apiError= true};
+    if (response?.data === undefined) {
+        createResponse.apiError = true;
+    } else {
+        createResponse = Object.assign(createResponse,response.data);        
+    }
+    if (!createResponse.createdSuccessfully) {createResponse.dbError=true;}
+    return createResponse;
 }
 
-export function getTokenInfo(JWT: string) {
+export function getTokenInfo(JWT: string, logIt: boolean) {
     let tokenResponse = {
         valid : false,
-        expireDate: 0
+        expireDate: 0,
+        expiresInSeconds: 0,
+        expired: true,
+        username: ""
     }
+    if (JWT === "" || JWT === undefined || JWT === null) { return tokenResponse}
     let JWTDecode;
     let JWTDecodeValid = true;
     try { JWTDecode = jwt_decode(JWT);}
@@ -60,13 +153,25 @@ export function getTokenInfo(JWT: string) {
     if (JWTDecodeValid) {
         tokenResponse.valid = true;
         tokenResponse.expireDate = (JWTDecode as any).exp
+        tokenResponse.expiresInSeconds = (JWTDecode as any).exp - (new Date().getTime() / 1000); 
+        tokenResponse.username = (JWTDecode as any).sub
+        if (tokenResponse.expireDate >= (new Date().getTime() / 1000)) {
+            tokenResponse.expired = false;
+        }
     }
+    if (logIt ) {log.debug("Got token info:",tokenResponse);}
     return(tokenResponse);
 }
 
 export async function refreshToken(remoteDBCreds: DBCreds, devID: string) {
     log.info("Refreshing token, device id: ", devID);
-    log.info("Using API Server: ", remoteDBCreds.apiServerURL);
+    let tokenResponse = {
+        valid : false,
+        dbError: false,
+        apiError: false,
+        refreshJWT: "",
+        accessJWT: ""
+    }
     let response: HttpResponse | undefined;
     const options: HttpOptions = {
         url: String(remoteDBCreds.apiServerURL+"/refreshtoken"),
@@ -81,8 +186,14 @@ export async function refreshToken(remoteDBCreds: DBCreds, devID: string) {
         }            
     };
     try { response = await CapacitorHttp.post(options);}
-    catch(err) { log.error("http error refreshing token",err);}
-    return response;
+    catch(err) { log.error("http error refreshing token",err); tokenResponse.apiError = true;}
+    if (!tokenResponse.apiError && response?.status === 200 && response.data !== undefined) {
+        tokenResponse.valid = response.data.valid;
+        tokenResponse.dbError = response.data.dbError;
+        tokenResponse.refreshJWT = response.data.refreshJWT;
+        tokenResponse.accessJWT = response.data.accessJWT;
+    }
+    return tokenResponse;
 }
 
 export function errorCheckCreds({credsObj,background, creatingNewUser = false, password = "", verifyPassword = ""} :
@@ -133,16 +244,17 @@ export function errorCheckCreds({credsObj,background, creatingNewUser = false, p
     return credsCheck;
 }
 
-export async function checkJWT(accessJWT: string, remoteDBCreds: DBCreds) {
+export async function checkJWT(accessJWT: string, couchBaseURL: string | null) {
     let checkResponse = {
         JWTValid: false,
         DBServerAvailable: true,
         JWTExpireDate: 0
     }
+    if (couchBaseURL === null) {checkResponse.DBServerAvailable = false; return checkResponse}
     let response: HttpResponse | undefined;
     checkResponse.DBServerAvailable = true;
     const options: HttpOptions = {
-        url: String(remoteDBCreds.couchBaseURL+"/_session"),
+        url: String(couchBaseURL+"/_session"),
         method: "GET",
         headers: { 'Content-Type': 'application/json',
                    'Accept': 'application/json',
@@ -153,7 +265,7 @@ export async function checkJWT(accessJWT: string, remoteDBCreds: DBCreds) {
     catch(err) {log.error("http error getting session error:",err); checkResponse.DBServerAvailable=false}
     if (checkResponse.DBServerAvailable) {
         if ((response?.status === 200) && (response.data?.userCtx?.name !== null)) {
-            let tokenInfo = getTokenInfo(accessJWT);
+            let tokenInfo = getTokenInfo(accessJWT,true);
             if (tokenInfo.valid) {
                 checkResponse.JWTValid = true;
                 checkResponse.JWTExpireDate = tokenInfo.expireDate;
@@ -169,8 +281,21 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
         schemaVersion: 0,
         dbUUIDAction: DBUUIDAction.none
     }
-    let UUIDResults = await remoteDB.find({
-        selector: { "type": { "$eq": "dbuuid"} } })
+    async function getData() {
+        let results = await remoteDB.find({
+            selector: { "type": { "$eq": "dbuuid"} } })
+        return results;
+    }
+    let UUIDResults : PouchDB.Find.FindResponse<{}>
+    try { UUIDResults = await getData() }
+    catch(err) {
+                log.error("Error getting remote DB UUID"); 
+                await new Promise(r => setTimeout(r,1000));
+                try { UUIDResults = await getData()}
+                catch(err) {log.error("Retry of DBUUID from remote also failed");
+                            UUIDCheck.checkOK = false;
+                            return UUIDCheck;}
+    }
     let UUIDResult : null|string = null;
     if (UUIDResults.docs.length > 0) {
       UUIDResult = (UUIDResults.docs[0] as UUIDDoc).uuid;

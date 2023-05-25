@@ -1,5 +1,5 @@
 export const maxAppSupportedSchemaVersion = 3;
-export const appVersion = "0.7.5";
+export const appVersion = "0.7.6";
 
 export interface UUIDDoc {
   _id?: string,
@@ -20,7 +20,7 @@ export interface CategoryDoc {
     type: string,
     name: string,
     color: string,
-    updatedAt: string
+    updatedAt?: string
   }
   
 export const InitCategoryDoc: CategoryDoc = {

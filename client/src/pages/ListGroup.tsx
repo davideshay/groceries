@@ -54,7 +54,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   const deleteListGroup = useDeleteGenericDocument();
   const deleteList = useDeleteGenericDocument();
   const deleteItemsInListGroup = useDeleteItemsInListGroup();
-  const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
+  const { remoteDBState, remoteDBCreds, setRemoteDBState } = useContext(RemoteDBStateContext);
   const [ presentToast ] = useIonToast();
   const {useFriendState, friendRows} = useFriends(String(remoteDBCreds.dbUsername));
   const { listCombinedRows, listRows, listRowsLoaded, listError } = useContext(GlobalDataContext);
@@ -82,35 +82,37 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   useEffect( () => {
     async function getUI(userIDList: UserIDList) {
       let usersInfo: UsersInfo = cloneDeep(initUsersInfo);
+      let online = true;
       if (userIDList.userIDs.length > 0) {
         setPageState(prevState => ({...prevState,usersInfo:[],usersLoaded:false}));
-        usersInfo = await getUsersInfo(userIDList,String(remoteDBCreds.apiServerURL),String(remoteDBState.accessJWT))  
+        [online,usersInfo] = await getUsersInfo(userIDList,String(remoteDBCreds.apiServerURL),String(remoteDBState.accessJWT))  
       }
-      setPageState(prevState => ({...prevState,usersInfo: usersInfo,usersLoaded: true}))
+      setPageState(prevState => ({...prevState,usersInfo: usersInfo,usersLoaded: true}));
+      if (!online) {
+        setRemoteDBState(prevState => ({...prevState,apiServerAvailable: false}));
+      }
     }
-    let newPageState: PageState =cloneDeep(pageState);
-    if (listRowsLoaded && (useFriendState === UseFriendState.rowsLoaded ||  !remoteDBState.serverAvailable) && !categoryLoading && (!listGroupLoading || mode==="new")) {
+    if (listRowsLoaded && (useFriendState === UseFriendState.rowsLoaded ||  !remoteDBState.dbServerAvailable) && !categoryLoading && (!listGroupLoading || mode==="new")) {
+      let sharedWith: string[] = [];
       if (mode === "new" && pageState.needInitListGroupDoc) {
-        let initListGroupDoc = ListGroupDocInit;
-        newPageState.listGroupDoc=initListGroupDoc;
-        newPageState.listGroupDoc.listGroupOwner=String(remoteDBCreds.dbUsername);
+        let initListGroupDoc: ListGroupDoc = cloneDeep(ListGroupDocInit);
+        initListGroupDoc.listGroupOwner=String(remoteDBCreds.dbUsername);
         friendRows.forEach((fr: FriendRow) => {
-          newPageState.listGroupDoc.sharedWith.push(fr.targetUserName);
+          initListGroupDoc.sharedWith.push(fr.targetUserName);
         })
-        newPageState.needInitListGroupDoc=false;
+        setPageState(prevState => ({...prevState,listGroupDoc: initListGroupDoc, needInitListGroupDoc: false, changesMade: false}))
       }
       else if (mode !== "new") {
-        newPageState.listGroupDoc = listGroupDoc;
+        sharedWith = (listGroupDoc as ListGroupDoc).sharedWith;
+        setPageState(prevState => ({...prevState,listGroupDoc: listGroupDoc, changesMade: false}))
       }
-      newPageState.changesMade=false;
-      setPageState(newPageState);
       let userIDList: UserIDList = cloneDeep(initUserIDList);
-      newPageState.listGroupDoc.sharedWith.forEach((user: string) => {
+      sharedWith.forEach((user: string) => {
         userIDList.userIDs.push(user);
       });
       getUI(userIDList);
     }
-  },[listGroupLoading, listGroupDoc, listRowsLoaded, mode, useFriendState,friendRows, categoryLoading,categoryDocs,pageState.selectedListGroupID, remoteDBState.accessJWT]);
+  },[listGroupLoading, listGroupDoc, listRowsLoaded, mode, useFriendState,friendRows, categoryLoading,categoryDocs,pageState.selectedListGroupID, remoteDBState.accessJWT, pageState.needInitListGroupDoc,remoteDBCreds.apiServerURL,remoteDBCreds.dbUsername,remoteDBState.dbServerAvailable,setRemoteDBState]);
 
   if (listError || listGroupError  || useFriendState === UseFriendState.error || categoryError) {
     <ErrorPage errorText={t('error.loading_list_group') as string}></ErrorPage>
@@ -308,7 +310,7 @@ function deletePrompt() {
       message: t("general.changing_selected_listgroup_detail")
     }
     selectElem.push(
-      <IonSelect label={t("general.editing_list_group") as string} aria-label={t("general.editing_list_group") as string} key="list-changed" interface="alert" interfaceOptions={alertOptions}
+      <IonSelect label={t("general.editing_listgroup") as string} aria-label={t("general.editing_listgroup") as string} key="list-changed" interface="alert" interfaceOptions={alertOptions}
         onIonChange={(ev) => changeListUpdateState(ev.detail.value)} value={pageState.selectedListGroupID}>
         {selectOptionListElem}
       </IonSelect>
@@ -316,7 +318,7 @@ function deletePrompt() {
   } else {
     let iopts={};
     selectElem.push(
-      <IonSelect label={t("general.editing")+":"} aria-label={t("general.editing")+":"} key="list-notchanged" interface="popover" interfaceOptions={iopts} onIonChange={(ev) => changeListUpdateState(ev.detail.value)} value={pageState.selectedListGroupID}>
+      <IonSelect label={t("general.editing_listgroup")+":"} aria-label={t("general.editing_listgroup")+":"} key="list-notchanged" interface="popover" interfaceOptions={iopts} onIonChange={(ev) => changeListUpdateState(ev.detail.value)} value={pageState.selectedListGroupID}>
         {selectOptionListElem}
       </IonSelect>
     ) 
@@ -324,10 +326,10 @@ function deletePrompt() {
   
   let selectDropDown=[];
     if (mode === "new") {
-      selectDropDown.push(<IonTitle class="ion-no-padding" key="createnew">{t("general.creating_listgroup")}</IonTitle>)
+      selectDropDown.push(<IonTitle className="ion-no-padding" key="createnew">{t("general.creating_listgroup")}</IonTitle>)
     } else {  
       selectDropDown.push(
-        <IonTitle class="ion-no-padding" key="editexisting">
+        <IonTitle className="ion-no-padding" key="editexisting">
         <IonItem key="editexistingitem">
         {selectElem}
         </IonItem>
@@ -380,9 +382,9 @@ function deletePrompt() {
             {usersElem}
             </IonItemGroup>
           </IonList>
-          <IonFooter class="floating-error-footer">
+          <IonFooter className="floating-error-footer">
               {
-                formErrors[ErrorLocation.General].hasError ? <IonItem class="shorter-item-some-padding" lines="none"><IonText color="danger">{formErrors[ErrorLocation.General].errorMessage}</IonText></IonItem> : <></>
+                formErrors[ErrorLocation.General].hasError ? <IonItem className="shorter-item-some-padding" lines="none"><IonText color="danger">{formErrors[ErrorLocation.General].errorMessage}</IonText></IonItem> : <></>
               }  
             <IonToolbar>
             <IonButtons slot="start">

@@ -54,7 +54,7 @@ const GlobalItem: React.FC<HistoryProps> = (props: HistoryProps) => {
               <IonInput disabled={true} label={t("general.default_uom") as string} labelPlacement="stacked" value={curUOM}></IonInput>
             </IonItem>
           </IonList>
-          <IonButton class="ion-float-right" fill="outline" color="secondary" onClick={() => goBack("/categories")}><IonIcon slot="start" icon={closeCircleOutline}></IonIcon>{t("general.go_back")}</IonButton>
+          <IonButton className="ion-float-right" fill="outline" color="secondary" onClick={() => goBack("/categories")}><IonIcon slot="start" icon={closeCircleOutline}></IonIcon>{t("general.go_back")}</IonButton>
       </IonContent>
       <IonFooter>
       </IonFooter>

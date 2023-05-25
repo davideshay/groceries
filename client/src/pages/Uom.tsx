@@ -37,11 +37,11 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
   if ( mode === "new" ) { routeID = "<new>"};
   const [pageState,setPageState] = useState<PageState>({
-    uomDoc: InitUomDoc, needInitUomDoc: (mode === "new") ? true : false,
+    uomDoc: InitUomDoc, needInitUomDoc: true,
     deletingUom: false
   })
   const [formErrors,setFormErrors] = useState(FormErrorInit);
-  const [presentAlert,dismissAlert] = useIonAlert();
+  const [presentAlert] = useIonAlert();
   const updateUom  = useUpdateGenericDocument();
   const createUom = useCreateGenericDocument();
   const deleteUom = useDeleteGenericDocument();
@@ -56,17 +56,16 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { t } = useTranslation();
 
   useEffect( () => {
-    let newUomDoc = cloneDeep(pageState.uomDoc);
-    if (!uomLoading) {
-      if (mode === "new" && pageState.needInitUomDoc) {
+    if (!uomLoading && pageState.needInitUomDoc) {
+      let newUomDoc: UomDoc 
+      if (mode === "new") {
         newUomDoc = cloneDeep(InitUomDoc);
-        setPageState(prevState => ({...prevState,needInitUomDoc: false}))
       } else {
         newUomDoc = uomDoc;
       }
-      setPageState(prevState => ({...prevState,uomDoc: newUomDoc}))
+      setPageState(prevState => ({...prevState,needInitUomDoc: false, uomDoc: newUomDoc}))
     }
-  },[uomLoading,uomDoc]);
+  },[uomLoading,uomDoc,pageState.needInitUomDoc,mode]);
 
   if ( globalData.listError || recipesError || itemError ) { return (
     <ErrorPage errorText={t("error.loading_uom") as string}></ErrorPage>
@@ -168,13 +167,13 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   async function deleteUomFromDB() {
-    let uomItemDelResponse = await deleteUomFromItems(String(pageState.uomDoc._id));
+    let uomItemDelResponse = await deleteUomFromItems(String(pageState.uomDoc.name));
     if (!uomItemDelResponse.successful) {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.unable_remove_uom_items"), hasError: true }}));
       setPageState(prevState=>({...prevState,deletingUom: false }))
       return false;
     }
-    let uomRecipeDelResponse = await deleteUomFromRecipes(String(pageState.uomDoc._id));
+    let uomRecipeDelResponse = await deleteUomFromRecipes(String(pageState.uomDoc.name));
     if (!uomRecipeDelResponse.successful) {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.unable_remove_uom_recipes"), hasError: true }}));
       setPageState(prevState=>({...prevState,deletingUom: false}))
@@ -261,7 +260,7 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
              </IonInput>
             </IonItem>
             <IonItemDivider>{t("general.alternate_abbreviations")}</IonItemDivider>
-              {formErrors[ErrorLocation.Alternate].hasError ? <IonItem class="shorter-item-some-padding" lines="none"><IonText color="danger">{formErrors[ErrorLocation.Alternate].errorMessage}</IonText></IonItem> : <></>}
+              {formErrors[ErrorLocation.Alternate].hasError ? <IonItem className="shorter-item-some-padding" lines="none"><IonText color="danger">{formErrors[ErrorLocation.Alternate].errorMessage}</IonText></IonItem> : <></>}
             {
               pageState.uomDoc._id?.startsWith("system:uom") ?
               pageState.uomDoc.alternates?.map((alt,index) => (
@@ -287,8 +286,8 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
               <IonButton onClick={() => addNewCustom()}><IonIcon icon={add}></IonIcon></IonButton>
             </IonItem>
           </IonList>
-          <IonFooter class="floating-error-footer">
-            {formErrors[ErrorLocation.General].hasError ? <IonItem class="shorter-item-some-padding" lines="none"><IonText color="danger">{formErrors[ErrorLocation.General].errorMessage}</IonText></IonItem> : <></>}         
+          <IonFooter className="floating-error-footer">
+            {formErrors[ErrorLocation.General].hasError ? <IonItem className="shorter-item-some-padding" lines="none"><IonText color="danger">{formErrors[ErrorLocation.General].errorMessage}</IonText></IonItem> : <></>}         
           <IonToolbar>
             { pageState.uomDoc._id?.startsWith("system:uom") ? <></> :
             <IonButtons slot="start">

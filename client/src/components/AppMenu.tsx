@@ -9,18 +9,18 @@ import { useTranslation } from 'react-i18next';
 import './AppMenu.css';
 
 const AppMenu: React.FC = () => {
-  const { remoteDBCreds } = useContext(RemoteDBStateContext);
+  const { remoteDBCreds, remoteDBState } = useContext(RemoteDBStateContext);
   const {useFriendState,friendRows} = useFriends(String(remoteDBCreds.dbUsername));
   const { conflictDocs, conflictsLoading } = useConflicts();
   const { t } = useTranslation();
  
   const listHeader = (headerName: string) => {
-    return (<IonItemDivider class="category-divider">{headerName}</IonItemDivider>)
+    return (<IonItemDivider className="category-divider">{headerName}</IonItemDivider>)
   }
 
   const listItem = (listItem: string,link: string) => {
     return (<IonMenuToggle key={listItem} autoHide={false}>
-              <IonItem class="app-menu-item" key={"item-"+listItem} routerLink={link}>{listItem}</IonItem>
+              <IonItem className="app-menu-item" key={"item-"+listItem} routerLink={link}>{listItem}</IonItem>
           </IonMenuToggle>)
   }
 
@@ -32,7 +32,7 @@ const AppMenu: React.FC = () => {
       })
     }  
     return (<IonMenuToggle key="Friends" autoHide={false}>
-              <IonItem class="app-menu-item" key={"item-Friends"} routerLink="/friends">
+              <IonItem className="app-menu-item" key={"item-Friends"} routerLink="/friends">
               {(pendingCount > 0) ? <IonBadge slot="start">{pendingCount}</IonBadge> : <></>}
               {t('general.friends')}
               </IonItem></IonMenuToggle>) 
@@ -41,17 +41,16 @@ const AppMenu: React.FC = () => {
     let pendingCount=0;
     if (!conflictsLoading) { pendingCount=conflictDocs.length }
     return (<IonMenuToggle key="ConflictLog" autoHide={false}>
-              <IonItem class="app-menu-item" key={"item-ConflictLog"} routerLink="/conflictlog">
+              <IonItem className="app-menu-item" key={"item-ConflictLog"} routerLink="/conflictlog">
               {(pendingCount > 0) ? <IonBadge slot="start">{pendingCount}</IonBadge> : <></>}
               {t('general.conflict_log')}
               </IonItem></IonMenuToggle>) 
   }
  
-  return (
-  <IonMenu contentId="main" type="overlay">
-    <IonContent className="ion-padding">
-      <IonList>
-        <IonListHeader>{t('general.groceries_menu')}</IonListHeader>
+  let contentElem;
+  if (remoteDBState.loggedIn) {
+    contentElem =
+        <> 
         <IonList>
           {listHeader(t('general.lists'))}
           <ListsAll separatePage={false}/>
@@ -67,6 +66,21 @@ const AppMenu: React.FC = () => {
         {friendItem()}
         {conflictItem()}
         {listItem(t('general.settings'),"/settings")}
+        {listItem(t('general.login'),"/login")}
+      </>
+  } else {
+    contentElem = 
+      <>
+        {listItem(t('general.login'),"/login")}
+      </>  
+  }
+
+  return (
+  <IonMenu contentId="main" type="overlay">
+    <IonContent className="ion-padding">
+      <IonList>
+        <IonListHeader>{t('general.groceries_menu')}</IonListHeader>
+        {contentElem}
       </IonList>
     </IonContent>
   </IonMenu>

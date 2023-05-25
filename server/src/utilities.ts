@@ -2,7 +2,7 @@ import { couchUserPrefix, couchStandardRole, accessTokenExpires, refreshTokenExp
 import { usersDBAsAdmin, todosDBAsAdmin } from './dbstartup';
 import { generateJWT } from "./jwt";
 import { UserDoc, FriendDoc, FriendDocs} from './DBSchema'
-import { DocumentScope, MangoQuery, MangoResponse, MaybeDocument } from "nano";
+import { DatabaseGetResponse, DocumentScope, MangoQuery, MangoResponse, MaybeDocument } from "nano";
 import { cloneDeep } from "lodash";
 import { NewUserReqBody, UserObj, CustomRequest } from "./datatypes";
 import log from 'loglevel';
@@ -27,8 +27,17 @@ export function fullnamePatternValidation(fullname: string) {
 }
 
 export async function totalDocCount(db: DocumentScope<unknown>) {
-    const info = await db.info();
+    let info: DatabaseGetResponse;
+    let records = 0;
+    try { info = await db.info();}
+    catch(err) {log.error("No returned info from database:",err); return records;}
     return info.doc_count;
+}
+
+export async function checkDBAvailable(db: DocumentScope<unknown>) {
+    try {await db.info();}
+    catch(err) {log.error("No returned info from database",err); return false};
+    return true;
 }
 
 export type UserResponse = {
@@ -51,7 +60,7 @@ export async function getUserDoc(username: string) {
     const userResponse = cloneDeep(UserResponseInit)
     let res: UserDoc | null = null;
     try { res = (await usersDBAsAdmin.get(couchUserPrefix+":"+username) as UserDoc | null)}
-    catch(err) { userResponse.error= true }
+    catch(err) { userResponse.error= true; log.warn("Couldn't retrieve user doc:"+username) }
     if (!userResponse.error) {
         userResponse.email = String(res?.email);
         userResponse.fullname = String(res?.fullname);

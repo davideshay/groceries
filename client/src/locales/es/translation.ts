@@ -208,7 +208,12 @@ export const es_translations =
         "shopping_quantity":"Cantidad de compra",
         "shopping_uom": "Unidad de medida de la compra",
         "update_user_info": "Actualizar información de usuario",
-        "include_globalitems_in_search": "Incluir elementos globales en la búsqueda"
+        "include_globalitems_in_search": "Incluir elementos globales en la búsqueda",
+        "offline_cant_get_sharing_info": "Trabajando sin conexión, no se pueden recuperar ni editar usuarios compartidos",
+        "logged_in": "Conectado",
+        "working_offline": "Trabajando sin conexión",
+        "online": "En línea",
+        "attempt_login_again": "Intentar iniciar sesión nuevamente",
      },
      "itemtext": {
         "item_is_on_these_lists": "El artículo está en estas listas:",
@@ -336,7 +341,10 @@ export const es_translations =
         "could_not_match_uom":"No se pudo encontrar la unidad de medida. Original era: {{name}} o {{pluralName}}",
         "must_enter_a_plural_name":"Debe ingresar un nombre plural",
         "account_creation_disabled":"creación de cuenta deshabilitada",
-        "updating_uom": "Error al actualizar la unidad de medida"    
+        "updating_uom": "Error al actualizar la unidad de medida",
+        "database_server_not_available": "Servidor de base de datos no disponible",
+        "press_button_work_offline_as_user": "Presiona el botón de abajo para trabajar sin conexión como usuario:",
+        "server_not_available_nor_cached_creds": "El servidor no está disponible para iniciar sesión. Tampoco hay credenciales en caché para poder usar la aplicación localmente. Por favor, inicia sesión nuevamente cuando el servidor esté disponible.",    
     },
      "category": {
         "bakery": "Panadería",
