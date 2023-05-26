@@ -8,9 +8,10 @@ import { cloneDeep, isEqual, omit } from "lodash";
 import { v4 as uuidv4} from 'uuid';
 import { uomContent, categories, globalItems, totalDocCount } from "./utilities";
 import { DocumentScope, MangoResponse, MangoQuery } from "nano";
-import { CategoryDoc, GlobalItemDoc, ItemDoc, ListDoc, ListGroupDoc, UUIDDoc, UomDoc, UserDoc, appVersion, maxAppSupportedSchemaVersion } from "./DBSchema";
+import { CategoryDoc, GlobalItemDoc, ItemDoc, ListDoc, ListGroupDoc, UUIDDoc, UomDoc, UserDoc, appVersion, maxAppSupportedSchemaVersion, minimumAccessRefreshSeconds } from "./DBSchema";
 import log, { LogLevelDesc } from "loglevel";
 import prefix from "loglevel-plugin-prefix";
+import { timeSpan } from "./timeutils";
 
 
 let uomContentVersion = 0;
@@ -621,8 +622,22 @@ export async function dbStartup() {
     log.info("Internal Database URL: ",couchdbInternalUrl);
     if (couchDatabase == "") { log.error("No CouchDatabase environment variable."); return false;}
     log.info("Using database:",couchDatabase);
-    log.info("Refresh token expires in ",refreshTokenExpires);
-    log.info("STATUS: Access token expires in ",accessTokenExpires);
+    let refreshTimeSeconds: number;
+    try {refreshTimeSeconds = timeSpan(refreshTokenExpires)}
+    catch (err) {log.error("Invalid Refresh Token expiration environment variable (REFRESH_TOKEN_EXPIRES"); return false;}
+    if (refreshTimeSeconds < (minimumAccessRefreshSeconds+60)) {
+        log.error("Refresh token expiration time must be greater than minimum access refresh time ("+minimumAccessRefreshSeconds+") + 1 minute");
+        return false;
+    }
+    let accessTimeSeconds: number;
+    try {accessTimeSeconds = timeSpan(accessTokenExpires)}
+    catch (err) {log.error("Invalid Access Time expiration environment variable (ACCESS_TOKEN_EXPIRES)"); return false;}
+    if (accessTimeSeconds < (minimumAccessRefreshSeconds+60)) {
+        log.error("Access token expiration time must be greater than minimum access refresh time ("+minimumAccessRefreshSeconds+") + 1 minute");
+        return false;
+    }
+    log.info("Refresh token expires in ",refreshTokenExpires + "("+refreshTimeSeconds+" seconds)");
+    log.info("STATUS: Access token expires in ",accessTokenExpires + "("+accessTimeSeconds+" seconds)");
     log.info("STATUS: User Account Creation is: ",disableAccountCreation ? "DISABLED" : "ENABLED");
     await createDBIfNotExists();
     await setDBSecurity();

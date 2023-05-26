@@ -5,7 +5,7 @@ export const couchKey = process.env.COUCHDB_HMAC_KEY;
 export const couchAdminUser = process.env.COUCHDB_ADMIN_USER;
 export const couchAdminPassword = process.env.COUCHDB_ADMIN_PASSWORD;
 export const refreshTokenExpires = (process.env.REFRESH_TOKEN_EXPIRES == undefined) ? "30d" : process.env.REFRESH_TOKEN_EXPIRES;
-export const accessTokenExpires = (process.env.ACCESS_TOKEN_EXPIRES == undefined) ? "15m" : process.env.ACCESS_TOKEN_EXPIRES;
+export const accessTokenExpires = (process.env.ACCESS_TOKEN_EXPIRES == undefined) ? "1d" : process.env.ACCESS_TOKEN_EXPIRES;
 export const enableScheduling = (process.env.ENABLE_SCHEDULING == undefined) ? true : getBooleanFromText(process.env.ENABLE_SCHEDULING);
 export const resolveConflictsFrequencyMinutes = (process.env.RESOLVE_CONFLICTS_FREQUENCY_MINUTES == undefined) ? 15 : process.env.RESOLVE_CONFLICTS_FREQUENCY_MINUTES;
 export const expireJWTFrequencyMinutes = (process.env.EXPIRE_JWT_FREQUENCY_MINUTES == undefined) ? 10 : process.env.EXPIRE_JWT_FREQUENCY_MINUTES;
@@ -31,6 +31,7 @@ const smtpOptions: SMTPTransport.Options= {
     auth: { user: smtpUser, pass: smtpPassword}
 };
 
+import { timeSpan } from './timeutils';
 import nodemailer from 'nodemailer';
 import nanoAdmin, { DocumentListResponse,  MangoResponse, MaybeDocument } from 'nano';
 const nanoAdminOpts = {

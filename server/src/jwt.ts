@@ -5,7 +5,7 @@ import { couchKey, couchStandardRole } from './apicalls';
 import { getUserDoc } from './utilities';
 import { isEqual, isEmpty } from 'lodash';
 import {UserDoc} from './DBSchema'
-import { DocumentListResponse, MangoResponse } from 'nano';
+import { DocumentListResponse } from 'nano';
 import log from 'loglevel';
 
 const JWTKey = new TextEncoder().encode(couchKey);
