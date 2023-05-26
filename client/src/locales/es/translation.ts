@@ -355,7 +355,9 @@ export const es_translations =
         "press_button_work_offline_as_user": "Presiona el botón de abajo para trabajar sin conexión como usuario:",
         "server_not_available_nor_cached_creds": "El servidor no está disponible para iniciar sesión. No hay credenciales en caché (o las credenciales eran inválidas) para poder usar la aplicación localmente. Por favor, inicie sesión nuevamente cuando el servidor esté disponible.",
         "unknown_login_state": "Estado de inicio de sesión desconocido. Por favor, reinicie la aplicación.",
-        "friends_server_unavailable": "No se pueden mostrar ni actualizar los datos de amigos. La API y/o la base de datos no están disponibles."    },
+        "friends_server_unavailable": "No se pueden mostrar ni actualizar los datos de amigos. La API y/o la base de datos no están disponibles.",
+        "app_already_running": "Ya se está ejecutando en otra sesión, por favor continúa usando la aplicación allí."
+    },
      "category": {
         "bakery": "Panadería",
         "deli": "Charcutería",

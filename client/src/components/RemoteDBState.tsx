@@ -13,10 +13,10 @@ import { cloneDeep } from "lodash";
 import log from "loglevel";
 import { useHistory } from "react-router";
 import PQueue from "p-queue";
+import { Capacitor } from "@capacitor/core";
 
-// const secondsBeforeAccessRefresh = 10;
-const minimumAccessRefreshSeconds = 30;
-// const secondsBeforeAccessRefresh = 180;
+import { minimumAccessRefreshSeconds } from "./DBSchema";
+
 const secondsBetweenRefreshRetries = 30;
 
 let globalSync: PouchDB.Replication.Sync<{}>;
@@ -42,7 +42,8 @@ export type RemoteDBState = {
     offlineJWTMatch: boolean,
     loggedIn: boolean,
     retryCount: number,
-    tokenTimerAction: TokenTimerAction
+    tokenTimerAction: TokenTimerAction,
+    dupCheck: DupCheckStatus
 }
 
 enum TokenTimerAction {
@@ -125,6 +126,19 @@ export enum AppStatus {
     resumed = "RD"
 }
 
+enum BroadcastMessage {
+    CheckAlive,
+    AmAlive
+}
+
+export enum DupCheckStatus {
+    channelNeedsRegistered = "CN",
+    channelRegistered = "CR",
+    messageSent = "MS",
+    dupDetected = "DD",
+    noDupDetected = "ND"
+}
+
 export interface DBCreds {
     apiServerURL: string | null,
     couchBaseURL: string | null,
@@ -160,7 +174,8 @@ export const initialRemoteDBState: RemoteDBState = {
     offlineJWTMatch: false,
     loggedIn: false,
     retryCount: 0,
-    tokenTimerAction: TokenTimerAction.NeedToStart
+    tokenTimerAction: TokenTimerAction.NeedToStart,
+    dupCheck: DupCheckStatus.channelNeedsRegistered
 }
 
 const initialContext: RemoteDBStateContextType = {
@@ -195,6 +210,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     const refreshTokenLocked = useRef(false);
     const tokenTimer = useRef<NodeJS.Timeout>();
     const appStatus = useRef<AppStatus>(AppStatus.resumed);
+    const broadcastChannel = useRef<BroadcastChannel>(new BroadcastChannel("dupcheck"))
 
     function setLoginType(lType: LoginType) {
         loginType.current = lType;
@@ -218,6 +234,22 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
 
     function setDBServerAvailable(value: boolean) {
         setRemoteDBState(prevState => ({...prevState,dbServerAvailable: value}));
+    }
+
+    function registerBroadcastChannel() {
+        broadcastChannel.current.onmessage = (event) => {
+            if (event.data === BroadcastMessage.CheckAlive) {
+                broadcastChannel.current.postMessage(BroadcastMessage.AmAlive);
+            } else if (event.data === BroadcastMessage.AmAlive) {
+                setRemoteDBState(prevState => ({...prevState,dupCheck: DupCheckStatus.dupDetected}))
+            }
+        }
+        setRemoteDBState(prevState => ({...prevState,dupCheck: DupCheckStatus.channelRegistered}))
+    }
+
+    function sendCheckAliveMessage() {
+        broadcastChannel.current.postMessage(BroadcastMessage.CheckAlive);
+        setRemoteDBState(prevState => ({...prevState,dupCheck: DupCheckStatus.messageSent}))
     }
 
     const checkRetryNetworkIsUp = useCallback( async () => {
@@ -528,6 +560,31 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         } else {return false;}
     },[remoteDBState.loggedIn, remoteDBState.accessJWT,assignDB,refreshTokenAndUpdate])
 
+    useEffect( () => {
+        let checkDupTimer: ReturnType<typeof setTimeout>;
+        if (remoteDBState.dupCheck === DupCheckStatus.channelNeedsRegistered) {
+            log.debug("Duplicate Browser Check... Platform is : ",Capacitor.getPlatform(), " native: ",Capacitor.isNativePlatform())
+            if (!Capacitor.isNativePlatform()) {
+                registerBroadcastChannel()
+            } else {
+                setRemoteDBState(prevState => ({...prevState,dupCheck: DupCheckStatus.noDupDetected}))
+            }
+        } else if (remoteDBState.dupCheck === DupCheckStatus.channelRegistered) {
+            sendCheckAliveMessage()
+        } else if (remoteDBState.dupCheck === DupCheckStatus.messageSent) {
+            checkDupTimer = setTimeout(() => {
+                log.debug("No other browser sessions active... continuing...");
+                setRemoteDBState(prevState => ({...prevState,dupCheck: DupCheckStatus.noDupDetected}))
+            },200)
+        } else if (remoteDBState.dupCheck === DupCheckStatus.dupDetected) {
+            broadcastChannel.current.close()
+            alert("Already running in another session, please continue using the app there.");
+            window.location.replace('about:blank');
+        } else if (remoteDBState.dupCheck === DupCheckStatus.noDupDetected) {
+        }
+        return () => {clearTimeout(checkDupTimer) }
+    },[remoteDBState.dupCheck])
+
     
     useEffect(() => {
         if (remoteDBState.loggedIn) {
@@ -556,12 +613,12 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     },[ remoteDBState.loggedIn, remoteDBState.accessJWT, checkAndRefreshToken, stopSyncAndCloseRemote])
 
     useEffect(() => {
-        if (!loginAttempted.current && !(remoteDBState.connectionStatus === ConnectionStatus.navToLoginScreen) && !(remoteDBState.connectionStatus === ConnectionStatus.onLoginScreen)) {
+        if ( remoteDBState.dupCheck === DupCheckStatus.noDupDetected && !loginAttempted.current && !(remoteDBState.connectionStatus === ConnectionStatus.navToLoginScreen) && !(remoteDBState.connectionStatus === ConnectionStatus.onLoginScreen)) {
             log.debug("STATUS: about to attempt full login...");
             attemptFullLogin()
             loginAttempted.current = true;
         }
-      },[loginAttempted,remoteDBState.connectionStatus,attemptFullLogin])
+      },[remoteDBState.dupCheck,loginAttempted,remoteDBState.connectionStatus,attemptFullLogin])
   
     useEffect(() => {
 //        log.debug("Connection Status:",cloneDeep(remoteDBState.connectionStatus));

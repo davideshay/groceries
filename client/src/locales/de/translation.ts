@@ -347,7 +347,9 @@ export const de_translations =
         "press_button_work_offline_as_user": "Drücken Sie die Schaltfläche unten, um als Benutzer offline zu arbeiten:",
         "server_not_available_nor_cached_creds": "Der Server ist nicht verfügbar, um sich anzumelden. Es sind keine zwischengespeicherten Anmeldeinformationen vorhanden (oder die Anmeldeinformationen waren ungültig), um die App lokal verwenden zu können. Bitte melden Sie sich erneut an, wenn der Server verfügbar ist.",
         "unknown_login_state": "Unbekannter Anmeldestatus. Bitte starten Sie die Anwendung neu.",
-        "friends_server_unavailable": "Freundesdaten können nicht angezeigt oder aktualisiert werden. Die API und/oder die Datenbank sind nicht verfügbar."    },
+        "friends_server_unavailable": "Freundesdaten können nicht angezeigt oder aktualisiert werden. Die API und/oder die Datenbank sind nicht verfügbar.",
+        "app_already_running": "Bereits in einer anderen Sitzung ausgeführt, bitte setze die Verwendung der App dort fort."
+    },
     "itemtext": {
         "item_is_on_these_lists": "Artikel ist auf diesen Listen:",
         "highlighted_lists_diff_values": "Hervorgehobene Listen haben unterschiedliche Werte auf der Ebene von Artikel-Liste",
