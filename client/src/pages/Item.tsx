@@ -333,13 +333,13 @@ const Item: React.FC = (props) => {
 
   return (
     <IonPage>
-      <PageHeader title={t("general.editing_item")+" "+ translatedItemName(stateItemDoc.globalItemID,stateItemDoc.name)} />
+      <PageHeader title={t("general.editing_item")+" "+ translatedItemName(stateItemDoc.globalItemID,stateItemDoc.name,stateItemDoc.pluralName)} />
       <IonContent>
           <IonList lines="none">
             <IonItem key="name">
               <IonInput disabled={stateItemDoc.globalItemID != null} label={t("general.name") as string}
                         labelPlacement="stacked" type="text" onIonInput={(e) => setStateItemDoc({...stateItemDoc, name: String(e.detail.value)})}
-                        value={translatedItemName(stateItemDoc.globalItemID,stateItemDoc.name,1)}
+                        value={translatedItemName(stateItemDoc.globalItemID,stateItemDoc.name,stateItemDoc.pluralName,1)}
                         className={"ion-touched "+(formErrors[ErrorLocation.Name].hasError ? "ion-invalid": "")}
                         errorText={formErrors[ErrorLocation.Name].errorMessage}>
               </IonInput>
@@ -347,7 +347,7 @@ const Item: React.FC = (props) => {
             <IonItem key="pluralname">
               <IonInput disabled={stateItemDoc.globalItemID != null} label={t("general.plural_name") as string}
                         labelPlacement="stacked" type="text" onIonInput={(e) => setStateItemDoc({...stateItemDoc, pluralName: String(e.detail.value)})}
-                        value={translatedItemName(stateItemDoc.globalItemID,(stateItemDoc.pluralName!),2)}
+                        value={translatedItemName(stateItemDoc.globalItemID,(stateItemDoc.pluralName!),stateItemDoc.pluralName,2)}
                         className={"ion-touched "+(formErrors[ErrorLocation.PluralName].hasError ? "ion-invalid" : "")}
                         errorText={formErrors[ErrorLocation.PluralName].errorMessage}>
               </IonInput>
@@ -372,7 +372,7 @@ const Item: React.FC = (props) => {
                     <IonSelect label={t("general.uom_abbrev") as string} labelPlacement='stacked' interface="popover" onIonChange={(ev) => updateAllKey("uomName", ev.detail.value)} value={getCommonKey(stateItemDoc,"uomName",globalData.listDocs)}>
                     <IonSelectOption key="uom-undefined" value={null}>{t("general.no_uom")}</IonSelectOption>
                     {(globalData.uomDocs as UomDoc[]).map((uom) => (
-                      <IonSelectOption key={uom.name} value={uom.name}>{translatedUOMName(uom._id!,uom.description)}</IonSelectOption>
+                      <IonSelectOption key={uom.name} value={uom.name}>{translatedUOMName(uom._id!,uom.description,uom.pluralDescription)}</IonSelectOption>
                     ))}
                     </IonSelect>
                   </IonCol>

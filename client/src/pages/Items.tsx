@@ -2,7 +2,7 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
   IonItemDivider, IonButton, IonButtons, IonFab, IonFabButton, IonIcon, IonCheckbox, IonLabel, IonSelect,
   IonSelectOption, IonInput, IonPopover, IonAlert,IonMenuButton, useIonToast, IonGrid, IonRow, 
   IonCol, useIonAlert } from '@ionic/react';
-import { add,searchOutline } from 'ionicons/icons';
+import { add,documentTextOutline,searchOutline } from 'ionicons/icons';
 import React, { useState, useEffect, useContext, useRef, KeyboardEvent, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { cloneDeep } from 'lodash';
@@ -472,7 +472,9 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
             checked={Boolean(pageState.itemRows[i].completed)}></IonCheckbox>
         </IonCol>
         <IonCol className="col-no-pad" size="11">
-          <IonItem className="itemrow-inner" routerLink={"/item/edit/"+item.itemID} key={pageState.itemRows[i].itemID+"mynewbutton"}>{item.itemName + (item.quantityUOMDesc === "" ? "" : " ("+ item.quantityUOMDesc+")")}</IonItem>
+          <IonItem className="itemrow-inner" routerLink={"/item/edit/"+item.itemID} key={pageState.itemRows[i].itemID+"mynewbutton"}>{item.itemName + (item.quantityUOMDesc === "" ? "" : " ("+ item.quantityUOMDesc+")")}
+          {item.hasNote ? <IonIcon className="note-icon" icon={documentTextOutline}></IonIcon> : <></>}
+          </IonItem>
         </IonCol>
         </IonRow></IonGrid>
       </IonItem>);

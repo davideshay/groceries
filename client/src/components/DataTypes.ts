@@ -12,6 +12,7 @@ export interface ItemRow {
     quantity: number,
     uomDesc: string,
     quantityUOMDesc: string,
+    hasNote: boolean,
     completed: boolean | null
   }
 
@@ -20,7 +21,7 @@ export type ItemRows = ItemRow[];
 export const initItemRow: ItemRow = {
     itemID: "", globalItemID: null, itemName: "",categoryID: "", categoryName: "",
     categorySeq: 0, categoryColor: "#ffffff", quantity: 0,
-    uomDesc: "", quantityUOMDesc: "", completed: false
+    uomDesc: "", quantityUOMDesc: "", hasNote: false, completed: false
   }
 
 export enum ItemSearchType {

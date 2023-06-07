@@ -36,10 +36,10 @@ export async function isRecipeItemOnList({ recipeItem, listOrGroupID,globalData,
             } else {
                 item.pluralName = item.name;
             }
-            if (translatedItemName(item.globalItemID,item.name,1).toLocaleUpperCase() === recipeItem.name.toLocaleUpperCase() ||
-                translatedItemName(item.globalItemID,item.name,2).toLocaleUpperCase() === recipeItem.name.toLocaleUpperCase() ||
-                translatedItemName(item.globalItemID,item.pluralName!,1).toLocaleUpperCase() === recipeItem.name.toLocaleUpperCase() ||
-                translatedItemName(item.globalItemID,item.pluralName!,2).toLocaleUpperCase() === recipeItem.name.toLocaleUpperCase() ||
+            if (translatedItemName(item.globalItemID,item.name,item.name,1).toLocaleUpperCase() === recipeItem.name.toLocaleUpperCase() ||
+                translatedItemName(item.globalItemID,item.name,item.name,2).toLocaleUpperCase() === recipeItem.name.toLocaleUpperCase() ||
+                translatedItemName(item.globalItemID,item.pluralName!,item.pluralName,1).toLocaleUpperCase() === recipeItem.name.toLocaleUpperCase() ||
+                translatedItemName(item.globalItemID,item.pluralName!,item.pluralName,2).toLocaleUpperCase() === recipeItem.name.toLocaleUpperCase() ||
                 (item.globalItemID !== null && (item.globalItemID === recipeItem.globalItemID) )) {
                     foundItem = cloneDeep(item);
             } 

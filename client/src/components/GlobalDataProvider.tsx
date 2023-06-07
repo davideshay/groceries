@@ -137,7 +137,7 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
             itemsLoading,
             itemError,
             globalItemDocs: (globalItemDocs as GlobalItemDocs).sort(function (a,b) {
-                return translatedItemName(String(a._id),a.name).toLocaleUpperCase().localeCompare(translatedItemName(String(b._id),b.name).toLocaleUpperCase())
+                return translatedItemName(String(a._id),a.name,a.name).toLocaleUpperCase().localeCompare(translatedItemName(String(b._id),b.name,b.name).toLocaleUpperCase())
             }),
             globalItemsLoading,
             globalItemError,
@@ -155,7 +155,7 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
             categoryLoading,
             categoryError,
             uomDocs: (uomDocs as UomDoc[]).sort(function(a,b) {
-                return translatedUOMName(a._id as string,a.name).toUpperCase().localeCompare(translatedUOMName(b._id as string,b.name).toUpperCase())
+                return translatedUOMName(a._id as string,a.description,a.pluralDescription).toUpperCase().localeCompare(translatedUOMName(b._id as string,b.description,b.pluralDescription).toUpperCase())
             }),
             uomLoading,
             uomError,

@@ -229,7 +229,7 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   return (
     <IonPage>
-      <PageHeader title={t("general.editing_uom")+ " " + translatedUOMName(String(pageState.uomDoc._id),pageState.uomDoc.name)  } />
+      <PageHeader title={t("general.editing_uom")+ " " + translatedUOMName(String(pageState.uomDoc._id),pageState.uomDoc.description,pageState.uomDoc.pluralDescription)  } />
       <IonContent>
           <IonList>
             <IonItem key="name">
@@ -245,7 +245,7 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
               <IonInput label={t("general.description") as string} disabled={pageState.uomDoc._id?.startsWith("system:uom")}
                         labelPlacement="stacked" type="text" placeholder={t("general.new_placeholder") as string}
                         onIonInput={(e) => setPageState(prevState=>({...prevState, uomDoc:{...prevState.uomDoc,  description: String(e.detail.value)}}))}
-                        value={translatedUOMName(String(pageState.uomDoc._id),pageState.uomDoc.description,1)}
+                        value={translatedUOMName(String(pageState.uomDoc._id),pageState.uomDoc.description,pageState.uomDoc.pluralDescription,1)}
                         className={"ion-touched "+(formErrors[ErrorLocation.Description].hasError ? "ion-invalid": "")}
                         errorText={formErrors[ErrorLocation.Description].errorMessage}>
               </IonInput>
@@ -254,7 +254,7 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
               <IonInput label={t("general.plural_description") as string} disabled={pageState.uomDoc._id?.startsWith("system:uom")}
                         labelPlacement="stacked" type="text" placeholder={t("general.new_placeholder") as string}
                         onIonInput={(e) => setPageState(prevState=>({...prevState, uomDoc:{...prevState.uomDoc,  pluralDescription: String(e.detail.value)}}))}
-                        value={translatedUOMName(String(pageState.uomDoc._id),pageState.uomDoc.pluralDescription,2)}
+                        value={translatedUOMName(String(pageState.uomDoc._id),pageState.uomDoc.pluralDescription,pageState.uomDoc.pluralDescription,2)}
                         className={"ion-touched "+(formErrors[ErrorLocation.PluralDescription].hasError ? "ion-invalid": "")}
                         errorText={formErrors[ErrorLocation.PluralDescription].errorMessage}>
              </IonInput>

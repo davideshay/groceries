@@ -72,3 +72,6 @@ ion-col.col-no-pad {
     --ion-grid-column-padding: 0px;
 }
 
+ion-icon.note-icon {
+    padding-left: 6px
+}
