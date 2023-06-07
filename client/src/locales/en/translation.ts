@@ -439,7 +439,7 @@ export const en_translations =
         "CU_one": "Cup",
         "CU_other": "Cups",
         "CT_one": "Carton",
-        "CT_other": "Catrons",
+        "CT_other": "Cartons",
         "CH_one": "Container",
         "CH_other": "Containers",
         "DZ_one": "Dozen",

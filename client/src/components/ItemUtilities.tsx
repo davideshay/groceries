@@ -7,6 +7,7 @@ import { cloneDeep } from 'lodash';
 import { t } from 'i18next';
 import { translatedCategoryName, translatedItemName, translatedUOMShortName } from './translationUtilities';
 import log from 'loglevel';
+import { isEmpty } from 'lodash';
 
 export function getGroupIDForList(listID: string, listDocs: ListDocs): string | null {
     let retGID = null;
@@ -21,7 +22,7 @@ export function getAllSearchRows(allItemDocs: ItemDocs, listID: string,listType:
     allItemDocs.forEach((itemDoc) => {
       let searchRow: ItemSearch = {
         itemID: String(itemDoc._id),
-        itemName: translatedItemName(itemDoc.globalItemID,itemDoc.name),
+        itemName: translatedItemName(itemDoc.globalItemID,itemDoc.name,itemDoc.pluralName),
         itemType: ItemSearchType.Local,
         globalItemID: itemDoc.globalItemID,
         globalItemCategoryID: null,
@@ -71,7 +72,7 @@ export function getAllSearchRows(allItemDocs: ItemDocs, listID: string,listType:
       if (itemExistsInSearchIdx === -1 && !itemExistsInItem) {
         let searchRow: ItemSearch = {
             itemID: String(globalItem._id),
-            itemName: translatedItemName(globalItem._id!,globalItem.name),
+            itemName: translatedItemName(globalItem._id!,globalItem.name, globalItem.name),
             itemType: ItemSearchType.Global,
             globalItemID: String(globalItem._id),
             globalItemCategoryID: globalItem.defaultCategoryID,
@@ -109,7 +110,7 @@ function isListPartOfGroup(listID: string, listGroupID: string, listCombinedRows
     return isPart;
 }
 
-function findRightList(itemDoc: ItemDoc, listType: RowType, listOrGroupID: string, listCombinedRow: ListCombinedRow, listCombinedRows: ListCombinedRows) {
+function findRightList(itemDoc: ItemDoc, listType: RowType, listOrGroupID: string, listCombinedRow: ListCombinedRow, listCombinedRows: ListCombinedRows) : ItemList | undefined {
     let list: ItemList | undefined;
 // for requested row type of list, just match on listID
     if (listType === RowType.list) {
@@ -144,7 +145,7 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
         itemRow.globalItemID = itemDoc.globalItemID;
         let list = findRightList(itemDoc,listType,listOrGroupID,(listRow as ListCombinedRow), listCombinedRows);
         if (list === undefined) {return itemRows};
-        itemRow.itemName =  translatedItemName(itemDoc.globalItemID,itemDoc.name,list.hasOwnProperty("quantity") ? list.quantity : 0);
+        itemRow.itemName =  translatedItemName(itemDoc.globalItemID,itemDoc.name,itemDoc.pluralName,list.hasOwnProperty("quantity") ? list.quantity : 0);
         itemRow.categoryID = list.categoryID;
         if (itemRow.categoryID === null) {
             itemRow.categoryName = t("general.uncategorized");
@@ -169,8 +170,9 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
             }    
         }
         itemRow.quantity =  list.hasOwnProperty("quantity") ? list.quantity : 0;
+        if (!isEmpty(list.note)) {itemRow.hasNote = true;}
         const uomName = list.hasOwnProperty("uomName") ? list.uomName : null;
-        let uomDesc=translatedUOMShortName(uomName,uomDocs)
+        let uomDesc=translatedUOMShortName(uomName,uomDocs,itemRow.quantity)
         itemRow.uomDesc = uomDesc;
 
         let quantityUOMDesc = "";

@@ -58,7 +58,7 @@ const RecipeItemSearch: React.FC<RecipeItemSearchProps> = (props: RecipeItemSear
             let searchIdx=0;
             let newSearchRows: RecipeSearchRow[] = [];
             globalData.globalItemDocs.forEach(idoc => {
-                newSearchRows.push({id: String(searchIdx++),display: translatedItemName(String(idoc._id),idoc.name), data: {name: idoc.name,globalItemID: String(idoc._id) }})
+                newSearchRows.push({id: String(searchIdx++),display: translatedItemName(String(idoc._id),idoc.name,idoc.name), data: {name: idoc.name,globalItemID: String(idoc._id) }})
             });
             (itemDocs as ItemDocs).forEach((idoc: ItemDoc) => {
                 if ( idoc.globalItemID === null && !newSearchRows.some( sr => sr.display === idoc.name)) {
@@ -66,7 +66,7 @@ const RecipeItemSearch: React.FC<RecipeItemSearchProps> = (props: RecipeItemSear
                 }
             })
             newSearchRows.sort((a,b)=> {
-                return translatedItemName(a.data.globalItemID,a.display).toLocaleUpperCase().localeCompare(translatedItemName(b.data.globalItemID,b.display).toLocaleUpperCase())
+                return translatedItemName(a.data.globalItemID,a.display,a.display).toLocaleUpperCase().localeCompare(translatedItemName(b.data.globalItemID,b.display,b.display).toLocaleUpperCase())
             })
             setPageState(prevState=>({...prevState,itemsNeedLoaded: false,recipeSearchRows: newSearchRows}))
         }

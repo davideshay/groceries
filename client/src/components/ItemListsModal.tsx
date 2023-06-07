@@ -72,7 +72,7 @@ const ItemListsModal: React.FC<ModalProps> = (props: ModalProps) => {
                     <IonSelectOption key="uom-undefined" value={null}>{t('general.no_uom')}</IonSelectOption>
                     {globalData.uomDocs.map((uom) => (
                       <IonSelectOption key={uom.name} value={uom.name}>
-                        {translatedUOMName(uom._id as string,uom.description)}
+                        {translatedUOMName(uom._id as string,uom.description,uom.pluralDescription)}
                       </IonSelectOption>
                     ))}
           </IonSelect>

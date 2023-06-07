@@ -35,17 +35,17 @@ const GlobalItem: React.FC<HistoryProps> = (props: HistoryProps) => {
   
   screenLoading.current=false;
   let curUOMItem : UomDoc | undefined = (globalData.uomDocs as UomDoc[]).find((uom) => (uom.name === globalItemDoc.defaultUOM));
-  let curUOM = (curUOMItem === undefined) ? t("general.undefined")  :  translatedUOMName(curUOMItem._id as string ,curUOMItem.description);
+  let curUOM = (curUOMItem === undefined) ? t("general.undefined")  :  translatedUOMName(curUOMItem._id as string ,curUOMItem.description, curUOMItem.pluralDescription);
   let curCategoryItem : CategoryDoc | undefined = (globalData.categoryDocs as CategoryDoc[]).find((cat) => (cat._id === globalItemDoc.defaultCategoryID));
   let curCategory = (curCategoryItem === undefined) ? t("general.undefined") : translatedCategoryName(curCategoryItem._id,curCategoryItem.name)       ;
 
   return (
     <IonPage>
-      <PageHeader title={t("general.viewing_global_item")+ " " + translatedItemName((globalItemDoc as GlobalItemDoc)._id!, globalItemDoc.name) } />
+      <PageHeader title={t("general.viewing_global_item")+ " " + translatedItemName((globalItemDoc as GlobalItemDoc)._id!, globalItemDoc.name,globalItemDoc.name) } />
       <IonContent>
           <IonList>
             <IonItem key="name">
-              <IonInput disabled={true} label={t("general.name") as string} labelPlacement="stacked" type="text" placeholder={t("general.new_placeholder") as string} value={translatedItemName((globalItemDoc as GlobalItemDoc)._id!, globalItemDoc.name)}></IonInput>
+              <IonInput disabled={true} label={t("general.name") as string} labelPlacement="stacked" type="text" placeholder={t("general.new_placeholder") as string} value={translatedItemName((globalItemDoc as GlobalItemDoc)._id!, globalItemDoc.name,globalItemDoc.name)}></IonInput>
             </IonItem>
             <IonItem key="cat">
               <IonInput disabled={true} label={t("general.default_category") as string} labelPlacement="stacked" value={curCategory}></IonInput>

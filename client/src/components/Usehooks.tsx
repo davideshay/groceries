@@ -245,7 +245,7 @@ export function useItems({selectedListGroupID,isReady, needListGroupID, activeOn
       }
     })
     newItemRows.sort(function (a: ItemDoc, b: ItemDoc) {
-      return translatedItemName(a.globalItemID,a.name,2).toLocaleUpperCase().localeCompare(translatedItemName(b.globalItemID,b.name,2).toLocaleUpperCase())
+      return translatedItemName(a.globalItemID,a.name,a.pluralName,2).toLocaleUpperCase().localeCompare(translatedItemName(b.globalItemID,b.name,b.pluralName,2).toLocaleUpperCase())
     });
     setItemRows(newItemRows);
 
