@@ -222,8 +222,8 @@ export const es_translations =
         "access_token_valid": "Token de acceso válido:",
         "expires_in": "Expira en:",
         "expired_by": "Expirado por:",
-        "days_one": "día",
-        "days_other": "días"     },
+        "days_one": " día",
+        "days_other": " días"     },
      "itemtext": {
         "item_is_on_these_lists": "El artículo está en estas listas:",
         "highlighted_lists_diff_values": "Las listas resaltadas tienen valores diferentes a nivel de artículo-lista",

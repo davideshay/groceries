@@ -185,9 +185,11 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     useEffect( () => {
       async function doNav() {
         await dismiss()
-        navigateToFirstListID(props.history,remoteDBCreds, globalData.listRows);
+        log.debug("doing nav from donav in login");
+        navigateToFirstListID(props.history,globalData.listRows);
         setRemoteDBState(prevState =>({...prevState,initialNavComplete: true}));
       }
+      log.debug("startup/nav:",{"inc:":remoteDBState.initialNavComplete, "isc": remoteDBState.initialSyncComplete, "li": remoteDBState.loggedIn, "woff": remoteDBState.workingOffline,"cs": remoteDBState.connectionStatus,"lr":globalData.listRows, "lrl": globalData.listRowsLoaded, "ll": globalData.listsLoading})
       if (globalData.listRowsLoaded && !globalData.listsLoading) {
         if (remoteDBState.connectionStatus === ConnectionStatus.cannotStart) {
           log.error("Detected cannot start, setting initRemoteState");
@@ -198,7 +200,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
           doNav();
         }
       }
-    },[remoteDBState.initialNavComplete, remoteDBState.initialSyncComplete ,remoteDBState.loggedIn, remoteDBState.workingOffline, remoteDBState.connectionStatus, db, globalData.listRows, props.history, remoteDBCreds, globalData.listRowsLoaded, globalData.listsLoading, dismiss, setRemoteDBState]);
+    },[remoteDBState.initialNavComplete, remoteDBState.initialSyncComplete ,remoteDBState.loggedIn, remoteDBState.workingOffline, remoteDBState.connectionStatus, db, globalData.listRows, props.history, globalData.listRowsLoaded, globalData.listsLoading, dismiss, setRemoteDBState]);
 
     function updateDBCredsFromResponse(response: CreateResponse): DBCreds {
       let newDBCreds=cloneDeep(remoteDBCreds);
@@ -347,7 +349,8 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     setRemoteDBState(prevState=>({...prevState,workingOffline: true,loggedIn: true  ,initialNavComplete: true, 
         syncStatus: SyncStatus.offline, dbServerAvailable: false ,credsError: false, credsErrorText:""}));
     setRemoteState(prevState=>({...prevState,formError:""}));
-    navigateToFirstListID(props.history,remoteDBCreds, globalData.listRows);    
+    log.debug("naving to first list ID because working offline");
+    navigateToFirstListID(props.history, globalData.listRows);    
   }
 
 /*   function workOffline() {

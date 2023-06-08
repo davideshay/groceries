@@ -5,6 +5,7 @@ import { ListCombinedRows, ListRow } from "./DataTypes";
 import { getListRows } from "./GlobalDataUtilities";
 import { RemoteDBStateContext } from "./RemoteDBState";
 import { translatedCategoryName, translatedItemName, translatedUOMName } from "./translationUtilities";
+import log from "loglevel";
 
 export type GlobalDataState = {
     itemDocs: ItemDocs,
@@ -126,8 +127,10 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
                 (remoteDBState.initialSyncComplete || !remoteDBState.dbServerAvailable)) {
             setListRowsLoaded(false);
             const { listRows: localListRows, listCombinedRows: localListCombinedRows} = getListRows(listDocs as ListDocs,listGroupDocs as ListGroupDocs,remoteDBCreds)
+            log.debug("setting list rows to:",localListRows,"sync complete is:",remoteDBState.initialSyncComplete, "db server avail:",remoteDBState.dbServerAvailable);
             setListRows(localListRows);
             setListCombinedRows(localListCombinedRows);
+            log.debug("setting list rows loaded to true");
             setListRowsLoaded(true);
         }
     },[listsLoading, listDocs, listGroupDocs, listGroupsLoading, remoteDBCreds, remoteDBState.workingOffline, remoteDBState.initialSyncComplete, remoteDBState.dbServerAvailable])

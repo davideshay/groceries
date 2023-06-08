@@ -32,7 +32,8 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
         async function initialStartup() {
             await initialSetupActivities(remoteDB as PouchDB.Database, String(remoteDBCreds.dbUsername));
             screenLoading.current=false;
-            await navigateToFirstListID(props.history,remoteDBCreds,listRows);
+            log.debug("In Initial Load, naving to first list id");
+            await navigateToFirstListID(props.history,listRows);
             setRemoteDBState(prevState => ({...prevState,initialNavComplete: true}));
         }
         if (listRowsLoaded && !listsLoading) {
@@ -40,7 +41,7 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
                 initialStartup();
             } 
         }      
-    },[db, remoteDB, listRows, props.history, remoteDBCreds, remoteDBState.connectionStatus, listRowsLoaded, listsLoading, setRemoteDBState])   
+    },[db, remoteDB, listRows, props.history, remoteDBCreds.dbUsername, remoteDBState.connectionStatus, listRowsLoaded, listsLoading, setRemoteDBState])   
 
     useEffect(() => {
         async function dismissToLogin() {

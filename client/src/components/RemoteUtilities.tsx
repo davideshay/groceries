@@ -12,13 +12,15 @@ import { cloneDeep, pick, keys, isEqual } from 'lodash';
 import { t } from "i18next";
 import log from "loglevel";
 
-export async function navigateToFirstListID(phistory: History,remoteDBCreds: DBCreds, listRows: ListRow[]) {
+export async function navigateToFirstListID(phistory: History, listRows: ListRow[]) {
+//    log.debug("Nav to first list: ",cloneDeep(remoteDBCreds),cloneDeep(listRows));
     let firstListID = null;
     if (listRows !== undefined) {
         if (listRows.length > 0) {
         firstListID = listRows[0].listDoc._id;
         }
     }
+    log.debug("First attempted list ID:",firstListID)
     if (firstListID == null) {
         phistory.push("/lists");
     } else {
