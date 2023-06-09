@@ -36,6 +36,7 @@ export type RemoteDBState = {
     dbUUIDAction: DBUUIDAction,
     credsError: boolean,
     credsErrorText: string,
+    forceShowLoginScreen: boolean,
     apiServerAvailable: boolean,
     dbServerAvailable: boolean,
     workingOffline: boolean,
@@ -170,6 +171,7 @@ export const initialRemoteDBState: RemoteDBState = {
     credsErrorText: "",
     apiServerAvailable: true,
     dbServerAvailable: true,
+    forceShowLoginScreen: false,
     workingOffline: false,
     offlineJWTMatch: false,
     loggedIn: false,
@@ -300,7 +302,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
                                     setSyncStatus(SyncStatus.active);
                                     setDBServerAvailable(true)})
             .on('denied', (err) => { setSyncStatus(SyncStatus.denied);
-                                    setDBServerAvailable(false)
+//                                    setDBServerAvailable(false)
                                     log.debug("live sync denied: ",{err})})
             .on('error', (err) => { log.debug("live sync error state",{err}) ; 
                                 globalSync.cancel();
@@ -345,7 +347,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
                                     }
                                     })
             .on('denied', (err) => { setSyncStatus(SyncStatus.denied);
-                                    setDBServerAvailable(false);
+//                                    setDBServerAvailable(false);
                                     log.debug("Initial sync denied: ",{err})})
             .on('error', (err) => { log.debug("initial error state",{err}) ; 
                                 globalSync.cancel();
@@ -396,7 +398,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
                         let pouchPromise : Promise<Response> = new Promise((resolve,reject)=>(resolve(pouchResponse)))
                         return pouchPromise}
                     }}) }
-        catch(err) {log.error("Could not assign assign PouchDB Remote Server:",err); return false;}        
+        catch(err) {log.error("Could not assign PouchDB Remote Server:",err); return false;}        
         globalRemoteDB.setMaxListeners(40);    
         log.debug("In assignDB, setting connection status to dbAssigned...");
         setRemoteDBState(prevState => ({...prevState,connectionStatus: ConnectionStatus.dbAssigned, 
@@ -432,9 +434,17 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             devID = devIDInfo.identifier;
         }
         setRemoteDBState(prevState => ({...prevState,deviceUUID: devID}));
-        let credsObj = await getPrefsDBCreds(remoteDBCreds.current);
+        let [initialState,credsObj] = await getPrefsDBCreds(remoteDBCreds.current);
+        if (initialState) {
+            setRemoteDBState(prevState => ({...prevState,forceShowLoginScreen: true, connectionStatus: ConnectionStatus.navToLoginScreen}));
+            remoteDBCreds.current = credsObj;
+            await setPrefsDBCreds();
+            return [false,""];
+        }
+        log.debug("Got credsObj",JSON.stringify(credsObj));
         remoteDBCreds.current = credsObj;
         let serverAvailable = await isServerAvailable(remoteDBCreds.current.apiServerURL); 
+        log.debug("is api server available: ",JSON.stringify(serverAvailable));
         if (!serverAvailable.apiServerAvailable) {
             // validate you have a refreshJWT matching userid
             let validJWTMatch = JWTMatchesUser(credsObj.refreshJWT,credsObj.dbUsername);

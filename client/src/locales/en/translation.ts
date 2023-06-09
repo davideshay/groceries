@@ -222,7 +222,8 @@ export const en_translations =
         "expires_in": "Expires In:",
         "expired_by": "Expired By:",
         "days_one": " day",
-        "days_other": " days"
+        "days_other": " days",
+        "relogin": "Relogin"
      },
      "error" : {
         "invalid_dbuuid" : "Invalid Database Unique Identifier",

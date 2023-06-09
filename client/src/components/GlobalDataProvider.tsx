@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext} from "react";
+import React, { createContext, useState, useEffect, useContext, useCallback} from "react";
 import { useFind} from 'use-pouchdb';
 import { CategoryDocs, GlobalItemDocs, ItemDocs, ListDocs, ListGroupDocs, UomDoc } from "./DBSchema";
 import { ListCombinedRows, ListRow } from "./DataTypes";
@@ -28,7 +28,15 @@ export type GlobalDataState = {
     uomError: PouchDB.Core.Error | null,
     listRowsLoaded: boolean,
     listRows: ListRow[],
-    listCombinedRows: ListCombinedRows
+    listCombinedRows: ListCombinedRows,
+    dataReloadStatus: DataReloadStatus,
+    waitForReload: () => void
+}
+
+export enum DataReloadStatus {
+    ReloadNeeded = "N",
+    ReloadInProcess = "I",
+    ReloadComplete = "C"
 }
 
 export interface GlobalDataContextType {
@@ -56,8 +64,9 @@ export const initialGlobalDataState: GlobalDataState = {
     uomError: null,
     listRowsLoaded: false,
     listRows: [],
-    listCombinedRows: []
-
+    listCombinedRows: [],
+    dataReloadStatus: DataReloadStatus.ReloadNeeded,
+    waitForReload: () => {}
 }
 
 export const GlobalDataContext = createContext(initialGlobalDataState)
@@ -71,6 +80,7 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
     const [ listCombinedRows, setListCombinedRows] = useState<ListCombinedRows>();
     const [ listRowsLoaded, setListRowsLoaded] = useState(false);
     const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
+    const [ dataReloadStatus, setDataReloadStatus] = useState<DataReloadStatus>(DataReloadStatus.ReloadNeeded);
 
     const { docs: itemDocs, loading: itemsLoading, error: itemError} = useFind({
         index: { fields: ["type","name"] },
@@ -127,13 +137,31 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
                 (remoteDBState.initialSyncComplete || !remoteDBState.dbServerAvailable)) {
             setListRowsLoaded(false);
             const { listRows: localListRows, listCombinedRows: localListCombinedRows} = getListRows(listDocs as ListDocs,listGroupDocs as ListGroupDocs,remoteDBCreds)
-            log.debug("setting list rows to:",localListRows,"sync complete is:",remoteDBState.initialSyncComplete, "db server avail:",remoteDBState.dbServerAvailable);
             setListRows(localListRows);
             setListCombinedRows(localListCombinedRows);
-            log.debug("setting list rows loaded to true");
             setListRowsLoaded(true);
         }
     },[listsLoading, listDocs, listGroupDocs, listGroupsLoading, remoteDBCreds, remoteDBState.workingOffline, remoteDBState.initialSyncComplete, remoteDBState.dbServerAvailable])
+
+    useEffect( () => {
+        if (dataReloadStatus === DataReloadStatus.ReloadNeeded) {
+            log.debug("Global data reload initiated");
+            setDataReloadStatus(DataReloadStatus.ReloadInProcess);
+            return
+        }
+        if (dataReloadStatus === DataReloadStatus.ReloadInProcess) {
+            if (! (itemsLoading || globalItemsLoading || listsLoading || listGroupsLoading || categoryLoading || uomLoading)) {
+                log.debug("Global data reload complete")
+                setDataReloadStatus(DataReloadStatus.ReloadComplete);
+            }
+        }
+    },[itemsLoading,globalItemsLoading,listsLoading,listGroupsLoading,categoryLoading,uomLoading,dataReloadStatus])
+
+
+    const waitForReload = useCallback( () => {
+        log.debug("Wait for Reload Triggered")
+        setDataReloadStatus(DataReloadStatus.ReloadNeeded);
+    },[setDataReloadStatus])
 
     let value: GlobalDataState = {
             itemDocs: itemDocs as ItemDocs,
@@ -164,7 +192,9 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
             uomError,
             listRows: listRows as ListRow[],
             listRowsLoaded,
-            listCombinedRows: listCombinedRows as ListCombinedRows
+            listCombinedRows: listCombinedRows as ListCombinedRows,
+            dataReloadStatus: dataReloadStatus,
+            waitForReload: waitForReload
         };
     return (
         <GlobalDataContext.Provider value={value}>{props.children}</GlobalDataContext.Provider>

@@ -223,7 +223,9 @@ export const es_translations =
         "expires_in": "Expira en:",
         "expired_by": "Expirado por:",
         "days_one": " día",
-        "days_other": " días"     },
+        "days_other": " días",
+        "relogin": "volver a iniciar sesión"
+         },
      "itemtext": {
         "item_is_on_these_lists": "El artículo está en estas listas:",
         "highlighted_lists_diff_values": "Las listas resaltadas tienen valores diferentes a nivel de artículo-lista",

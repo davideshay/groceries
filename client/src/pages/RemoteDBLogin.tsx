@@ -14,7 +14,7 @@ import { HistoryProps} from '../components/DataTypes';
 import { apiConnectTimeout } from '../components/Utilities';
 import { useTranslation } from 'react-i18next';
 import PageHeader from '../components/PageHeader';
-import { GlobalDataContext } from '../components/GlobalDataProvider';
+import { DataReloadStatus, GlobalDataContext } from '../components/GlobalDataProvider';
 import log from 'loglevel';
 
 enum LoginOptions {
@@ -47,6 +47,20 @@ export const initRemoteState = {
   formError: "",
   showMainPassword: false,
   showVerifyPassword: false
+}
+
+export type FormState = {
+  apiServerURL: string | null, 
+  dbUsername: string | null,
+  email: string | null,
+  fullName: string | null
+}
+
+export const initFormState = {
+  apiServerURL: "",
+  dbUsername: "",
+  email: "",
+  fullName: ""
 }
 
 /* 
@@ -85,10 +99,11 @@ states to support:
 const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     const db=usePouch();
     const [remoteState,setRemoteState]=useState<RemoteState>(initRemoteState);
+    const [formState,setFormState]=useState<FormState>(initFormState);;
     const [presentAlert] = useIonAlert();
     const { remoteDBState, remoteDBCreds, setRemoteDBState, setRemoteDBCreds,stopSyncAndCloseRemote,
       assignDB, setDBCredsValue, setLoginType, attemptFullLogin} = useContext(RemoteDBStateContext);
-    const globalData = useContext(GlobalDataContext);
+    const { dataReloadStatus, waitForReload, listRows, listRowsLoaded, listsLoading } = useContext(GlobalDataContext);
     const [ present, dismiss ]= useIonLoading();
     const { t } = useTranslation();
 
@@ -110,7 +125,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       if (remoteDBState.credsError) {
         setRemoteState(prevState => ({...prevState,formError: remoteDBState.credsErrorText}))
       }
-//      log.debug("setting login type to from login page");
+      setFormState(prevState=> ({...prevState,apiServerURL: remoteDBCreds.apiServerURL, dbUserName: remoteDBCreds.dbUsername}))
       setLoginType(LoginType.loginFromLoginPage);
 // eslint-disable-next-line react-hooks/exhaustive-deps 
     },[])
@@ -183,24 +198,28 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     },[remoteDBState.dbUUIDAction,destroyAndExit,dismiss,exitApp,presentAlert,setRemoteDBState,t])
 
     useEffect( () => {
+      if (remoteDBState.initialSyncComplete) {
+          waitForReload()
+      }
+    },[remoteDBState.initialSyncComplete,waitForReload])
+
+    useEffect( () => {
       async function doNav() {
         await dismiss()
-        log.debug("doing nav from donav in login");
-        navigateToFirstListID(props.history,globalData.listRows);
+        navigateToFirstListID(props.history,listRows);
         setRemoteDBState(prevState =>({...prevState,initialNavComplete: true}));
       }
-      log.debug("startup/nav:",{"inc:":remoteDBState.initialNavComplete, "isc": remoteDBState.initialSyncComplete, "li": remoteDBState.loggedIn, "woff": remoteDBState.workingOffline,"cs": remoteDBState.connectionStatus,"lr":globalData.listRows, "lrl": globalData.listRowsLoaded, "ll": globalData.listsLoading})
-      if (globalData.listRowsLoaded && !globalData.listsLoading) {
+      if (listRowsLoaded && !listsLoading) {
         if (remoteDBState.connectionStatus === ConnectionStatus.cannotStart) {
           log.error("Detected cannot start, setting initRemoteState");
           setRemoteState(initRemoteState);
         } else if (remoteDBState.loggedIn && remoteDBState.initialNavComplete) {
           return;
-        } else if (remoteDBState.connectionStatus === ConnectionStatus.loginComplete && (remoteDBState.initialSyncComplete || remoteDBState.workingOffline)) {
+        } else if (remoteDBState.connectionStatus === ConnectionStatus.loginComplete && ((remoteDBState.initialSyncComplete && dataReloadStatus === DataReloadStatus.ReloadComplete) || remoteDBState.workingOffline)) {
           doNav();
         }
       }
-    },[remoteDBState.initialNavComplete, remoteDBState.initialSyncComplete ,remoteDBState.loggedIn, remoteDBState.workingOffline, remoteDBState.connectionStatus, db, globalData.listRows, props.history, globalData.listRowsLoaded, globalData.listsLoading, dismiss, setRemoteDBState]);
+    },[remoteDBState.initialNavComplete, remoteDBState.initialSyncComplete ,remoteDBState.loggedIn, remoteDBState.workingOffline, remoteDBState.connectionStatus, db, listRows, props.history, listRowsLoaded, listsLoading, dataReloadStatus,dismiss, setRemoteDBState]);
 
     function updateDBCredsFromResponse(response: CreateResponse): DBCreds {
       let newDBCreds=cloneDeep(remoteDBCreds);
@@ -222,6 +241,8 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     await showLoading();
     setRemoteState(prevState => ({...prevState,formError: ""}));
     setRemoteDBState(prevState =>({...prevState,credsError: false, credsErrorText: ""}));
+    setDBCredsValue("apiServerURL",formState.apiServerURL);
+    setDBCredsValue("dbUsername",formState.dbUsername);    
     let credsCheck = errorCheckCreds({credsObj: remoteDBCreds,background:false,creatingNewUser:false,password: remoteState.password});
     if (credsCheck.credsError ) {
       setRemoteState(prevState => ({...prevState,formError: String(credsCheck.errorText)}))
@@ -263,7 +284,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     let newCreds=updateDBCredsFromResponse(newResponse);
     let tokenInfo = getTokenInfo(response.data.accessJWT, true);
     setRemoteDBCreds(newCreds);
-    setRemoteDBState(prevState=>({...prevState, accessJWT: response.data.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate, loggedIn: true, credsError: false, credsErrorText: ""}));
+    setRemoteDBState(prevState=>({...prevState, accessJWT: response.data.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate, loggedIn: true, forceShowLoginScreen: false , credsError: false, credsErrorText: ""}));
     await assignDB(response.data.accessJWT);
   }
   
@@ -271,6 +292,10 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     await showLoading();
     setRemoteState(prevState => ({...prevState,formError: ""}));
     setRemoteDBState(prevState=>({...prevState,credsError: false, credsErrorText: ""}));
+    setDBCredsValue("apiServerURL",formState.apiServerURL);
+    setDBCredsValue("dbUsername",formState.dbUsername);    
+    setDBCredsValue("email",formState.email);
+    setDBCredsValue("fullName",formState.fullName);
     let createResponse: CreateResponse;
     let credsCheck = errorCheckCreds({credsObj: remoteDBCreds,background: false,creatingNewUser: true,password: remoteState.password,verifyPassword: remoteState.verifyPassword});
     if (!credsCheck.credsError) {
@@ -303,7 +328,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     let newCreds=updateDBCredsFromResponse(createResponse);
     setRemoteDBCreds(newCreds);
     let tokenInfo = getTokenInfo(createResponse.accessJWT,true);
-    setRemoteDBState(prevState=>({...prevState,accessJWT: createResponse.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate, loggedIn: true}));
+    setRemoteDBState(prevState=>({...prevState,accessJWT: createResponse.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate, loggedIn: true, forceShowLoginScreen: false}));
     await assignDB(createResponse.accessJWT);
     await dismiss();
   }
@@ -350,7 +375,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
         syncStatus: SyncStatus.offline, dbServerAvailable: false ,credsError: false, credsErrorText:""}));
     setRemoteState(prevState=>({...prevState,formError:""}));
     log.debug("naving to first list ID because working offline");
-    navigateToFirstListID(props.history, globalData.listRows);    
+    navigateToFirstListID(props.history, listRows);    
   }
 
 /*   function workOffline() {
@@ -418,7 +443,14 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     setRemoteDBState(prevState =>({...prevState,credsError: false, credsErrorText: ""}));
   }
 
+  function forceLogin() {
+    setRemoteDBState(prevState => ({...prevState,forceShowLoginScreen: true}));
+  }
+
   function getLoginOption() {
+    if (remoteDBState.forceShowLoginScreen) {
+      return LoginOptions.Login;
+    }
     let lo : LoginOptions = LoginOptions.Login
     let decTbl: any =[]
     for (let a = 0; a < 2; a++) {
@@ -477,19 +509,19 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       if (remoteState.inCreateMode) {
         formElem = <>
         <IonItem>
-        <IonInput label={t("general.api_server_url") as string} labelPlacement="stacked" type="url" inputmode="url" value={remoteDBCreds.apiServerURL} onIonInput={(e) => {setDBCredsValue("apiServerURL:",String(e.detail.value))}}>
+        <IonInput label={t("general.api_server_url") as string} labelPlacement="stacked" type="url" inputmode="url" value={formState.apiServerURL} onIonInput={(e) => {setFormState(prevState=>({...prevState,apiServerURL:String(e.detail.value)}))}}>
         </IonInput>
         </IonItem>
         <IonItem>
-        <IonInput label={t("general.username") as string} labelPlacement="stacked" type="text" autocomplete="username" value={remoteDBCreds.dbUsername} onIonInput={(e) => {setDBCredsValue("dbUsername",String(e.detail.value))}}>
+        <IonInput label={t("general.username") as string} labelPlacement="stacked" type="text" autocomplete="username" value={formState.dbUsername} onIonInput={(e) => {setFormState(prevState=>({...prevState,dbUsername:String(e.detail.value)}))}}>
         </IonInput>
         </IonItem>
         <IonItem>
-        <IonInput label={t("general.email_address") as string} labelPlacement="stacked" type="email" autocomplete="email" value={remoteDBCreds.email} onIonInput={(e) => {setDBCredsValue("email",String(e.detail.value))}}>
+        <IonInput label={t("general.email_address") as string} labelPlacement="stacked" type="email" autocomplete="email" value={formState.email} onIonInput={(e) => {setFormState(prevState=>({...prevState,email:String(e.detail.value)}))}}>
         </IonInput>
         </IonItem>
         <IonItem>
-        <IonInput label={t("general.fullname") as string} labelPlacement="stacked"  type="text" value={remoteDBCreds.fullName} onIonInput={(e) => {setDBCredsValue("fullName",String(e.detail.value))}}>
+        <IonInput label={t("general.fullname") as string} labelPlacement="stacked"  type="text" value={formState.fullName} onIonInput={(e) => {setFormState(prevState=>({...prevState,fullName:String(e.detail.value)}))}}>
         </IonInput>
         </IonItem>
         <IonItem>
@@ -503,11 +535,11 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
         </>
       } else {
         formElem = <><IonItem>
-        <IonInput label={t("general.api_server_url") as string} labelPlacement="stacked" type="url" inputmode="url" value={remoteDBCreds.apiServerURL} onIonInput={(e) => {setDBCredsValue("apiServerURL",String(e.detail.value))}}>
+        <IonInput label={t("general.api_server_url") as string} labelPlacement="stacked" type="url" inputmode="url" value={formState.apiServerURL} onIonInput={(e) => {setFormState(prevState=>({...prevState,apiServerURL:String(e.detail.value)}))}}>
         </IonInput>
         </IonItem>
         <IonItem>
-        <IonInput label={t("general.username") as string} labelPlacement="stacked"  type="text" autocomplete="username" value={remoteDBCreds.dbUsername} onIonInput={(e) => {setDBCredsValue("dbUsername",String(e.detail.value))}}>
+        <IonInput label={t("general.username") as string} labelPlacement="stacked"  type="text" autocomplete="username" value={formState.dbUsername} onIonInput={(e) => {setFormState(prevState=>({...prevState,dbUsername:String(e.detail.value)}))}}>
         </IonInput>
         </IonItem>
         <IonItem>
@@ -566,11 +598,11 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
   let buttonsElem
   switch (loginOption) {
     case LoginOptions.AskOffline:
-      buttonsElem=<>
+      buttonsElem=
       <IonItem>
-        <IonButton slot="start" onClick={() => setWorkingOffline()}>{t("general.work_offline")}</IonButton>
+        <IonButton size="small" slot="start" onClick={() => setWorkingOffline()}>{t("general.work_offline")}</IonButton>
+        <IonButton size="small" slot="end" onClick={() => forceLogin()}>{t("general.relogin")}</IonButton>
       </IonItem>
-      </>
       break;
     case LoginOptions.AttemptLogin:
       buttonsElem=<IonButton size="small" onClick={() => attemptLogin()}>{t("general.attempt_login_again")}</IonButton>
@@ -578,8 +610,8 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     case LoginOptions.Login:
       if (remoteState.inCreateMode) {
         buttonsElem=<>
-        <IonButton fill="outline" onClick={() => setRemoteState(prevState => ({...prevState,inCreateMode: false}))}>{t("general.cancel")}</IonButton>
-        <IonButton onClick={() => submitCreateForm()}>{t("general.create")}</IonButton>
+        <IonButton size="small" fill="outline" onClick={() => setRemoteState(prevState => ({...prevState,inCreateMode: false}))}>{t("general.cancel")}</IonButton>
+        <IonButton size="small" onClick={() => submitCreateForm()}>{t("general.create")}</IonButton>
         </>
       } else {
         buttonsElem=<>
@@ -593,6 +625,10 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       buttonsElem=<IonButton size="small" onClick={() => logoutPopup()}>{t("general.logout")}</IonButton>
       break;  
     case LoginOptions.NoCachedCreds:
+      buttonsElem=
+        <IonItem>
+          <IonButton size="small" onClick={() => forceLogin()}>{t("general.relogin")}</IonButton>
+        </IonItem>
       break;
     default:
       break;

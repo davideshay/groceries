@@ -360,8 +360,9 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
     return UUIDCheck;
   }
 
-  export async function  getPrefsDBCreds(curCreds: DBCreds)  {
+  export async function  getPrefsDBCreds(curCreds: DBCreds): Promise<[boolean,DBCreds]>  {
     let { value: credsStr } = await Preferences.get({ key: 'dbcreds'});
+    let initial : boolean = false;
     let credsObj: DBCreds = cloneDeep(DBCredsInit);
     const credsOrigKeys = keys(credsObj);
     if (isJsonString(String(credsStr))) {
@@ -380,6 +381,7 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
             fullName: "",
             lastConflictsViewed: (new Date()).toISOString()
             };
+        initial = true;    
     }
-    return credsObj;
+    return [initial,credsObj];
   }

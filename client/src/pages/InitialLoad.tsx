@@ -7,7 +7,7 @@ import { navigateToFirstListID } from '../components/RemoteUtilities';
 import { initialSetupActivities } from '../components/Utilities';
 import ErrorPage from './ErrorPage';
 import { History } from 'history';
-import { GlobalDataContext } from '../components/GlobalDataProvider';
+import { DataReloadStatus, GlobalDataContext } from '../components/GlobalDataProvider';
 import { useTranslation } from 'react-i18next';
 import log from 'loglevel';
 
@@ -17,7 +17,7 @@ type InitialLoadProps = {
 
 const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
     const { remoteDBState, remoteDBCreds, remoteDB, setLoginType, setRemoteDBState} = useContext(RemoteDBStateContext);
-    const { listError ,listRowsLoaded, listRows, listsLoading } = useContext(GlobalDataContext)
+    const { listError ,listRowsLoaded, listRows, listsLoading, dataReloadStatus } = useContext(GlobalDataContext)
     const db=usePouch();
     const screenLoading = useRef(true);
     const { t } = useTranslation();
@@ -37,11 +37,11 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
             setRemoteDBState(prevState => ({...prevState,initialNavComplete: true}));
         }
         if (listRowsLoaded && !listsLoading) {
-            if ((remoteDBState.connectionStatus === ConnectionStatus.loginComplete)) {
+            if ((remoteDBState.connectionStatus === ConnectionStatus.loginComplete && dataReloadStatus === DataReloadStatus.ReloadComplete)) {
                 initialStartup();
             } 
         }      
-    },[db, remoteDB, listRows, props.history, remoteDBCreds.dbUsername, remoteDBState.connectionStatus, listRowsLoaded, listsLoading, setRemoteDBState])   
+    },[db, remoteDB, listRows, props.history, remoteDBCreds.dbUsername, remoteDBState.connectionStatus, listRowsLoaded, listsLoading, setRemoteDBState, dataReloadStatus])   
 
     useEffect(() => {
         async function dismissToLogin() {

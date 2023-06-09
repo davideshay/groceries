@@ -221,7 +221,9 @@ export const de_translations =
         "expires_in": "Läuft ab in:",
         "expired_by": "Abgelaufen am:",
         "days_one": " Tag",
-        "days_other": " Tage"    },
+        "days_other": " Tage",
+        "relogin": "Erneut anmelden"
+        },
     "error": {
         "invalid_dbuuid" : "Ungültiger Datenbank-Identifier",
         "could_not_contact_api_server": "API-Server konnte nicht erreicht werden",
