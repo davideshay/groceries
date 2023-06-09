@@ -221,8 +221,9 @@ export const en_translations =
         "access_token_valid": "Access Token Valid:",
         "expires_in": "Expires In:",
         "expired_by": "Expired By:",
-        "days_one": "day",
-        "days_other": "days"
+        "days_one": " day",
+        "days_other": " days",
+        "relogin": "Relogin"
      },
      "error" : {
         "invalid_dbuuid" : "Invalid Database Unique Identifier",

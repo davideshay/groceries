@@ -220,8 +220,10 @@ export const de_translations =
         "access_token_valid": "Gültiges Zugriffstoken:",
         "expires_in": "Läuft ab in:",
         "expired_by": "Abgelaufen am:",
-        "days_one": "Tag",
-        "days_other": "Tage"    },
+        "days_one": " Tag",
+        "days_other": " Tage",
+        "relogin": "Erneut anmelden"
+        },
     "error": {
         "invalid_dbuuid" : "Ungültiger Datenbank-Identifier",
         "could_not_contact_api_server": "API-Server konnte nicht erreicht werden",
