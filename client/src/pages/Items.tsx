@@ -2,7 +2,7 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
   IonItemDivider, IonButton, IonButtons, IonFab, IonFabButton, IonIcon, IonCheckbox, IonLabel, IonSelect,
   IonSelectOption, IonInput, IonPopover, IonAlert,IonMenuButton, useIonToast, IonGrid, IonRow, 
   IonCol, useIonAlert } from '@ionic/react';
-import { add,documentTextOutline,searchOutline } from 'ionicons/icons';
+import { add,chevronDown,chevronUp,documentTextOutline,searchOutline } from 'ionicons/icons';
 import React, { useState, useEffect, useContext, useRef, KeyboardEvent, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { cloneDeep } from 'lodash';
@@ -10,7 +10,7 @@ import './Items.css';
 import { useUpdateGenericDocument, useCreateGenericDocument, useItems } from '../components/Usehooks';
 import { GlobalStateContext } from '../components/GlobalState';
 import { AddListOptions } from '../components/DBSchema';
-import { ItemSearch, SearchState, PageState, ListCombinedRow, HistoryProps, RowType, ItemSearchType} from '../components/DataTypes'
+import { ItemSearch, SearchState, PageState, ListCombinedRow, HistoryProps, RowType, ItemSearchType, CategoryRows} from '../components/DataTypes'
 import { ItemDoc, ItemDocs, ItemListInit, ItemList, ItemDocInit, CategoryDoc, UomDoc, GlobalItemDocs } from '../components/DBSchema';
 import { getAllSearchRows, getItemRows, filterSearchRows } from '../components/ItemUtilities';
 import SyncIndicator from '../components/SyncIndicator';
@@ -19,6 +19,7 @@ import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
 import { isEqual } from 'lodash';
 import { useTranslation } from 'react-i18next';
+import log from 'loglevel';
 
 const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode: routeMode, id: routeListID  } = useParams<{mode: string, id: string}>();
@@ -28,7 +29,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
           selectedListType: (routeMode === "list" ? RowType.list : RowType.listGroup) ,
           ignoreCheckOffWarning: false,
           groupIDforSelectedList: null,
-          doingUpdate: false, itemRows: [], showAlert: false, alertHeader: "", alertMessage: ""});
+          doingUpdate: false, itemRows: [], categoryRows: [],showAlert: false, alertHeader: "", alertMessage: ""});
   const searchRef=useRef<HTMLIonInputElement>(null);
   const [presentToast] = useIonToast();
   const [presentAlert, dismissAlert] = useIonAlert();
@@ -47,8 +48,11 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       needListGroupID: true, activeOnly: false, selectedListID: pageState.selectedListOrGroupID,
       selectedListType: pageState.selectedListType});
   const { listError , listDocs, listCombinedRows,listRows, listRowsLoaded, uomDocs, uomLoading, uomError, categoryDocs, categoryLoading, categoryError, itemDocs } = useContext(GlobalDataContext);
-  const { globalState,setStateInfo: setGlobalStateInfo} = useContext(GlobalStateContext);
+  const { globalState,setStateInfo: setGlobalStateInfo, updateSettingKey} = useContext(GlobalStateContext);
   const {t} = useTranslation();
+  const contentRef = useRef<any>(null);
+  const scrollTopRef = useRef(0);
+  const shouldScroll = useRef(false);
 
   const getGroupIDForList = useCallback( (listID: string) => {
     if (routeMode === "group") { return pageState.selectedListOrGroupID};
@@ -71,10 +75,14 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   useEffect( () => {
     if (baseItemRowsLoaded && listRowsLoaded && !categoryLoading && !uomLoading && !globalData.globalItemsLoading) {
-      setPageState( (prevState) => ({ ...prevState,
+      setPageState( (prevState) => {
+        const [newItemRows,newCategoryRows] = getItemRows(baseItemDocs as ItemDocs, listCombinedRows, categoryDocs as CategoryDoc[], uomDocs as UomDoc[], pageState.selectedListType, pageState.selectedListOrGroupID, prevState.categoryRows)
+        return (
+        { ...prevState,
         doingUpdate: false,
-        itemRows: getItemRows(baseItemDocs as ItemDocs, listCombinedRows, categoryDocs as CategoryDoc[], uomDocs as UomDoc[], pageState.selectedListType, pageState.selectedListOrGroupID)
-      }))
+        itemRows: newItemRows, categoryRows: newCategoryRows
+          })
+      });
     }
   },[baseItemRowsLoaded, listRowsLoaded, categoryLoading, uomLoading, globalData.globalItemsLoading,
     uomDocs, baseItemDocs, listCombinedRows, categoryDocs, pageState.selectedListOrGroupID, pageState.selectedListType]);
@@ -120,7 +128,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function isItemAlreadyInList(itemName: string): boolean {
-    let existingItem = (baseItemDocs as ItemDocs).find((el) => el.name.toUpperCase() === itemName.toUpperCase());
+    let existingItem = (baseItemDocs as ItemDocs).find((el) => (el.name.toUpperCase() === itemName.toUpperCase() || el.pluralName?.toUpperCase() === itemName.toUpperCase()));
     return(!(existingItem === undefined));
   }
 
@@ -336,14 +344,17 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         presentToast({message: t("error.updating_item_completed"), duration: 1500, position: "middle"})
       }
     }
+    shouldScroll.current = true;
   }
 
   function selectList(listOrGroupID: string) {
     if (listOrGroupID === "null" ) { return }
     let combinedRow: ListCombinedRow | undefined = listCombinedRows.find(lcr => lcr.listOrGroupID === listOrGroupID);
-    let newListType: RowType = combinedRow!.rowType;
-    setPageState({...pageState, selectedListOrGroupID: listOrGroupID, selectedListType: newListType, itemRows: getItemRows(baseItemDocs as ItemDocs, listCombinedRows, categoryDocs as CategoryDoc[], uomDocs as UomDoc[], newListType, listOrGroupID)});
     if (combinedRow === undefined) {return};
+    let newListType: RowType = combinedRow.rowType;
+    const [newItemRows,newCategoryRows] = getItemRows(baseItemDocs as ItemDocs, listCombinedRows, categoryDocs as CategoryDoc[], uomDocs as UomDoc[], newListType, listOrGroupID, [])
+    setPageState({...pageState, selectedListOrGroupID: listOrGroupID, selectedListType: newListType, itemRows: newItemRows, categoryRows: newCategoryRows });
+    updateSettingKey("savedListID",listOrGroupID);
     if (combinedRow.rowType === RowType.list) {
       props.history.push('/items/list/'+combinedRow.listDoc._id);
     } else {
@@ -351,12 +362,23 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   }
 
-  async function deleteCompletedItems(itemDocs: ItemDocs,listID: string) {
-    (itemDocs as ItemDocs).forEach(async (itemDoc) => {
+  async function deleteCompletedItemsPrompt() {
+       await presentAlert({
+        header: t("general.confirm"),
+        subHeader: t("general.confirm_remove_completed_items"),
+        buttons: [ { text: t("general.cancel"), role: "Cancel" ,
+                    handler: () => dismissAlert()},
+                    { text: t("general.ok"), role: "Confirm",
+                    handler: () => {deleteCompletedItems()}}]
+      })
+  }
+
+  async function deleteCompletedItems() {
+    (baseItemDocs as ItemDocs).forEach(async (itemDoc) => {
         let updatedItem: ItemDoc=cloneDeep(itemDoc);
         let itemUpdated = false;
         for (let i = 0; i < updatedItem.lists.length; i++) {
-          let willUpdate = (updatedItem.lists[i].listID === listID || globalState.settings.completeFromAllLists) && updatedItem.lists[i].completed;
+          let willUpdate = (updatedItem.lists[i].listID === pageState.selectedListOrGroupID || globalState.settings.completeFromAllLists) && updatedItem.lists[i].completed;
           if (!willUpdate) {continue}
           updatedItem.lists[i].active = false;
           itemUpdated = true;
@@ -369,6 +391,20 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
           }          
         }
     });
+  }
+
+  function collapseExpandCategory(catID: string | null, completed: boolean) {
+    let newCatRows: CategoryRows = cloneDeep(pageState.categoryRows);
+    const foundCat = newCatRows.find((catRow) => (catRow.id === catID && catRow.completed === completed))
+    if (foundCat === undefined) {log.debug("No Matching Category to Collapse"); return};
+    foundCat.collapsed = !foundCat.collapsed;
+    setPageState(prevState => ({...prevState,categoryRows: newCatRows}));
+  }
+
+  function getCategoryExpanded(catID: string | null, completed: boolean) {
+    const foundCat = pageState.categoryRows.find((catRow) => (catRow.id === catID && catRow.completed === completed))
+    if (foundCat === undefined) {return true};
+    return (!foundCat.collapsed)
   }
 
   let popOverElem = (
@@ -430,17 +466,18 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   let listContent=[];
 
-  function addCurrentRows(listCont: JSX.Element[], curRows: JSX.Element[], catID: string, catName: string, catColor: string, completed: boolean | null) {
+  function addCurrentRows(listCont: JSX.Element[], curRows: JSX.Element[], catID: string | null, catName: string, catColor: string, completed: boolean | null) {
     if (catColor === "primary") {catColor = "#777777"}
+    let isExpanded = getCategoryExpanded(catID,Boolean(completed));
     listCont.push(
-        <IonItemGroup key={"cat"+catID+Boolean(completed).toString()}>
-        <IonItemDivider className="category-divider" style={{"borderBottom":"4px solid "+catColor}}    key={"cat"+catID+Boolean(completed).toString()}>{catName}</IonItemDivider>
+        <IonItemGroup key={"cat"+String(catID)+Boolean(completed).toString()}>
+        <IonItemDivider className="category-divider" style={{"borderBottom":"4px solid "+catColor}} key={"cat"+String(catID)+Boolean(completed).toString()}><IonIcon className="collapse-icon" icon={isExpanded ? chevronUp : chevronDown } onClick={() => {collapseExpandCategory(catID,Boolean(completed))}}></IonIcon>{catName}</IonItemDivider>
           {curRows}
       </IonItemGroup>
     )
   }
 
-  let lastCategoryID : string | null ="<INITIAL>";
+  let lastCategoryID : string | null = null;
   let lastCategoryName="<INITIAL>";
   let lastCategoryColor="#ffffff";
   let lastCategoryFinished: boolean | null = null;
@@ -449,13 +486,13 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   const completedDivider=(
         <IonItemGroup key="completeddividergroup"><IonItemDivider key="Completed">
         <IonLabel key="completed-divider-label">{t("general.completed")}</IonLabel>
-        <IonButton slot="end" onClick={() => deleteCompletedItems(baseItemDocs as ItemDocs,pageState.selectedListOrGroupID)}>{t("general.delete_completed_items")}</IonButton>
+        <IonButton slot="end" onClick={() => deleteCompletedItemsPrompt()}>{t("general.delete_completed_items")}</IonButton>
         </IonItemDivider></IonItemGroup>);
   for (let i = 0; i < pageState.itemRows.length; i++) {
     const item = pageState.itemRows[i];
     if ((lastCategoryName !== item.categoryName )||(lastCategoryFinished !== item.completed)) {
       if (currentRows.length > 0) {
-        addCurrentRows(listContent,currentRows,String(lastCategoryID),lastCategoryName,lastCategoryColor,lastCategoryFinished);
+        addCurrentRows(listContent,currentRows,lastCategoryID,lastCategoryName,lastCategoryColor,lastCategoryFinished);
         currentRows=[];
       }
       lastCategoryID = item.categoryID;
@@ -463,8 +500,9 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       lastCategoryColor=item.categoryColor;
       lastCategoryFinished=item.completed;
     }
+    let rowVisible = getCategoryExpanded(item.categoryID,Boolean(item.completed));
     currentRows.push(
-      <IonItem className="itemrow-outer" key={pageState.itemRows[i].itemID} >
+      <IonItem style={{display: rowVisible ? "block" : "none"}} className="itemrow-outer" key={pageState.itemRows[i].itemID} >
         <IonGrid className="grid-no-pad"><IonRow>
         <IonCol className="col-no-pad" size="1">
         <IonCheckbox aria-label=""
@@ -483,14 +521,27 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       createdFinished=true;
     }
   }
-  addCurrentRows(listContent,currentRows,String(lastCategoryID),lastCategoryName,lastCategoryColor,lastCategoryFinished);
+  addCurrentRows(listContent,currentRows,lastCategoryID,lastCategoryName,lastCategoryColor,lastCategoryFinished);
   if (!createdFinished) {listContent.push(completedDivider)};
   let contentElem=(<IonList lines="full">{listContent}</IonList>)
+
+  function resumeScroll() {
+    let content = contentRef.current;
+    if (content) {
+      try {content!.scrollToPoint(0,scrollTopRef.current);}
+      catch(err) {log.debug("Error resuming scroll...")}
+    }
+  }
+
+  if (shouldScroll) {
+    resumeScroll();
+    shouldScroll.current = false;
+  }
 
   return (
     <IonPage>
       {headerElem}
-      <IonContent>
+      <IonContent ref={contentRef} scrollEvents={true} onIonScroll={(e) => {scrollTopRef.current = e.detail.scrollTop}}>
           {contentElem}
       </IonContent>
       <IonFab slot="fixed" vertical="bottom" horizontal="end">

@@ -1,5 +1,5 @@
 export const maxAppSupportedSchemaVersion = 3;
-export const appVersion = "0.7.9";
+export const appVersion = "0.8.0";
 export const minimumAccessRefreshSeconds = 300;
 
 export interface UUIDDoc {
@@ -301,7 +301,8 @@ export type GlobalSettings = {
   removeFromAllLists: boolean,
   completeFromAllLists: boolean,
   includeGlobalInSearch: boolean,
-  daysOfConflictLog: Number
+  daysOfConflictLog: Number,
+  savedListID?: string | undefined | null
 }
 
 export const InitSettings: GlobalSettings = {
@@ -309,7 +310,8 @@ export const InitSettings: GlobalSettings = {
   removeFromAllLists: true,
   completeFromAllLists: true,
   includeGlobalInSearch: true,
-  daysOfConflictLog: 2
+  daysOfConflictLog: 2,
+  savedListID: null
 }
 
 export type SettingsDoc = {

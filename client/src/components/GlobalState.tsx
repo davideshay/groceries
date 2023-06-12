@@ -24,7 +24,7 @@ export interface GlobalStateContextType {
     settingsLoading: boolean,
     setGlobalState: React.Dispatch<React.SetStateAction<GlobalState>>,
     setStateInfo: (key: string, value: string | null | RowType) => void,
-    updateSettingKey: (key: string, value: AddListOptions | boolean | number) => Promise<boolean>
+    updateSettingKey: (key: string, value: AddListOptions | boolean | number | string) => Promise<boolean>
 }
 
 
@@ -43,7 +43,7 @@ const initialContext = {
     settingsLoading: false,
     setGlobalState: (state: GlobalState ) => {},
     setStateInfo: (key: string, value: string | null | RowType) => {},
-    updateSettingKey: async (key: string, value: AddListOptions | boolean | number) => {return false}
+    updateSettingKey: async (key: string, value: AddListOptions | boolean | number| string) => {return false}
 }
 
 export const GlobalStateContext = createContext(initialContext)
@@ -66,7 +66,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         setGlobalState(prevState => ({ ...prevState, [key]: value}))
     }
 
-    async function updateSettingKey(key: string, value: AddListOptions | boolean | number): Promise<boolean> {
+    async function updateSettingKey(key: string, value: AddListOptions | boolean | number | string): Promise<boolean> {
         setGlobalState(prevState => ({...prevState,settings: {...prevState.settings, [key]: value}}))
         let dbSettingsDoc: SettingsDoc = settingsDocs[0] as SettingsDoc;
         let newSettingsDoc: SettingsDoc = {...dbSettingsDoc,settings: {...dbSettingsDoc.settings,[key]: value}};
@@ -97,6 +97,10 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
             newSettings.daysOfConflictLog = InitSettings.daysOfConflictLog;
             updated = true;
         }
+        if (!newSettings.hasOwnProperty('savedListID')) {
+            newSettings.savedListID = InitSettings.savedListID;
+            updated = true;
+        }
         return [newSettings, updated]
     }
 
@@ -109,7 +113,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         let storageSettingsExist = false;
         if (storageSettingsStr != null && isJsonString(String(storageSettingsStr))) {
             storageSettings=JSON.parse(String(storageSettingsStr));
-            let settingsObjFiltered=pick(storageSettings,"addListOption","removeFromAllLists","completeFromAllLists","includeGlobalInSearch","daysOfConflictLog");
+            let settingsObjFiltered=pick(storageSettings,"addListOption","removeFromAllLists","completeFromAllLists","includeGlobalInSearch","daysOfConflictLog","savedListID");
             storageSettings = settingsObjFiltered;
             storageSettingsExist = true;
         }

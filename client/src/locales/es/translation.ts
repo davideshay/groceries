@@ -224,7 +224,8 @@ export const es_translations =
         "expired_by": "Expirado por:",
         "days_one": " día",
         "days_other": " días",
-        "relogin": "volver a iniciar sesión"
+        "relogin": "volver a iniciar sesión",
+        "confirm_remove_completed_items": "Confirme que desea eliminar elementos completados de la lista"
          },
      "itemtext": {
         "item_is_on_these_lists": "El artículo está en estas listas:",

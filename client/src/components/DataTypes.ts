@@ -19,10 +19,25 @@ export interface ItemRow {
 export type ItemRows = ItemRow[];
 
 export const initItemRow: ItemRow = {
-    itemID: "", globalItemID: null, itemName: "",categoryID: "", categoryName: "",
+    itemID: "", globalItemID: null, itemName: "",categoryID: null, categoryName: "",
     categorySeq: 0, categoryColor: "#ffffff", quantity: 0,
     uomDesc: "", quantityUOMDesc: "", hasNote: false, completed: false
   }
+
+export interface CategoryRow {
+  id: string | null,
+  name: string,
+  seq: number | undefined,
+  color : string,
+  completed: boolean,
+  collapsed: boolean
+}
+
+export type CategoryRows = CategoryRow[];
+
+export const initCategoryRow: CategoryRow = {
+  id: null, name: "", seq: 0, color: "#ffffff", completed: false, collapsed: false
+}
 
 export enum ItemSearchType {
   Local= "L",
@@ -54,6 +69,7 @@ export enum ItemSearchType {
     groupIDforSelectedList: null | string,
     doingUpdate: boolean,
     itemRows: Array<ItemRow>,
+    categoryRows: Array<CategoryRow>,
     ignoreCheckOffWarning: boolean,
     showAlert: boolean,
     alertHeader: string,

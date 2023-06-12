@@ -2,17 +2,17 @@ import { DBCreds, DBCredsInit, RemoteDBState } from "./RemoteDBState";
 import { CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
 import { Preferences } from '@capacitor/preferences';
 import jwt_decode from 'jwt-decode';
-import { ListRow } from "./DataTypes";
+import { ListCombinedRows, ListRow, RowType } from "./DataTypes";
 import { UUIDDoc, maxAppSupportedSchemaVersion } from "./DBSchema";
 import { DBUUIDAction, DBUUIDCheck } from "./RemoteDBState";
 import { History } from "history";
 import { urlPatternValidation, usernamePatternValidation, emailPatternValidation,
-        fullnamePatternValidation, apiConnectTimeout, isJsonString, DEFAULT_API_URL } from "./Utilities";
+        fullnamePatternValidation, apiConnectTimeout, isJsonString, DEFAULT_API_URL, getRowTypeFromListOrGroupID } from "./Utilities";
 import { cloneDeep, pick, keys, isEqual } from 'lodash';
 import { t } from "i18next";
 import log from "loglevel";
 
-export async function navigateToFirstListID(phistory: History, listRows: ListRow[]) {
+export async function navigateToFirstListID(phistory: History, listRows: ListRow[], listCombinedRows: ListCombinedRows, savedListID: string | undefined | null) {
 //    log.debug("Nav to first list: ",cloneDeep(remoteDBCreds),cloneDeep(listRows));
     let firstListID = null;
     if (listRows !== undefined) {
@@ -20,11 +20,30 @@ export async function navigateToFirstListID(phistory: History, listRows: ListRow
         firstListID = listRows[0].listDoc._id;
         }
     }
-    log.debug("First attempted list ID:",firstListID)
-    if (firstListID == null) {
+    let navToID = null;
+    let navType: RowType;
+    if (savedListID === null || savedListID === undefined) {
+        navToID = firstListID;
+        navType = RowType.list;
+    } else {
+        navToID = savedListID;
+        let savedType = getRowTypeFromListOrGroupID(savedListID,listCombinedRows);
+        if (savedType === null) {
+            navToID = firstListID;
+            navType = RowType.list
+        } else {
+            navType = savedType;
+        }
+    }
+    log.debug("Navigating to type: ",navType," with ID:",navToID);
+    if (navToID == null) {
         phistory.push("/lists");
     } else {
-        phistory.push("/items/list/"+firstListID)
+        if (navType === RowType.list) {
+            phistory.push("/items/list/"+navToID);
+        } else {
+            phistory.push("/items/group/"+navToID);
+        }
     }  
   }
 

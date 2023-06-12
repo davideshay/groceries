@@ -1,12 +1,11 @@
 import {initItemRow, ItemRow, ItemSearch, ListCombinedRow, ListCombinedRows,
-     ListRow, RowType, ItemSearchType} from '../components/DataTypes';
+     ListRow, RowType, ItemSearchType, CategoryRows, CategoryRow, ItemRows, initCategoryRow} from '../components/DataTypes';
 import { GlobalState } from "./GlobalState";
 import { AddListOptions, GlobalSettings } from './DBSchema';
 import { UomDoc, ItemDoc, ItemDocs, ItemList, ListDocs, ListDoc, CategoryDoc, GlobalItemDocs } from './DBSchema';
 import { cloneDeep } from 'lodash';
 import { t } from 'i18next';
 import { translatedCategoryName, translatedItemName, translatedUOMShortName } from './translationUtilities';
-import log from 'loglevel';
 import { isEmpty } from 'lodash';
 
 export function getGroupIDForList(listID: string, listDocs: ListDocs): string | null {
@@ -129,10 +128,11 @@ function findRightList(itemDoc: ItemDoc, listType: RowType, listOrGroupID: strin
     if (list === undefined) { return undefined} else {return cloneDeep(list)}
 }
 
-export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRow[], categoryDocs: CategoryDoc[], uomDocs: UomDoc[], listType: RowType, listOrGroupID: string) {
+export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRow[], categoryDocs: CategoryDoc[], uomDocs: UomDoc[], listType: RowType, listOrGroupID: string, curCategoryRows: CategoryRows) : [ItemRows, CategoryRows] {
     let itemRows: Array<ItemRow> =[];
+    let categoryRows: Array<CategoryRow> = [];
     let listRow=listCombinedRows.find((el: ListCombinedRow) => (el.rowType === listType && el.listOrGroupID === listOrGroupID));
-    if (listRow === undefined) {return itemRows};
+    if (listRow === undefined) {return [itemRows,categoryRows]};
     let sortedItemDocs: ItemDocs = cloneDeep(itemDocs);
     if (sortedItemDocs.length > 0) {
         sortedItemDocs.sort(function(a,b) {
@@ -199,7 +199,25 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
     (a.categoryName.toLocaleUpperCase().localeCompare(b.categoryName.toLocaleUpperCase())) ||
     (a.itemName.toLocaleUpperCase().localeCompare(b.itemName.toLocaleUpperCase()))
     ))
-    return (itemRows)
+    itemRows.forEach((item) => {
+      let foundCat = categoryRows.find((catRow) => (item.categoryID === catRow.id && item.completed === catRow.completed))
+      let foundCurCat = curCategoryRows.find((catRow) => (item.categoryID === catRow.id && item.completed === catRow.completed))
+      if (foundCat === undefined) {
+        let newCatRow: CategoryRow = cloneDeep(initCategoryRow);
+        newCatRow.id = item.categoryID;
+        newCatRow.name = item.categoryName;
+        newCatRow.seq = item.categorySeq;
+        newCatRow.completed = Boolean(item.completed);
+        newCatRow.color = item.categoryColor;
+        if (foundCurCat === undefined) {
+          newCatRow.collapsed = false;
+        } else {
+          newCatRow.collapsed = foundCurCat.collapsed;
+        }
+        categoryRows.push(newCatRow);
+      }
+    })
+    return ([itemRows,categoryRows])
 }
 
 export function sortedItemLists(itemList: ItemList[], listDocs: ListDocs) : ItemList[] {
@@ -320,14 +338,23 @@ export function listIsDifferentThanCommon(sortedLists: ItemList[], listIdx: numb
     return ((combinedKeys[thisKey] < maxCnt) || (maxCheckCount > 1)) ;
 }
 
-export async function checkNameInGlobal(db: PouchDB.Database, name: string) {
-    let nameExists=false;
-    let globalItemDocs = null;
-    try { globalItemDocs = await db.query('_utilities/ucase-globalitems',{ key: name.toUpperCase()}) }
-    catch(e) {log.error("checkNameInGlobal query error:",e)};
-    if (globalItemDocs !== null && globalItemDocs.hasOwnProperty("rows") && globalItemDocs.rows.length > 0) {
-        log.debug(globalItemDocs);
-        if (globalItemDocs.rows[0].key === name.toUpperCase()) {nameExists = true}
-    }
-    return nameExists;
+export function checkNameInGlobalItems(globalItemDocs: GlobalItemDocs, name: string, pluralName: string): boolean {
+  let nameExists=false;
+  const sysItemKey="system:item";
+  const compName = name.toLocaleUpperCase();
+  const compPluralName = pluralName.toLocaleUpperCase();
+  globalItemDocs.every(item => {
+    const tkey = "globalitem." + item._id?.substring(sysItemKey.length+1)
+    if (item.name.toLocaleUpperCase() === compName ||
+        item.name.toLocaleUpperCase() === compPluralName ||
+        t(tkey, {count: 1}).toLocaleUpperCase() === compName ||
+        t(tkey, {count: 1}).toLocaleUpperCase() === compPluralName ||
+        t(tkey, {count: 1}).toLocaleUpperCase() === compName ||
+        t(tkey, {count: 2}).toLocaleUpperCase() === compPluralName  
+        ) {
+          nameExists = true;
+        }
+        return !nameExists;
+  });
+  return nameExists;
 }

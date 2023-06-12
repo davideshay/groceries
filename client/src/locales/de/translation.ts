@@ -222,7 +222,8 @@ export const de_translations =
         "expired_by": "Abgelaufen am:",
         "days_one": " Tag",
         "days_other": " Tage",
-        "relogin": "Erneut anmelden"
+        "relogin": "Erneut anmelden",
+        "confirm_remove_completed_items": "Bestätigen Sie, dass Sie abgeschlossene Elemente aus der Liste entfernen möchten"
         },
     "error": {
         "invalid_dbuuid" : "Ungültiger Datenbank-Identifier",

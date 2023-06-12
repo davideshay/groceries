@@ -223,7 +223,8 @@ export const en_translations =
         "expired_by": "Expired By:",
         "days_one": " day",
         "days_other": " days",
-        "relogin": "Relogin"
+        "relogin": "Relogin",
+        "confirm_remove_completed_items": "Confirm that you want to remove completed items from the list"
      },
      "error" : {
         "invalid_dbuuid" : "Invalid Database Unique Identifier",
@@ -343,7 +344,7 @@ export const en_translations =
         "nothing_to_load": "Nothing To Load",
         "could_not_import_recipe_dup":"Could not import: {{recipe}} - Duplicate",
         "could_not_match_uom":"Could Not find UoM. Original was: {{name}} or {{pluralName}}",
-        "must_enter_a_plural_name":"Must Enter a Plural Name",
+        "must_enter_a_plural_name":"Must Enter a Plural Name. Defaulted to current name.",
         "account_creation_disabled":"Account Creation Disabled",
         "updating_uom": "Error updating UoM",
         "database_server_not_available": "Database Server Not Available",
