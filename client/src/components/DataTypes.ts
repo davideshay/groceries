@@ -19,7 +19,7 @@ export interface ItemRow {
 export type ItemRows = ItemRow[];
 
 export const initItemRow: ItemRow = {
-    itemID: "", globalItemID: null, itemName: "",categoryID: "", categoryName: "",
+    itemID: "", globalItemID: null, itemName: "",categoryID: null, categoryName: "",
     categorySeq: 0, categoryColor: "#ffffff", quantity: 0,
     uomDesc: "", quantityUOMDesc: "", hasNote: false, completed: false
   }
@@ -36,7 +36,7 @@ export interface CategoryRow {
 export type CategoryRows = CategoryRow[];
 
 export const initCategoryRow: CategoryRow = {
-  id: "", name: "", seq: 0, color: "#ffffff", completed: false, collapsed: false
+  id: null, name: "", seq: 0, color: "#ffffff", completed: false, collapsed: false
 }
 
 export enum ItemSearchType {

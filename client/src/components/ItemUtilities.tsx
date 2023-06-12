@@ -128,7 +128,7 @@ function findRightList(itemDoc: ItemDoc, listType: RowType, listOrGroupID: strin
     if (list === undefined) { return undefined} else {return cloneDeep(list)}
 }
 
-export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRow[], categoryDocs: CategoryDoc[], uomDocs: UomDoc[], listType: RowType, listOrGroupID: string) : [ItemRows, CategoryRows] {
+export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRow[], categoryDocs: CategoryDoc[], uomDocs: UomDoc[], listType: RowType, listOrGroupID: string, curCategoryRows: CategoryRows) : [ItemRows, CategoryRows] {
     let itemRows: Array<ItemRow> =[];
     let categoryRows: Array<CategoryRow> = [];
     let listRow=listCombinedRows.find((el: ListCombinedRow) => (el.rowType === listType && el.listOrGroupID === listOrGroupID));
@@ -201,6 +201,7 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
     ))
     itemRows.forEach((item) => {
       let foundCat = categoryRows.find((catRow) => (item.categoryID === catRow.id && item.completed === catRow.completed))
+      let foundCurCat = curCategoryRows.find((catRow) => (item.categoryID === catRow.id && item.completed === catRow.completed))
       if (foundCat === undefined) {
         let newCatRow: CategoryRow = cloneDeep(initCategoryRow);
         newCatRow.id = item.categoryID;
@@ -208,7 +209,11 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
         newCatRow.seq = item.categorySeq;
         newCatRow.completed = Boolean(item.completed);
         newCatRow.color = item.categoryColor;
-        newCatRow.collapsed = false;
+        if (foundCurCat === undefined) {
+          newCatRow.collapsed = false;
+        } else {
+          newCatRow.collapsed = foundCurCat.collapsed;
+        }
         categoryRows.push(newCatRow);
       }
     })

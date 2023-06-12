@@ -48,7 +48,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       needListGroupID: true, activeOnly: false, selectedListID: pageState.selectedListOrGroupID,
       selectedListType: pageState.selectedListType});
   const { listError , listDocs, listCombinedRows,listRows, listRowsLoaded, uomDocs, uomLoading, uomError, categoryDocs, categoryLoading, categoryError, itemDocs } = useContext(GlobalDataContext);
-  const { globalState,setStateInfo: setGlobalStateInfo} = useContext(GlobalStateContext);
+  const { globalState,setStateInfo: setGlobalStateInfo, updateSettingKey} = useContext(GlobalStateContext);
   const {t} = useTranslation();
   const contentRef = useRef<any>(null);
   const scrollTopRef = useRef(0);
@@ -75,11 +75,14 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   useEffect( () => {
     if (baseItemRowsLoaded && listRowsLoaded && !categoryLoading && !uomLoading && !globalData.globalItemsLoading) {
-      const [newItemRows, newCategoryRows] = getItemRows(baseItemDocs as ItemDocs, listCombinedRows, categoryDocs as CategoryDoc[], uomDocs as UomDoc[], pageState.selectedListType, pageState.selectedListOrGroupID)
-      setPageState( (prevState) => ({ ...prevState,
+      setPageState( (prevState) => {
+        const [newItemRows,newCategoryRows] = getItemRows(baseItemDocs as ItemDocs, listCombinedRows, categoryDocs as CategoryDoc[], uomDocs as UomDoc[], pageState.selectedListType, pageState.selectedListOrGroupID, prevState.categoryRows)
+        return (
+        { ...prevState,
         doingUpdate: false,
         itemRows: newItemRows, categoryRows: newCategoryRows
-      }))
+          })
+      });
     }
   },[baseItemRowsLoaded, listRowsLoaded, categoryLoading, uomLoading, globalData.globalItemsLoading,
     uomDocs, baseItemDocs, listCombinedRows, categoryDocs, pageState.selectedListOrGroupID, pageState.selectedListType]);
@@ -125,7 +128,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function isItemAlreadyInList(itemName: string): boolean {
-    let existingItem = (baseItemDocs as ItemDocs).find((el) => el.name.toUpperCase() === itemName.toUpperCase());
+    let existingItem = (baseItemDocs as ItemDocs).find((el) => (el.name.toUpperCase() === itemName.toUpperCase() || el.pluralName?.toUpperCase() === itemName.toUpperCase()));
     return(!(existingItem === undefined));
   }
 
@@ -347,10 +350,11 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   function selectList(listOrGroupID: string) {
     if (listOrGroupID === "null" ) { return }
     let combinedRow: ListCombinedRow | undefined = listCombinedRows.find(lcr => lcr.listOrGroupID === listOrGroupID);
-    let newListType: RowType = combinedRow!.rowType;
-    const [newItemRows,newCategoryRows] = getItemRows(baseItemDocs as ItemDocs, listCombinedRows, categoryDocs as CategoryDoc[], uomDocs as UomDoc[], newListType, listOrGroupID)
-    setPageState({...pageState, selectedListOrGroupID: listOrGroupID, selectedListType: newListType, itemRows: newItemRows, categoryRows: newCategoryRows });
     if (combinedRow === undefined) {return};
+    let newListType: RowType = combinedRow.rowType;
+    const [newItemRows,newCategoryRows] = getItemRows(baseItemDocs as ItemDocs, listCombinedRows, categoryDocs as CategoryDoc[], uomDocs as UomDoc[], newListType, listOrGroupID, [])
+    setPageState({...pageState, selectedListOrGroupID: listOrGroupID, selectedListType: newListType, itemRows: newItemRows, categoryRows: newCategoryRows });
+    updateSettingKey("savedListID",listOrGroupID);
     if (combinedRow.rowType === RowType.list) {
       props.history.push('/items/list/'+combinedRow.listDoc._id);
     } else {
@@ -466,14 +470,14 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     if (catColor === "primary") {catColor = "#777777"}
     let isExpanded = getCategoryExpanded(catID,Boolean(completed));
     listCont.push(
-        <IonItemGroup key={"cat"+catID+Boolean(completed).toString()}>
+        <IonItemGroup key={"cat"+String(catID)+Boolean(completed).toString()}>
         <IonItemDivider className="category-divider" style={{"borderBottom":"4px solid "+catColor}} key={"cat"+String(catID)+Boolean(completed).toString()}><IonIcon className="collapse-icon" icon={isExpanded ? chevronUp : chevronDown } onClick={() => {collapseExpandCategory(catID,Boolean(completed))}}></IonIcon>{catName}</IonItemDivider>
           {curRows}
       </IonItemGroup>
     )
   }
 
-  let lastCategoryID : string | null ="<INITIAL>";
+  let lastCategoryID : string | null = null;
   let lastCategoryName="<INITIAL>";
   let lastCategoryColor="#ffffff";
   let lastCategoryFinished: boolean | null = null;
@@ -517,7 +521,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       createdFinished=true;
     }
   }
-  addCurrentRows(listContent,currentRows,String(lastCategoryID),lastCategoryName,lastCategoryColor,lastCategoryFinished);
+  addCurrentRows(listContent,currentRows,lastCategoryID,lastCategoryName,lastCategoryColor,lastCategoryFinished);
   if (!createdFinished) {listContent.push(completedDivider)};
   let contentElem=(<IonList lines="full">{listContent}</IonList>)
 

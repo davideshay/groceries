@@ -153,7 +153,12 @@ const Item: React.FC = (props) => {
     }
     let alreadyExists = false;
     itemRows.forEach((ir) => {
-      if ( ir._id !== stateItemDoc._id  && ir.listGroupID === stateItemDoc.listGroupID && ir.name.toUpperCase() === stateItemDoc.name.toUpperCase()) {
+      if ( ir._id !== stateItemDoc._id  && ir.listGroupID === stateItemDoc.listGroupID &&
+        (ir.name.toUpperCase() === stateItemDoc.name.toUpperCase() ||
+         ir.name.toUpperCase() === stateItemDoc.pluralName?.toUpperCase() ||
+         ir.pluralName?.toUpperCase() === stateItemDoc.name.toUpperCase() ||
+         ir.pluralName?.toUpperCase() === stateItemDoc.pluralName?.toUpperCase()
+      )) {
         alreadyExists = true;
       }
     })
