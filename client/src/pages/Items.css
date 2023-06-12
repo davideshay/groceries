@@ -75,3 +75,7 @@ ion-col.col-no-pad {
 ion-icon.note-icon {
     padding-left: 6px
 }
+
+ion-icon.collapse-icon {
+    padding-right: 6px
+}

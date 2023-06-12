@@ -5,14 +5,13 @@ import { IonContent, IonPage, IonButton, IonList, IonInput, IonItem,
 import { addCircleOutline, closeCircleOutline, trashOutline, saveOutline } from 'ionicons/icons';
 import { usePhotoGallery } from '../components/Usehooks';
 import { useParams } from 'react-router-dom';
-import { usePouch } from 'use-pouchdb';
 import { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import { useCreateGenericDocument, useUpdateGenericDocument, useDeleteGenericDocument, useGetOneDoc, useItems, pictureSrcPrefix } from '../components/Usehooks';
 import { GlobalStateContext } from '../components/GlobalState';
 import { cloneDeep, isEmpty, remove } from 'lodash';
 import './Item.css';
 import ItemLists from '../components/ItemLists';
-import { getCommonKey, createEmptyItemDoc, checkNameInGlobal  } from '../components/ItemUtilities';
+import { getCommonKey, createEmptyItemDoc, checkNameInGlobalItems  } from '../components/ItemUtilities';
 import { PouchResponse, ListRow, RowType, PouchResponseInit} from '../components/DataTypes';
 import { UomDoc, ItemDoc, ItemDocInit, ItemList, ItemListInit, CategoryDoc, ImageDoc, ImageDocInit, InitUomDoc } from '../components/DBSchema';
 import ErrorPage from './ErrorPage';
@@ -50,7 +49,6 @@ const Item: React.FC = (props) => {
   const delImage = useDeleteGenericDocument();
   const { doc: itemDoc, loading: itemLoading, dbError: itemError } = useGetOneDoc(routeItemID);
   const { doc: imageDoc, loading: imageLoading, dbError: imageError} = useGetOneDoc(stateItemDoc.imageID)
-  const db = usePouch();
   const screenLoading = useRef(true);
   const {goBack} = useContext(NavContext);
   const { takePhoto } = usePhotoGallery();
@@ -147,6 +145,7 @@ const Item: React.FC = (props) => {
     }
     if (isEmpty(stateItemDoc.pluralName) && (stateItemDoc.globalItemID === null)) {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.PluralName]: {errorMessage: t("error.must_enter_a_plural_name"), hasError: true}}))
+      setStateItemDoc(prevState => ({...prevState,pluralName: prevState.name}))
       return false;
     }
     if (isEmpty(stateItemDoc.pluralName) && (stateItemDoc.globalItemID !== null)) {
@@ -162,7 +161,7 @@ const Item: React.FC = (props) => {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.cannot_use_name_existing_item"), hasError: true}}))
       return false;
     }
-    if ( stateItemDoc.globalItemID == null && await checkNameInGlobal(db as PouchDB.Database,stateItemDoc.name.toUpperCase())) {
+    if ( stateItemDoc.globalItemID == null && await checkNameInGlobalItems(globalData.globalItemDocs,stateItemDoc.name, String(stateItemDoc.pluralName))) {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.cannot_use_name_existing_globalitem"), hasError: true}}))
       return false;
     }
