@@ -36,6 +36,7 @@ export async function navigateToFirstListID(phistory: History, listRows: ListRow
         }
     }
     log.debug("Navigating to type: ",navType," with ID:",navToID);
+    log.debug("Current history object:",JSON.stringify(phistory))
     if (navToID == null) {
         phistory.push("/lists");
     } else {
@@ -50,7 +51,8 @@ export async function navigateToFirstListID(phistory: History, listRows: ListRow
 export async function isServerAvailable(apiServerURL: string|null) {
     let respObj = {
         apiServerAvailable: false,
-        dbServerAvailable: false
+        dbServerAvailable: false,
+        apiServerAppVersion: ""     
     }
     if (apiServerURL === null || apiServerURL === undefined || apiServerURL === "") {
         return respObj;
@@ -70,6 +72,7 @@ export async function isServerAvailable(apiServerURL: string|null) {
     if (response.status === 200 && response.data && responseSuccessful && response.data.apiServerAvailable) {
         respObj.apiServerAvailable = true;
         respObj.dbServerAvailable = response.data.dbServerAvailable;
+        respObj.apiServerAppVersion = response.data.apiServerAppVersion ? response.data.apiServerAppVersion : ""
     }    
     return respObj
 }

@@ -17,6 +17,7 @@ import PageHeader from '../components/PageHeader';
 import { DataReloadStatus, GlobalDataContext } from '../components/GlobalDataProvider';
 import log from 'loglevel';
 import { GlobalStateContext } from '../components/GlobalState';
+import { useHistory } from 'react-router';
 
 enum LoginOptions {
   Unknown = "U",
@@ -108,6 +109,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     const { globalState} = useContext(GlobalStateContext);
     const [ present, dismiss ]= useIonLoading();
     const { t } = useTranslation();
+    const history = useHistory();
 
     const exitApp = useCallback( async () => {
       if (!(isPlatform("desktop") || isPlatform("electron"))) {App.exitApp()}
@@ -208,7 +210,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     useEffect( () => {
       async function doNav() {
         await dismiss()
-        navigateToFirstListID(props.history,listRows,listCombinedRows , globalState.settings.savedListID);
+        navigateToFirstListID(history,listRows,listCombinedRows , globalState.settings.savedListID);
         setRemoteDBState(prevState =>({...prevState,initialNavComplete: true}));
       }
       if (listRowsLoaded && !listsLoading) {
@@ -221,7 +223,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
           doNav();
         }
       }
-    },[remoteDBState.initialNavComplete, remoteDBState.initialSyncComplete ,remoteDBState.loggedIn, remoteDBState.workingOffline, remoteDBState.connectionStatus, db, listRows, listCombinedRows, props.history, listRowsLoaded, listsLoading, dataReloadStatus,dismiss, setRemoteDBState, globalState.settings, globalState.settingsLoaded]);
+    },[remoteDBState.initialNavComplete, remoteDBState.initialSyncComplete ,remoteDBState.loggedIn, remoteDBState.workingOffline, remoteDBState.connectionStatus, db, listRows, listCombinedRows, listRowsLoaded, listsLoading, dataReloadStatus,dismiss, setRemoteDBState, globalState.settings, globalState.settingsLoaded, history]);
 
     function updateDBCredsFromResponse(response: CreateResponse): DBCreds {
       let newDBCreds=cloneDeep(remoteDBCreds);
@@ -377,7 +379,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
         syncStatus: SyncStatus.offline, dbServerAvailable: false ,credsError: false, credsErrorText:""}));
     setRemoteState(prevState=>({...prevState,formError:""}));
     log.debug("naving to first list ID because working offline");
-    navigateToFirstListID(props.history, listRows, listCombinedRows, globalState.settings.savedListID);    
+    navigateToFirstListID(history, listRows, listCombinedRows, globalState.settings.savedListID);    
   }
 
 /*   function workOffline() {

@@ -1,5 +1,5 @@
 import { Redirect, Route, Switch} from 'react-router-dom';
-import { IonApp, IonSplitPane,setupIonicReact, IonRouterOutlet } from '@ionic/react';
+import { IonApp, IonSplitPane,setupIonicReact, IonRouterOutlet} from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
@@ -55,23 +55,37 @@ import { Provider } from 'use-pouchdb';
 import PouchDB from 'pouchdb';
 import find from 'pouchdb-find';
 import { GlobalDataProvider } from './components/GlobalDataProvider';
+// import log from 'loglevel';
 
-setupIonicReact();
+setupIonicReact({
+  swipeBackEnabled: false,
+  hardwareBackButton: false
+});
 
 const App: React.FC = () => {
 
   PouchDB.plugin(find);
   const [db, ] = useState(() => new PouchDB('local', {revs_limit: 10, auto_compaction: true, size: 250}))
 
-  if (Capacitor.isNativePlatform()) {
-    CapacitorApp.addListener('backButton', ({canGoBack}) => {
-      if (!canGoBack ) {
-        CapacitorApp.exitApp()
-      } else {
-//        history.goBack();
-      }
-    })
-  }
+
+  // useEffect( () => {
+  //   if (Capacitor.isNativePlatform()) {
+  //     console.log("Back Button listener registering now...");
+  //     CapacitorApp.addListener('backButton', ({canGoBack}) => {
+  //       console.log("Back Button hit - capacitor app. CanGoBack:",canGoBack)
+  //       if (!canGoBack ) {
+  //         CapacitorApp.exitApp()
+  //       } else {
+  // //        history.goBack();
+  //       }
+  //     })
+  //   }
+  //   return () => {
+  //     if (Capacitor.isNativePlatform()) {
+  //        CapacitorApp.removeAllListeners();
+  //     }
+  //   }
+  // },[])
 
   useEffect( () => {
     db.setMaxListeners(20);

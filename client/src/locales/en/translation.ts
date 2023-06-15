@@ -224,7 +224,12 @@ export const en_translations =
         "days_one": " day",
         "days_other": " days",
         "relogin": "Relogin",
-        "confirm_remove_completed_items": "Confirm that you want to remove completed items from the list"
+        "confirm_remove_completed_items": "Confirm that you want to remove completed items from the list",
+        "delete_this_category": "Delete This Category?",
+        "really_delete_category": "Do you really want to delete this category?",
+        "all_category_info_lost": "All information on this category will be lost.",
+        
+
      },
      "error" : {
         "invalid_dbuuid" : "Invalid Database Unique Identifier",
@@ -352,7 +357,9 @@ export const en_translations =
         "server_not_available_nor_cached_creds": "The server is not available to login. There are no cached credentials (or the credentials were invalid) to be able to use the app locally either. Please login again when the server is available.",
         "unknown_login_state": "Unknown Login State. Please restart the application.",
         "friends_server_unavailable": "Cannot display or update Friends data. API and/or Database is unavailable.",
-        "app_already_running":"Already running in another session, please continue using the app there."
+        "app_already_running":"Already running in another session, please continue using the app there.",
+        "listgroup_already_exists": "There is already a list group with this name.",
+        "list_already_exists": "There is already a list with this name."
     },
     "itemtext": {
         "item_is_on_these_lists": "Item is on these lists:",

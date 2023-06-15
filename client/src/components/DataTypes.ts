@@ -64,7 +64,7 @@ export enum ItemSearchType {
   }
 
   export interface PageState {
-    selectedListOrGroupID: string,
+    selectedListOrGroupID: string | null,
     selectedListType: RowType,
     groupIDforSelectedList: null | string,
     doingUpdate: boolean,
@@ -76,7 +76,6 @@ export enum ItemSearchType {
     alertMessage: string
   }
 
-
   export enum ResolvedFriendStatus {
     PendingConfirmation = "PENDING",
     Requested = "REQUESTED",
@@ -84,7 +83,6 @@ export enum ItemSearchType {
     Confirmed = "CONFIRMED",
     Deleted = "DELETED"
   }
-
 
   export type FriendRow = {
     friendDoc: FriendDoc,
@@ -210,7 +208,6 @@ export type TandoorIngredient = {
     plural_name: string | null,
     supermarket_category: string | null
   }
-
 }
 
 export type TandoorRecipeStep = {

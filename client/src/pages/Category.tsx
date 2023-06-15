@@ -154,8 +154,8 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
     const subListText = t("general.lists_using_category",{count: numListsUsed});
     setDeletingCategory(true);
     presentAlert({
-      header: t("general.delete_this_list"),
-      subHeader: t("general.really_delete_list") +subItemText+ " " + subListText + " " + t("general.all_list_info_lost"),
+      header: t("general.delete_this_category"),
+      subHeader: t("general.really_delete_category") +subItemText+ " " + subListText + " " + t("general.all_category_info_lost"),
       buttons: [ { text: t("general.cancel"), role: "Cancel" ,
                   handler: () => setDeletingCategory(false)},
                   { text: t("general.delete"), role: "confirm",
@@ -187,9 +187,10 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
           </IonList>
           <IonItem lines="none"  key="formerror">{formErrors[ErrorLocation.General].hasError ? <IonText color="danger">{formErrors[ErrorLocation.General].errorMessage}</IonText> : <></>}</IonItem>
           <IonToolbar>
+            { !stateCategoryDoc._id?.startsWith("system:cat:") ?
             <IonButtons slot="start">
               <IonButton fill="outline" color="danger" onClick={() => deletePrompt()}><IonIcon slot="start" icon={trashOutline}></IonIcon>{t("general.delete")}</IonButton>
-           </IonButtons>
+           </IonButtons> : <></> }
            <IonButtons slot="secondary">
            <IonButton fill="outline" color="secondary" onClick={() => goBack("/categories")}><IonIcon slot="start" icon={closeCircleOutline}></IonIcon>{t("general.cancel")}</IonButton>
           </IonButtons>

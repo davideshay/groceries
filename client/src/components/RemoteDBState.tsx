@@ -597,6 +597,17 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
 
     
     useEffect(() => {
+        if (Capacitor.isNativePlatform()) {
+            console.log("Back Button listener registering now...");
+            App.addListener('backButton', ({canGoBack}) => {
+              console.log("Back Button hit - capacitor app. CanGoBack:",canGoBack,JSON.stringify(window.location.pathname),JSON.stringify(history))
+              if (!canGoBack  || history.length < 3) {
+                App.exitApp()
+              } else {
+                history.goBack();
+              }
+            })
+          }      
         if (remoteDBState.loggedIn) {
             App.addListener("pause", async () => {
                     await queue.add( async () => {
@@ -620,7 +631,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             })
         }    
         return () => {App.removeAllListeners()};
-    },[ remoteDBState.loggedIn, remoteDBState.accessJWT, checkAndRefreshToken, stopSyncAndCloseRemote])
+    },[ remoteDBState.loggedIn, remoteDBState.accessJWT, checkAndRefreshToken, stopSyncAndCloseRemote, history])
 
     useEffect(() => {
         if ( remoteDBState.dupCheck === DupCheckStatus.noDupDetected && !loginAttempted.current && !(remoteDBState.connectionStatus === ConnectionStatus.navToLoginScreen) && !(remoteDBState.connectionStatus === ConnectionStatus.onLoginScreen)) {
