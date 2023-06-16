@@ -629,6 +629,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       buttonsElem=<IonButton size="small" onClick={() => logoutPopup()}>{t("general.logout")}</IonButton>
       break;  
     case LoginOptions.NoCachedCreds:
+    case LoginOptions.MustStayOffline:
       buttonsElem=
         <IonItem>
           <IonButton size="small" onClick={() => forceLogin()}>{t("general.relogin")}</IonButton>

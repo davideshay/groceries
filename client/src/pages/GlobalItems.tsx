@@ -1,6 +1,6 @@
 import { IonContent, IonPage, IonList, IonItem } from '@ionic/react';
 import { useFind } from 'use-pouchdb';
-import { useRef } from 'react';
+import { useContext, useRef } from 'react';
 import { HistoryProps} from '../components/DataTypes';
 import { GlobalItemDocs } from '../components/DBSchema';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +9,7 @@ import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import PageHeader from '../components/PageHeader';
 import { translatedItemName } from '../components/translationUtilities';
+import { GlobalDataContext } from '../components/GlobalDataProvider';
 
 // The AllItems component is a master editor of all of the known items in the database.
 // Each item has a name, along with data about each list the item is on (list ID, quantity, count of number of times bought,
@@ -16,14 +17,12 @@ import { translatedItemName } from '../components/translationUtilities';
 
 
 const GlobalItems: React.FC<HistoryProps> = (props: HistoryProps) => {
-  const { docs: globalItemDocs, loading: globalItemsLoading, error: globalItemsError} = useFind({
-    index: { fields: [ "type","name"]},
-    selector: { type: "globalitem","name": { $exists: true}}  })
   const screenLoading = useRef(true);
+  const {globalItemDocs, globalItemsLoading, globalItemError } = useContext(GlobalDataContext)
   const { t } = useTranslation();
 
 
-  if (globalItemsError ) { return (
+  if (globalItemError ) { return (
     <ErrorPage errorText={t("error.loading_global_item") as string}></ErrorPage>
     )}
 

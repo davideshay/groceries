@@ -35,8 +35,6 @@ export async function navigateToFirstListID(phistory: History, listRows: ListRow
             navType = savedType;
         }
     }
-    log.debug("Navigating to type: ",navType," with ID:",navToID);
-    log.debug("Current history object:",JSON.stringify(phistory))
     if (navToID == null) {
         phistory.push("/lists");
     } else {
@@ -391,7 +389,7 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
     const credsOrigKeys = keys(credsObj);
     if (isJsonString(String(credsStr))) {
       credsObj=JSON.parse(String(credsStr));
-      let credsObjFiltered=pick(credsObj,['apiServerURL','couchBaseURL','database','dbUsername','email','fullName','JWT','refreshJWT','lastConflictsViewed'])
+      let credsObjFiltered=pick(credsObj,['apiServerURL','couchBaseURL','database','dbUsername','email','fullName','refreshJWT','lastConflictsViewed'])
       credsObj = credsObjFiltered;
     }
     const credKeys = keys(credsObj);
