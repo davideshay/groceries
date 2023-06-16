@@ -66,25 +66,8 @@ const App: React.FC = () => {
   const [db, ] = useState(() => new PouchDB('local', {revs_limit: 10, auto_compaction: true, size: 250}))
 
 
-  // useEffect( () => {
-  //   if (Capacitor.isNativePlatform()) {
-  //     console.log("Back Button listener registering now...");
-  //     CapacitorApp.addListener('backButton', ({canGoBack}) => {
-  //       console.log("Back Button hit - capacitor app. CanGoBack:",canGoBack)
-  //       if (!canGoBack ) {
-  //         CapacitorApp.exitApp()
-  //       } else {
-  // //        history.goBack();
-  //       }
-  //     })
-  //   }
-  //   return () => {
-  //     if (Capacitor.isNativePlatform()) {
-  //        CapacitorApp.removeAllListeners();
-  //     }
-  //   }
-  // },[])
-
+  // Back button listener functionality now in RemoteDBState
+  
   useEffect( () => {
     db.setMaxListeners(20);
   },[db]);

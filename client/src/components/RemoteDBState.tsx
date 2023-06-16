@@ -606,9 +606,8 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     
     useEffect(() => {
         if (Capacitor.isNativePlatform()) {
-            console.log("Back Button listener registering now...");
+            log.debug("Back Button listener registering now...");
             App.addListener('backButton', ({canGoBack}) => {
-              console.log("Back Button hit - capacitor app. CanGoBack:",canGoBack,JSON.stringify(window.location.pathname),JSON.stringify(history))
               if (!canGoBack  || history.length < 3) {
                 App.exitApp()
               } else {
