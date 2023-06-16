@@ -1,0 +1,40 @@
+name: build-publish-client-android
+on:
+   workflow_dispatch:
+   push:
+     branches:
+       - master
+     tags:
+       - 'v*'  
+     paths:
+       - 'client/**'
+defaults:
+  run:
+    working-directory: client/android
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}-client    
+jobs:
+  build-it:
+    runs-on: ubuntu-latest
+    steps:
+     - name: Clone repository
+       uses: actions/checkout@v3
+       with:
+         ref: ${{ steps.vars.outputs.tag }}
+     - name: Set up JDK
+       uses: actions/setup-java@v3
+       with:
+         java-version: 17
+         distribution: 'temurin'
+         cache: gradle
+     - name: Setup Gradle Exec
+       run: chmod +x android/gradlew
+     - name: Bundle release
+       run: android/gradlew bundle
+       id: bundle
+     - name: Upload APK
+       uses: actions/upload-artifact@v1
+       with:
+        name: groceries.apk
+        path: client/android/app/build/outputs/apk/debug/groceries.apk
