@@ -52,4 +52,4 @@ jobs:
        uses: actions/upload-artifact@v1
        with:
         name: groceries.apk
-        path: android/app/build/outputs/apk/debug/groceries.apk
+        path: client/android/app/build/outputs/apk/debug/groceries.apk
