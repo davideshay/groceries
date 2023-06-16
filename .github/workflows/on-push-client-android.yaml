@@ -29,12 +29,12 @@ jobs:
          distribution: 'temurin'
          cache: gradle
      - name: Setup Gradle Exec
-       run: chmod +x client/android/gradlew
+       run: chmod +x gradlew
      - name: Bundle release
-       run: client/android/gradlew bundle
+       run: gradlew bundle
        id: bundle
      - name: Upload APK
        uses: actions/upload-artifact@v1
        with:
         name: groceries.apk
-        path: client/android/app/build/outputs/apk/debug/groceries.apk
+        path: app/build/outputs/apk/debug/groceries.apk
