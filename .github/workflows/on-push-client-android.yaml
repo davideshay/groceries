@@ -29,9 +29,9 @@ jobs:
          distribution: 'temurin'
          cache: gradle
      - name: Setup Gradle Exec
-       run: chmod +x android/gradlew
+       run: chmod +x client/android/gradlew
      - name: Bundle release
-       run: android/gradlew bundle
+       run: client/android/gradlew bundle
        id: bundle
      - name: Upload APK
        uses: actions/upload-artifact@v1
