@@ -1,7 +1,7 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput,
    IonItem, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonSelectOption,
   IonButtons, IonMenuButton, useIonToast, IonIcon, useIonAlert, IonFooter, IonText } from '@ionic/react';
-import { useParams } from 'react-router-dom';
+import { useHistory, useParams } from 'react-router-dom';
 import { useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useFriends, 
@@ -66,6 +66,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { loading: listGroupLoading, doc: listGroupDoc, dbError: listGroupError } = useGetOneDoc(pageState.selectedListGroupID);
   const [presentAlert,dismissAlert] = useIonAlert();
   const screenLoading = useRef(true);
+  const history = useHistory();
   const { t } = useTranslation();
 
   useEffect( () => {
@@ -76,7 +77,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   function changeListUpdateState(listGroupID: string) {
     setPageState(prevState => ({...prevState,
         selectedListGroupID: listGroupID}))
-    props.history.push('/listgroup/edit/'+listGroupID);    
+    history.push('/listgroup/edit/'+listGroupID);    
   }
 
   useEffect( () => {
@@ -131,6 +132,14 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.must_enter_a_name"), hasError: true }}));
       return false;
     }
+    let nameExists=false;
+    if (listCombinedRows.filter(lcr => (lcr.rowType === RowType.listGroup && lcr.listGroupName.toUpperCase() === pageState.listGroupDoc.name.toUpperCase() && lcr.listGroupID !== pageState.listGroupDoc._id)).length > 0) {
+      nameExists=true;
+    }
+    if (nameExists) {
+      setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.listgroup_already_exists"), hasError: true}}));
+      return false;
+    }
     let response: PouchResponse;
     if (mode === "new") {
       response = await createListGroup(pageState.listGroupDoc);
@@ -139,7 +148,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
       response = await updateListGroupWhole(pageState.listGroupDoc);
     }
     if (response.successful) {
-      props.history.goBack();  // back("lists")
+      history.goBack();  // back("lists")
     } else {
       presentToast({message: t("error.creating_updating_listgroup"), duration: 1500, position: "middle"});
     }
@@ -251,7 +260,7 @@ async function deleteListGroupFromDB() {
     if (delResponse.successful) {
       setPageState(prevState => ({...prevState,deletingDoc: false}));
       dismissAlert();
-      props.history.goBack(); // back to "list"
+      history.goBack(); // back to "list"
     } else {
       dismissAlert()
       setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.could_not_delete_listgroup"), hasError: true }}));
@@ -391,7 +400,7 @@ function deletePrompt() {
               {deleteButton}
             </IonButtons>
             <IonButtons slot="secondary">
-              <IonButton color="secondary" key="back" fill="outline" onClick={() => props.history.goBack()}>{t("general.cancel")}<IonIcon slot="start" icon={closeCircleOutline}></IonIcon></IonButton>  
+              <IonButton color="secondary" key="back" fill="outline" onClick={() => history.goBack()}>{t("general.cancel")}<IonIcon slot="start" icon={closeCircleOutline}></IonIcon></IonButton>  
             </IonButtons>
             <IonButtons slot="end">
               {updateButton}

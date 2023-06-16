@@ -16,7 +16,7 @@ export function getGroupIDForList(listID: string, listDocs: ListDocs): string | 
     return retGID;
 }
 
-export function getAllSearchRows(allItemDocs: ItemDocs, listID: string,listType: RowType ,listDocs: ListDocs, globalItemDocs: GlobalItemDocs, settings: GlobalSettings): ItemSearch[] {
+export function getAllSearchRows(allItemDocs: ItemDocs, listID: string | null,listType: RowType ,listDocs: ListDocs, globalItemDocs: GlobalItemDocs, settings: GlobalSettings): ItemSearch[] {
     let searchRows: ItemSearch[] = [];
     allItemDocs.forEach((itemDoc) => {
       let searchRow: ItemSearch = {
@@ -101,7 +101,7 @@ export function filterSearchRows(searchRows: ItemSearch[] | undefined, searchCri
     return filteredSearchRows;
 }
 
-function isListPartOfGroup(listID: string, listGroupID: string, listCombinedRows: ListCombinedRows): boolean {
+function isListPartOfGroup(listID: string, listGroupID: string | null, listCombinedRows: ListCombinedRows): boolean {
     let isPart = false;
     let lcr = listCombinedRows.find((el) => (el.rowType===RowType.list && el.listOrGroupID===listID))
     if (lcr === undefined) return isPart;
@@ -109,7 +109,7 @@ function isListPartOfGroup(listID: string, listGroupID: string, listCombinedRows
     return isPart;
 }
 
-function findRightList(itemDoc: ItemDoc, listType: RowType, listOrGroupID: string, listCombinedRow: ListCombinedRow, listCombinedRows: ListCombinedRows) : ItemList | undefined {
+function findRightList(itemDoc: ItemDoc, listType: RowType, listOrGroupID: string | null, listCombinedRow: ListCombinedRow, listCombinedRows: ListCombinedRows) : ItemList | undefined {
     let list: ItemList | undefined;
 // for requested row type of list, just match on listID
     if (listType === RowType.list) {
@@ -128,7 +128,7 @@ function findRightList(itemDoc: ItemDoc, listType: RowType, listOrGroupID: strin
     if (list === undefined) { return undefined} else {return cloneDeep(list)}
 }
 
-export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRow[], categoryDocs: CategoryDoc[], uomDocs: UomDoc[], listType: RowType, listOrGroupID: string, curCategoryRows: CategoryRows) : [ItemRows, CategoryRows] {
+export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRow[], categoryDocs: CategoryDoc[], uomDocs: UomDoc[], listType: RowType, listOrGroupID: string | null, curCategoryRows: CategoryRows) : [ItemRows, CategoryRows] {
     let itemRows: Array<ItemRow> =[];
     let categoryRows: Array<CategoryRow> = [];
     let listRow=listCombinedRows.find((el: ListCombinedRow) => (el.rowType === listType && el.listOrGroupID === listOrGroupID));

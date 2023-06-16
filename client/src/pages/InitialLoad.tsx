@@ -11,6 +11,8 @@ import { DataReloadStatus, GlobalDataContext } from '../components/GlobalDataPro
 import { useTranslation } from 'react-i18next';
 import log from 'loglevel';
 import { GlobalStateContext } from '../components/GlobalState';
+import { useHistory } from 'react-router';
+import { App } from '@capacitor/app';
 
 type InitialLoadProps = {
   history : History
@@ -19,11 +21,16 @@ type InitialLoadProps = {
 const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
     const { remoteDBState, remoteDBCreds, remoteDB, setLoginType, setRemoteDBState} = useContext(RemoteDBStateContext);
     const { listError ,listRowsLoaded, listRows, listsLoading, listCombinedRows, dataReloadStatus } = useContext(GlobalDataContext)
-    const { globalState } = useContext(GlobalStateContext);
+    const { globalState, setGlobalState } = useContext(GlobalStateContext);
     const db=usePouch();
     const screenLoading = useRef(true);
+    const history = useHistory();
     const { t } = useTranslation();
   
+    if (globalState.initialLoadCompleted) {
+        App.exitApp();
+    }
+
     useEffect(() => {
         log.debug("setting to auto login from root...");
         setLoginType(LoginType.autoLoginFromRoot);
@@ -35,26 +42,28 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
             await initialSetupActivities(remoteDB as PouchDB.Database, String(remoteDBCreds.dbUsername));
             screenLoading.current=false;
             log.debug("In Initial Load, naving to first list id");
-            await navigateToFirstListID(props.history,listRows,listCombinedRows, globalState.settings.savedListID);
+            await navigateToFirstListID(history,listRows,listCombinedRows, globalState.settings.savedListID);
             setRemoteDBState(prevState => ({...prevState,initialNavComplete: true}));
+            setGlobalState(prevState => ({...prevState,initialLoadCompleted: true}));
         }
         if (listRowsLoaded && !listsLoading) {
             if ((remoteDBState.connectionStatus === ConnectionStatus.loginComplete && globalState.settingsLoaded && dataReloadStatus === DataReloadStatus.ReloadComplete)) {
                 initialStartup();
             } 
         }      
-    },[db, remoteDB, listRows, listCombinedRows, props.history, remoteDBCreds.dbUsername, remoteDBState.connectionStatus, listRowsLoaded, listsLoading, setRemoteDBState, dataReloadStatus, globalState.settings, globalState.settingsLoaded])   
+    },[db, remoteDB, listRows, listCombinedRows, history, remoteDBCreds.dbUsername, remoteDBState.connectionStatus, listRowsLoaded, listsLoading, setRemoteDBState, dataReloadStatus, globalState.settings, globalState.settingsLoaded, setGlobalState])   
 
     useEffect(() => {
         async function dismissToLogin() {
             screenLoading.current = false;
             setRemoteDBState(prevState => ({...prevState,connectionStatus: ConnectionStatus.onLoginScreen}));
-            props.history.push("/login");
+            setGlobalState(prevState => ({...prevState,initialLoadCompleted: true}));
+            history.push("/login");
         }
         if (remoteDBState.connectionStatus === ConnectionStatus.navToLoginScreen) {
             dismissToLogin();
         }
-    },[remoteDBState.connectionStatus,props.history,setRemoteDBState])
+    },[remoteDBState.connectionStatus,history,setRemoteDBState, setGlobalState])
 
     if (listError) {return (
         <ErrorPage errorText={t("error.loading_list_info") as string}></ErrorPage>

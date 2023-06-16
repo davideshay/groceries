@@ -1,13 +1,14 @@
-import { IonIcon, IonButton, NavContext } from '@ionic/react';
+import { IonIcon, IonButton } from '@ionic/react';
 import { cloudDoneOutline, cloudDownloadOutline, cloudOfflineOutline, warningOutline } from 'ionicons/icons';
 import { useContext } from 'react';
 import { RemoteDBStateContext, SyncStatus } from '../components/RemoteDBState';
 import { useConflicts } from './Usehooks';
+import { useHistory } from 'react-router';
 
 const SyncIndicator: React.FC = () => {
     const { remoteDBState } = useContext(RemoteDBStateContext);
     const { conflictDocs, conflictsLoading } = useConflicts();
-    const { navigate } = useContext(NavContext);
+    const history = useHistory()
 
     const iconSize="medium"
     let iconElem;
@@ -25,7 +26,7 @@ const SyncIndicator: React.FC = () => {
     let conflictElem;
     if (!conflictsLoading) {
         if (conflictDocs.length > 0)
-        conflictElem=(<IonButton slot="end" fill="default" onClick={() => navigate("/conflictlog")}><IonIcon slot="end" size={iconSize} icon={warningOutline} /></IonButton>)
+        conflictElem=(<IonButton slot="end" fill="default" onClick={() => history.push("/conflictlog")}><IonIcon slot="end" size={iconSize} icon={warningOutline} /></IonButton>)
     }
 
     return (<>{conflictElem}{iconElem}</>)

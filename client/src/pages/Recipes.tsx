@@ -1,6 +1,6 @@
 import { IonContent, IonPage, IonList, IonItem, IonFab,
-     IonFabButton, IonIcon, IonFooter, IonButton, NavContext } from '@ionic/react';
-import { useContext, useRef } from 'react';
+     IonFabButton, IonIcon, IonFooter, IonButton } from '@ionic/react';
+import { useRef } from 'react';
 import { add } from 'ionicons/icons';
 import { HistoryProps } from '../components/DataTypes';
 import ErrorPage from './ErrorPage';
@@ -8,12 +8,13 @@ import { Loading } from '../components/Loading';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
 import { useRecipes } from '../components/Usehooks';
+import { useHistory } from 'react-router';
 
 const Recipes: React.FC<HistoryProps> = (props: HistoryProps) => {
   const screenLoading=useRef(true);
   const { t } = useTranslation();
   const { recipeDocs, recipesLoading, recipesError} = useRecipes();
-  const { navigate } = useContext(NavContext);
+  const history = useHistory()
 
   if (recipesError) { return (
     <ErrorPage errorText={t('error.loading_recipes') as string}></ErrorPage>
@@ -40,7 +41,7 @@ const Recipes: React.FC<HistoryProps> = (props: HistoryProps) => {
         </IonList>
       </IonContent>
       <IonFooter>
-        <IonButton onClick={() => {navigate('/recipeimport')}}>{t("general.import_new")}</IonButton>
+        <IonButton onClick={() => {history.push('/recipeimport')}}>{t("general.import_new")}</IonButton>
       </IonFooter>
       <IonFab slot="fixed" vertical="bottom" horizontal="end">
         <IonFabButton routerLink={"/recipe/new/new"}>

@@ -35,7 +35,6 @@ export async function navigateToFirstListID(phistory: History, listRows: ListRow
             navType = savedType;
         }
     }
-    log.debug("Navigating to type: ",navType," with ID:",navToID);
     if (navToID == null) {
         phistory.push("/lists");
     } else {
@@ -50,7 +49,8 @@ export async function navigateToFirstListID(phistory: History, listRows: ListRow
 export async function isServerAvailable(apiServerURL: string|null) {
     let respObj = {
         apiServerAvailable: false,
-        dbServerAvailable: false
+        dbServerAvailable: false,
+        apiServerAppVersion: ""     
     }
     if (apiServerURL === null || apiServerURL === undefined || apiServerURL === "") {
         return respObj;
@@ -70,6 +70,7 @@ export async function isServerAvailable(apiServerURL: string|null) {
     if (response.status === 200 && response.data && responseSuccessful && response.data.apiServerAvailable) {
         respObj.apiServerAvailable = true;
         respObj.dbServerAvailable = response.data.dbServerAvailable;
+        respObj.apiServerAppVersion = response.data.apiServerAppVersion ? response.data.apiServerAppVersion : ""
     }    
     return respObj
 }
@@ -299,6 +300,7 @@ export async function checkJWT(accessJWT: string, couchBaseURL: string | null) {
 export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Database) {
     let UUIDCheck: DBUUIDCheck = {
         checkOK: true,
+        dbAvailable: false,
         schemaVersion: 0,
         dbUUIDAction: DBUUIDAction.none
     }
@@ -314,6 +316,7 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
                 await new Promise(r => setTimeout(r,1000));
                 try { UUIDResults = await getData()}
                 catch(err) {log.error("Retry of DBUUID from remote also failed");
+                            UUIDCheck.dbAvailable = false;
                             UUIDCheck.checkOK = false;
                             return UUIDCheck;}
     }
@@ -386,7 +389,7 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
     const credsOrigKeys = keys(credsObj);
     if (isJsonString(String(credsStr))) {
       credsObj=JSON.parse(String(credsStr));
-      let credsObjFiltered=pick(credsObj,['apiServerURL','couchBaseURL','database','dbUsername','email','fullName','JWT','refreshJWT','lastConflictsViewed'])
+      let credsObjFiltered=pick(credsObj,['apiServerURL','couchBaseURL','database','dbUsername','email','fullName','refreshJWT','lastConflictsViewed'])
       credsObj = credsObjFiltered;
     }
     const credKeys = keys(credsObj);

@@ -50,7 +50,7 @@ import { usernamePatternValidation, fullnamePatternValidation, getUserDoc, getUs
 import { generateJWT, isValidToken, invalidateToken, JWTMatchesUserDB, TokenReturnType } from './jwt'     
 import { NextFunction, Request, Response } from 'express';
 import { CheckUseEmailReqBody, CheckUserExistsReqBody, CustomRequest, NewUserReqBody, RefreshTokenResponse, checkUserByEmailExistsResponse } from './datatypes';
-import { ConflictDoc, FriendDoc, UserDoc } from './DBSchema';
+import { ConflictDoc, FriendDoc, UserDoc, appVersion } from './DBSchema';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
 import log, { LogLevelDesc } from 'loglevel';
 
@@ -570,7 +570,8 @@ export async function resetPasswordUIPost(req: Request, res: Response) {
 export async function isAvailable(req: Request, res: Response) {
     let respObj = {
         apiServerAvailable: true,
-        dbServerAvailable : await checkDBAvailable(todosDBAsAdmin)
+        dbServerAvailable : await checkDBAvailable(todosDBAsAdmin),
+        apiServerAppVersion: appVersion
     };
     log.debug("Server checking availability:",respObj);
     return(respObj);

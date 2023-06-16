@@ -2,7 +2,7 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonLis
    IonItem, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonSelectOption,
    IonReorder, IonReorderGroup,ItemReorderEventDetail, IonButtons, IonMenuButton, 
    useIonToast, IonFooter, IonIcon, useIonAlert, IonText } from '@ionic/react';
-import { useParams } from 'react-router-dom';
+import { useHistory, useParams } from 'react-router-dom';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useGetOneDoc,
    useDeleteGenericDocument, useDeleteListFromItems, useAddListToAllItems } from '../components/Usehooks';
@@ -62,6 +62,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { loading: listGroupLoading, doc: listGroupDoc, dbError: listGroupError} = useGetOneDoc(pageState.listGroupID);
   const [presentAlert] = useIonAlert();
   const screenLoading = useRef(true);
+  const history = useHistory();
   const { t } = useTranslation();
 
   useEffect( () => {
@@ -108,13 +109,18 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
     setPageState(prevState => ({...prevState,
         listDoc: (cloneDeep((listDocs as ListDocs).find((el: ListDoc) => el._id === listID))) as ListDoc,
         selectedListID: listID}))
-    props.history.push('/list/edit/'+listID);    
+    history.push('/list/edit/'+listID);    
   }
 
   async function updateThisItem() {
     setFormErrors(prevState=>(FormErrorInit));
     if (pageState.listDoc.name === "" || pageState.listDoc.name === undefined || pageState.listDoc.name === null) {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.must_enter_a_name"), hasError: true }}));
+      return false;
+    }
+    log.debug("listRows:",listRows,"page name",pageState.listDoc.name,"filtered",listRows.filter(lr => (lr.listDoc.name.toUpperCase() === pageState.listDoc.name && lr.listDoc._id !== pageState.listDoc._id)));
+    if (listRows.filter(lr => (lr.listDoc.name.toUpperCase() === pageState.listDoc.name.toUpperCase() && lr.listGroupID === pageState.listDoc.listGroupID && lr.listDoc._id !== pageState.listDoc._id)).length > 0) {
+      setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.list_already_exists"), hasError: true }}));
       return false;
     }
     if (pageState.listGroupID === null) {
@@ -133,7 +139,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
       response = await updateListWhole(pageState.listDoc);
     }
     if (response.successful) {
-      props.history.goBack();  // back("lists")
+      history.goBack();  // back("lists")
     } else {
       presentToast({message: t("error.creating_updating_list"), duration: 1500, position: "middle"});
     }
@@ -194,7 +200,7 @@ async function deleteListFromDB() {
     let delResponse = await deleteList((pageState.listDoc));
     if (delResponse.successful) {
       setPageState(prevState => ({...prevState,deletingDoc: false}));
-      props.history.goBack(); // back to "list"
+      history.goBack(); // back to "list"
     } else {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.could_not_delete_list"), hasError: true }}));
     }
@@ -361,7 +367,7 @@ function deletePrompt() {
             {deleteButton}
           </IonButtons>
           <IonButtons slot="secondary">
-            <IonButton key="back" fill="outline"  color="secondary" onClick={() => props.history.goBack()}>{t("general.cancel")}<IonIcon slot="start" icon={closeCircleOutline}></IonIcon></IonButton>  
+            <IonButton key="back" fill="outline"  color="secondary" onClick={() => history.goBack()}>{t("general.cancel")}<IonIcon slot="start" icon={closeCircleOutline}></IonIcon></IonButton>  
           </IonButtons>
           <IonButtons slot="end">  
             {updateButton}

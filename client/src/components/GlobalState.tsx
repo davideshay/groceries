@@ -16,7 +16,8 @@ export type GlobalState = {
     callingListID?: string,
     callingListType: RowType,
     settings: GlobalSettings,
-    settingsLoaded: boolean
+    settingsLoaded: boolean,
+    initialLoadCompleted: boolean
 }
 
 export interface GlobalStateContextType {
@@ -36,12 +37,13 @@ const initialState: GlobalState = {
     callingListType: RowType.list,
     settings: InitSettings,
     settingsLoaded: false,
+    initialLoadCompleted: false
 }
 
-const initialContext = {
+const initialContext: GlobalStateContextType = {
     globalState: initialState,
     settingsLoading: false,
-    setGlobalState: (state: GlobalState ) => {},
+    setGlobalState: (prevState => (prevState) ),
     setStateInfo: (key: string, value: string | null | RowType) => {},
     updateSettingKey: async (key: string, value: AddListOptions | boolean | number| string) => {return false}
 }

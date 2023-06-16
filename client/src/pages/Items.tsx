@@ -4,7 +4,7 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
   IonCol, useIonAlert } from '@ionic/react';
 import { add,chevronDown,chevronUp,documentTextOutline,searchOutline } from 'ionicons/icons';
 import React, { useState, useEffect, useContext, useRef, KeyboardEvent, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useHistory, useParams } from 'react-router-dom';
 import { cloneDeep } from 'lodash';
 import './Items.css';
 import { useUpdateGenericDocument, useCreateGenericDocument, useItems } from '../components/Usehooks';
@@ -20,6 +20,7 @@ import { GlobalDataContext } from '../components/GlobalDataProvider';
 import { isEqual } from 'lodash';
 import { useTranslation } from 'react-i18next';
 import log from 'loglevel';
+import { navigateToFirstListID } from '../components/RemoteUtilities';
 
 const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode: routeMode, id: routeListID  } = useParams<{mode: string, id: string}>();
@@ -53,8 +54,9 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   const contentRef = useRef<any>(null);
   const scrollTopRef = useRef(0);
   const shouldScroll = useRef(false);
+  const history = useHistory();
 
-  const getGroupIDForList = useCallback( (listID: string) => {
+  const getGroupIDForList = useCallback( (listID: string | null) => {
     if (routeMode === "group") { return pageState.selectedListOrGroupID};
     let retGID = null;
     for (let i = 0; i < listRows.length; i++) {
@@ -64,8 +66,12 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   },[pageState.selectedListOrGroupID,listRows,routeMode])
 
   useEffect( () => {
-    setPageState(prevState => ({...prevState,selectedListOrGroupID: routeListID, selectedListType: (routeMode === "group" ? RowType.listGroup : RowType.list)}))
-  },[routeListID,routeMode])
+    if ( listRowsLoaded && listCombinedRows.filter(lcr => (lcr.listOrGroupID === routeListID)).length === 0) {
+      navigateToFirstListID(history, listRows, listCombinedRows, null);
+    } else { 
+      setPageState(prevState => ({...prevState,selectedListOrGroupID: routeListID, selectedListType: (routeMode === "group" ? RowType.listGroup : RowType.list)}))
+    }
+  },[routeListID,routeMode,listCombinedRows,listRows,listRowsLoaded,history])
 
   useEffect( () => {
     if (listRowsLoaded) {
@@ -160,7 +166,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       setGlobalStateInfo("newItemGlobalItemID",globalItemID)
       setGlobalStateInfo("newItemName",itemName);
       setSearchState(prevState => ({...prevState, isOpen: false,searchCriteria:"",isFocused: false}))
-      props.history.push("/item/new/");
+      history.push("/item/new/");
     }
   }
 
@@ -356,9 +362,9 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     setPageState({...pageState, selectedListOrGroupID: listOrGroupID, selectedListType: newListType, itemRows: newItemRows, categoryRows: newCategoryRows });
     updateSettingKey("savedListID",listOrGroupID);
     if (combinedRow.rowType === RowType.list) {
-      props.history.push('/items/list/'+combinedRow.listDoc._id);
+      history.push('/items/list/'+combinedRow.listDoc._id);
     } else {
-      props.history.push('/items/group/'+combinedRow.listGroupID);
+      history.push('/items/group/'+combinedRow.listGroupID);
     }
   }
 
