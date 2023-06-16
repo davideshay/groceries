@@ -48,8 +48,12 @@ jobs:
        working-directory: client/android/
        run: ./gradlew bundle
        id: bundle
-     - name: List Files
-       run: find $PWD
+     - name: Assemble release
+       working-directory: client/android/
+       run: ./gradlew assemble
+       id: assemble
+#     - name: List Files
+#       run: find $PWD
      - name: Upload APK
        uses: actions/upload-artifact@v1
        with:
