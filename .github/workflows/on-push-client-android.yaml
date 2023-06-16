@@ -31,7 +31,7 @@ jobs:
      - name: Setup Gradle Exec
        run: chmod +x gradlew
      - name: Bundle release
-       run: gradlew bundle
+       run: ./fgradlew bundle
        id: bundle
      - name: Upload APK
        uses: actions/upload-artifact@v1
