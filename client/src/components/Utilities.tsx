@@ -228,5 +228,5 @@ export function secondsToDHMS(seconds: number) : string {
     return outStr;
 }
 
-export const DEFAULT_API_URL=(window as any)._env_.DEFAULT_API_URL
+export const DEFAULT_API_URL=(window as any)._env_.DEFAULT_API_URL === undefined ? "https://groceries.mydomain.com/api" : (window as any)._env_.DEFAULT_API_URL
 export const LOG_LEVEL= (window as any)._env_.LOG_LEVEL === undefined ? startLogging("INFO") : startLogging((window as any)._env_.LOG_LEVEL)
