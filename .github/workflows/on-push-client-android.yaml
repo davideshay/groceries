@@ -33,7 +33,7 @@ jobs:
        with:
          node-version: 20.3.0
      - name: Install Ionic
-       run: npm install -g @ionic/cl
+       run: npm install -g @ionic/cli
      - name: Build app dependencies
        run: npm install
      - name: Build Ionic app
