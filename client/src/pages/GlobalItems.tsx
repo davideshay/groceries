@@ -1,5 +1,4 @@
 import { IonContent, IonPage, IonList, IonItem } from '@ionic/react';
-import { useFind } from 'use-pouchdb';
 import { useContext, useRef } from 'react';
 import { HistoryProps} from '../components/DataTypes';
 import { GlobalItemDocs } from '../components/DBSchema';
