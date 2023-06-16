@@ -1,6 +1,6 @@
 import { IonContent, IonPage, IonList, IonItem, IonFab,
-     IonFabButton, IonIcon, IonFooter, IonButton, NavContext } from '@ionic/react';
-import { useContext, useRef } from 'react';
+     IonFabButton, IonIcon, IonFooter, IonButton } from '@ionic/react';
+import { useRef } from 'react';
 import { add } from 'ionicons/icons';
 import { HistoryProps } from '../components/DataTypes';
 import ErrorPage from './ErrorPage';

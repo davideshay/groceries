@@ -302,6 +302,7 @@ export async function checkJWT(accessJWT: string, couchBaseURL: string | null) {
 export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Database) {
     let UUIDCheck: DBUUIDCheck = {
         checkOK: true,
+        dbAvailable: false,
         schemaVersion: 0,
         dbUUIDAction: DBUUIDAction.none
     }
@@ -317,6 +318,7 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
                 await new Promise(r => setTimeout(r,1000));
                 try { UUIDResults = await getData()}
                 catch(err) {log.error("Retry of DBUUID from remote also failed");
+                            UUIDCheck.dbAvailable = false;
                             UUIDCheck.checkOK = false;
                             return UUIDCheck;}
     }

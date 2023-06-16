@@ -101,6 +101,7 @@ export enum RefreshTokenResults {
 
 export type DBUUIDCheck = {
     checkOK: boolean,
+    dbAvailable: boolean,
     schemaVersion: Number,
     dbUUIDAction: DBUUIDAction
 }
@@ -417,7 +418,11 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         // }
         if (!DBUUIDCheck.checkOK) {
             log.debug("Did not pass DB unique ID check.");
-            setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.invalid_dbuuid") , dbUUIDAction: DBUUIDCheck.dbUUIDAction, connectionStatus: ConnectionStatus.navToLoginScreen}))
+            if (DBUUIDCheck.dbAvailable) {
+                setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.invalid_dbuuid") , dbUUIDAction: DBUUIDCheck.dbUUIDAction, connectionStatus: ConnectionStatus.navToLoginScreen}))
+            } else {
+                setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.db_server_not_available"), dbUUIDAction: DBUUIDAction.none}))
+            }    
         } else {
             setRemoteDBState(prevState => ({...prevState,connectionStatus: ConnectionStatus.syncStarted}));
             await initialSetupActivities(globalRemoteDB as PouchDB.Database,remoteDBCreds.current.dbUsername as string)

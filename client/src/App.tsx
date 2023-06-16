@@ -1,8 +1,6 @@
 import { Redirect, Route, Switch} from 'react-router-dom';
 import { IonApp, IonSplitPane,setupIonicReact, IonRouterOutlet} from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
-import { Capacitor } from '@capacitor/core';
-import { App as CapacitorApp } from '@capacitor/app';
 import { useState, useEffect } from 'react';
 import List from "./pages/List";
 import Lists from './pages/Lists';

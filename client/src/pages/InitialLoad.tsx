@@ -51,7 +51,7 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
                 initialStartup();
             } 
         }      
-    },[db, remoteDB, listRows, listCombinedRows, history, remoteDBCreds.dbUsername, remoteDBState.connectionStatus, listRowsLoaded, listsLoading, setRemoteDBState, dataReloadStatus, globalState.settings, globalState.settingsLoaded])   
+    },[db, remoteDB, listRows, listCombinedRows, history, remoteDBCreds.dbUsername, remoteDBState.connectionStatus, listRowsLoaded, listsLoading, setRemoteDBState, dataReloadStatus, globalState.settings, globalState.settingsLoaded, setGlobalState])   
 
     useEffect(() => {
         async function dismissToLogin() {
@@ -63,7 +63,7 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
         if (remoteDBState.connectionStatus === ConnectionStatus.navToLoginScreen) {
             dismissToLogin();
         }
-    },[remoteDBState.connectionStatus,history,setRemoteDBState])
+    },[remoteDBState.connectionStatus,history,setRemoteDBState, setGlobalState])
 
     if (listError) {return (
         <ErrorPage errorText={t("error.loading_list_info") as string}></ErrorPage>
