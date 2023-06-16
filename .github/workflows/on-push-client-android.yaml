@@ -10,7 +10,7 @@ on:
        - 'client/**'
 defaults:
   run:
-    working-directory: client/android
+    working-directory: client
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}-client    
@@ -28,13 +28,27 @@ jobs:
          java-version: 17
          distribution: 'temurin'
          cache: gradle
+     - name: Set up Node.js
+       uses: actions/setup-node@v3
+       with:
+         node-version: 20.3.0
+     - name: Install Ionic
+       run: npm install -g @ionic/cl
+     - name: Build app dependencies
+       run: npm install
+     - name: Build Ionic app
+       run: ionic build
+     - name: Android Copy
+       run: ionic capacitor copy android
+     - name: Setup Capacitor Build
+       run: ionic capacitor build android        
      - name: Setup Gradle Exec
-       run: chmod +x gradlew
+       run: chmod +x android/gradlew
      - name: Bundle release
-       run: ./gradlew bundle
+       run: android/gradlew bundle
        id: bundle
      - name: Upload APK
        uses: actions/upload-artifact@v1
        with:
         name: groceries.apk
-        path: app/build/outputs/apk/debug/groceries.apk
+        path: android/app/build/outputs/apk/debug/groceries.apk
