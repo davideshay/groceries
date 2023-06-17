@@ -14,6 +14,7 @@ import { GlobalDataContext } from '../components/GlobalDataProvider';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
 import { translatedCategoryName } from '../components/translationUtilities';
+import { cloneDeep } from 'lodash';
 
 enum ErrorLocation  {
    Name, PluralName, General
@@ -47,7 +48,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
     let newCategoryDoc: CategoryDoc;
     if (!categoryLoading && needInitCategoryDoc) {
       if (mode === "new") {
-        newCategoryDoc = {type: "category", name: "", color:"#888888"}
+        newCategoryDoc = cloneDeep(InitCategoryDoc);
       } else {
         newCategoryDoc = categoryDoc;
       }

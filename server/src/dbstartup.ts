@@ -8,7 +8,7 @@ import { cloneDeep, isEqual, omit } from "lodash";
 import { v4 as uuidv4} from 'uuid';
 import { uomContent, categories, globalItems, totalDocCount } from "./utilities";
 import { DocumentScope, MangoResponse, MangoQuery } from "nano";
-import { CategoryDoc, GlobalItemDoc, ItemDoc, ListDoc, ListGroupDoc, UUIDDoc, UomDoc, UserDoc, appVersion, maxAppSupportedSchemaVersion, minimumAccessRefreshSeconds } from "./DBSchema";
+import { CategoryDoc, CategoryDocs, GlobalItemDoc, InitSettingsDoc, ItemDoc, ItemDocs, ListDoc, ListGroupDoc, ListGroupDocs, SettingsDoc, UUIDDoc, UomDoc, UserDoc, appVersion, maxAppSupportedSchemaVersion, minimumAccessRefreshSeconds } from "./DBSchema";
 import log, { LogLevelDesc } from "loglevel";
 import prefix from "loglevel-plugin-prefix";
 import { timeSpan } from "./timeutils";
@@ -21,7 +21,7 @@ const targetCategoriesVersion = 2;
 let globalItemVersion = 0;
 const targetGlobalItemVersion = 2;
 let schemaVersion = 0;
-const targetSchemaVersion = 3;
+const targetSchemaVersion = 4;
 
 
 export let todosDBAsAdmin: DocumentScope<unknown>;
@@ -483,6 +483,184 @@ async function restructureListGroupSchema() {
     return updateSuccess;
 }    
 
+async function updateSystemCategory(catDoc: CategoryDoc): Promise<boolean> {
+    let success = true;
+    catDoc.listGroupID = "system";
+    let dbResp = null;
+    try { dbResp = await todosDBAsAdmin.insert(catDoc)}
+    catch(err) { log.error("Couldn't update system category with list group system.");
+                 success = false;}
+    if (success) { log.info("Updated category ",catDoc.name," to system list group.");}
+    return success;             
+}
+
+async function updateCustomCategory(catDoc: CategoryDoc, itemDocs: ItemDocs): Promise<boolean> {
+    let success = true;
+    let listGroups = new Set<string>();
+    for (let i = 0; i < itemDocs.length; i++) {
+        const item = itemDocs[i];
+        if (item.lists.filter(il => (il.categoryID === catDoc._id)).length > 0) {
+            listGroups.add(String(item.listGroupID))
+        }
+    }
+    log.info("Updating custom category ",catDoc.name," List groups to process:",listGroups);
+    if (listGroups.size === 0) {
+        let newCatDoc: CategoryDoc = cloneDeep(catDoc);
+        newCatDoc.listGroupID = null;
+        let dbResp = null;
+        try { dbResp = await todosDBAsAdmin.insert(newCatDoc)}
+        catch(err) { log.error("Couldn't set category ",catDoc.name," to an unused list group");
+            success = false;}
+        if (success) { log.info("Assigned unused by item category ",catDoc.name, " to the unused list group ");}   
+    }
+    else {
+        log.debug("listgroups:",listGroups);
+        let firstOneUpdated = false;
+        for (const lg of listGroups) {
+            log.debug("For cat ",catDoc.name, " processing list group: ",lg);
+            if (firstOneUpdated) {
+                let newCatDoc = cloneDeep(catDoc);
+                newCatDoc._id = undefined;
+                newCatDoc._rev = undefined;
+                newCatDoc.listGroupID = lg;
+                let dbResp = null;
+                try { dbResp = await todosDBAsAdmin.insert(newCatDoc)}
+                catch(err) { log.error("Couldn't add category ",catDoc.name," with list group ",lg);
+                    success = false;}
+                if (success) { log.info("Created new category ",catDoc.name, " in list group ",lg)}   
+            } else {
+                let newCatDoc = cloneDeep(catDoc);
+                newCatDoc.listGroupID = lg;
+                let dbResp = null;
+                try { dbResp = await todosDBAsAdmin.insert(newCatDoc)}
+                catch(err) { log.error("Couldn't update category ",catDoc.name," with list group ",lg);
+                    success = false;}
+                if (success) { log.info("Updated category ",catDoc.name," with list group ",lg)}
+                firstOneUpdated = true;    
+            }
+        }
+    }
+    if (success) {log.info("Updated custom category / created new : ",catDoc.name)}
+    return success;
+}
+
+function isUserInListGroup(username: string, listGroupID: string, listGroupDocs: ListGroupDocs): boolean {
+    let isInGroup = false;
+    for (let i = 0; i < listGroupDocs.length; i++) {
+        const lg = listGroupDocs[i];
+        log.debug("checking if user is in listgroup... ",username,listGroupID)
+        if (lg.listGroupOwner === username || lg.sharedWith.includes(username)) {
+            isInGroup = true;
+            break;
+        }
+    }
+    return isInGroup;
+}
+
+async function generateUserColors(catDocs: CategoryDocs, userDocs: UserDoc[], settingsDocs: SettingsDoc[], listGroupDocs: ListGroupDocs): Promise<boolean> {
+    console.log("cat :", catDocs[0].name, " user:", userDocs[0].name, " settings:" , settingsDocs[0].username, "listgroup: ",listGroupDocs[0].name);
+    let success = true;
+    log.info("Generating user-specific colors for every category");
+    for (let i = 0; i < userDocs.length; i++) {
+        const user = cloneDeep(userDocs[i]);
+        log.info("Updating settings for user ",user.name," to have colors");
+        let foundSetting = settingsDocs.find(sd => (sd.username = user.name));
+        log.debug("Found setting doc to update:",foundSetting?.username)
+        let newCategoryColors : { [key: string]: string }= {};
+        for (let j = 0; j < catDocs.length; j++) {
+            const cat = catDocs[j];
+            let includeCat = false;
+            if (cat.listGroupID === "system") {
+                includeCat = true;
+            } else {
+                if (cat.listGroupID === null || cat.listGroupID === undefined) {
+                    includeCat = false
+                } else {
+                    includeCat = isUserInListGroup(user.name,cat.listGroupID,listGroupDocs)
+                }
+            }
+            if (includeCat) {
+                let id = cat._id;
+                if (id !== undefined && id !== null) {
+                    newCategoryColors[id] = cat.color;
+                }    
+            }
+        }
+        if (foundSetting === undefined) {
+            let newSettingDoc: SettingsDoc = cloneDeep(InitSettingsDoc);
+            newSettingDoc.username = user.name;
+            newSettingDoc.categoryColors = newCategoryColors;
+            newSettingDoc.updatedAt = (new Date().toISOString());
+            let dbResp = null;
+            try { dbResp = await todosDBAsAdmin.insert(newSettingDoc)}
+            catch(err) { log.error("Couldn't create user setting ",user.name," with category colors ");
+                success = false;}
+            if (success) {log.info("User setting doc created for ",user.name," didn't previously exist")};    
+        } else {
+            console.log("orig setting doc:",foundSetting);
+            // update setting doc for user, add key
+            foundSetting.categoryColors = newCategoryColors;
+            foundSetting.updatedAt = (new Date().toISOString());
+            console.log("Updated setting doc:",foundSetting);
+            let dbResp = null;
+            try { dbResp = await todosDBAsAdmin.insert(foundSetting)}
+            catch(err) { log.error("Couldn't update user setting ",user.name," with category colors ");
+                success = false;}
+            if (success) {log.info("User setting doc created for user ",user.name)}    
+        }
+    }
+    return success;
+}
+
+
+async function restructureCategoriesUOMSchema() {
+    let updateSuccess = true;
+    log.info("Upgrading schema to link categories and UOMs to list Groups.");
+    log.info("Loading up all current categories");
+    const catq: MangoQuery = { selector: { type: "category", name: {$exists: true}}, limit: await totalDocCount(todosDBAsAdmin)};
+    let foundCatDocs: MangoResponse<CategoryDoc>;
+    try {foundCatDocs = (await todosDBAsAdmin.find(catq) as MangoResponse<CategoryDoc>);}
+    catch(err) {log.error("Could not find category list during schema update:",err); return false;}
+    log.info("Found categories to process: ", foundCatDocs.docs.length);
+    const itemq: MangoQuery = { selector: { type: "item", name: {$exists: true}}, limit: await totalDocCount(todosDBAsAdmin)};
+    let foundItemDocs: MangoResponse<ItemDoc>;
+    try {foundItemDocs = (await todosDBAsAdmin.find(itemq) as MangoResponse<ItemDoc>);}
+    catch(err) {log.error("Could not find items during schema update:",err); return false;}
+    log.info("Found items to process: ", foundItemDocs.docs.length);
+    const userq: MangoQuery = { selector: { type: "user", name: {$exists: true}}, limit: await totalDocCount(usersDBAsAdmin)};
+    let foundUserDocs: MangoResponse<UserDoc>;
+    try {foundUserDocs = (await usersDBAsAdmin.find(userq) as MangoResponse<UserDoc>);}
+    catch(err) {log.error("Could not find user list during schema update:",err); return false;}
+    log.info("Found users to create listgroups: ", foundUserDocs.docs.length);
+    const settingsq: MangoQuery = { selector: { type: "settings", username: {$exists: true}}, limit: await totalDocCount(todosDBAsAdmin)};
+    let foundSettingsDocs: MangoResponse<SettingsDoc>;
+    try {foundSettingsDocs = (await todosDBAsAdmin.find(settingsq) as MangoResponse<SettingsDoc>);}
+    catch(err) {log.error("Could not find settings list during schema update:",err); return false;}
+    log.info("Found settings to create color specific categories: ", foundSettingsDocs.docs.length);
+    for (let i = 0; i < foundCatDocs.docs.length; i++) {
+        const cat = foundCatDocs.docs[i];
+        if (cat._id.startsWith("system:cat:")) {
+            updateSuccess = await updateSystemCategory(cat);
+        } else {
+            updateSuccess = await updateCustomCategory(cat,foundItemDocs.docs);
+        }
+        if (!updateSuccess) {break;}
+    }
+    if (!updateSuccess) {return false};
+    log.info("Retrieving updated categories after changes...");
+    try {foundCatDocs = (await todosDBAsAdmin.find(catq) as MangoResponse<CategoryDoc>);}
+    catch(err) {log.error("Could not find category list during schema update:",err); return false;}
+//    log.info("Found updated categories to process: ", foundCatDocs.docs.length, foundCatDocs.docs);
+    const listgroupsq: MangoQuery = { selector: { type: "listgroup", name: {$exists: true}}, limit: await totalDocCount(todosDBAsAdmin)};
+    let foundListGroupDocs: MangoResponse<ListGroupDoc>;
+    try {foundListGroupDocs = (await todosDBAsAdmin.find(listgroupsq) as MangoResponse<ListGroupDoc>);}
+    catch(err) {log.error("Could not find list groups during schema update:",err); return false;}
+    log.info("Found list groups to create color specific categories: ", foundListGroupDocs.docs.length);
+    updateSuccess = await generateUserColors(foundCatDocs.docs,foundUserDocs.docs, foundSettingsDocs.docs, foundListGroupDocs.docs);
+
+    return updateSuccess;
+}    
+
 async function setSchemaVersion(updSchemaVersion: number) {
     log.info("Finished schema updates, updating database to :",updSchemaVersion);
     let foundIDDoc = await getLatestDBUUIDDoc();
@@ -511,6 +689,11 @@ async function checkAndUpdateSchema() {
         log.info("Updating schema to rev. 3: Changes for restructuring/listgroups ");
         let schemaUpgradeSuccess = await restructureListGroupSchema();
         if (schemaUpgradeSuccess) { schemaVersion = 3; await setSchemaVersion(schemaVersion);}
+    }
+    if (schemaVersion < 4) {
+        log.info("Updating schema to rev. 4: Make Categories/UOMs listgroup specific ");
+        let schemaUpgradeSuccess = await restructureCategoriesUOMSchema();
+        if (schemaUpgradeSuccess) { schemaVersion = 4; await setSchemaVersion(schemaVersion);}
     }
 }
 
@@ -655,6 +838,7 @@ export async function dbStartup() {
     }
     await addDBIdentifier();
     await checkAndUpdateSchema();
+    return false;
     await checkAndCreateContent();
     await checkAndCreateViews();
     if (enableScheduling) {
