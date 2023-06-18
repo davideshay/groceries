@@ -732,6 +732,7 @@ async function generateRecipeUOMs(recipeDocs: RecipeDoc[]): Promise<boolean> {
             }
             if (item.shoppingUOMName !== undefined && item.shoppingUOMName !== null && item.shoppingUOMName !== "") {
                 let foundUOM = baseUOMDocs.findIndex(uom => (uom._id?.startsWith("system:uom:") && uom.name === item.shoppingUOMName))
+                log.debug("for recipe uom ",item.recipeUOMName," found idx:", foundUOM);
                 if (foundUOM === -1) {
                     let ok = await checkAndCreateNewUOMForRecipeItem(item.shoppingUOMName);
                     if (!ok) {success=false;break};
