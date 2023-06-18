@@ -155,6 +155,7 @@ async function createTandoorRecipe(recipeObj: TandoorRecipe, db: PouchDB.Databas
                     recipeItem.recipeUOMName = matchGlobalItem.defaultUOM;
                 }
                 if (recipeItem.recipeUOMName === "" && (ingredient.unit.name !== "" || ingredient.unit.plural_name !== "")) {
+                    recipeItem.recipeUOMName = null;
                     recipeItem.note = t("error.could_not_match_uom",{name: ingredient.unit.name ,pluralName: ingredient.unit.plural_name});
                 }
             }

@@ -47,6 +47,7 @@ export interface UomDoc {
     _id?: string,
     _rev?: string,
     type: string,
+    listGroupID: string | null,
     name: string,
     description: string,
     pluralDescription: string,
@@ -57,6 +58,7 @@ export interface UomDoc {
 
  export const InitUomDoc: UomDoc = {
   type: "uom",
+  listGroupID: null,
   name: "",
   description: "",
   pluralDescription: "",
