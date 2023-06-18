@@ -558,13 +558,12 @@ function isUserInListGroup(username: string, listGroupID: string, listGroupDocs:
 }
 
 async function generateUserColors(catDocs: CategoryDocs, userDocs: UserDoc[], settingsDocs: SettingsDoc[], listGroupDocs: ListGroupDocs): Promise<boolean> {
-    console.log("cat :", catDocs[0].name, " user:", userDocs[0].name, " settings:" , settingsDocs[0].username, "listgroup: ",listGroupDocs[0].name);
     let success = true;
     log.info("Generating user-specific colors for every category");
     for (let i = 0; i < userDocs.length; i++) {
         const user = cloneDeep(userDocs[i]);
         log.info("Updating settings for user ",user.name," to have colors");
-        let foundSetting = settingsDocs.find(sd => (sd.username = user.name));
+        let foundSetting = settingsDocs.find(sd => (sd.username === user.name));
         log.debug("Found setting doc to update:",foundSetting?.username)
         let newCategoryColors : { [key: string]: string }= {};
         for (let j = 0; j < catDocs.length; j++) {
@@ -597,7 +596,7 @@ async function generateUserColors(catDocs: CategoryDocs, userDocs: UserDoc[], se
                 success = false;}
             if (success) {log.info("User setting doc created for ",user.name," didn't previously exist")};    
         } else {
-            console.log("orig setting doc:",foundSetting);
+            log.debug("orig setting doc:",foundSetting);
             // update setting doc for user, add key
             foundSetting.categoryColors = newCategoryColors;
             foundSetting.updatedAt = (new Date().toISOString());
@@ -606,7 +605,7 @@ async function generateUserColors(catDocs: CategoryDocs, userDocs: UserDoc[], se
             try { dbResp = await todosDBAsAdmin.insert(foundSetting)}
             catch(err) { log.error("Couldn't update user setting ",user.name," with category colors ");
                 success = false;}
-            if (success) {log.info("User setting doc created for user ",user.name)}    
+            if (success) {log.info("User setting doc updated for user ",user.name)}    
         }
     }
     return success;
