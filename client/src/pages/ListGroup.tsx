@@ -8,7 +8,7 @@ import { useUpdateGenericDocument, useCreateGenericDocument, useFriends,
   UseFriendState, useDeleteGenericDocument, useDeleteItemsInListGroup, useGetOneDoc } from '../components/Usehooks';
 import { cloneDeep, isEmpty, isEqual } from 'lodash';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
-import { initUserIDList, initUsersInfo, PouchResponse, ResolvedFriendStatus, UserIDList, UsersInfo, HistoryProps, ListCombinedRow, RowType, FriendRow, ListCombinedRows } from '../components/DataTypes'
+import { initUserIDList, initUsersInfo, PouchResponse, ResolvedFriendStatus, UserIDList, UsersInfo, HistoryProps, ListCombinedRow, RowType, FriendRow } from '../components/DataTypes'
 import { ListGroupDoc, ListGroupDocInit } from '../components/DBSchema';
 import SyncIndicator from '../components/SyncIndicator';
 import { getUsersInfo } from '../components/Utilities';
@@ -303,10 +303,8 @@ function deletePrompt() {
     })
   }              
 }
-  let groupOnlyRows: ListCombinedRows = cloneDeep(listCombinedRows);
-  groupOnlyRows.filter(lg => (lg.rowType === RowType.listGroup))
   let selectOptionListElem = (
-    groupOnlyRows.map((list: ListCombinedRow) => (
+    listCombinedRows.filter(lg => (lg.rowType === RowType.listGroup && !lg.hidden)).map((list: ListCombinedRow) => (
       <IonSelectOption key={list.rowKey} value={list.listGroupID}>
         {list.listGroupName}
       </IonSelectOption>) 
@@ -347,10 +345,12 @@ function deletePrompt() {
   }
 
   let updateButton=[];
-  if (mode === "new") {
-    updateButton.push(<IonButton color="primary" fill="solid" key="add" onClick={() => updateThisItem()}>{t("general.add")}<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
-  } else {
-    updateButton.push(<IonButton color="primary" fill="solid" key="update" onClick={() => updateThisItem()}>{t("general.save")}<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
+  if (iAmListOwner) {
+    if (mode === "new") {
+      updateButton.push(<IonButton color="primary" fill="solid" key="add" onClick={() => updateThisItem()}>{t("general.add")}<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
+    } else {
+      updateButton.push(<IonButton color="primary" fill="solid" key="update" onClick={() => updateThisItem()}>{t("general.save")}<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
+    }
   }
 
   let deleteButton=[];
@@ -381,7 +381,7 @@ function deletePrompt() {
             <IonItem key="defaultlistgroup">
               <IonCheckbox labelPlacement="end" justify='start'
                   onIonChange={(evt) => {setPageState(prevState => ({...prevState,listGroupDoc: {...pageState.listGroupDoc, default: evt.detail.checked}}))}}
-                  checked={pageState.listGroupDoc.default}>
+                  checked={pageState.listGroupDoc.default} disabled={!iAmListOwner}>
                   {t("general.is_default_listgroup_for_user")}</IonCheckbox>
             </IonItem>
             <IonItemGroup key="assignedlists">
@@ -400,7 +400,9 @@ function deletePrompt() {
               {deleteButton}
             </IonButtons>
             <IonButtons slot="secondary">
-              <IonButton color="secondary" key="back" fill="outline" onClick={() => history.goBack()}>{t("general.cancel")}<IonIcon slot="start" icon={closeCircleOutline}></IonIcon></IonButton>  
+              {iAmListOwner ? (
+                <IonButton color="secondary" key="back" fill="outline" onClick={() => history.goBack()}>{t("general.cancel")}<IonIcon slot="start" icon={closeCircleOutline}></IonIcon></IonButton>  
+                ) : <></>}
             </IonButtons>
             <IonButtons slot="end">
               {updateButton}

@@ -9,7 +9,7 @@ import { cloneDeep } from 'lodash';
 import './Items.css';
 import { useUpdateGenericDocument, useCreateGenericDocument, useItems } from '../components/Usehooks';
 import { GlobalStateContext } from '../components/GlobalState';
-import { AddListOptions } from '../components/DBSchema';
+import { AddListOptions, DefaultColor } from '../components/DBSchema';
 import { ItemSearch, SearchState, PageState, ListCombinedRow, HistoryProps, RowType, ItemSearchType, CategoryRows} from '../components/DataTypes'
 import { ItemDoc, ItemDocs, ItemListInit, ItemList, ItemDocInit, CategoryDoc, UomDoc, GlobalItemDocs } from '../components/DBSchema';
 import { getAllSearchRows, getItemRows, filterSearchRows } from '../components/ItemUtilities';
@@ -82,7 +82,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   useEffect( () => {
     if (baseItemRowsLoaded && listRowsLoaded && !categoryLoading && !uomLoading && !globalData.globalItemsLoading) {
       setPageState( (prevState) => {
-        const [newItemRows,newCategoryRows] = getItemRows(baseItemDocs as ItemDocs, listCombinedRows, categoryDocs as CategoryDoc[], uomDocs as UomDoc[], pageState.selectedListType, pageState.selectedListOrGroupID, prevState.categoryRows)
+        const [newItemRows,newCategoryRows] = getItemRows(baseItemDocs as ItemDocs, listCombinedRows, categoryDocs as CategoryDoc[], uomDocs as UomDoc[], pageState.selectedListType, pageState.selectedListOrGroupID, prevState.categoryRows, globalState.categoryColors)
         return (
         { ...prevState,
         doingUpdate: false,
@@ -91,7 +91,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       });
     }
   },[baseItemRowsLoaded, listRowsLoaded, categoryLoading, uomLoading, globalData.globalItemsLoading,
-    uomDocs, baseItemDocs, listCombinedRows, categoryDocs, pageState.selectedListOrGroupID, pageState.selectedListType]);
+    uomDocs, baseItemDocs, listCombinedRows, categoryDocs, pageState.selectedListOrGroupID, pageState.selectedListType, globalState.categoryColors]);
 
   useEffect( () => {
     if (baseSearchItemRowsLoaded && !globalData.globalItemsLoading) {
@@ -134,6 +134,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function isItemAlreadyInList(itemName: string): boolean {
+    if (itemName === "") {return false;}
     let existingItem = (baseItemDocs as ItemDocs).find((el) => (el.name.toUpperCase() === itemName.toUpperCase() || el.pluralName?.toUpperCase() === itemName.toUpperCase()));
     return(!(existingItem === undefined));
   }
@@ -358,7 +359,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     let combinedRow: ListCombinedRow | undefined = listCombinedRows.find(lcr => lcr.listOrGroupID === listOrGroupID);
     if (combinedRow === undefined) {return};
     let newListType: RowType = combinedRow.rowType;
-    const [newItemRows,newCategoryRows] = getItemRows(baseItemDocs as ItemDocs, listCombinedRows, categoryDocs as CategoryDoc[], uomDocs as UomDoc[], newListType, listOrGroupID, [])
+    const [newItemRows,newCategoryRows] = getItemRows(baseItemDocs as ItemDocs, listCombinedRows, categoryDocs as CategoryDoc[], uomDocs as UomDoc[], newListType, listOrGroupID, [], globalState.categoryColors)
     setPageState({...pageState, selectedListOrGroupID: listOrGroupID, selectedListType: newListType, itemRows: newItemRows, categoryRows: newCategoryRows });
     updateSettingKey("savedListID",listOrGroupID);
     if (combinedRow.rowType === RowType.list) {
@@ -438,7 +439,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     <IonTitle className="ion-no-padding item-outer"></IonTitle>
         <IonItem id="item-list-selector-id" className="item-list-selector" key="listselector">
         <IonSelect id="select-list-selector-id" className="select-list-selector" label={t("general.items_on") as string} aria-label={t("general.items_on") as string} interface="popover" onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListOrGroupID}  >
-            {listCombinedRows.map((listCombinedRow: ListCombinedRow) => (
+            {listCombinedRows.filter(lcr => (!lcr.hidden)).map((listCombinedRow: ListCombinedRow) => (
                 <IonSelectOption disabled={listCombinedRow.rowKey==="G-null"} className={listCombinedRow.rowType === RowType.list ? "indented" : ""} key={listCombinedRow.listOrGroupID} value={listCombinedRow.listOrGroupID}>
                   {listCombinedRow.rowName}
                 </IonSelectOption>
@@ -462,12 +463,19 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         {alertElem}
     </IonToolbar></IonHeader>)
 
+  let fabContent =  (
+      <IonFab slot="fixed" vertical="bottom" horizontal="end">
+        <IonFabButton onClick={() => addNewItemToList("")}>
+          <IonIcon icon={add}></IonIcon>
+        </IonFabButton>
+      </IonFab>)
+
   if (globalData.listRows.length <=0) {return(
     <IonPage>{headerElem}<IonContent><IonItem key="nonefound"><IonLabel key="nothinghere">{t("error.please_create_list_before_adding_items")}</IonLabel></IonItem></IonContent></IonPage>
   )};
 
   if (pageState.itemRows.length <=0 )  {return(
-    <IonPage>{headerElem}<IonContent><IonItem key="nonefound"><IonLabel key="nothinghere">{t("error.no_items_on_list")}</IonLabel></IonItem></IonContent></IonPage>
+    <IonPage>{headerElem}<IonContent><IonItem key="nonefound"><IonLabel key="nothinghere">{t("error.no_items_on_list")}</IonLabel></IonItem></IonContent>{fabContent}</IonPage>
   )};
 
   let listContent=[];
@@ -485,7 +493,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   let lastCategoryID : string | null = null;
   let lastCategoryName="<INITIAL>";
-  let lastCategoryColor="#ffffff";
+  let lastCategoryColor=DefaultColor;
   let lastCategoryFinished: boolean | null = null;
   let currentRows=[];
   let createdFinished=false;
@@ -550,11 +558,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       <IonContent ref={contentRef} scrollEvents={true} onIonScroll={(e) => {scrollTopRef.current = e.detail.scrollTop}}>
           {contentElem}
       </IonContent>
-      <IonFab slot="fixed" vertical="bottom" horizontal="end">
-        <IonFabButton onClick={() => addNewItemToList("")}>
-          <IonIcon icon={add}></IonIcon>
-        </IonFabButton>
-      </IonFab>
+      {fabContent}
     </IonPage>
   );
 };

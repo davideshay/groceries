@@ -1,5 +1,5 @@
 import { History } from "history";
-import { FriendDoc, InitFriendDoc, ListDoc, ItemList, ItemListInit } from "./DBSchema";
+import { FriendDoc, InitFriendDoc, ListDoc, ItemList, ItemListInit, DefaultColor } from "./DBSchema";
 
 export interface ItemRow {
     itemID: string,
@@ -20,7 +20,7 @@ export type ItemRows = ItemRow[];
 
 export const initItemRow: ItemRow = {
     itemID: "", globalItemID: null, itemName: "",categoryID: null, categoryName: "",
-    categorySeq: 0, categoryColor: "#ffffff", quantity: 0,
+    categorySeq: 0, categoryColor: DefaultColor, quantity: 0,
     uomDesc: "", quantityUOMDesc: "", hasNote: false, completed: false
   }
 
@@ -36,7 +36,7 @@ export interface CategoryRow {
 export type CategoryRows = CategoryRow[];
 
 export const initCategoryRow: CategoryRow = {
-  id: null, name: "", seq: 0, color: "#ffffff", completed: false, collapsed: false
+  id: null, name: "", seq: 0, color: DefaultColor, completed: false, collapsed: false
 }
 
 export enum ItemSearchType {
@@ -121,7 +121,8 @@ export enum ItemSearchType {
     listGroupName: string,
     listGroupDefault: boolean,
     listGroupOwner: string | null,
-    listDoc: ListDoc 
+    hidden: boolean
+    listDoc: ListDoc
   }
 
   export type ListCombinedRows = ListCombinedRow[];

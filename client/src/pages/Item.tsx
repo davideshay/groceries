@@ -13,7 +13,7 @@ import './Item.css';
 import ItemLists from '../components/ItemLists';
 import { getCommonKey, createEmptyItemDoc, checkNameInGlobalItems  } from '../components/ItemUtilities';
 import { PouchResponse, ListRow, RowType, PouchResponseInit} from '../components/DataTypes';
-import { UomDoc, ItemDoc, ItemDocInit, ItemList, ItemListInit, CategoryDoc, ImageDoc, ImageDocInit, InitUomDoc } from '../components/DBSchema';
+import { UomDoc, ItemDoc, ItemDocInit, ItemList, ItemListInit, CategoryDoc, ImageDoc, ImageDocInit, InitUomDoc, InitCategoryDoc } from '../components/DBSchema';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
@@ -202,14 +202,20 @@ const Item: React.FC = (props) => {
     setStateItemDoc(newItemDoc);
   }
 
-  async function addNewCategory(category: string) {
+  async function addNewCategory(listGroupID: string, category: string) {
     let alreadyFound=false;
     (globalData.categoryDocs as CategoryDoc[]).forEach((cat) => 
       {
-        if (category.toUpperCase() === cat.name.toUpperCase()) {alreadyFound=true}
+        if ( ["system",listGroupID].includes(String(cat.listGroupID))  && category.toUpperCase() === cat.name.toUpperCase()) {alreadyFound=true}
       });
-    if (!alreadyFound) {
-      let result = await addCategoryDoc({"type": "category", "name": category, "color": "#ffffff"})
+    console.log("Already Found:",alreadyFound);  
+    if (alreadyFound) {
+      presentToast({message: t("error.duplicate_category_name"), duration: 1500, position: "middle"})
+    } else {  
+      let newCategoryDoc: CategoryDoc = cloneDeep(InitCategoryDoc);
+      newCategoryDoc.listGroupID = listGroupID;
+      newCategoryDoc.name = category;
+      let result = await addCategoryDoc(newCategoryDoc);
       if (result.successful) {
           updateAllKey("categoryID",result.pouchData.id as string);
       } else {
@@ -219,10 +225,10 @@ const Item: React.FC = (props) => {
     }  
   }
 
-  async function addNewUOM(uomData: UomDoc) {
+  async function addNewUOM(listGroupID: string, uomData: UomDoc) {
     let alreadyFound = false;
     (globalData.uomDocs as UomDoc[]).forEach((uom) => {
-      if (uom.name.toUpperCase() === uomData.name.toUpperCase()) {alreadyFound=true;}
+      if (["system",] && uom.name.toUpperCase() === uomData.name.toUpperCase()) {alreadyFound=true;}
     });
     if (alreadyFound) {
       presentToast({message: t("error.uom_exists"), duration: 1500, position: "middle"});
@@ -258,6 +264,7 @@ const Item: React.FC = (props) => {
       return false;
     }
     let newUOMDoc: UomDoc = cloneDeep(InitUomDoc);
+    newUOMDoc.listGroupID = listGroupID;
     newUOMDoc.name = uomData.name;
     newUOMDoc.description = uomData.description;
     newUOMDoc.pluralDescription = uomData.pluralDescription;
@@ -271,27 +278,41 @@ const Item: React.FC = (props) => {
   }
 
   function addCategoryPopup() {
-    presentAlert({
-      header: t("general.add_new_category"),
-      inputs: [ {name: "category", type: "text"}],
-      buttons: [ { text: t("general.cancel"), role: 'cancel'},
-                { text: t("general.add"), role: 'confirm',
-                handler: (alertData) => {addNewCategory(alertData.category)}}
-                ]    
-    })
+    if (stateItemDoc.listGroupID === null || stateItemDoc.listGroupID === "") {
+      presentAlert({
+        header: t("cannot_create_category_no_listgroup_selected"),
+        buttons: [ {text: t("general.ok"), role: 'confirm'}]
+      })
+    } else {
+      presentAlert({
+        header: t("general.add_new_category"),
+        inputs: [ {name: "category", type: "text"}],
+        buttons: [ { text: t("general.cancel"), role: 'cancel'},
+                  { text: t("general.add"), role: 'confirm',
+                  handler: (alertData) => {addNewCategory(String(stateItemDoc.listGroupID),alertData.category)}}
+                  ]    
+      })
+    } 
   }
 
   function addUOMPopup() {
-    presentAlert({
-      header: t("general.add_new_uom"),
-      inputs: [ {name: "name", placeholder: t("general.name"), max: "2", type: "text"},
-                {name:"description", placeholder: t("general.description"), type:"text"},
-                {name:"pluralDescription", placeholder: t("general.plural_description"),type:"text"}],
-      buttons: [ {text: t("general.cancel"), role: "cancel"},
-                 {text: t("general.add"), role: "confirm", handler: (alertData) => {addNewUOM(alertData)}}
-    ]
-    })
-  }
+    if (stateItemDoc.listGroupID === null || stateItemDoc.listGroupID === "") {
+      presentAlert({
+        header: t("cannot_create_category_no_listgroup_selected"),
+        buttons: [ {text: t("general.ok"), role: 'confirm'}]
+      })
+    } else {  
+      presentAlert({
+        header: t("general.add_new_uom"),
+        inputs: [ {name: "name", placeholder: t("general.name"), max: "2", type: "text"},
+                  {name:"description", placeholder: t("general.description"), type:"text"},
+                  {name:"pluralDescription", placeholder: t("general.plural_description"),type:"text"}],
+        buttons: [ {text: t("general.cancel"), role: "cancel"},
+                  {text: t("general.add"), role: "confirm", handler: (alertData) => {addNewUOM(String(stateItemDoc.listGroupID) ,alertData)}}
+      ]
+      })
+    }
+  }  
 
   async function deleteItemFromDB() {
       setFormErrors(prevState => (FormErrorInit));

@@ -159,7 +159,7 @@ export function useDeleteCategoryFromItems() {
           selector: {
             type: "item",
             name: { $exists: true },
-            categoryID: catID
+            lists: { $elemMatch : { categoryID: catID}}
           }
           })
       } catch(err) {response.successful=false; response.fullError=t("error.could_not_find_items"); return response}

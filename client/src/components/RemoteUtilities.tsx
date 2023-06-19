@@ -76,13 +76,14 @@ export async function isServerAvailable(apiServerURL: string|null) {
 }
 
 export async function isDBServerAvailable(refreshJWT: string | null, couchBaseURL: string | null) {
+    log.debug("in IS DB Server Available...", "refresh:",refreshJWT, "url:",couchBaseURL);
     let response = false;
     if (refreshJWT === null || refreshJWT === undefined || refreshJWT === "" ||
         couchBaseURL === null || couchBaseURL === undefined || couchBaseURL === "" ) {
         return response;
     }
-    let checkResponse = checkJWT(refreshJWT,couchBaseURL);
-    return (await checkResponse).DBServerAvailable;
+    let checkResponse = await checkJWT(refreshJWT,couchBaseURL);
+    return  (checkResponse.DBServerAvailable);
 }
 
 
@@ -267,6 +268,7 @@ export function errorCheckCreds({credsObj,background, creatingNewUser = false, p
 }
 
 export async function checkJWT(accessJWT: string, couchBaseURL: string | null) {
+    log.debug("in CheckJWT:",accessJWT, couchBaseURL);
     let checkResponse = {
         JWTValid: false,
         DBServerAvailable: true,
@@ -285,6 +287,7 @@ export async function checkJWT(accessJWT: string, couchBaseURL: string | null) {
           };
     try { response = await CapacitorHttp.get(options); }
     catch(err) {log.error("http error getting session error:",err); checkResponse.DBServerAvailable=false}
+    log.debug("checkJWT response: ",response);
     if (checkResponse.DBServerAvailable) {
         if ((response?.status === 200) && (response.data?.userCtx?.name !== null)) {
             let tokenInfo = getTokenInfo(accessJWT,true);
@@ -300,7 +303,7 @@ export async function checkJWT(accessJWT: string, couchBaseURL: string | null) {
 export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Database) {
     let UUIDCheck: DBUUIDCheck = {
         checkOK: true,
-        dbAvailable: false,
+        dbAvailable: true,
         schemaVersion: 0,
         dbUUIDAction: DBUUIDAction.none
     }

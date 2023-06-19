@@ -3,11 +3,12 @@ import { Preferences } from '@capacitor/preferences';
 import { pick,cloneDeep } from "lodash";
 import { isJsonString } from "./Utilities";
 import { RowType } from "./DataTypes";
-import { GlobalSettings, AddListOptions, SettingsDoc, InitSettings, InitSettingsDoc } from "./DBSchema";
+import { GlobalSettings, AddListOptions, SettingsDoc, InitSettings, InitSettingsDoc, CategoryColors } from "./DBSchema";
 import { useCreateGenericDocument, useUpdateGenericDocument } from "./Usehooks";
 import { RemoteDBStateContext } from "./RemoteDBState";
 import { useFind } from "use-pouchdb";
 import log from "loglevel";
+import { isEmpty } from "lodash";
 
 export type GlobalState = {
     itemMode?: string,
@@ -16,6 +17,7 @@ export type GlobalState = {
     callingListID?: string,
     callingListType: RowType,
     settings: GlobalSettings,
+    categoryColors: CategoryColors,
     settingsLoaded: boolean,
     initialLoadCompleted: boolean
 }
@@ -25,7 +27,9 @@ export interface GlobalStateContextType {
     settingsLoading: boolean,
     setGlobalState: React.Dispatch<React.SetStateAction<GlobalState>>,
     setStateInfo: (key: string, value: string | null | RowType) => void,
-    updateSettingKey: (key: string, value: AddListOptions | boolean | number | string) => Promise<boolean>
+    updateSettingKey: (key: string, value: AddListOptions | boolean | number | string) => Promise<boolean>,
+    updateCategoryColor: (catID: string, color: string) => Promise<boolean>,
+    deleteCategoryColor: (catID: string) => Promise<boolean>
 }
 
 
@@ -36,6 +40,7 @@ const initialState: GlobalState = {
     callingListID: undefined,
     callingListType: RowType.list,
     settings: InitSettings,
+    categoryColors: {},
     settingsLoaded: false,
     initialLoadCompleted: false
 }
@@ -45,7 +50,9 @@ const initialContext: GlobalStateContextType = {
     settingsLoading: false,
     setGlobalState: (prevState => (prevState) ),
     setStateInfo: (key: string, value: string | null | RowType) => {},
-    updateSettingKey: async (key: string, value: AddListOptions | boolean | number| string) => {return false}
+    updateSettingKey: async (key: string, value: AddListOptions | boolean | number| string) => {return false},
+    updateCategoryColor: async (catID: string, color: string) => {return false},
+    deleteCategoryColor: async (catID: string) => {return false}
 }
 
 export const GlobalStateContext = createContext(initialContext)
@@ -55,7 +62,7 @@ type GlobalStateProviderProps = {
 }
 
 export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: GlobalStateProviderProps) => {
-    const [globalState,setGlobalState] = useState(initialState);
+    const [globalState,setGlobalState] = useState<GlobalState>(initialState);
     const [settingsRetrieved,setSettingsRetrieved] = useState(false);
     const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
     const { docs: settingsDocs, loading: settingsLoading, error: settingsError} = useFind({
@@ -73,6 +80,34 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         let dbSettingsDoc: SettingsDoc = settingsDocs[0] as SettingsDoc;
         let newSettingsDoc: SettingsDoc = {...dbSettingsDoc,settings: {...dbSettingsDoc.settings,[key]: value}};
         await updateSettingDoc(newSettingsDoc);
+        return true;
+    }
+
+    async function updateCategoryColor(catID: string, color: string): Promise<boolean> {
+        if (isEmpty(color) || isEmpty(catID)) { return false;}
+        let curSettingsDoc: SettingsDoc = settingsDocs[0] as SettingsDoc;
+        let curCategoryColors: CategoryColors = {}
+        if (curSettingsDoc.categoryColors) {
+            curCategoryColors = curSettingsDoc.categoryColors;
+        }
+        curCategoryColors[catID] = color;
+        curSettingsDoc.categoryColors = curCategoryColors;
+        await updateSettingDoc(curSettingsDoc);
+        return true;
+    }
+
+    async function deleteCategoryColor(catID: string): Promise<boolean> {
+        if (isEmpty(catID)) { return false;}
+        let curSettingsDoc: SettingsDoc = settingsDocs[0] as SettingsDoc;
+        let curCategoryColors: CategoryColors = {}
+        if (curSettingsDoc.categoryColors) {
+            curCategoryColors = cloneDeep(curSettingsDoc.categoryColors);
+        }
+        if (curCategoryColors.hasOwnProperty(catID)) {
+            delete curCategoryColors[catID];
+        }
+        curSettingsDoc.categoryColors = curCategoryColors;
+        await updateSettingDoc(curSettingsDoc);
         return true;
     }
 
@@ -110,6 +145,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         log.debug("getting settings...");
         let dbSettingsExist = (settingsDocs.length > 0);
         let dbSettingsDoc: SettingsDoc = cloneDeep(settingsDocs[0]);
+        let dbCategoryColors: CategoryColors = {};
         let { value: storageSettingsStr } = await Preferences.get({ key: 'settings'});
         let storageSettings: GlobalSettings = cloneDeep(InitSettings);
         let storageSettingsExist = false;
@@ -125,6 +161,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         let dbUpdated = false;
         if (dbSettingsExist) {
             [dbSettingsDoc.settings, dbUpdated] = validateSettings(dbSettingsDoc.settings);
+            dbCategoryColors = isEmpty(dbSettingsDoc.categoryColors) ? {} : dbSettingsDoc.categoryColors! ;
         }
         let finalSettings: GlobalSettings = cloneDeep(InitSettings);
         if (storageSettingsExist && !dbSettingsExist) {
@@ -155,21 +192,20 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
                 await updateSettingDoc(newSettingsDoc)
             }
         }
-        setGlobalState(prevState => ({...prevState,settings: finalSettings}))
-        setSettingsRetrieved(true);
+        setGlobalState(prevState => ({...prevState,settings: finalSettings, categoryColors: dbCategoryColors}))
         setGlobalState(prevState => ({...prevState,settingsLoaded: true}));
-        log.debug("settings retrieved and set: ",finalSettings);
+        log.debug("settings retrieved and set: ",finalSettings,dbCategoryColors);
         return (finalSettings);
     },[createSettingDoc,remoteDBCreds.dbUsername,settingsDocs,updateSettingDoc])
 
     useEffect( () => {
-        if (!settingsRetrieved && (remoteDBState.initialSyncComplete || remoteDBState.workingOffline) && !settingsLoading && (settingsError === null)) {
+        if ((remoteDBState.initialSyncComplete || remoteDBState.workingOffline) && !settingsLoading && (settingsError === null)) {
             getSettings()
         }
-    },[remoteDBState.initialSyncComplete, remoteDBState.workingOffline, settingsLoading, settingsError,getSettings,settingsRetrieved])
+    },[remoteDBState.initialSyncComplete, remoteDBState.workingOffline, settingsLoading, settingsError,getSettings,settingsRetrieved, settingsDocs])
 
 
-    let value: GlobalStateContextType = {globalState, setGlobalState, setStateInfo, updateSettingKey, settingsLoading: settingsLoading};
+    let value: GlobalStateContextType = {globalState, setGlobalState, setStateInfo, updateSettingKey, updateCategoryColor, deleteCategoryColor, settingsLoading: settingsLoading};
     return (
         <GlobalStateContext.Provider value={value}>{props.children}</GlobalStateContext.Provider>
       );

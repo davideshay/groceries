@@ -137,7 +137,12 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     useEffect( () => {
       async function checkAPIServerAvailable(apiServerURL: string|null) {
           let apiServerAvailable = await isServerAvailable(apiServerURL);
-          let dbServerAvailable = await isDBServerAvailable(remoteDBCreds.refreshJWT,remoteDBCreds.couchBaseURL);
+          let dbServerAvailable = true;
+          if (apiServerAvailable && remoteDBState.loggedIn) {
+            dbServerAvailable = await isDBServerAvailable(remoteDBCreds.refreshJWT,remoteDBCreds.couchBaseURL);
+          } else {
+            dbServerAvailable = apiServerAvailable.dbServerAvailable;
+          }
           log.debug("API Server Available: ",apiServerAvailable);
           log.debug("dbServer Available:", dbServerAvailable);
           let validJWTMatch = JWTMatchesUser(remoteDBCreds.refreshJWT,remoteDBCreds.dbUsername);
@@ -149,7 +154,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       }
       log.debug("checking is API server is available in useeffect...");
       checkAPIServerAvailable(remoteDBCreds.apiServerURL);
-    },[remoteDBCreds.apiServerURL,setRemoteDBState,remoteDBCreds.refreshJWT,remoteDBCreds.dbUsername, remoteDBCreds.couchBaseURL])
+    },[remoteDBCreds.apiServerURL,setRemoteDBState,remoteDBCreds.refreshJWT,remoteDBCreds.dbUsername, remoteDBCreds.couchBaseURL, remoteDBState.loggedIn])
 
     // effect for dbuuidaction not none
     useEffect( () => {

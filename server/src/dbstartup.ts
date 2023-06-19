@@ -4,7 +4,7 @@ enableScheduling, resolveConflictsFrequencyMinutes,expireJWTFrequencyMinutes, di
 import { resolveConflicts } from "./apicalls";
 import { expireJWTs, generateJWT } from './jwt'
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
-import { cloneDeep, isEqual, omit } from "lodash";
+import { cloneDeep, isEmpty, isEqual, omit } from "lodash";
 import { v4 as uuidv4} from 'uuid';
 import { uomContent, categories, globalItems, totalDocCount } from "./utilities";
 import { DocumentScope, MangoResponse, MangoQuery } from "nano";
@@ -41,8 +41,17 @@ export async function couchLogin(username: string, password: string) {
     }
     let res: AxiosResponse| null;
     try  {res = await axios(config)}
-    catch(err) {loginResponse.loginSuccessful = false;
-                loginResponse.dbServerAvailable = false;
+    catch(err: any) { log.debug("auth error for _session:",err.response.status);
+                loginResponse.loginSuccessful = false;
+                let httpResponseExists = (err && err.response && err.response.status && isInteger(err.response.status));
+                if (!httpResponseExists) {
+                    loginResponse.dbServerAvailable = false
+                } else {
+                    let httpResponse = Number(err.response.status);
+                    if (httpResponse >= 500 && httpResponse <= 599) {
+                        loginResponse.dbServerAvailable = false
+                    }
+                }
                 return loginResponse};
     if (res == null) {loginResponse.loginSuccessful = false; return loginResponse}
     if (loginResponse.loginSuccessful) {
@@ -232,7 +241,7 @@ async function addDBIdentifier() {
 
 async function createUOMContent() {
     const dbuomq = {
-        selector: { type: { "$eq": "uom" }},
+        selector: { type: { "$eq": "uom" }, listGroupID: "system"},
         limit: await totalDocCount(todosDBAsAdmin)
     }
     let foundUOMDocs: MangoResponse<UomDoc> =  (await todosDBAsAdmin.find(dbuomq) as MangoResponse<UomDoc>);
@@ -251,6 +260,8 @@ async function createUOMContent() {
                     thisDoc.name = uom.name;
                     thisDoc.description = uom.description;
                     thisDoc.pluralDescription = uom.pluralDescription;
+                    thisDoc.updatedAt = (new Date().toISOString());
+                    thisDoc.listGroupID = "system";
                     if (uom.hasOwnProperty("alternates")) {
                         thisDoc.alternates = cloneDeep(uom.alternates)
                     }
@@ -267,6 +278,8 @@ async function createUOMContent() {
         }
         if (needsAdded) {
             log.info("Adding uom ",uom.name, " ", uom.description);
+            uom.listGroupID = "system";
+            uom.updatedAt = (new Date().toISOString());
             let dbResp = null;
             try { dbResp = await todosDBAsAdmin.insert(uom);}
             catch(err) { log.error("Adding uom ",uom.name, " error: ",err);}
@@ -288,15 +301,14 @@ async function createUOMContent() {
 
 async function createCategoriesContent() {
     const dbcatq = {
-        selector: { type: { "$eq": "category" }},
+        selector: { type: { "$eq": "category" }, listGroupID: "system"},
         limit: await totalDocCount(todosDBAsAdmin)
     }
     let foundCategoryDocs: MangoResponse<CategoryDoc> =  (await todosDBAsAdmin.find(dbcatq) as MangoResponse<CategoryDoc>);
     for (let i = 0; i < categories.length; i++) {
-        let category = categories[i];
+        let category: CategoryDoc = categories[i];
         category.type = "category";
-        category.color = "#ffffff";
-        foundCategoryDocs.docs
+        category.listGroupID = "system";
         const docIdx=foundCategoryDocs.docs.findIndex((el) => (el.name.toUpperCase() === category.name.toUpperCase() || el._id === category._id));
         let needsAdded = true;
         if (docIdx !== -1) {
@@ -312,6 +324,8 @@ async function createCategoriesContent() {
         }
         if (needsAdded) {
             log.info("Adding category ",category.name);
+            category.listGroupID = "system",
+            category.updatedAt = (new Date().toISOString());
             let dbResp = null;
             try { dbResp = await todosDBAsAdmin.insert(category);}
             catch(err) { log.error("Adding category ",category.name, " error: ",err);}
@@ -323,6 +337,7 @@ async function createCategoriesContent() {
         log.error("Couldn't update database content version record.");
     } else {
         foundIDDoc.categoriesVersion = targetCategoriesVersion;
+        foundIDDoc.updatedAt = (new Date().toISOString());
         let dbResp = null;
         try { dbResp = await todosDBAsAdmin.insert(foundIDDoc)}
         catch(err) { log.error("Couldn't update Categories target version.")};
@@ -337,11 +352,12 @@ async function createGlobalItemContent() {
     }
     let foundGlobalItemDocs: MangoResponse<GlobalItemDoc> =  (await todosDBAsAdmin.find(dbglobalq) as MangoResponse<GlobalItemDoc>);
     for (let i = 0; i < globalItems.length; i++) {
-        let globalItem = globalItems[i];
+        let globalItem: GlobalItemDoc = globalItems[i];
         globalItem.type = "globalitem";
         const docIdx=foundGlobalItemDocs.docs.findIndex((el) => el.name === globalItem.name );
         if (docIdx == -1) {
             log.info("Adding global item ",globalItem.name);
+            globalItem.updatedAt = (new Date().toISOString());
             let dbResp = null;
             try { dbResp = await todosDBAsAdmin.insert(globalItem);}
             catch(err) { log.error("Adding global item ",globalItem.name, " error: ",err);}
@@ -363,6 +379,7 @@ async function createGlobalItemContent() {
             }
             if (needsChanged) {
                 log.info("Item "+globalItem.name+ " had changed values. Reverting to original...");
+                globalItem.updatedAt = (new Date().toISOString());
                 let dbResp = null;
                 try {dbResp = await todosDBAsAdmin.insert(compareDoc)}
                 catch(err) {log.error("Error reverting values on doc "+globalItem.name,"error:",err)}
@@ -653,7 +670,7 @@ async function generateUserColors(catDocs: CategoryDocs, userDocs: UserDoc[], se
             }
             if (includeCat) {
                 let id = cat._id;
-                if (id !== undefined && id !== null) {
+                if (id !== undefined && id !== null && cat.color && !isEmpty(cat.color)) {
                     newCategoryColors[id] = cat.color;
                 }    
             }
@@ -682,17 +699,26 @@ async function generateUserColors(catDocs: CategoryDocs, userDocs: UserDoc[], se
     return success;
 }
 
-async function getLatestUOMDocs(): Promise<UomDoc[]> {
+async function getLatestUOMDocs(): Promise<[boolean,UomDoc[]]> {
     const uomq: MangoQuery = { selector: { type: "uom", name: {$exists: true}}, limit: await totalDocCount(todosDBAsAdmin)};
     let foundUOMDocs: MangoResponse<UomDoc>;
     try {foundUOMDocs = (await todosDBAsAdmin.find(uomq) as MangoResponse<UomDoc>);}
-    catch(err) {log.error("Could not find Units of Measure during schema update:",err); return [];}
-    return foundUOMDocs.docs;
+    catch(err) {log.error("Could not find Units of Measure during schema update:",err); return [false,[]];}
+    return [true,foundUOMDocs.docs];
+}
+
+async function getLatestCategoryDocs(): Promise<[boolean,CategoryDocs]> {
+    const catq: MangoQuery = { selector: { type: "category", name: {$exists: true}}, limit: await totalDocCount(todosDBAsAdmin)};
+    let foundCatDocs: MangoResponse<CategoryDoc>;
+    try {foundCatDocs = (await todosDBAsAdmin.find(catq) as MangoResponse<CategoryDoc>);}
+    catch(err) {log.error("Could not find Categories during schema update::",err); return [false,[]];}
+    return [true,foundCatDocs.docs];
 }
 
 async function checkAndCreateNewUOMForRecipeItem(uomName: string): Promise<boolean> {
     let success = true;
-    let curUOMDocs = await getLatestUOMDocs();
+    let [getSuccess,curUOMDocs] = await getLatestUOMDocs();
+    if (!getSuccess) {return false};
     let alreadyInRecipeUOMs = (curUOMDocs.filter(uom => (uom.name === uomName && uom.listGroupID === "recipe")).length > 0);
     if (!alreadyInRecipeUOMs) {
         let uomDoc = curUOMDocs.find(uom => (uom.name === uomName));
@@ -704,6 +730,7 @@ async function checkAndCreateNewUOMForRecipeItem(uomName: string): Promise<boole
             newUOMDoc._id = undefined;
             newUOMDoc._rev = undefined;
             newUOMDoc.listGroupID = "recipe";
+            newUOMDoc.updatedAt = (new Date().toISOString());
             let dbResp = null;
             try { dbResp = await todosDBAsAdmin.insert(newUOMDoc)}
             catch(err) { log.error("Couldn't create new UOM for recipe:",uomName);
@@ -716,7 +743,8 @@ async function checkAndCreateNewUOMForRecipeItem(uomName: string): Promise<boole
 
 async function generateRecipeUOMs(recipeDocs: RecipeDoc[]): Promise<boolean> {
     let success = true;
-    let baseUOMDocs = await getLatestUOMDocs()
+    let [getSuccess,baseUOMDocs] = await getLatestUOMDocs();
+    if (!getSuccess) {return false;}
     for (let i = 0; i < recipeDocs.length; i++) {
         const recipe = recipeDocs[i];
         for (let j = 0; j < recipe.items.length; j++) {
@@ -724,7 +752,6 @@ async function generateRecipeUOMs(recipeDocs: RecipeDoc[]): Promise<boolean> {
             log.debug("Processing recipe ",recipe.name, " item: ",item.name);
             if (item.recipeUOMName !== undefined && item.recipeUOMName !== null && item.recipeUOMName !== "") {
                 let foundUOM = baseUOMDocs.findIndex(uom => (uom._id?.startsWith("system:uom:") && uom.name === item.recipeUOMName))
-                log.debug("for recipe uom ",item.recipeUOMName," found idx:", foundUOM);
                 if (foundUOM === -1) {
                     let ok = await checkAndCreateNewUOMForRecipeItem(item.recipeUOMName);
                     if (!ok) {success=false;break};
@@ -732,7 +759,6 @@ async function generateRecipeUOMs(recipeDocs: RecipeDoc[]): Promise<boolean> {
             }
             if (item.shoppingUOMName !== undefined && item.shoppingUOMName !== null && item.shoppingUOMName !== "") {
                 let foundUOM = baseUOMDocs.findIndex(uom => (uom._id?.startsWith("system:uom:") && uom.name === item.shoppingUOMName))
-                log.debug("for recipe uom ",item.recipeUOMName," found idx:", foundUOM);
                 if (foundUOM === -1) {
                     let ok = await checkAndCreateNewUOMForRecipeItem(item.shoppingUOMName);
                     if (!ok) {success=false;break};
@@ -744,15 +770,30 @@ async function generateRecipeUOMs(recipeDocs: RecipeDoc[]): Promise<boolean> {
     return success;
 }
 
+async function deleteColorFieldFromCategories(): Promise<boolean> {
+    let success = true;
+    let [getSuccess,categoryDocs] = await getLatestCategoryDocs();
+    if (!getSuccess) {return false;}
+    for (const cat of categoryDocs) {
+        let newCatDoc = cloneDeep(cat);
+        delete newCatDoc.color;
+        newCatDoc.updatedAt = (new Date().toISOString());
+        let dbResp = null;
+        try { dbResp = await todosDBAsAdmin.insert(newCatDoc)}
+        catch(err) { log.error("Couldn't delete color from category:",newCatDoc.name);
+            success = false;}
+        if (success) {log.info("Deleted color field from category ",newCatDoc.name);}    
+    }
+    return success;
+}
+
 async function restructureCategoriesUOMSchema() {
     let updateSuccess = true;
     log.info("Upgrading schema to link categories and UOMs to list Groups.");
     log.info("Loading up all current categories");
-    const catq: MangoQuery = { selector: { type: "category", name: {$exists: true}}, limit: await totalDocCount(todosDBAsAdmin)};
-    let foundCatDocs: MangoResponse<CategoryDoc>;
-    try {foundCatDocs = (await todosDBAsAdmin.find(catq) as MangoResponse<CategoryDoc>);}
-    catch(err) {log.error("Could not find category list during schema update:",err); return false;}
-    log.info("Found categories to process: ", foundCatDocs.docs.length);
+    let [getSuccess,foundCatDocs] = await getLatestCategoryDocs();
+    if (!getSuccess) {return false;}
+    log.info("Found categories to process: ", foundCatDocs.length);
     const itemq: MangoQuery = { selector: { type: "item", name: {$exists: true}}, limit: await totalDocCount(todosDBAsAdmin)};
     let foundItemDocs: MangoResponse<ItemDoc>;
     try {foundItemDocs = (await todosDBAsAdmin.find(itemq) as MangoResponse<ItemDoc>);}
@@ -768,9 +809,9 @@ async function restructureCategoriesUOMSchema() {
     try {foundSettingsDocs = (await todosDBAsAdmin.find(settingsq) as MangoResponse<SettingsDoc>);}
     catch(err) {log.error("Could not find settings list during schema update:",err); return false;}
     log.info("Found settings to create color specific categories: ", foundSettingsDocs.docs.length);
-    for (let i = 0; i < foundCatDocs.docs.length; i++) {
-        const cat = foundCatDocs.docs[i];
-        if (cat._id.startsWith("system:cat:")) {
+    for (let i = 0; i < foundCatDocs.length; i++) {
+        const cat = foundCatDocs[i];
+        if (cat && cat._id && cat._id.startsWith("system:cat:")) {
             updateSuccess = await updateSystemCategory(cat);
         } else {
             updateSuccess = await updateCustomCategory(cat,foundItemDocs.docs);
@@ -779,18 +820,18 @@ async function restructureCategoriesUOMSchema() {
     }
     if (!updateSuccess) {return false};
     log.info("Retrieving updated categories after changes...");
-    try {foundCatDocs = (await todosDBAsAdmin.find(catq) as MangoResponse<CategoryDoc>);}
-    catch(err) {log.error("Could not find category list during schema update:",err); return false;}
-//    log.info("Found updated categories to process: ", foundCatDocs.docs.length, foundCatDocs.docs);
+    [getSuccess,foundCatDocs] = await getLatestCategoryDocs();
+    if (!getSuccess) {return false};
     const listgroupsq: MangoQuery = { selector: { type: "listgroup", name: {$exists: true}}, limit: await totalDocCount(todosDBAsAdmin)};
     let foundListGroupDocs: MangoResponse<ListGroupDoc>;
     try {foundListGroupDocs = (await todosDBAsAdmin.find(listgroupsq) as MangoResponse<ListGroupDoc>);}
     catch(err) {log.error("Could not find list groups during schema update:",err); return false;}
     log.info("Found list groups to create color specific categories: ", foundListGroupDocs.docs.length);
-    updateSuccess = await generateUserColors(foundCatDocs.docs,foundUserDocs.docs, foundSettingsDocs.docs, foundListGroupDocs.docs);
+    updateSuccess = await generateUserColors(foundCatDocs,foundUserDocs.docs, foundSettingsDocs.docs, foundListGroupDocs.docs);
     if (!updateSuccess) {return false};
     log.info("User Color settings all crated/updated ");
-    let foundUOMDocs = await getLatestUOMDocs();
+    let [uomSuccess,foundUOMDocs] = await getLatestUOMDocs();
+    if (!uomSuccess) {return false};
     log.info("About to update units of measure with listgroup data. Found: ",foundUOMDocs.length);
     const recipeq: MangoQuery = { selector: { type: "recipe", name: {$exists: true}}, limit: await totalDocCount(todosDBAsAdmin)};
     let foundRecipeDocs: MangoResponse<RecipeDoc>;
@@ -799,7 +840,7 @@ async function restructureCategoriesUOMSchema() {
     log.info("About to create units of measure for Recipes. Found recipes: ",foundRecipeDocs. docs.length);
     for (let i = 0; i < foundUOMDocs.length; i++) {
         const uom = foundUOMDocs[i];
-        if (uom._id?.startsWith("system:uom:")) {
+        if (uom && uom._id && uom._id?.startsWith("system:uom:")) {
             updateSuccess = await updateSystemUOM(uom);
         } else {
             updateSuccess = await updateCustomUOM(uom,foundItemDocs.docs,foundRecipeDocs.docs);
@@ -808,6 +849,9 @@ async function restructureCategoriesUOMSchema() {
     }
     log.info("UOMs by item classified/created");
     updateSuccess = await generateRecipeUOMs(foundRecipeDocs.docs);
+    if (!updateSuccess) {return false};
+    log.info("Deleting color field from categories");
+    updateSuccess = await deleteColorFieldFromCategories()
     return updateSuccess;
 }    
 
@@ -988,7 +1032,6 @@ export async function dbStartup() {
     }
     await addDBIdentifier();
     await checkAndUpdateSchema();
-    return false;
     await checkAndCreateContent();
     await checkAndCreateViews();
     if (enableScheduling) {

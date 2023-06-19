@@ -419,6 +419,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         if (!DBUUIDCheck.checkOK) {
             log.debug("Did not pass DB unique ID check.");
             if (DBUUIDCheck.dbAvailable) {
+                log.debug("DBUUID Action is : ",DBUUIDCheck.dbUUIDAction, " naving to login screen...");
                 setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.invalid_dbuuid") , dbUUIDAction: DBUUIDCheck.dbUUIDAction, connectionStatus: ConnectionStatus.navToLoginScreen}))
             } else {
                 setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.db_server_not_available"), dbUUIDAction: DBUUIDAction.none}))

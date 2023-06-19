@@ -1,12 +1,12 @@
 import { IonContent, IonPage, IonButton, IonList, IonInput, 
- IonItem, NavContext, IonIcon, useIonAlert, IonToolbar, IonButtons, IonItemDivider, IonGrid, IonRow, IonCol, IonText, IonFooter} from '@ionic/react';
+ IonItem, NavContext, IonIcon, useIonAlert, IonToolbar, IonButtons, IonItemDivider, IonGrid, IonRow, IonCol, IonText, IonFooter, IonSelect, IonSelectOption, useIonLoading} from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteGenericDocument,
     useGetOneDoc, useItems, useRecipes } from '../components/Usehooks';
 import { cloneDeep } from 'lodash';
-import { PouchResponse, HistoryProps, RowType} from '../components/DataTypes';
-import { ItemDoc, ItemList, UomDoc, InitUomDoc } from '../components/DBSchema';
+import { PouchResponse, HistoryProps, RowType, ListCombinedRows} from '../components/DataTypes';
+import { ItemDoc, UomDoc, InitUomDoc } from '../components/DBSchema';
 import { add, addCircleOutline, closeCircleOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
@@ -42,6 +42,7 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
   })
   const [formErrors,setFormErrors] = useState(FormErrorInit);
   const [presentAlert] = useIonAlert();
+  const [presentDeleting,dismissDeleting] = useIonLoading();
   const updateUom  = useUpdateGenericDocument();
   const createUom = useCreateGenericDocument();
   const deleteUom = useDeleteGenericDocument();
@@ -92,9 +93,14 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.PluralDescription]: {errorMessage: t("error.must_enter_plural_description"), hasError: true }}));
       return false;
     }
+    if (isEmpty(pageState.uomDoc.listGroupID)) {
+      setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.must_select_valid_listgroup_id"), hasError: true }}));
+      return false;
+    }
     let uomDup=false;
     (globalData.uomDocs).forEach((doc) => {
-      if ((doc._id !== pageState.uomDoc._id) && (
+      if ((doc._id !== pageState.uomDoc._id) && 
+      (["system",pageState.uomDoc.listGroupID].includes(doc.listGroupID)) && (
           (doc.name.toUpperCase() === pageState.uomDoc.name.toUpperCase()) || 
           (doc.description.toUpperCase() === pageState.uomDoc.description.toUpperCase()) ||
           (doc.pluralDescription.toUpperCase() === pageState.uomDoc.pluralDescription.toUpperCase()) ) )
@@ -138,16 +144,23 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
         setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.updating_uom")+" " + result.errorCode + " : " + result.errorText + ". " + (t("error.please_retry") as string), hasError: true }}));
     } 
   }
+
+  function updateListGroup(updGroup: string) {
+    if (pageState.uomDoc.listGroupID !== updGroup) {
+      setPageState(prevState => ({...prevState,uomDoc: {...prevState.uomDoc,listGroupID: updGroup}}))
+    }
+  }
   
   async function getNumberOfItemsUsingUom() {
     let numResults = 0;
     if (pageState.uomDoc === null) return numResults;
     itemRows.forEach( (ir: ItemDoc) => {
-      ir.lists.forEach( (list: ItemList) => {
+      for (const list of ir.lists) {
         if (list.uomName === pageState.uomDoc.name) {
           numResults++;
+          break;
         }
-      })
+      }
     })
     return numResults;
   }
@@ -156,35 +169,41 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
     let numResults = 0;
     if (pageState.uomDoc === null) return numResults;
     recipeDocs.forEach(recipe => {
-      recipe.items.forEach(recItem => {
+      for (const recItem of recipe.items) {
         if (String(recItem.recipeUOMName).toUpperCase() === pageState.uomDoc.name.toUpperCase() || 
             String(recItem.shoppingUOMName).toUpperCase() === pageState.uomDoc.name.toUpperCase()) {
-              numResults++
+              numResults++;
+              break;
             } 
-      })
+      }
     })
     return numResults;
   }
 
   async function deleteUomFromDB() {
+    presentDeleting(t("general.deleting_uom"));
     let uomItemDelResponse = await deleteUomFromItems(String(pageState.uomDoc.name));
     if (!uomItemDelResponse.successful) {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.unable_remove_uom_items"), hasError: true }}));
       setPageState(prevState=>({...prevState,deletingUom: false }))
+      dismissDeleting()
       return false;
     }
     let uomRecipeDelResponse = await deleteUomFromRecipes(String(pageState.uomDoc.name));
     if (!uomRecipeDelResponse.successful) {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.unable_remove_uom_recipes"), hasError: true }}));
       setPageState(prevState=>({...prevState,deletingUom: false}))
+      dismissDeleting();
       return false;
     }
    let uomDelResponse = await deleteUom(pageState.uomDoc);
    if (!uomDelResponse.successful) {
     setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.unable_delete_uom"), hasError: true }}));
     setPageState(prevState=>({...prevState,deletingUom: false }))
-     return false;
+    dismissDeleting();
+    return false;
    }
+    dismissDeleting();
     goBack("/uoms");
     setPageState(prevState=>({...prevState,deletingUom: false }));
   }
@@ -196,8 +215,8 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
     const subListText = t("general.lists_using_category",{count: numRecipesUsed});
     setPageState(prevState=>({...prevState,deletingUom: true}));
     presentAlert({
-      header: t("general.delete_this_uom"),
-      subHeader: t("general.really_delete_uom") +subItemText+ " " + subListText + " " + t("general.all_uom_info_lost"),
+      header: t("general.delete_this_uom", {uom: pageState.uomDoc.description}),
+      subHeader: t("general.really_delete_uom") +" "+subItemText+ " " + subListText + " " + t("general.all_uom_info_lost"),
       buttons: [ { text: t("general.cancel"), role: "Cancel" ,
                   handler: () => setPageState(prevState=>({...prevState,deletingUom: false})) },
                   { text: t("general.delete"), role: "confirm",
@@ -232,6 +251,14 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
       <PageHeader title={t("general.editing_uom")+ " " + translatedUOMName(String(pageState.uomDoc._id),pageState.uomDoc.description,pageState.uomDoc.pluralDescription)  } />
       <IonContent>
           <IonList>
+            <IonItem key="listgroup">
+              <IonSelect disabled={mode!=="new"} key="listgroupsel" label={t("general.list_group") as string} labelPlacement='stacked' interface="popover" onIonChange={(e) => updateListGroup(e.detail.value)} value={pageState.uomDoc.listGroupID}>
+                { (cloneDeep(globalData.listCombinedRows) as ListCombinedRows).filter(lr => (lr.rowType === RowType.listGroup)).map((lr) => 
+                  ( <IonSelectOption key={lr.rowKey} value={lr.listGroupID} disabled={lr.listGroupID === "system"}>{lr.listGroupName}</IonSelectOption> )
+                )}
+              </IonSelect>
+            </IonItem>
+
             <IonItem key="name">
               <IonInput label={t("general.uom_code") as string} disabled={pageState.uomDoc._id?.startsWith("system:uom")}
                         labelPlacement="stacked" type="text" placeholder={t("general.new_placeholder") as string}

@@ -1,6 +1,7 @@
 export const maxAppSupportedSchemaVersion = 4;
 export const appVersion = "0.9.0";
 export const minimumAccessRefreshSeconds = 300;
+export const DefaultColor = "#ffffff";
 
 export interface UUIDDoc {
   _id?: string,
@@ -21,12 +22,12 @@ export interface CategoryDoc {
     type: string,
     listGroupID: string | null,
     name: string,
-    color: string,
+    color?: string,
     updatedAt?: string
   }
   
 export const InitCategoryDoc: CategoryDoc = {
-   type: "category", listGroupID: null, name: "", color: "", updatedAt: ""
+   type: "category", listGroupID: null, name: "", color: DefaultColor, updatedAt: ""
   }
   
 export type CategoryDocs = CategoryDoc[];
@@ -317,15 +318,17 @@ export const InitSettings: GlobalSettings = {
   savedListID: null
 }
 
+export type CategoryColors = {
+  [key: string]: string
+}
+
 export type SettingsDoc = {
   _id?: string,
   _rev?: string,
   type: string,
   username: string,
   settings: GlobalSettings,
-  categoryColors: {
-    [key: string] : string
-  },
+  categoryColors?: CategoryColors,
   updatedAt: string
 }
 

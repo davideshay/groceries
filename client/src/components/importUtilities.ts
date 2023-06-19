@@ -178,9 +178,10 @@ async function createTandoorRecipe(recipeObj: TandoorRecipe, db: PouchDB.Databas
 
 function findMatchingUOM(uom: string, globalData: GlobalDataState): string {
     if (uom === null || uom === undefined) {return ""};
-    let foundUOM = globalData.uomDocs.find(u => (u.description.toUpperCase() === uom.toUpperCase() || u.pluralDescription.toUpperCase() === uom.toUpperCase()));
+    let foundUOM = globalData.uomDocs.find(u => ( ["system","recipe"].includes(String(u.listGroupID)) && (u.description.toUpperCase() === uom.toUpperCase() || u.pluralDescription.toUpperCase() === uom.toUpperCase())));
     if (foundUOM === undefined) {
         foundUOM = globalData.uomDocs.find(u => {
+            if (!["system","recipe"].includes(String(u.listGroupID))) {return false}
             let foundAlt = false;
             if (u.hasOwnProperty("alternates") && u.alternates !== null) {
                 let upperAlternates = u.alternates!.map(el => (el.replace(/\W|_/g, '').toUpperCase()))

@@ -1,12 +1,12 @@
 import { IonContent, IonPage, IonButton, IonList, IonInput, 
- IonItem, IonLabel, NavContext, IonIcon, useIonAlert, IonToolbar, IonButtons, IonText} from '@ionic/react';
+ IonItem, IonLabel, NavContext, IonIcon, useIonAlert, IonToolbar, IonButtons, IonText, IonSelect, IonSelectOption, useIonLoading} from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteCategoryFromItems, useDeleteGenericDocument,
    useDeleteCategoryFromLists, useGetOneDoc, useItems } from '../components/Usehooks';
 import './Category.css';
-import { PouchResponse, HistoryProps, ListRow, RowType} from '../components/DataTypes';
-import { ItemDoc, ItemList, CategoryDoc, InitCategoryDoc } from '../components/DBSchema';
+import { PouchResponse, HistoryProps, ListRow, RowType, ListCombinedRows} from '../components/DataTypes';
+import { ItemDoc, CategoryDoc, InitCategoryDoc, DefaultColor } from '../components/DBSchema';
 import { addCircleOutline, closeCircleOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
@@ -15,9 +15,11 @@ import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
 import { translatedCategoryName } from '../components/translationUtilities';
 import { cloneDeep } from 'lodash';
+import log from 'loglevel';
+import { GlobalStateContext } from '../components/GlobalState';
 
 enum ErrorLocation  {
-   Name, PluralName, General
+   Name, General
 }
 
 const FormErrorInit = {  [ErrorLocation.Name]:       {errorMessage:"", hasError: false},
@@ -29,6 +31,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   if ( mode === "new" ) { routeID = "<new>"};
   const [needInitCategoryDoc,setNeedInitCategoryDoc] = useState(true);
   const [stateCategoryDoc,setStateCategoryDoc] = useState<CategoryDoc>(InitCategoryDoc);
+  const [stateColor,setStateColor] = useState<string>(DefaultColor);
   const [formErrors,setFormErrors] = useState(FormErrorInit);
   const [deletingCategory,setDeletingCategory] = useState(false)
   const [presentAlert] = useIonAlert();
@@ -42,20 +45,27 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   const {goBack} = useContext(NavContext);
   const screenLoading = useRef(true);
   const globalData = useContext(GlobalDataContext);
+  const {globalState, updateCategoryColor, deleteCategoryColor} = useContext(GlobalStateContext)
+  const [presentDeleting,dismissDeleting] = useIonLoading();
   const { t } = useTranslation();
 
   useEffect( () => {
     let newCategoryDoc: CategoryDoc;
-    if (!categoryLoading && needInitCategoryDoc) {
+    let newColor: string = DefaultColor;
+    if (!categoryLoading && globalState.settingsLoaded && needInitCategoryDoc) {
       if (mode === "new") {
         newCategoryDoc = cloneDeep(InitCategoryDoc);
       } else {
-        newCategoryDoc = categoryDoc;
+        newCategoryDoc = categoryDoc as CategoryDoc;
+        if (globalState.categoryColors.hasOwnProperty(String(newCategoryDoc._id))) {
+          newColor =globalState.categoryColors[String(newCategoryDoc._id)];
+        }
       }
       setNeedInitCategoryDoc(false);
       setStateCategoryDoc(newCategoryDoc);
+      setStateColor(newColor);
     }
-  },[categoryLoading,categoryDoc,mode,needInitCategoryDoc]);
+  },[globalState.settingsLoaded,categoryLoading,categoryDoc,mode,needInitCategoryDoc,globalState.categoryColors]);
 
   useEffect( () => {
     if (categoryDoc !== null) {setStateCategoryDoc(categoryDoc)}
@@ -72,6 +82,12 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   
   screenLoading.current=false;
 
+  function updateListGroup(updGroup: string) {
+    if (stateCategoryDoc.listGroupID !== updGroup) {
+      setStateCategoryDoc(prevState => ({...prevState, listGroupID: updGroup}));
+    }
+  }
+
   async function updateThisCategory() {
     setFormErrors(prevState=>(FormErrorInit));
     if (stateCategoryDoc.name === undefined || stateCategoryDoc.name === "" || stateCategoryDoc.name === null) {
@@ -80,21 +96,30 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
     let categoryDup=false;
     (globalData.categoryDocs as CategoryDoc[]).forEach((doc) => {
-      if ((doc._id !== stateCategoryDoc._id) && (doc.name.toUpperCase() === stateCategoryDoc.name.toUpperCase())) {
+      if ((["SYSTEM",stateCategoryDoc.listGroupID?.toUpperCase()].includes(doc.listGroupID?.toUpperCase(  ))) && (doc._id !== stateCategoryDoc._id) && (doc.name.toUpperCase() === stateCategoryDoc.name.toUpperCase() || translatedCategoryName(doc._id,doc.name).toUpperCase() === stateCategoryDoc.name.toUpperCase())) {
         categoryDup = true;
       }
     });
     if (categoryDup) {
-      setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.duplicate_category_name"), hasError: true}}))
-      return
+      setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.duplicate_category_name"), hasError: true}}));
+      return;
+    }
+    if (stateCategoryDoc.listGroupID === null || stateCategoryDoc.listGroupID === "") {
+      setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.must_select_valid_listgroup_id"), hasError: true}}));
+      return;
     }
     let result: PouchResponse;
+    let catID: string = "";
     if ( mode === "new") {
       result = await createCategory(stateCategoryDoc);
+      if (result.successful) {catID = String(result.pouchData.id)}
     } else {
       result = await updateCategory(stateCategoryDoc);
+      catID = String(stateCategoryDoc._id)
     }
     if (result.successful) {
+        console.log(result);
+        let colorUpdate = await updateCategoryColor(catID,stateColor)
         goBack("/categories");
     } else {
         setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.updating_category"), hasError: true}}))
@@ -105,11 +130,12 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
     let numResults = 0;
     if (stateCategoryDoc === null) return numResults;
     itemRows.forEach( (ir: ItemDoc) => {
-      ir.lists.forEach( (list: ItemList) => {
+      for (const list of ir.lists) {
         if (list.categoryID === stateCategoryDoc._id) {
           numResults++;
+          break;
         }
-      })
+      }
     })
     return numResults;
   }
@@ -126,24 +152,30 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   async function deleteCategoryFromDB() {
+    presentDeleting(t("general.deleting_category"));
     let catItemDelResponse = await deleteCategoryFromItems(String(stateCategoryDoc._id));
     if (!catItemDelResponse.successful) {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.unable_remove_category_items"), hasError: true}}))
       setDeletingCategory(false);
+      dismissDeleting();
       return;
     }
     let catListDelResponse = await deleteCategoryFromLists(String(stateCategoryDoc._id));
     if (!catListDelResponse.successful) {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.unable_remove_category_lists"), hasError: true}}))
       setDeletingCategory(false);
+      dismissDeleting();
       return;
     }
    let catDelResponse = await deleteCategory(stateCategoryDoc);
    if (!catDelResponse.successful) {
      setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.unable_delete_category"), hasError: true}}))
      setDeletingCategory(false);
+     dismissDeleting();
      return;
    }
+    await deleteCategoryColor(String(stateCategoryDoc._id));
+    dismissDeleting();
     goBack("/categories");
     setDeletingCategory(false);
   }
@@ -155,15 +187,14 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
     const subListText = t("general.lists_using_category",{count: numListsUsed});
     setDeletingCategory(true);
     presentAlert({
-      header: t("general.delete_this_category"),
-      subHeader: t("general.really_delete_category") +subItemText+ " " + subListText + " " + t("general.all_category_info_lost"),
+      header: t("general.delete_this_category",{ category: stateCategoryDoc.name}),
+      subHeader: t("general.really_delete_category") +" " + subItemText+ " " + subListText + " " + t("general.all_category_info_lost"),
       buttons: [ { text: t("general.cancel"), role: "Cancel" ,
                   handler: () => setDeletingCategory(false)},
                   { text: t("general.delete"), role: "confirm",
                   handler: () => deleteCategoryFromDB()}]
-    })
-    
-    }
+    })  
+  }
 
   if (stateCategoryDoc.color === undefined) {setStateCategoryDoc((prevState) => ({...prevState,color:"#888888"}))};
 
@@ -181,9 +212,16 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
               errorText={formErrors[ErrorLocation.Name].errorMessage}>
               </IonInput>
             </IonItem>
+            <IonItem key="listgroup">
+              <IonSelect disabled={mode!=="new"} key="listgroupsel" label={t("general.list_group") as string} labelPlacement='stacked' interface="popover" onIonChange={(e) => updateListGroup(e.detail.value)} value={stateCategoryDoc.listGroupID}>
+                { (cloneDeep(globalData.listCombinedRows) as ListCombinedRows).filter(lr => (lr.rowType === RowType.listGroup)).map((lr) => 
+                  ( <IonSelectOption key={lr.rowKey} value={lr.listGroupID} disabled={lr.listGroupID === "system"}>{lr.listGroupName}</IonSelectOption> )
+                )}
+              </IonSelect>
+            </IonItem>
             <IonItem key="color">
               <IonLabel position="stacked">{t("general.color")}</IonLabel>
-              <input type="color" value={stateCategoryDoc.color} onChange={(e) => {setStateCategoryDoc((prevState) => ({...prevState,color: e.target.value}))}}></input>
+              <input type="color" value={stateColor} onChange={(e) => {setStateColor((prevState) => (e.target.value))}}></input>
             </IonItem>
           </IonList>
           <IonItem lines="none"  key="formerror">{formErrors[ErrorLocation.General].hasError ? <IonText color="danger">{formErrors[ErrorLocation.General].errorMessage}</IonText> : <></>}</IonItem>

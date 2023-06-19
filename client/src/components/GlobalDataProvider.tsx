@@ -111,7 +111,11 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
         index: { fields: ["type","name"] },
         selector: { 
             "type": "listgroup",
-            "name": { "$exists": true } 
+            "name": { "$exists": true },
+            "$or": [
+                { "listGroupOwner": remoteDBCreds.dbUsername },
+                { "sharedWith": {"$elemMatch" : {"$eq" : remoteDBCreds.dbUsername}}}
+            ] 
             }
         });
 
@@ -119,7 +123,11 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
         index: { fields: ["type","name"] },
         selector: { 
             "type": "category",
-            "name": { "$exists": true } 
+            "name": { "$exists": true },
+            "$or": [
+                {"listGroupID": "system" },
+                {"listGroupID": {"$in": (listGroupDocs.map(lg => (lg._id)))}}
+            ]
             }
         });
 
@@ -127,7 +135,11 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
         index: { fields: ["type","name"] },
         selector: { 
             "type": "uom",
-            "name": { "$exists": true } 
+            "name": { "$exists": true }, 
+            "$or": [
+                {"listGroupID": "system" },
+                {"listGroupID": {"$in": (listGroupDocs.map(lg => (lg._id)))}}
+            ]
             }
         });
 

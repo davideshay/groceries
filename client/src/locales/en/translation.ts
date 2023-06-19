@@ -43,10 +43,10 @@ export const en_translations =
         "categories": "Categories",
         "loading_category": "Loading Category...",
         "items_using_category_one": "There is {{count}} item using this category.",
-        "items_using_category_other": "There are {{count}} items using this category",
+        "items_using_category_other": "There are {{count}} items using this category.",
         "lists_using_category_one": "There is {{count}} list using this category.",
         "lists_using_category_other": "There are {{count}} lists using this category.",
-        "delete_this_list": "Delete This List?",
+        "delete_this_list": "Delete This List: {{list}} ?",
         "really_delete_list": "Do you really want to delete this list?",
         "really_delete_list_extended": "Do you really want to delete this list?  All information on this list will be lost.",
         "all_list_info_lost": "All information on this list will be lost.",
@@ -180,7 +180,7 @@ export const en_translations =
         "items_using_uom_other": "There are {{count}} items using this UoM",
         "recipes_using_uom_one": "There is {{count}} recipe using this UoM.",
         "recipes_using_uom_other": "There are {{count}} recipes using this UoM.",
-        "delete_this_uom": "Delete this Unit of Measure?",
+        "delete_this_uom": "Delete this Unit of Measure: {{uom}} ?",
         "really_delete_uom": "This UOM will be removed from all items and recipes. Are you sure you want to delete?",
         "all_uom_info_lost": "All unit of measure info will be lost",
         "editing_uom": "Editing UOM",
@@ -225,11 +225,12 @@ export const en_translations =
         "days_other": " days",
         "relogin": "Relogin",
         "confirm_remove_completed_items": "Confirm that you want to remove completed items from the list",
-        "delete_this_category": "Delete This Category?",
+        "delete_this_category": "Delete This Category : {{category}} ?",
         "really_delete_category": "Do you really want to delete this category?",
         "all_category_info_lost": "All information on this category will be lost.",
-        
-
+        "deleting_category": "Deleting Category...",
+        "deleting_list": "Deleting List...",
+        "deleting_uom": "Deleting Unit of Measure..."
      },
      "error" : {
         "invalid_dbuuid" : "Invalid Database Unique Identifier",
@@ -359,7 +360,9 @@ export const en_translations =
         "friends_server_unavailable": "Cannot display or update Friends data. API and/or Database is unavailable.",
         "app_already_running":"Already running in another session, please continue using the app there.",
         "listgroup_already_exists": "There is already a list group with this name.",
-        "list_already_exists": "There is already a list with this name."
+        "list_already_exists": "There is already a list with this name.",
+        "cannot_create_category_no_listgroup_selected": "Cannot create a category with no list group selected",
+        "cannot_create_uom_no_listgroup_selected": "Cannot create a unit of measure with no list group selected",
     },
     "itemtext": {
         "item_is_on_these_lists": "Item is on these lists:",
