@@ -195,7 +195,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
 async function deleteListFromDB() {
-  presentDeleting(t("general.deleting_list"));
+  presentDeleting(String(t("general.deleting_list")));
   let response = await deleteListFromItems(String(pageState.selectedListID));
   if (response.successful) {
     let delResponse = await deleteList((pageState.listDoc));

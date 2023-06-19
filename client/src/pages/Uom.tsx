@@ -181,7 +181,7 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   async function deleteUomFromDB() {
-    presentDeleting(t("general.deleting_uom"));
+    presentDeleting(String(t("general.deleting_uom")));
     let uomItemDelResponse = await deleteUomFromItems(String(pageState.uomDoc.name));
     if (!uomItemDelResponse.successful) {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.unable_remove_uom_items"), hasError: true }}));

@@ -15,7 +15,6 @@ import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
 import { translatedCategoryName } from '../components/translationUtilities';
 import { cloneDeep } from 'lodash';
-import log from 'loglevel';
 import { GlobalStateContext } from '../components/GlobalState';
 
 enum ErrorLocation  {
@@ -119,7 +118,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
     if (result.successful) {
         console.log(result);
-        let colorUpdate = await updateCategoryColor(catID,stateColor)
+        await updateCategoryColor(catID,stateColor)
         goBack("/categories");
     } else {
         setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.updating_category"), hasError: true}}))
@@ -152,7 +151,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   async function deleteCategoryFromDB() {
-    presentDeleting(t("general.deleting_category"));
+    presentDeleting(String(t("general.deleting_category")));
     let catItemDelResponse = await deleteCategoryFromItems(String(stateCategoryDoc._id));
     if (!catItemDelResponse.successful) {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.unable_remove_category_items"), hasError: true}}))
