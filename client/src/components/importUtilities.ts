@@ -229,6 +229,7 @@ async function checkRecipeExists(recipeName: string, db: PouchDB.Database): Prom
     let exists=false;
     let recipeResults: PouchDB.Find.FindResponse<{}> = {docs: []}
     try {recipeResults = await db.find({
+        use_index: "stdTypeName",
         selector: {
           type: "recipe",
           name: recipeName }

@@ -83,7 +83,7 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
     const [ dataReloadStatus, setDataReloadStatus] = useState<DataReloadStatus>(DataReloadStatus.ReloadNeeded);
 
     const { docs: itemDocs, loading: itemsLoading, error: itemError} = useFind({
-        index: { fields: ["type","name"] },
+        index: "stdTypeName",
         selector: { 
             "type": "item",
             "name": { "$exists": true } 
@@ -91,7 +91,7 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
          });
 
     const { docs: globalItemDocs, loading: globalItemsLoading, error: globalItemError} = useFind({
-        index: { fields: ["type","name"] },
+        index: "stdTypeName",
         selector: { 
             "type": "globalitem",
             "name": { "$exists": true } 
@@ -99,7 +99,7 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
         });
 
     const { docs: listDocs, loading: listsLoading, error: listError} = useFind({
-        index: { fields: ["type","name"] },
+        index: "stdTypeName",
         selector: { 
             "type": "list",
             "name": { "$exists": true } 
@@ -108,7 +108,7 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
 
 
     const { docs: listGroupDocs, loading: listGroupsLoading, error: listGroupError} = useFind({
-        index: { fields: ["type","name"] },
+        index: "stdTypeName",
         selector: { 
             "type": "listgroup",
             "name": { "$exists": true },
@@ -120,7 +120,7 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
         });
 
     const { docs: categoryDocs, loading: categoryLoading, error: categoryError} = useFind({
-        index: { fields: ["type","name"] },
+        index: "stdTypeName",
         selector: { 
             "type": "category",
             "name": { "$exists": true },
@@ -132,7 +132,7 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
         });
 
     const { docs: uomDocs, loading: uomLoading, error: uomError} = useFind({
-        index: { fields: ["type","name"] },
+        index: "stdTypeName",
         selector: { 
             "type": "uom",
             "name": { "$exists": true }, 

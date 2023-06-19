@@ -933,9 +933,45 @@ async function createUtilitiesViews() {
     }
 }
 
+type CouchIndex = {
+    name: string,
+    fields: string[];
+}
+
+async function checkAndCreateIndex(index: CouchIndex): Promise<boolean> {
+    log.info("Creating index ",index.name);
+    const newIndex = {index: { fields: index.fields}, name: index.name};
+    let success = true;
+    let dbResp = null;
+    try {dbResp = await todosDBAsAdmin.createIndex(newIndex)}
+    catch(err) {log.error("Error creating index ",index.name, "Error:",err); success=false}
+    log.debug("Response from create index:",dbResp)
+    return success;
+}
+
+async function createStandardIndexes(): Promise<boolean> {
+    log.info("Creating Standard Indexes for find command")
+    let indexes: CouchIndex[] = [
+        {name: "stdType", fields: ["type"]},
+        {name: "stdTypeName", fields: ["type","name"]},
+        {name: "stdTypeUsername", fields: ["type","username"]},
+        {name: "stdTypeListGroupID", fields: ["type","listGroupID"]},
+        {name: "stdTypeLists", fields: ["type","lists"]},
+        {name: "stdFriend", fields: ["type","friendID1","friendID2"]},
+        {name: "stdConflict", fields: ["type","docType","updatedAt"]}
+    ];
+    let success = true;
+    for (const index of indexes) {
+        success = await checkAndCreateIndex(index);
+        if (!success) {break;}
+    }
+    return success;
+}
+
 async function checkAndCreateViews() {
     await createConflictsView();
     await createUtilitiesViews();
+    await createStandardIndexes();
 }
 
 async function checkJWTKeys() {

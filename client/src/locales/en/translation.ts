@@ -363,6 +363,9 @@ export const en_translations =
         "list_already_exists": "There is already a list with this name.",
         "cannot_create_category_no_listgroup_selected": "Cannot create a category with no list group selected",
         "cannot_create_uom_no_listgroup_selected": "Cannot create a unit of measure with no list group selected",
+        "header_adding_item": "Error Adding Existing Item",
+        "header_warning_adding_item": "Warning Adding Existing Item",
+        "warning_none_set_active": "Based on settings, although the item was added, it is not currently active on any of the lists. This could be because the category is not active on the lists."
     },
     "itemtext": {
         "item_is_on_these_lists": "Item is on these lists:",

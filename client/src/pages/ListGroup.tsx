@@ -2,7 +2,6 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonLis
    IonItem, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonSelectOption,
   IonButtons, IonMenuButton, useIonToast, IonIcon, useIonAlert, IonFooter, IonText } from '@ionic/react';
 import { useHistory, useParams } from 'react-router-dom';
-import { useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useFriends, 
   UseFriendState, useDeleteGenericDocument, useDeleteItemsInListGroup, useGetOneDoc } from '../components/Usehooks';
@@ -58,11 +57,6 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   const [ presentToast ] = useIonToast();
   const {useFriendState, friendRows} = useFriends(String(remoteDBCreds.dbUsername));
   const { listCombinedRows, listRows, listRowsLoaded, listError } = useContext(GlobalDataContext);
-  const { docs: categoryDocs, loading: categoryLoading, error: categoryError } = useFind({
-    index: { fields: [ "type","name"] },
-    selector: { type: "category", name: { $exists: true}},
-    sort: [ "type","name"]
-  })
   const { loading: listGroupLoading, doc: listGroupDoc, dbError: listGroupError } = useGetOneDoc(pageState.selectedListGroupID);
   const [presentAlert,dismissAlert] = useIonAlert();
   const screenLoading = useRef(true);
@@ -93,7 +87,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
         setRemoteDBState(prevState => ({...prevState,apiServerAvailable: false}));
       }
     }
-    if (listRowsLoaded && (useFriendState === UseFriendState.rowsLoaded ||  !remoteDBState.dbServerAvailable) && !categoryLoading && (!listGroupLoading || mode==="new")) {
+    if (listRowsLoaded && (useFriendState === UseFriendState.rowsLoaded ||  !remoteDBState.dbServerAvailable) && (!listGroupLoading || mode==="new")) {
       let sharedWith: string[] = [];
       if (mode === "new" && pageState.needInitListGroupDoc) {
         let initListGroupDoc: ListGroupDoc = cloneDeep(ListGroupDocInit);
@@ -113,13 +107,13 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
       });
       getUI(userIDList);
     }
-  },[listGroupLoading, listGroupDoc, listRowsLoaded, mode, useFriendState,friendRows, categoryLoading,categoryDocs,pageState.selectedListGroupID, remoteDBState.accessJWT, pageState.needInitListGroupDoc,remoteDBCreds.apiServerURL,remoteDBCreds.dbUsername,remoteDBState.dbServerAvailable,setRemoteDBState]);
+  },[listGroupLoading, listGroupDoc, listRowsLoaded, mode, useFriendState,friendRows,pageState.selectedListGroupID, remoteDBState.accessJWT, pageState.needInitListGroupDoc,remoteDBCreds.apiServerURL,remoteDBCreds.dbUsername,remoteDBState.dbServerAvailable,setRemoteDBState]);
 
-  if (listError || listGroupError  || useFriendState === UseFriendState.error || categoryError) {
+  if (listError || listGroupError  || useFriendState === UseFriendState.error) {
     <ErrorPage errorText={t('error.loading_list_group') as string}></ErrorPage>
   }
 
-  if (!listRowsLoaded || (listGroupLoading && pageState.selectedListGroupID !== null) ||(useFriendState !== UseFriendState.rowsLoaded && !remoteDBState.workingOffline) || categoryLoading || isEmpty(pageState.listGroupDoc) || !pageState.usersLoaded || pageState.deletingDoc)  {
+  if (!listRowsLoaded || (listGroupLoading && pageState.selectedListGroupID !== null) ||(useFriendState !== UseFriendState.rowsLoaded && !remoteDBState.workingOffline) || isEmpty(pageState.listGroupDoc) || !pageState.usersLoaded || pageState.deletingDoc)  {
     return ( <Loading isOpen={screenLoading.current} message={t('general.loading_list_group')}  /> )
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   };

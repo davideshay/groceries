@@ -287,7 +287,7 @@ export function useFriends(username: string) : { useFriendState: UseFriendState,
   const [useFriendState,setUseFriendState] = useState(UseFriendState.init);
   const { t }= useTranslation();
   const { docs: friendDocs, state: friendState } = useFind({
-    index: { fields: ["type","friendID1","friendID2"]},
+    index: "stdFriend",
     selector: { "$and": [ {
         "type": "friend",
         "friendID1": { "$exists": true },
@@ -380,7 +380,7 @@ export function useConflicts() : { conflictsError: boolean, conflictDocs: Confli
   const [mostRecentDate,setMostRecentDate] = useState<Date>(new Date());
 
   const { docs: conflictDocs, loading: conflictsLoading, error: dbError } = useFind({
-    index: { fields: ["type","docType","updatedAt"]},
+    index: "stdConflict",
     selector: { type: "conflictlog", docType: { $exists: true }, updatedAt: { $gt: mostRecentDate.toISOString()} },
     sort: [ "type", "docType","updatedAt" ]
   })
@@ -399,7 +399,7 @@ export function useConflicts() : { conflictsError: boolean, conflictDocs: Confli
 
 export function useRecipes() : { recipesError: boolean, recipeDocs: RecipeDoc[], recipesLoading: boolean} {
   const { docs: recipeDocs, loading: recipesLoading, error: dbError} = useFind({
-    index: { fields: ["type","name"]},
+    index: "stdTypeName",
     selector: { type: "recipe", name: { $exists: true } },
     sort: [ "type", "name" ]
   });

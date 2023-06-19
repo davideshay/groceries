@@ -66,6 +66,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
     const [settingsRetrieved,setSettingsRetrieved] = useState(false);
     const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
     const { docs: settingsDocs, loading: settingsLoading, error: settingsError} = useFind({
+        index: "stdTypeUsername",
         selector: {type: "settings", "username": remoteDBCreds.dbUsername}
     })
     const updateSettingDoc = useUpdateGenericDocument();

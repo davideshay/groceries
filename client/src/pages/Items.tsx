@@ -159,6 +159,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   function addNewItemToList(itemName: string) {
     if (isItemAlreadyInList(itemName)) {
       setPageState(prevState => ({...prevState, showAlert: true, alertHeader: t("error.adding_to_list") , alertMessage: t("error.item_exists_current_list")}))
+      setSearchState(prevState => ({...prevState, isOpen: false, searchCriteria: "", filteredSearchRows: [], isFocused: false}))
     } else {
       setGlobalStateInfo("itemMode","new");
       setGlobalStateInfo("callingListID",pageState.selectedListOrGroupID);
@@ -166,7 +167,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       let globalItemID = getGlobalItemID(itemName)
       setGlobalStateInfo("newItemGlobalItemID",globalItemID)
       setGlobalStateInfo("newItemName",itemName);
-      setSearchState(prevState => ({...prevState, isOpen: false,searchCriteria:"",isFocused: false}))
+      setSearchState(prevState => ({...prevState, isOpen: false,searchCriteria:"",filteredSearchRows: [],isFocused: false}))
       history.push("/item/new/");
     }
   }
@@ -226,7 +227,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
 
-  async function addExistingItemToList(itemSearch: ItemSearch) {
+  async function addExistingItemToList(itemSearch: ItemSearch): Promise<{success: boolean, errorHeader: string, errorMessage: string }> {
 
     /*  scenarios:
       
@@ -243,6 +244,8 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
           * Add item, set to active based on listgroup mode/list selected -- data comes from global item if needed
  */
 
+    let response = { success: true, errorHeader: "", errorMessage: ""};
+
     let testItemDoc: ItemDoc | undefined = undefined;
     testItemDoc = cloneDeep(itemDocs.find((item) => ((item._id === itemSearch.itemID && item.listGroupID === pageState.groupIDforSelectedList) || 
               (item.name === itemSearch.itemName && item.listGroupID === pageState.groupIDforSelectedList))) );
@@ -251,13 +254,16 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
     if (!addingNewItem) {
       if (testItemDoc!.lists.filter(il => il.active).length === testItemDoc!.lists.length) {
-        presentToast({message: t("error.item_exists_current_list"), duration: 1500, position: "middle"});
-        return;
+        response.success = false;
+        response.errorHeader = t("general.header_adding_item");
+        response.errorMessage = t("error.item_exists_current_list");
+        return response;
       }
     }
-    
+    log.debug("adding new item:",addingNewItem);
     let newItem: ItemDoc = cloneDeep(ItemDocInit);
     if (addingNewItem) {
+      let activeCount = 0;
       if (itemSearch.itemType === ItemSearchType.Global) {
         newItem.globalItemID = itemSearch.globalItemID;
         newItem.listGroupID = pageState.groupIDforSelectedList;
@@ -271,6 +277,8 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
             newItemList.uomName = itemSearch.globalItemUOM;
             newItemList.quantity = 1;
             newItemList.active = shouldBeActive(newItemList,true);
+            activeCount = newItemList.active ? (activeCount + 1) : activeCount;
+            log.debug("on listrow:",lr.listDoc.name,"active:",newItemList.active,"activeCount:",activeCount)
             newItem.lists.push(newItemList);
           }
         })
@@ -285,34 +293,53 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
             newItemList.listID = String(lr.listDoc._id);
             newItemList.quantity = 1;
             newItemList.active = shouldBeActive(newItemList,true);
+            activeCount = newItemList.active ? (activeCount + 1) : activeCount;
             newItem.lists.push(newItemList);
           }
         })
       }  
+      if (activeCount === 0) {
+        await presentAlert({header: t("error.header_warning_adding_item"), message: t("error.warning_none_set_active"), buttons: [t("general.ok")]})
+      }
       let itemAdded = await addNewItem(newItem);
       if (!itemAdded.successful) {
-        presentToast({message: t("error.adding_item"),duration: 1500, position: "middle"});
+        response.success=false;
+        response.errorHeader = t("error.header_adding_item");
+        response.errorMessage = t("error.adding_item");
       }
-      return;
+      return response;
     }
 
 // Finished adding new item where it didn't exist. Now update existing item, active on no or some lists
+    let activeCount = 0;
     let origLists = cloneDeep(testItemDoc!.lists);
     testItemDoc!.lists.forEach(il => {
       il.active = shouldBeActive(il,false);
+      activeCount = il.active ? (activeCount + 1) : activeCount;
+      log.debug("il",il.listID,"active:",il.active,"activeCount:",activeCount);
       if (il.active) { il.completed = false;}
     })
     if (!isEqual(origLists,testItemDoc!.lists)) {
       let result = await updateItemInList(testItemDoc);
+      if (activeCount === 0) {
+        await presentAlert({header: t("error.header_warning_adding_item"), message: t("error.warning_none_set_active"), buttons: [t("general.ok")]})
+      }
       if (!result.successful) {
-        presentToast({message: t("error.updating_item"),duration: 1500, position: "middle"});
+        response.success=false;
+        response.errorHeader = t("error.header_adding_item.");
+        response.errorMessage = t("error.updating_item");
+        return response;
       }
     }
+    return response;
   }
 
-  function chooseSearchItem(item: ItemSearch) {
-    addExistingItemToList(item);
-    setSearchState(prevState => ({...prevState, searchCriteria: "", filteredRows: [],isOpen: false, isFocused: false}))
+  async function chooseSearchItem(item: ItemSearch) {
+    const {success,errorHeader,errorMessage}  = await addExistingItemToList(item);
+    setSearchState(prevState => ({...prevState, searchCriteria: "", filteredSearchRows: [], isOpen: false, isFocused: false}));
+    if (!success) {
+      setPageState(prevState => ({...prevState,showAlert: true, alertHeader: errorHeader, alertMessage: errorMessage}));
+    }      
   }
 
   async function completeItemRow(id: String, newStatus: boolean | null) {
@@ -426,11 +453,12 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   let alertElem = (
     <IonAlert
+      key="mainerroralert"
       isOpen={pageState.showAlert}
-      onDidDismiss={() => setPageState(prevState => ({...prevState,showAlert: false, alertHeader:"",alertMessage:""}))}
+      onDidDismiss={() => {setPageState(prevState => ({...prevState,showAlert: false, alertHeader:"",alertMessage:""}));}}
       header={pageState.alertHeader}
       message={pageState.alertMessage}
-      buttons={["OK"]}
+      buttons={[String(t("general.ok"))]}
     />
   )
 
@@ -445,8 +473,8 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
                 </IonSelectOption>
             ))}
           </IonSelect>
-        <SyncIndicator />
-        </IonItem>
+         <SyncIndicator />
+         </IonItem>
         <IonItem key="searchbar" className="item-search">
            <IonIcon icon={searchOutline} />
            <IonInput id="item-search-box-id" aria-label="" className="ion-no-padding input-search" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="text" enterkeyhint="enter"

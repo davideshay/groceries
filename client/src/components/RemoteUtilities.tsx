@@ -309,7 +309,8 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
     }
     async function getData() {
         let results = await remoteDB.find({
-            selector: { "type": { "$eq": "dbuuid"} } })
+            use_index: "stdType",
+            selector: { "type": "dbuuid" } })
         return results;
     }
     let UUIDResults : PouchDB.Find.FindResponse<{}>
@@ -344,17 +345,20 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
       try { localDBAllDocs = await db.allDocs({include_docs: true});} catch(e) {log.error("error checking docs for uuid",e)};
       localHasRecords = false;
       if (localDBAllDocs != null) {
-        localDBAllDocs.rows.forEach(row => {
+        log.debug(localDBAllDocs);
+        for (const row of localDBAllDocs.rows) {
           if ((row.doc as any).language !== "query") {
-                localHasRecords=true;
+                localHasRecords=true; break;
             }
-        });
+        };
       }
     }
     if (localHasRecords) {
         let localDBFindDocs = null;
-        try { localDBFindDocs = await db.find({selector: { "type": { "$eq": "dbuuid"} }}) }
-        catch(e) {log.error("error finding dbuuid doc",e)};
+        try { localDBFindDocs = await db.find({use_index: "stdTypeName", selector: {"type": "dbuuid", "name": {"$exists": true}}})} 
+        catch(e) {log.error("error in first retrieve...",e,localDBFindDocs)}
+        try { localDBFindDocs = await db.find({use_index: "stdType", selector: { "type": "dbuuid" }}) }
+        catch(e) {log.error("error finding dbuuid doc",e,localDBFindDocs)};
         if ((localDBFindDocs !== null) && localDBFindDocs.docs.length === 1) {
             localDBUUID = (localDBFindDocs.docs[0] as UUIDDoc).uuid;
             localSchemaVersion = Number((localDBFindDocs.docs[0] as UUIDDoc).schemaVersion);
