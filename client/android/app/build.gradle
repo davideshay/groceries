@@ -1,15 +1,14 @@
 apply plugin: 'com.android.application'
 
 android {
-
-    namespace 'io.ionic.starter'
+    namespace "net.shaytech.groceries"
     compileSdkVersion rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "io.ionic.starter"
+        applicationId "net.shaytech.groceries"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 90
-        versionName '0.9.0'
+        versionName "0.9.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -31,7 +30,7 @@ android {
                         def name = "groceries.apk"
                         output.outputFileName = name
                 }
-       }
+        }       
     }
 }
 

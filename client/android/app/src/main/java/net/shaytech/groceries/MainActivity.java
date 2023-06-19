@@ -1,4 +1,4 @@
-package io.ionic.starter;
+package net.shaytech.groceries;
 
 import com.getcapacitor.BridgeActivity;
 

@@ -96,12 +96,12 @@
     ]
   },
   "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@capacitor/cli": "^5.0.3",
     "@types/lodash": "^4.14.195",
     "@types/uuid": "^9.0.2",
     "pouchdb-browser": "^8.0.1",
-    "pouchdb-find": "^8.0.1",
-    "@babel/plugin-proposal-private-property-in-object": "^7.21.11"
+    "pouchdb-find": "^8.0.1"
   },
   "description": "An Ionic project"
 }
