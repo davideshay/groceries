@@ -215,7 +215,7 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
               <IonButton fill="solid" size="small" color="primary" onClick={() => doUpdateUserInfo()} key="updateuser">{t("general.update_user_info")}</IonButton>
             </IonButtons>
           </IonToolbar>
-          <IonItemDivider>{t("general.add_other_list_options")}</IonItemDivider> 
+          <IonItemDivider className="category-divider">{t("general.add_other_list_options")}</IonItemDivider> 
           <IonRadioGroup value={localSettings?.addListOption} onIonChange={(e) => changeSetting("addListOption",e.detail.value)}>
           <IonItem className="shorter-item-some-padding myindented" key="addallauto">
             <IonRadio className="indent-setting" justify="space-between" labelPlacement="start" value={AddListOptions.addToAllListsAutomatically}>{t("general.add_same_group_auto")}</IonRadio>
@@ -227,7 +227,7 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
             <IonRadio className="indent-setting" justify="space-between" labelPlacement="start" value={AddListOptions.dontAddAutomatically}>{t("general.dont_add_auto")}</IonRadio>
           </IonItem>
           </IonRadioGroup>
-          <IonItemDivider>{t("general.other_settings")}</IonItemDivider>
+          <IonItemDivider className="category-divider">{t("general.other_settings")}</IonItemDivider>
           <IonItem className="shorter-item-no-padding" key="language">
             <IonSelect className="shorter-select shorter-select2" label={t("general.language") as string} interface="popover" onIonChange={(e) => i18n.changeLanguage(e.detail.value)} value={curLanguage}>
                 {languageDescriptions.map((lng: any) => (

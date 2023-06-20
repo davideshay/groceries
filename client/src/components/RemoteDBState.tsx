@@ -368,8 +368,6 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     const stopSyncAndCloseRemote = useCallback( async () => {
         let success=true;
         if (globalRemoteDB !== undefined && globalRemoteDB !== null) {
-            log.debug("RemoteDB already exists, closing before assign.");
-            log.debug("about to close: ",globalRemoteDB);
             if (globalSync !== undefined && globalSync !== null) {
                 globalSync.cancel();
             }
@@ -447,7 +445,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             await setPrefsDBCreds();
             return [false,""];
         }
-        log.debug("Got credsObj",JSON.stringify(credsObj));
+//        log.debug("Got credsObj",JSON.stringify(credsObj));
         remoteDBCreds.current = credsObj;
         let serverAvailable = await isServerAvailable(remoteDBCreds.current.apiServerURL); 
         log.debug("is api server available: ",JSON.stringify(serverAvailable));

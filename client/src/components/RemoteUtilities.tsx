@@ -268,7 +268,6 @@ export function errorCheckCreds({credsObj,background, creatingNewUser = false, p
 }
 
 export async function checkJWT(accessJWT: string, couchBaseURL: string | null) {
-    log.debug("in CheckJWT:",accessJWT, couchBaseURL);
     let checkResponse = {
         JWTValid: false,
         DBServerAvailable: true,
@@ -287,7 +286,6 @@ export async function checkJWT(accessJWT: string, couchBaseURL: string | null) {
           };
     try { response = await CapacitorHttp.get(options); }
     catch(err) {log.error("http error getting session error:",err); checkResponse.DBServerAvailable=false}
-    log.debug("checkJWT response: ",response);
     if (checkResponse.DBServerAvailable) {
         if ((response?.status === 200) && (response.data?.userCtx?.name !== null)) {
             let tokenInfo = getTokenInfo(accessJWT,true);
@@ -345,7 +343,6 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
       try { localDBAllDocs = await db.allDocs({include_docs: true});} catch(e) {log.error("error checking docs for uuid",e)};
       localHasRecords = false;
       if (localDBAllDocs != null) {
-        log.debug(localDBAllDocs);
         for (const row of localDBAllDocs.rows) {
           if ((row.doc as any).language !== "query") {
                 localHasRecords=true; break;
@@ -355,8 +352,6 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
     }
     if (localHasRecords) {
         let localDBFindDocs = null;
-        try { localDBFindDocs = await db.find({use_index: "stdTypeName", selector: {"type": "dbuuid", "name": {"$exists": true}}})} 
-        catch(e) {log.error("error in first retrieve...",e,localDBFindDocs)}
         try { localDBFindDocs = await db.find({use_index: "stdType", selector: { "type": "dbuuid" }}) }
         catch(e) {log.error("error finding dbuuid doc",e,localDBFindDocs)};
         if ((localDBFindDocs !== null) && localDBFindDocs.docs.length === 1) {

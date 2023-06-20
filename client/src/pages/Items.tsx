@@ -260,7 +260,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         return response;
       }
     }
-    log.debug("adding new item:",addingNewItem);
     let newItem: ItemDoc = cloneDeep(ItemDocInit);
     if (addingNewItem) {
       let activeCount = 0;
@@ -278,7 +277,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
             newItemList.quantity = 1;
             newItemList.active = shouldBeActive(newItemList,true);
             activeCount = newItemList.active ? (activeCount + 1) : activeCount;
-            log.debug("on listrow:",lr.listDoc.name,"active:",newItemList.active,"activeCount:",activeCount)
             newItem.lists.push(newItemList);
           }
         })
@@ -316,7 +314,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     testItemDoc!.lists.forEach(il => {
       il.active = shouldBeActive(il,false);
       activeCount = il.active ? (activeCount + 1) : activeCount;
-      log.debug("il",il.listID,"active:",il.active,"activeCount:",activeCount);
       if (il.active) { il.completed = false;}
     })
     if (!isEqual(origLists,testItemDoc!.lists)) {
@@ -513,12 +510,17 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     let isExpanded = getCategoryExpanded(catID,Boolean(completed));
     listCont.push(
         <IonItemGroup key={"cat"+String(catID)+Boolean(completed).toString()}>
-        <IonItemDivider className="category-divider" style={{"borderBottom":"4px solid "+catColor}} key={"cat"+String(catID)+Boolean(completed).toString()}><IonIcon className="collapse-icon" icon={isExpanded ? chevronUp : chevronDown } onClick={() => {collapseExpandCategory(catID,Boolean(completed))}}></IonIcon>{catName}</IonItemDivider>
-          {curRows}
-      </IonItemGroup>
+        <IonItemDivider className="category-divider" style={{"borderBottom":"4px solid "+catColor}} key={"cat"+String(catID)+Boolean(completed).toString()}>
+          {catName}
+          <IonIcon className="collapse-icon" icon={isExpanded ? chevronUp : chevronDown } onClick={() => {collapseExpandCategory(catID,Boolean(completed))}} />
+        </IonItemDivider>
+        {curRows}
+        </IonItemGroup>
     )
+    dividerCount++;
   }
 
+  let dividerCount = 0;
   let lastCategoryID : string | null = null;
   let lastCategoryName="<INITIAL>";
   let lastCategoryColor=DefaultColor;
@@ -565,7 +567,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
   addCurrentRows(listContent,currentRows,lastCategoryID,lastCategoryName,lastCategoryColor,lastCategoryFinished);
   if (!createdFinished) {listContent.push(completedDivider)};
-  let contentElem=(<IonList lines="full">{listContent}</IonList>)
+  let contentElem=(<IonList className="ion-no-padding" lines="full">{listContent}</IonList>)
 
   function resumeScroll() {
     let content = contentRef.current;

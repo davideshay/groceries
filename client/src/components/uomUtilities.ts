@@ -44,6 +44,7 @@ export function useDeleteUomFromItems() {
         let response: PouchResponse = cloneDeep(PouchResponseInit);
         let recipeResults: PouchDB.Find.FindResponse<{}>
         try { recipeResults = await db.find({
+          use_index: "stdTypeName",
           selector: {
             type: "recipe",
             name: { $exists: true },

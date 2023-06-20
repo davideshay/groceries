@@ -7,7 +7,7 @@ export const en_translations =
         "lists": "Lists",
         "create_new_list": "Create New List",
         "manage_all_listgroups": "Manage All Listgroups",
-        "other_actions": "Other Actions",
+        "other_actions": "Actions",
         "manage_categories": "Manage Categories",
         "manage_all_items": "Manage All Items",
         "view_global_items": "View Global Items",

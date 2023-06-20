@@ -218,7 +218,6 @@ export function findMatchingGlobalItem(foodName: string|null, globalData: Global
         return(
         (t("globalitem."+(git._id as string).substring(sysItemKey.length+1),{count: 1}).toLocaleUpperCase() === foodName.toLocaleUpperCase()) || 
         (t("globalitem."+(git._id as string).substring(sysItemKey.length+1),{count: 2}).toLocaleUpperCase() === foodName.toLocaleUpperCase()) )  })
-        log.debug("translated global:",translatedGlobal);
         if (translatedGlobal === undefined) {return [null,"",returnInitGlobalItem]}
         else {return [translatedGlobal._id as string,t("globalitem."+(translatedGlobal._id as string).substring(sysItemKey.length+1),{count: 2}),translatedGlobal]}
     }

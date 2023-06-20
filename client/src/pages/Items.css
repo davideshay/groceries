@@ -77,5 +77,10 @@ ion-icon.note-icon {
 }
 
 ion-icon.collapse-icon {
+    justify-self: flex-end;
     padding-right: 6px
+}
+
+ion-item-divider.item-divider-wrapper {
+    justify-content: space-between;
 }

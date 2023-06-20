@@ -124,7 +124,7 @@ export async function initialSetupActivities(db: PouchDB.Database, username: str
     try {totalDocs = (await db.info()).doc_count}
     catch(err) {log.error("Cannot retrieve doc count from local database"); return false;}
     let listGroupDocs: PouchDB.Find.FindResponse<{}>
-    try {listGroupDocs = await db.find({ selector: { type: "listgroup", listGroupOwner: username, default: true},
+    try {listGroupDocs = await db.find({ use_index:"stdTypeOwnerDefault",selector: { type: "listgroup", listGroupOwner: username, default: true},
          limit: totalDocs});}
     catch(err) {log.error("Cannot retrieve list groups from local database"); return false;}
     if (listGroupDocs.docs.length === 0) {

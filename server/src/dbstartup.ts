@@ -940,9 +940,19 @@ type CouchIndex = {
 
 async function checkAndCreateIndex(index: CouchIndex): Promise<boolean> {
     log.info("Creating index ",index.name);
-    const newIndex = {index: { fields: index.fields}, name: index.name};
+    const newIndex = {index: { fields: index.fields},
+                      ddoc: "_design/"+index.name,
+                      name: index.name};
     let success = true;
     let dbResp = null;
+    // try {dbResp = await todosNanoAsAdmin.request(
+    //     { db: couchDatabase,
+    //       method: 'POST',
+    //       path: "_index",
+    //       body: newIndex,
+
+    //     }
+    // )}
     try {dbResp = await todosDBAsAdmin.createIndex(newIndex)}
     catch(err) {log.error("Error creating index ",index.name, "Error:",err); success=false}
     log.debug("Response from create index:",dbResp)
@@ -958,7 +968,8 @@ async function createStandardIndexes(): Promise<boolean> {
         {name: "stdTypeListGroupID", fields: ["type","listGroupID"]},
         {name: "stdTypeLists", fields: ["type","lists"]},
         {name: "stdFriend", fields: ["type","friendID1","friendID2"]},
-        {name: "stdConflict", fields: ["type","docType","updatedAt"]}
+        {name: "stdConflict", fields: ["type","docType","updatedAt"]},
+        {name: "stdTypeOwnerDefault", fields: ["type","listGroupOwner","default"]}
     ];
     let success = true;
     for (const index of indexes) {
