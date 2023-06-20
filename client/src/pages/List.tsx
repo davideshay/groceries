@@ -344,7 +344,7 @@ function deletePrompt() {
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>
-          <IonList>
+          <IonList className="ion-no-padding">
             <IonItem key="name">
               <IonInput label={t("general.name") as string} labelPlacement="stacked" type="text" placeholder={t("general.new_placeholder") as string}
                         onIonInput={(e) => updateName(String(e.detail.value))} value={pageState.listDoc.name}

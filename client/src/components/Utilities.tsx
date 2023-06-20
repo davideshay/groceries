@@ -191,28 +191,6 @@ function startLogging(level: string) {
     } else if (["5","SILENT","S","NONE","N"].includes(uLevel)) {
         targetLevel="SILENT"
     } else {targetLevel="INFO"}
-
-    //const originalFactory = log.methodFactory;
-    // log.methodFactory = (methodName, level, loggerName) => {
-    //   const rawMethod = originalFactory(methodName, level, loggerName);
-    //   function dateFormat(): string {
-    //     const d = new Date();
-    //     return d.getMilliseconds().toString();
-    //     }
-    //   return rawMethod.bind(
-    //       console,
-    //       new Date().getMilliseconds()
-    //   );
-    // };
-
-    // log.methodFactory = function (methodName, logLevel, loggerName) {
-    //     const method = originalFactory(methodName, logLevel, loggerName);
-    //     return function (...message) {;
-    //       const datetime = new Date().toISOString();
-    //       method(datetime,message);
-    //     };
-    //   };
-
     log.setLevel(targetLevel);    
 }
 

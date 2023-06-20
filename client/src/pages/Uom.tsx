@@ -212,7 +212,7 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
     const numItemsUsed = await getNumberOfItemsUsingUom();
     const numRecipesUsed = await getNumberOfRecipesUsingUom();
     const subItemText = t("general.items_using_uom",{count: numItemsUsed});
-    const subListText = t("general.lists_using_category",{count: numRecipesUsed});
+    const subListText = t("general.recipes_using_uom",{count: numRecipesUsed});
     setPageState(prevState=>({...prevState,deletingUom: true}));
     presentAlert({
       header: t("general.delete_this_uom", {uom: pageState.uomDoc.description}),
@@ -250,7 +250,7 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
     <IonPage>
       <PageHeader title={t("general.editing_uom")+ " " + translatedUOMName(String(pageState.uomDoc._id),pageState.uomDoc.description,pageState.uomDoc.pluralDescription)  } />
       <IonContent>
-          <IonList>
+          <IonList className="ion-no-padding">
             <IonItem key="listgroup">
               <IonSelect disabled={mode!=="new"} key="listgroupsel" label={t("general.list_group") as string} labelPlacement='stacked' interface="popover" onIonChange={(e) => updateListGroup(e.detail.value)} value={pageState.uomDoc.listGroupID}>
                 { (cloneDeep(globalData.listCombinedRows) as ListCombinedRows).filter(lr => (lr.rowType === RowType.listGroup)).map((lr) => 

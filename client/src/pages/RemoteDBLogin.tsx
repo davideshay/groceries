@@ -2,7 +2,7 @@ import { IonContent, IonPage, IonButton, IonList, IonInput, IonItem,
   IonText, useIonAlert, isPlatform, IonIcon, useIonLoading, AlertOptions } from '@ionic/react';
 import { useState, useEffect, useContext, useCallback } from 'react';
 import { eye, eyeOff } from 'ionicons/icons';
-import { CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
+import { Capacitor, CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
 import { usePouch} from 'use-pouchdb';
 import { ConnectionStatus, DBCreds, DBUUIDAction, LoginType } from '../components/RemoteDBState';
 import { Preferences } from '@capacitor/preferences';
@@ -112,9 +112,12 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     const history = useHistory();
 
     const exitApp = useCallback( async () => {
-      if (!(isPlatform("desktop") || isPlatform("electron"))) {App.exitApp()}
-      setRemoteDBState(initialRemoteDBState);
-      window.location.replace('about:blank');
+      if (Capacitor.isNativePlatform()) {
+        App.exitApp()
+      } else {
+        setRemoteDBState(initialRemoteDBState);
+        window.location.replace('about:blank');  
+      }
     },[setRemoteDBState])
 
     const destroyAndExit = useCallback(async () => {
@@ -648,7 +651,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
         <IonPage>
             <PageHeader title={t("general.login_page")} />
             <IonContent>
-            <IonList>
+            <IonList className="ion-no-padding">
               {formElem}
               <IonItem>
                   <IonText>{remoteState.formError}</IonText>

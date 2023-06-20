@@ -399,7 +399,6 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
                     }}) }
         catch(err) {log.error("Could not assign PouchDB Remote Server:",err); return false;}        
         globalRemoteDB.setMaxListeners(40);    
-        log.debug("In assignDB, setting connection status to dbAssigned...");
         setRemoteDBState(prevState => ({...prevState,connectionStatus: ConnectionStatus.dbAssigned, 
                 accessJWT: accessJWT, accessJWTExpirationTime: tokenInfo.expireDate }));  
         await setPrefsDBCreds(); 
@@ -535,7 +534,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             }
             if (refreshResponse.valid) {
                 setRemoteDBState(prevState => ({...prevState, connectionStatus: ConnectionStatus.retry, apiServerAvailable: true}));
-                log.debug("refreshJWT being set to refresh response:",refreshResponse.refreshJWT);
+//                log.debug("refreshJWT being set to refresh response:",refreshResponse.refreshJWT);
                 setDBCredsValue("refreshJWT",refreshResponse.refreshJWT);
                 let assignOK = await assignDB(refreshResponse.accessJWT);
                 log.debug("re-assigned DB: result:",assignOK);

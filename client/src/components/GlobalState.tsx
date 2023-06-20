@@ -63,7 +63,6 @@ type GlobalStateProviderProps = {
 
 export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: GlobalStateProviderProps) => {
     const [globalState,setGlobalState] = useState<GlobalState>(initialState);
-    const [settingsRetrieved,setSettingsRetrieved] = useState(false);
     const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
     const { docs: settingsDocs, loading: settingsLoading, error: settingsError} = useFind({
         index: "stdTypeUsername",
@@ -143,7 +142,6 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
     }
 
     const getSettings = useCallback( async () => {
-        log.debug("getting settings...");
         let dbSettingsExist = (settingsDocs.length > 0);
         let dbSettingsDoc: SettingsDoc = cloneDeep(settingsDocs[0]);
         let dbCategoryColors: CategoryColors = {};
@@ -202,7 +200,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         if ((remoteDBState.initialSyncComplete || remoteDBState.workingOffline) && !settingsLoading && (settingsError === null)) {
             getSettings()
         }
-    },[remoteDBState.initialSyncComplete, remoteDBState.workingOffline, settingsLoading, settingsError,getSettings,settingsRetrieved, settingsDocs])
+    },[remoteDBState.initialSyncComplete, remoteDBState.workingOffline, settingsLoading, settingsError,getSettings, settingsDocs])
 
 
     let value: GlobalStateContextType = {globalState, setGlobalState, setStateInfo, updateSettingKey, updateCategoryColor, deleteCategoryColor, settingsLoading: settingsLoading};

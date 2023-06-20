@@ -36,7 +36,7 @@ const AllItems: React.FC<HistoryProps> = (props: HistoryProps) => {
     <IonPage>
       <PageHeader title={t("general.all_items")} />
       <IonContent>
-        <IonList lines="full">
+        <IonList className="ion-no-padding" lines="full">
         {itemRows.length === 0 ? (<IonList><IonItem>{t("error.no_items_available")}</IonItem></IonList>) : <></> }
         {itemRows.map(ir => (
           <IonItem key={ir._id} className="list-button" routerLink={("/item/edit/" + ir._id)}>{translatedItemName(ir.globalItemID,ir.name,ir.pluralName)}</IonItem>

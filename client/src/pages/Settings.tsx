@@ -160,7 +160,7 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
     <IonPage>
       <PageHeader title={t("general.settings")} />
       <IonContent fullscreen>
-        <IonList lines="none">
+        <IonList lines="none" className="ion-no-padding">
           <IonItemDivider className="category-divider">{t("general.app_info")}</IonItemDivider>
           <IonItem className="shorter-item-some-padding">{t("general.app_version")} : {appVersion}</IonItem>
           <IonItem className="shorter-item-some-padding">{t("general.database_schema_version")}: {maxAppSupportedSchemaVersion}</IonItem>

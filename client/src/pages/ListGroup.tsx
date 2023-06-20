@@ -178,7 +178,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   let assignedListsElem=[];
-  assignedListsElem.push(<IonItemDivider key="assigneddivider">{t("general.lists_assigned_to_group")}</IonItemDivider>)
+  assignedListsElem.push(<IonItemDivider key="assigneddivider" className="category-divider">{t("general.lists_assigned_to_group")}</IonItemDivider>)
   listCombinedRows.forEach((lcr: ListCombinedRow)  => {
     if (lcr.rowType === RowType.list && lcr.listGroupID === pageState.selectedListGroupID) {
       assignedListsElem.push(<IonItem key={lcr.rowKey}>{lcr.rowName}</IonItem>)
@@ -196,11 +196,11 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
     ownerText = ownerRow?.targetFullName + " " +t("general.is_listgroup_owner");
   }
 
-  usersElem.push(<IonItemDivider key="listuserdivider">{ownerText}</IonItemDivider>)
+  usersElem.push(<IonItemDivider key="listuserdivider" className="category-divider">{ownerText}</IonItemDivider>)
   if (remoteDBState.workingOffline) {
     usersElem.push(<IonItem key="offline">{t("general.offline_cant_get_sharing_info")}</IonItem>)
   } else {
-    usersElem.push(<IonItemDivider key="listdivider">{t("general.listgroup_shared_with_users")}</IonItemDivider>)
+    usersElem.push(<IonItemDivider key="listdivider" className="category-divider">{t("general.listgroup_shared_with_users")}</IonItemDivider>)
   }  
 
   if (iAmListOwner) {
@@ -288,7 +288,7 @@ function deletePrompt() {
     })
   } else {
     presentAlert({
-      header: t("general.delete_this_listgroup"),
+      header: t("general.delete_this_listgroup",{listgroup: pageState.listGroupDoc.name}),
       subHeader: t("general.delete_this_listgroup_detail"),
       buttons: [ { text: t("general.cancel"), role: "Cancel" ,
                   handler: () => setPageState(prevState => ({...prevState,deletingDoc: false}))},
@@ -362,7 +362,7 @@ function deletePrompt() {
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>
-          <IonList>
+          <IonList className="ion-no-padding">
             <IonItem key="name">
               <IonInput label="Name" labelPlacement='stacked'  type="text" placeholder="<New>"
                   onIonInput={(e) => updateName(String(e.detail.value))}

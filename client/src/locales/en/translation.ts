@@ -109,7 +109,7 @@ export const en_translations =
         "you_are_listgroup_owner": "You are the list group owner",
         "is_listgroup_owner":"is the list group owner",
         "listgroup_shared_with_users":"List group is shared with these other users:",
-        "delete_this_listgroup":"Delete this list group?",
+        "delete_this_listgroup":"Delete this list group: {{listgroup}} ?",
         "delete_this_listgroup_detail":"Do you really want to delete this list group?  All information on this list group will be lost (lists and items).",
         "changing_selected_listgroup":"Changing Selected List Group",
         "changing_selected_listgroup_detail":"List group has been updated and not saved. Do you still want to change list groups?",
@@ -215,10 +215,10 @@ export const en_translations =
         "attempt_login_again": "Attempt Login Again",
         "must_stay_offline": "Working offline and API/database are still offline. Continue to work offline and changes will be queued.",
         "as_user": "as user",
-        "api_server_status": "API Server Status:",
-        "db_server_status": "DB Server Status:",
-        "refresh_token_valid": "Refresh Token Valid:",
-        "access_token_valid": "Access Token Valid:",
+        "api_server_status": "API Server:",
+        "db_server_status": "DB Server:",
+        "refresh_token_valid": "Refresh Token:",
+        "access_token_valid": "Access Token:",
         "expires_in": "Expires In:",
         "expired_by": "Expired By:",
         "days_one": " day",
@@ -972,4 +972,3 @@ export const en_translations =
         "clementines_other":"Clementines"
         }
 }
-

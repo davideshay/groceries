@@ -128,10 +128,9 @@ export function useDeleteListFromItems() {
       let response: PouchResponse = cloneDeep(PouchResponseInit);
       let itemResults: PouchDB.Find.FindResponse<{}>;
       try {  itemResults = await db.find({
-              use_index: "stdTypeName",
+              use_index: "stdType",
               selector: {
               type: "item",
-              name: { $exists: true },
               lists: { $elemMatch: { "listID": listID } }
       }})}
       catch(err) { response.successful = false; response.fullError = err; return response;}      
@@ -403,9 +402,8 @@ export function useConflicts() : { conflictsError: boolean, conflictDocs: Confli
 
 export function useRecipes() : { recipesError: boolean, recipeDocs: RecipeDoc[], recipesLoading: boolean} {
   const { docs: recipeDocs, loading: recipesLoading, error: dbError} = useFind({
-    index: "stdTypeName",
-    selector: { type: "recipe", name: { $exists: true } },
-    sort: [ "type", "name" ]
+    index: "stdType",
+    selector: { type: "recipe" },
   });
   const [sortedRecipes,setSortedRecipes] = useState<RecipeDoc[]>()
 

@@ -117,7 +117,6 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
       catID = String(stateCategoryDoc._id)
     }
     if (result.successful) {
-        console.log(result);
         await updateCategoryColor(catID,stateColor)
         goBack("/categories");
     } else {
@@ -201,7 +200,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
     <IonPage>
       <PageHeader title={t("general.editing_category")+ translatedCategoryName(stateCategoryDoc._id,stateCategoryDoc.name)  } />
       <IonContent>
-          <IonList lines="none">
+          <IonList className="ion-no-padding" lines="none">
             <IonItem key="name">
               <IonInput label={t("general.name") as string} disabled={stateCategoryDoc._id?.startsWith("system:cat")}
               labelPlacement="stacked" type="text" placeholder="<NEW>"

@@ -61,7 +61,20 @@ ion-item.itemrow-inner::part(native) {
     border: none;
     min-height: auto;
     --padding-start: 0px;
-    
+}
+
+ion-item.item-completed::part(native) {
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+}
+
+ion-item-divider.item-category-divider {
+    margin-top: 16px;
+    font-size: smaller;
+}
+
+ion-item-divider.item-category-divider.first-category {
+    margin-top: 0px;
 }
 
 ion-grid.grid-no-pad {
@@ -77,7 +90,6 @@ ion-icon.note-icon {
 }
 
 ion-icon.collapse-icon {
-    justify-self: flex-end;
     padding-right: 6px
 }
 

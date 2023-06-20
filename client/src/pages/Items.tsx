@@ -3,7 +3,7 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
   IonSelectOption, IonInput, IonPopover, IonAlert,IonMenuButton, useIonToast, IonGrid, IonRow, 
   IonCol, useIonAlert } from '@ionic/react';
 import { add,chevronDown,chevronUp,documentTextOutline,searchOutline } from 'ionicons/icons';
-import React, { useState, useEffect, useContext, useRef, KeyboardEvent, useCallback } from 'react';
+import React, { useState, useEffect, useContext, useRef, KeyboardEvent, useCallback, ForwardRefExoticComponent } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { cloneDeep } from 'lodash';
 import './Items.css';
@@ -183,6 +183,9 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function enterSearchBox() {
+    if (globalData.listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length <=0) {
+      return;
+    }
     let toOpen=true;
     if (searchState.filteredSearchRows.length === 0) { toOpen = false}
     setSearchState(prevState => ({...prevState, isFocused: true,isOpen: toOpen}));
@@ -438,8 +441,17 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     return (!foundCat.collapsed)
   }
 
+  const popOverProps: any = {
+    side: "bottom",
+    isOpen: searchState.isOpen,
+    keyboardClose: false,
+    onDidDismiss: () => {leaveSearchBox()},
+  }
+  if (globalData.listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length >0) {
+    popOverProps.trigger = "item-search-box-id"
+  }
   let popOverElem = (
-    <IonPopover side="bottom" trigger="item-search-box-id" isOpen={searchState.isOpen} keyboardClose={false} onDidDismiss={(e) => {leaveSearchBox()}}>
+    <IonPopover {...popOverProps}>
     <IonContent><IonList key="popoverItemList">
       {(searchState.filteredSearchRows).map((item: ItemSearch) => (
         <IonItem button key={pageState.selectedListOrGroupID+"-poilist-"+item.itemID} onClick={(e) => {chooseSearchItem(item)}}>{item.itemName}</IonItem>
@@ -463,7 +475,8 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     <IonHeader><IonToolbar><IonButtons slot="start"><IonMenuButton className={"ion-no-padding small-menu-button"} /></IonButtons>
     <IonTitle className="ion-no-padding item-outer"></IonTitle>
         <IonItem id="item-list-selector-id" className="item-list-selector" key="listselector">
-        <IonSelect id="select-list-selector-id" className="select-list-selector" label={t("general.items_on") as string} aria-label={t("general.items_on") as string} interface="popover" onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListOrGroupID}  >
+        <IonSelect id="select-list-selector-id" className="select-list-selector" label={t("general.items_on") as string} aria-label={t("general.items_on") as string} interface="popover"
+              onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListOrGroupID} >
             {listCombinedRows.filter(lcr => (!lcr.hidden)).map((listCombinedRow: ListCombinedRow) => (
                 <IonSelectOption disabled={listCombinedRow.rowKey==="G-null"} className={listCombinedRow.rowType === RowType.list ? "indented" : ""} key={listCombinedRow.listOrGroupID} value={listCombinedRow.listOrGroupID}>
                   {listCombinedRow.rowName}
@@ -475,6 +488,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         <IonItem key="searchbar" className="item-search">
            <IonIcon icon={searchOutline} />
            <IonInput id="item-search-box-id" aria-label="" className="ion-no-padding input-search" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="text" enterkeyhint="enter"
+              disabled={globalData.listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length <=0}
               clearInput={true}  placeholder={t("general.search") as string} fill="solid"
               onKeyDown= {(e) => searchKeyPress(e)}
               onIonInput={(e) => updateSearchCriteria(e)}
@@ -495,7 +509,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         </IonFabButton>
       </IonFab>)
 
-  if (globalData.listRows.length <=0) {return(
+  if (globalData.listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length <=0) {return(
     <IonPage>{headerElem}<IonContent><IonItem key="nonefound"><IonLabel key="nothinghere">{t("error.please_create_list_before_adding_items")}</IonLabel></IonItem></IonContent></IonPage>
   )};
 
@@ -508,16 +522,18 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   function addCurrentRows(listCont: JSX.Element[], curRows: JSX.Element[], catID: string | null, catName: string, catColor: string, completed: boolean | null) {
     if (catColor === "primary") {catColor = "#777777"}
     let isExpanded = getCategoryExpanded(catID,Boolean(completed));
+    dividerCount++;
     listCont.push(
         <IonItemGroup key={"cat"+String(catID)+Boolean(completed).toString()}>
-        <IonItemDivider className="category-divider" style={{"borderBottom":"4px solid "+catColor}} key={"cat"+String(catID)+Boolean(completed).toString()}>
-          {catName}
-          <IonIcon className="collapse-icon" icon={isExpanded ? chevronUp : chevronDown } onClick={() => {collapseExpandCategory(catID,Boolean(completed))}} />
-        </IonItemDivider>
+          <IonItemDivider className={"category-divider item-category-divider" + (dividerCount === 1 ? " first-category" : "")} style={{"borderBottom":"4px solid "+catColor}} key={"cat"+String(catID)+Boolean(completed).toString()}>
+            <IonGrid className="ion-no-padding"><IonRow className="ion-no-padding ion-align-items-center">
+              <IonCol className="ion-no-padding ion-float-left">{catName}</IonCol>
+              <IonCol className="ion-no-padding ion-float-right"><IonIcon className="collapse-icon ion-float-right" icon={isExpanded ? chevronUp : chevronDown } size="large" onClick={() => {collapseExpandCategory(catID,Boolean(completed))}} /></IonCol>
+            </IonRow></IonGrid>
+          </IonItemDivider>
         {curRows}
         </IonItemGroup>
     )
-    dividerCount++;
   }
 
   let dividerCount = 0;
@@ -528,7 +544,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   let currentRows=[];
   let createdFinished=false;
   const completedDivider=(
-        <IonItemGroup key="completeddividergroup"><IonItemDivider key="Completed">
+        <IonItemGroup key="completeddividergroup"><IonItemDivider key="Completed" className="category-divider">
         <IonLabel key="completed-divider-label">{t("general.completed")}</IonLabel>
         <IonButton slot="end" onClick={() => deleteCompletedItemsPrompt()}>{t("general.delete_completed_items")}</IonButton>
         </IonItemDivider></IonItemGroup>);
@@ -551,10 +567,11 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         <IonCol className="col-no-pad" size="1">
         <IonCheckbox aria-label=""
             onIonChange={(e) => completeItemRow(item.itemID,e.detail.checked)}
-            checked={Boolean(pageState.itemRows[i].completed)}></IonCheckbox>
+            color={"medium"}
+            checked={Boolean(item.completed)} className={item.completed ? "item-completed" : ""}></IonCheckbox>
         </IonCol>
         <IonCol className="col-no-pad" size="11">
-          <IonItem className="itemrow-inner" routerLink={"/item/edit/"+item.itemID} key={pageState.itemRows[i].itemID+"mynewbutton"}>{item.itemName + (item.quantityUOMDesc === "" ? "" : " ("+ item.quantityUOMDesc+")")}
+          <IonItem className={"itemrow-inner"+(item.completed ? " item-completed": "")} routerLink={"/item/edit/"+item.itemID} key={pageState.itemRows[i].itemID+"mynewbutton"}>{item.itemName + (item.quantityUOMDesc === "" ? "" : " ("+ item.quantityUOMDesc+")")}
           {item.hasNote ? <IonIcon className="note-icon" icon={documentTextOutline}></IonIcon> : <></>}
           </IonItem>
         </IonCol>

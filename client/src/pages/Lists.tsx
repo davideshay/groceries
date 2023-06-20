@@ -12,7 +12,7 @@ return (
     <IonPage>
         <PageHeader title={t("general.all_lists")} />
         <IonContent>
-        <IonList>
+        <IonList className="ion-no-padding">
             <ListsAll separatePage={true}/>
         </IonList>
         </IonContent>

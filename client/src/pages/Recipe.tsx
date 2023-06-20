@@ -21,6 +21,7 @@ import { findMatchingGlobalItem } from '../components/importUtilities';
 import { createNewItemFromRecipeItem, isRecipeItemOnList, updateItemFromRecipeItem } from '../components/recipeUtilities';
 import { usePouch } from 'use-pouchdb';
 import { RecipeItemInit } from '../components/DBSchema';
+import log from 'loglevel';
 let fracty = require('fracty');
 
 type PageState = {
@@ -67,7 +68,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
   const [ present] = useIonAlert();
 
   useEffect( () => {
-    if (!recipeLoading) {
+    if (!recipeLoading && pageState.needInitDoc) {
       let newRecipeDoc: RecipeDoc 
       if (mode === "new" && pageState.needInitDoc) {
         newRecipeDoc = cloneDeep(InitRecipeDoc);
@@ -355,7 +356,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
       <PageHeader title={t("general.editing_recipe")+" "+pageState.recipeDoc.name } />
       <IonContent>
       {modalRecipeItem}
-          <IonList>
+          <IonList className="ion-no-padding">
             <IonItem key="name">
               <IonInput label={t("general.name") as string} labelPlacement="stacked" type="text"
                         placeholder={t("general.new_placeholder") as string}

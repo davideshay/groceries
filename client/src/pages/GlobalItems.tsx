@@ -40,10 +40,12 @@ const GlobalItems: React.FC<HistoryProps> = (props: HistoryProps) => {
     <IonPage>
       <PageHeader title={t('general.global_items')} />
       <IonContent>
-        {globalItemDocs.length === 0 ?(<IonList><IonItem>{t("error.no_global_items_available")}</IonItem></IonList>) : <></> }
-        {(globalItemDocs as GlobalItemDocs).map(gi => (
+        <IonList className="ion-no-padding">
+          {globalItemDocs.length === 0 ?(<IonItem>{t("error.no_global_items_available")}</IonItem>) : <></> }
+          {(globalItemDocs as GlobalItemDocs).map(gi => (
              <IonItem button key={gi._id} className="list-button" routerLink={("/globalitem/edit/" + gi._id)}>{translatedItemName(gi._id!,gi.name,gi.name,2)}</IonItem>
-        ))}
+          ))}
+        </IonList>  
       </IonContent>
     </IonPage>
   );

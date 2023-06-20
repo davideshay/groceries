@@ -208,7 +208,6 @@ const Item: React.FC = (props) => {
       {
         if ( ["system",listGroupID].includes(String(cat.listGroupID))  && category.toUpperCase() === cat.name.toUpperCase()) {alreadyFound=true}
       });
-    console.log("Already Found:",alreadyFound);  
     if (alreadyFound) {
       presentToast({message: t("error.duplicate_category_name"), duration: 1500, position: "middle"})
     } else {  
@@ -360,7 +359,7 @@ const Item: React.FC = (props) => {
     <IonPage>
       <PageHeader title={t("general.editing_item")+" "+ translatedItemName(stateItemDoc.globalItemID,stateItemDoc.name,stateItemDoc.pluralName)} />
       <IonContent>
-          <IonList lines="none">
+          <IonList lines="none" className="ion-no-padding">
             <IonItem key="name">
               <IonInput disabled={stateItemDoc.globalItemID != null} label={t("general.name") as string}
                         labelPlacement="stacked" type="text" onIonInput={(e) => setStateItemDoc({...stateItemDoc, name: String(e.detail.value)})}

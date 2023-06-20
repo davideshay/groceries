@@ -292,7 +292,7 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
                   onDidDismiss={() => setPageState(prevState => ({...prevState,showRegistrationURL: false}))} 
                   buttons={[t("general.ok") as string]}
                   />
-        <IonList id="friendslist" lines="full">
+        <IonList id="friendslist" lines="full" className="ion-no-padding">
           {friendsElem}
           {formElem}
         </IonList>
