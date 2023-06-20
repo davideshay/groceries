@@ -3,7 +3,7 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
   IonSelectOption, IonInput, IonPopover, IonAlert,IonMenuButton, useIonToast, IonGrid, IonRow, 
   IonCol, useIonAlert } from '@ionic/react';
 import { add,chevronDown,chevronUp,documentTextOutline,searchOutline } from 'ionicons/icons';
-import React, { useState, useEffect, useContext, useRef, KeyboardEvent, useCallback, ForwardRefExoticComponent } from 'react';
+import React, { useState, useEffect, useContext, useRef, KeyboardEvent, useCallback } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { cloneDeep } from 'lodash';
 import './Items.css';

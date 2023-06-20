@@ -7,7 +7,6 @@ import { GlobalSettings, AddListOptions, SettingsDoc, InitSettings, InitSettings
 import { useCreateGenericDocument, useUpdateGenericDocument } from "./Usehooks";
 import { RemoteDBStateContext } from "./RemoteDBState";
 import { useFind } from "use-pouchdb";
-import log from "loglevel";
 import { isEmpty } from "lodash";
 
 export type GlobalState = {

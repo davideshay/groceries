@@ -21,7 +21,6 @@ import { findMatchingGlobalItem } from '../components/importUtilities';
 import { createNewItemFromRecipeItem, isRecipeItemOnList, updateItemFromRecipeItem } from '../components/recipeUtilities';
 import { usePouch } from 'use-pouchdb';
 import { RecipeItemInit } from '../components/DBSchema';
-import log from 'loglevel';
 let fracty = require('fracty');
 
 type PageState = {
