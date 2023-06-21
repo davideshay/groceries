@@ -25,6 +25,7 @@ type RecipeModalProps = {
     selectedItemIdx: number,
     recipeDoc: RecipeDoc,
     updateRecipeDoc: (newRecipeDoc: RecipeDoc) => void
+    updateRecipeName: (name: string) => void
 }
 
 const RecipeModal: React.FC<RecipeModalProps> = (props: RecipeModalProps) => {
@@ -39,11 +40,7 @@ return (
             <IonInput type="text" label={t("general.name") as string} labelPlacement="stacked"
                 disabled={props.recipeItem.globalItemID !== null}
                 value={translatedItemName(props.recipeItem.globalItemID,props.recipeItem.name, props.recipeItem.name)}
-                onIonInput={(ev)=>{
-                    let updRecipeDoc: RecipeDoc = cloneDeep(props.recipeDoc);
-                    updRecipeDoc.items[props.selectedItemIdx].name = String(ev.detail.value);
-                    props.updateRecipeDoc(updRecipeDoc);
-                }}>
+                onIonInput={(ev)=>{ props.updateRecipeName(String(ev.detail.value))}}>
             </IonInput>
         </IonItem>
         <IonItem key="r-qty">

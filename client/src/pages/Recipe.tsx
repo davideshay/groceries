@@ -1,5 +1,5 @@
 import { IonContent, IonPage, IonButton, IonList, IonInput, 
- IonItem, NavContext, IonIcon, useIonAlert, IonToolbar, IonButtons, IonItemDivider, IonGrid, IonRow, IonCol, IonCheckbox, IonSelect, IonSelectOption, IonFooter, IonModal, IonTitle, IonTextarea, useIonLoading, IonText} from '@ionic/react';
+ IonItem, NavContext, IonIcon, useIonAlert, IonToolbar, IonButtons, IonItemDivider, IonGrid, IonRow, IonCol, IonCheckbox, IonSelect, IonSelectOption, IonFooter, IonTextarea, useIonLoading, IonText} from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteGenericDocument,
@@ -7,7 +7,7 @@ import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteGenericDoc
 import { cloneDeep } from 'lodash';
 import { PouchResponse, HistoryProps, RowType} from '../components/DataTypes';
 import { RecipeDoc, InitRecipeDoc, RecipeItem, UomDoc, ItemDoc, ItemDocInit, RecipeInstruction } from '../components/DBSchema';
-import { add, addCircleOutline, closeCircleOutline, pencilOutline, returnDownBackOutline, saveOutline, trashOutline } from 'ionicons/icons';
+import { add, addCircleOutline, closeCircleOutline, pencilOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
@@ -15,7 +15,7 @@ import { GlobalStateContext } from '../components/GlobalState';
 import PageHeader from '../components/PageHeader';
 import RecipeItemSearch, { RecipeSearchData } from '../components/RecipeItemSearch';
 import { useTranslation } from 'react-i18next';
-import { translatedItemName, translatedUOMName } from '../components/translationUtilities';
+import { translatedItemName } from '../components/translationUtilities';
 import './Recipe.css';
 import { findMatchingGlobalItem } from '../components/importUtilities';
 import { createNewItemFromRecipeItem, isRecipeItemOnList, updateItemFromRecipeItem } from '../components/recipeUtilities';
@@ -172,6 +172,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function updateRecipeName(name: string) {
+    log.debug("URN",name);
     let updRecipeDoc: RecipeDoc = cloneDeep(pageState.recipeDoc);
     let globalItemID: null | string = null;
     let newRecipeName: string = "";
@@ -308,6 +309,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
             recipeDoc={pageState.recipeDoc}
             selectedItemIdx={pageState.selectedItemIdx}
             updateRecipeDoc={(newDoc: RecipeDoc) => {setPageState(prevState => ({...prevState,recipeDoc: newDoc}))}}
+            updateRecipeName={(name: string) =>{updateRecipeName(name)}}
           /> : <></>
         }
           <IonList className="ion-no-padding">
