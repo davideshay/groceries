@@ -9,3 +9,16 @@
     --padding-bottom: 10px;
     
 }
+
+ion-list-header.app-name {
+    font-family: "Berkshire Swash", sans-serif;
+    font-size: large;
+    padding-top: 14px;
+    padding-bottom: 14px;
+    padding-right: 14px;
+    justify-content: center;
+}
+
+ion-list-header.app-name.list-header-inner {
+    color:aquamarine
+}

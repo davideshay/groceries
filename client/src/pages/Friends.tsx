@@ -128,9 +128,9 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
     let friendRowsElem: JSX.Element[] = [];
     if (friendRows.length > 0) {
       let elem=(<IonRow  className="ion-justify-content-center ion-align-items-center friend-row" key={"header"}>
-              <IonCol className="col-minimal-padding" size="6"><IonText color="primary" className="bold-header">Friend Name/Email</IonText></IonCol>
-              <IonCol className="col-minimal-padding" size="3"><IonText color="primary" className="bold-header">Status</IonText></IonCol>
-              <IonCol className="col-minimal-padding" size="3"><IonText color="primary" className="bold-header">Action</IonText></IonCol>
+              <IonCol className="col-minimal-padding" size="6"><IonText className="bold-header">Friend Name/Email</IonText></IonCol>
+              <IonCol className="col-minimal-padding" size="3"><IonText className="bold-header">Status</IonText></IonCol>
+              <IonCol className="col-minimal-padding" size="3"><IonText className="bold-header">Action</IonText></IonCol>
             </IonRow>)
       friendRowsElem.push(elem);      
       friendRows.forEach((friendRow: FriendRow) => {

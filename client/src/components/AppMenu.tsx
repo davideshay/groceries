@@ -33,7 +33,7 @@ const AppMenu: React.FC = () => {
     }  
     return (<IonMenuToggle key="Friends" autoHide={false}>
               <IonItem className="app-menu-item" key={"item-Friends"} routerLink="/friends">
-              {(pendingCount > 0) ? <IonBadge slot="start">{pendingCount}</IonBadge> : <></>}
+              {(pendingCount > 0) ? <IonBadge slot="end">{pendingCount}</IonBadge> : <></>}
               {t('general.friends')}
               </IonItem></IonMenuToggle>) 
   }
@@ -79,7 +79,7 @@ const AppMenu: React.FC = () => {
   <IonMenu contentId="main" type="overlay">
     <IonContent className="ion-no-padding">
       <IonList className="ion-no-padding">
-        <IonListHeader>{t('general.groceries_menu')}</IonListHeader>
+        <IonListHeader className="app-name ion-text-center ion-justify-content-center">{t('general.groceries_menu')}</IonListHeader>
         {contentElem}
       </IonList>
     </IonContent>

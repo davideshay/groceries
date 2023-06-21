@@ -76,7 +76,6 @@ export async function isServerAvailable(apiServerURL: string|null) {
 }
 
 export async function isDBServerAvailable(refreshJWT: string | null, couchBaseURL: string | null) {
-    log.debug("in IS DB Server Available...", "refresh:",refreshJWT, "url:",couchBaseURL);
     let response = false;
     if (refreshJWT === null || refreshJWT === undefined || refreshJWT === "" ||
         couchBaseURL === null || couchBaseURL === undefined || couchBaseURL === "" ) {

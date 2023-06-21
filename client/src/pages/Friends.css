@@ -20,7 +20,7 @@ ion-button.extra-small-button::part(native) {
 
 ion-row.friend-row {
     height: 3.5em;
-    border-bottom: 1px solid var(--ion-color-primary);
+    border-bottom: 1px solid var(--ion-text-color);
 }
 
 ion-text.bold-header {
