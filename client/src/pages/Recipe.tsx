@@ -22,9 +22,9 @@ import { createNewItemFromRecipeItem, isRecipeItemOnList, updateItemFromRecipeIt
 import { usePouch } from 'use-pouchdb';
 import { RecipeItemInit } from '../components/DBSchema';
 import RecipeModal from '../components/RecipeModal';
+import RecipeItemRow from '../components/RecipeItemRows';
 import log from 'loglevel';
-// import RecipeModal from '../components/RecipeModal';
-let fracty = require('fracty');
+import RecipeItemRows from '../components/RecipeItemRows';
 
 type PageState = {
   recipeDoc: RecipeDoc,
@@ -155,18 +155,6 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
     })
     }
   
-  function checkItemOnList(checked: boolean,index: number) {
-    let itemsToUpdate=cloneDeep(pageState.recipeDoc.items) as RecipeItem[];
-    itemsToUpdate[index].addToList = checked;
-    setPageState(prevState => ({...prevState,recipeDoc: {...prevState.recipeDoc,items: itemsToUpdate}}))
-  }
-
-  function deleteItemFromList(index: number) {
-    let itemsToUpdate=cloneDeep(pageState.recipeDoc.items) as RecipeItem[];
-    itemsToUpdate.splice(index,1);
-    setPageState(prevState => ({...prevState,recipeDoc: {...prevState.recipeDoc,items: itemsToUpdate}}))
-  }
-
   function editItemModal(index: number) {
     setPageState(prevState=>({...prevState,modalOpen: true,selectedItemIdx: index}))
   }
@@ -267,33 +255,6 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
     })
   }
 
-  let recipeRows: JSX.Element[] = [];
-  pageState.recipeDoc.items.forEach((item,index) => {
-    let itemChecked = item.addToList;
-    let itemName = translatedItemName(item.globalItemID,item.name,item.name,item.recipeQuantity)
-    let uomDesc = "";
-    if (item.recipeUOMName !== null && item.recipeUOMName !== "") {
-        const uomDoc = globalData.uomDocs.find((el: UomDoc) => (el.name === item.recipeUOMName));
-        if (uomDoc !== undefined) {
-            uomDesc = t("uom."+item.recipeUOMName,{ count: item.recipeQuantity});
-        }
-    }
-    let quantityUOMDesc = "";
-    if ((item.recipeQuantity !== 0) && ((item.recipeQuantity > 1) || uomDesc !== "")) {
-        quantityUOMDesc = fracty(item.recipeQuantity).toString() + ((uomDesc === "" ? "" : " " + uomDesc));
-    }
-    let fullItemName = itemName;
-    if (quantityUOMDesc !== "") { fullItemName = fullItemName + " (" + quantityUOMDesc +")"}
-    recipeRows.push(
-      <IonRow key={"item-"+index}>
-        <IonCol size="2"><IonCheckbox aria-label="" checked={itemChecked} onIonChange={(ev) => checkItemOnList(ev.detail.checked,index)}></IonCheckbox></IonCol>
-        <IonCol size="8">{fullItemName}</IonCol>
-        <IonCol size="1"><IonButton fill="clear" onClick={() => editItemModal(index)}><IonIcon icon={pencilOutline}/></IonButton></IonCol>
-        <IonCol size="1"><IonButton fill="clear" onClick={() => deleteItemFromList(index)}><IonIcon icon={trashOutline} /></IonButton></IonCol>
-      </IonRow>
-    )
-  })
-
   let recipeItem = pageState.selectedItemIdx <= (pageState.recipeDoc.items.length + 1) ? 
       pageState.recipeDoc.items[pageState.selectedItemIdx] : null;
 
@@ -323,15 +284,12 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
               </IonInput>
             </IonItem>
             <IonItemDivider className="category-divider">{t("general.items_in_recipe")}</IonItemDivider>
-            <IonItem key="items-in-recipe">
-              <IonGrid>
-                <IonRow key="item-header">
-                  <IonCol size="2">{t("general.add_question")}</IonCol>
-                  <IonCol size="10">{t('general.item')}</IonCol>
-                </IonRow>
-                {recipeRows}
-              </IonGrid>
-            </IonItem>
+            <RecipeItemRows 
+              recipeDoc={pageState.recipeDoc}
+              updateRecipeDoc={(newDoc: RecipeDoc) => {setPageState(prevState => ({...prevState,recipeDoc: newDoc}))}}
+              editItemModal={(index) =>{editItemModal(index)}}
+
+            />
             <RecipeItemSearch rowSelected={addExistingRecipeItem} addItemWithoutRow={addNewRecipeItem}/>
             <IonItemDivider className="category-divider">{t("general.recipe_steps")}</IonItemDivider>
             <IonItem key="recipesteps">
