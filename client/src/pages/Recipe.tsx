@@ -21,6 +21,9 @@ import { findMatchingGlobalItem } from '../components/importUtilities';
 import { createNewItemFromRecipeItem, isRecipeItemOnList, updateItemFromRecipeItem } from '../components/recipeUtilities';
 import { usePouch } from 'use-pouchdb';
 import { RecipeItemInit } from '../components/DBSchema';
+import RecipeModal from '../components/RecipeModal';
+import log from 'loglevel';
+// import RecipeModal from '../components/RecipeModal';
 let fracty = require('fracty');
 
 type PageState = {
@@ -65,6 +68,10 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { globalState } =useContext(GlobalStateContext);
   const { t } = useTranslation();
   const [ present] = useIonAlert();
+
+  useEffect( () => {
+    log.debug("RecipeDoc changed, now:",pageState.recipeDoc);
+  },[pageState.recipeDoc])
 
   useEffect( () => {
     if (!recipeLoading && pageState.needInitDoc) {
@@ -289,72 +296,20 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
   let recipeItem = pageState.selectedItemIdx <= (pageState.recipeDoc.items.length + 1) ? 
       pageState.recipeDoc.items[pageState.selectedItemIdx] : null;
 
-  let modalRecipeItem =  recipeItem !== null && recipeItem !== undefined ? (
-    <IonModal id="recipe-item" isOpen={pageState.modalOpen} onDidDismiss={(ev)=>{setPageState(prevState => ({...prevState,modalOpen: false}))}}>
-      <IonTitle className="modal-title">{t('general.item_on_recipe') + translatedItemName(recipeItem.globalItemID,recipeItem.name, recipeItem.name)}</IonTitle>
-      <IonList>
-        <IonItem key="name">
-          <IonInput type="text" label={t("general.name") as string} labelPlacement="stacked" value={translatedItemName(recipeItem.globalItemID,recipeItem.name, recipeItem.name)} onIonInput={(ev)=>{updateRecipeName(ev.detail.value as string)}}></IonInput>
-        </IonItem>
-        <IonItem key="r-qty">
-          <IonInput type="number" label={t("general.recipe_quantity") as string} labelPlacement="stacked" value={recipeItem.recipeQuantity} onIonInput={(ev) => {
-            let updRecipeDoc: RecipeDoc=cloneDeep(pageState.recipeDoc);
-            updRecipeDoc.items[pageState.selectedItemIdx].recipeQuantity = Number(ev.detail.value);
-            setPageState(prevState=>({...prevState,recipeDoc: updRecipeDoc}));
-          }}></IonInput>
-        </IonItem>
-        <IonItem key="r-uom">
-          <IonSelect label={t("general.recipe_uom") as string} labelPlacement="stacked" interface="popover" value={recipeItem.recipeUOMName} onIonChange={(ev) => {
-            let updRecipeDoc: RecipeDoc=cloneDeep(pageState.recipeDoc);
-            updRecipeDoc.items[pageState.selectedItemIdx].recipeUOMName = ev.detail.value;
-            setPageState(prevState=>({...prevState,recipeDoc: updRecipeDoc}))   }}>
-              <IonSelectOption key="uom-undefined" value={null}>{t('general.no_uom')}</IonSelectOption>
-              {globalData.uomDocs.map((uom) => (
-                      <IonSelectOption key={uom.name} value={uom.name}>
-                        {translatedUOMName(uom._id as string,uom.description,uom.pluralDescription)}
-                      </IonSelectOption>
-                    ))}
-          </IonSelect>
-        </IonItem>
-        <IonItem key="s-qty">
-          <IonInput type="number" label={t("general.shopping_quantity") as string} labelPlacement="stacked" value={recipeItem.shoppingQuantity} onIonInput={(ev) => {
-              let updRecipeDoc: RecipeDoc=cloneDeep(pageState.recipeDoc);
-              updRecipeDoc.items[pageState.selectedItemIdx].shoppingQuantity = Number(ev.detail.value);
-              setPageState(prevState=>({...prevState,recipeDoc: updRecipeDoc}));
-            }}></IonInput>
-        </IonItem>  
-        <IonItem key="s-uom">
-          <IonSelect label={t("general.shopping_uom") as string} labelPlacement="stacked" interface="popover" value={recipeItem.shoppingUOMName} onIonChange={(ev) => {
-            let updRecipeDoc: RecipeDoc=cloneDeep(pageState.recipeDoc);
-            updRecipeDoc.items[pageState.selectedItemIdx].shoppingUOMName = ev.detail.value;
-            setPageState(prevState=>({...prevState,recipeDoc: updRecipeDoc}))   }}>
-              <IonSelectOption key="uom-undefined" value={null}>{t('general.no_uom')}</IonSelectOption>
-              {globalData.uomDocs.map((uom) => (
-                      <IonSelectOption key={uom.name} value={uom.name}>
-                        {translatedUOMName(uom._id as string,uom.description, uom.pluralDescription)}
-                      </IonSelectOption>
-                    ))}
-          </IonSelect>
-        </IonItem>
-        <IonItem key="note">
-            <IonTextarea label={t("general.note") as string} labelPlacement="stacked" value={recipeItem.note} onIonInput={(ev) => {
-            let updRecipeDoc: RecipeDoc=cloneDeep(pageState.recipeDoc);
-            updRecipeDoc.items[pageState.selectedItemIdx].note = String(ev.detail.value);
-            setPageState(prevState=>({...prevState,recipeDoc: updRecipeDoc}))   }}>
-            </IonTextarea>
-        </IonItem>
-        <IonItem key="button">
-          <IonButton fill="solid" onClick={()=>{setPageState(prevState=>({...prevState,modalOpen: false}))}}><IonIcon icon={returnDownBackOutline}></IonIcon>Go Back</IonButton>
-        </IonItem>
-      </IonList>
-    </IonModal>
-  ) : <></>
-
   return (
     <IonPage>
       <PageHeader title={t("general.editing_recipe")+" "+pageState.recipeDoc.name } />
       <IonContent>
-      {modalRecipeItem}
+        { recipeItem !== null ?
+          <RecipeModal 
+            isOpen={pageState.modalOpen}
+            setIsOpenFalse={() => setPageState(prevState => ({...prevState,modalOpen: false}))}
+            recipeItem={recipeItem}
+            recipeDoc={pageState.recipeDoc}
+            selectedItemIdx={pageState.selectedItemIdx}
+            updateRecipeDoc={(newDoc: RecipeDoc) => {setPageState(prevState => ({...prevState,recipeDoc: newDoc}))}}
+          /> : <></>
+        }
           <IonList className="ion-no-padding">
             <IonItem key="name">
               <IonInput label={t("general.name") as string} labelPlacement="stacked" type="text"
