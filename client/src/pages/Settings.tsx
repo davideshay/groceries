@@ -169,7 +169,7 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
               <IonRow><IonCol size="4">{t("general.api_server_status")}</IonCol>
               <IonCol size="1">{remoteDBState.apiServerAvailable ? <IonIcon icon={checkmarkCircle} className="online-indicator"></IonIcon> :
                                 <IonIcon icon={closeCircle} className="offline-indicator"></IonIcon> }</IonCol>
-              <IonCol size="4">{t("general.db_server_status")}:</IonCol>
+              <IonCol size="4">{t("general.db_server_status")}</IonCol>
               <IonCol size="1">{remoteDBState.dbServerAvailable ? <IonIcon icon={checkmarkCircle} className="online-indicator"></IonIcon> :
                                 <IonIcon icon={closeCircle} className="offline-indicator"></IonIcon> }</IonCol></IonRow>
               <IonRow><IonCol size="4">{t("general.refresh_token_valid")}</IonCol>

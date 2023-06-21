@@ -255,7 +255,7 @@ function deletePrompt() {
     const actname=active ? t("general.active") : t("general.inactive")
     return (
       <div key={actname+"-div"}>
-      <IonItemDivider key={actname}><IonLabel>{actname}</IonLabel></IonItemDivider>
+      <IonItemDivider key={actname} className="category-divider"><IonLabel>{actname}</IonLabel></IonItemDivider>
       <IonReorderGroup key={actname+"-reorder-group"} disabled={false} onIonItemReorder={handleReorder}>
           {lines}
       </IonReorderGroup>

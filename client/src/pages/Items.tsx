@@ -523,9 +523,19 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     if (catColor === "primary") {catColor = "#777777"}
     let isExpanded = getCategoryExpanded(catID,Boolean(completed));
     dividerCount++;
+    let dividerProps = {
+      className: "category-divider item-category-divider " + 
+          (dividerCount === 1 ? " first-category " : "") +
+          (catID === null ? " uncategorized-color" : ""),
+      style: {}
+    }
+    if (catID !== null) {
+      dividerProps.style = {"borderBottom":"4px solid "+catColor}
+    }
     listCont.push(
         <IonItemGroup key={"cat"+String(catID)+Boolean(completed).toString()}>
-          <IonItemDivider className={"category-divider item-category-divider" + (dividerCount === 1 ? " first-category" : "")} style={{"borderBottom":"4px solid "+catColor}} key={"cat"+String(catID)+Boolean(completed).toString()}>
+          <IonItemDivider {...dividerProps} 
+              key={"cat"+String(catID)+Boolean(completed).toString()}>
             <IonGrid className="ion-no-padding"><IonRow className="ion-no-padding ion-align-items-center">
               <IonCol className="ion-no-padding ion-float-left">{catName}</IonCol>
               <IonCol className="ion-no-padding ion-float-right"><IonIcon className="collapse-icon ion-float-right" icon={isExpanded ? chevronUp : chevronDown } size="large" onClick={() => {collapseExpandCategory(catID,Boolean(completed))}} /></IonCol>

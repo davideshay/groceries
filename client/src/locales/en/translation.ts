@@ -3,7 +3,7 @@ export const en_translations =
     "general": {
         "friends": "Friends",
         "conflict_log": "Conflict Log",
-        "groceries_menu": "Groceries Menu",
+        "groceries_menu": "Specifically Clementines",
         "lists": "Lists",
         "create_new_list": "Create New List",
         "manage_all_listgroups": "Manage All Listgroups",
