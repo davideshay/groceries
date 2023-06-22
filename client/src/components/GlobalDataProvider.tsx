@@ -82,14 +82,6 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
     const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
     const [ dataReloadStatus, setDataReloadStatus] = useState<DataReloadStatus>(DataReloadStatus.ReloadNeeded);
 
-    const { docs: itemDocs, loading: itemsLoading, error: itemError} = useFind({
-        index: "stdTypeName",
-        selector: { 
-            "type": "item",
-            "name": { "$exists": true } 
-         }
-         });
-
     const { docs: globalItemDocs, loading: globalItemsLoading, error: globalItemError} = useFind({
         index: "stdTypeName",
         selector: { 
@@ -97,15 +89,6 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
             "name": { "$exists": true } 
             }
         });
-
-    const { docs: listDocs, loading: listsLoading, error: listError} = useFind({
-        index: "stdTypeName",
-        selector: { 
-            "type": "list",
-            "name": { "$exists": true } 
-            }
-        });
-
 
     const { docs: listGroupDocs, loading: listGroupsLoading, error: listGroupError} = useFind({
         index: "stdTypeName",
@@ -131,6 +114,24 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
             }
         });
 
+    const { docs: listDocs, loading: listsLoading, error: listError} = useFind({
+        index: "stdTypeName",
+        selector: { 
+            "type": "list",
+            "name": { "$exists": true },
+            "listGroupID": {"$in": (listGroupDocs.map(lg => (lg._id)))}
+            }
+        });
+
+    const { docs: itemDocs, loading: itemsLoading, error: itemError} = useFind({
+        index: "stdTypeName",
+        selector: { 
+            "type": "item",
+            "name": { "$exists": true },
+            "listGroupID": {"$in": (listGroupDocs.map(lg => (lg._id)))}
+            }
+            });
+        
     const { docs: uomDocs, loading: uomLoading, error: uomError} = useFind({
         index: "stdTypeName",
         selector: { 
