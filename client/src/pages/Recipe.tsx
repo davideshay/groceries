@@ -1,13 +1,13 @@
 import { IonContent, IonPage, IonButton, IonList, IonInput, 
- IonItem, NavContext, IonIcon, useIonAlert, IonToolbar, IonButtons, IonItemDivider, IonGrid, IonRow, IonCol, IonCheckbox, IonSelect, IonSelectOption, IonFooter, IonTextarea, useIonLoading, IonText} from '@ionic/react';
+ IonItem, NavContext, IonIcon, useIonAlert, IonToolbar, IonButtons, IonItemDivider, IonGrid, IonRow, IonCol, IonSelect, IonSelectOption, IonFooter, IonTextarea, useIonLoading, IonText} from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteGenericDocument,
    useGetOneDoc, useItems, useRecipes } from '../components/Usehooks';
 import { cloneDeep } from 'lodash';
 import { PouchResponse, HistoryProps, RowType} from '../components/DataTypes';
-import { RecipeDoc, InitRecipeDoc, RecipeItem, UomDoc, ItemDoc, ItemDocInit, RecipeInstruction } from '../components/DBSchema';
-import { add, addCircleOutline, closeCircleOutline, pencilOutline, saveOutline, trashOutline } from 'ionicons/icons';
+import { RecipeDoc, InitRecipeDoc, RecipeItem, ItemDoc, ItemDocInit, RecipeInstruction } from '../components/DBSchema';
+import { add, addCircleOutline, closeCircleOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
@@ -22,7 +22,6 @@ import { createNewItemFromRecipeItem, isRecipeItemOnList, updateItemFromRecipeIt
 import { usePouch } from 'use-pouchdb';
 import { RecipeItemInit } from '../components/DBSchema';
 import RecipeModal from '../components/RecipeModal';
-import RecipeItemRow from '../components/RecipeItemRows';
 import log from 'loglevel';
 import RecipeItemRows from '../components/RecipeItemRows';
 

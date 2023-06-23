@@ -103,6 +103,7 @@ export type DBUUIDCheck = {
     checkOK: boolean,
     dbAvailable: boolean,
     schemaVersion: Number,
+    syncListGroupIDs: string[],
     dbUUIDAction: DBUUIDAction
 }
 
@@ -409,7 +410,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         if (appStatus.current === AppStatus.paused || appStatus.current === AppStatus.pausing) {
             log.error("Not checking ID and syncing, app pausing..."); return false;
         }
-        let DBUUIDCheck = await checkDBUUID(db as PouchDB.Database,globalRemoteDB as PouchDB.Database);
+        let DBUUIDCheck = await checkDBUUID(db as PouchDB.Database,globalRemoteDB as PouchDB.Database,String(remoteDBCreds.current.dbUsername));
         // if (appStatus.current === AppStatus.paused || appStatus.current === AppStatus.pausing) {
         //     log.error("Not checking ID and syncing, app pausing..."); return false;
         // }
@@ -427,7 +428,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             log.debug("DB Unique ID check passed. Setup Activities complete. Starting Sync.");
             startSync();
         }
-    },[db,startSync,t])
+    },[db,startSync,t,remoteDBCreds.current.dbUsername])
 
     const attemptFullLogin = useCallback( async (): Promise<[boolean,string]> => {
         const devIDInfo = await Device.getId();

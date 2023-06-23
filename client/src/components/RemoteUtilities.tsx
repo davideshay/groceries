@@ -3,7 +3,7 @@ import { CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
 import { Preferences } from '@capacitor/preferences';
 import jwt_decode from 'jwt-decode';
 import { ListCombinedRows, ListRow, RowType } from "./DataTypes";
-import { UUIDDoc, maxAppSupportedSchemaVersion } from "./DBSchema";
+import { ListGroupDocs, UUIDDoc, maxAppSupportedSchemaVersion } from "./DBSchema";
 import { DBUUIDAction, DBUUIDCheck } from "./RemoteDBState";
 import { History } from "history";
 import { urlPatternValidation, usernamePatternValidation, emailPatternValidation,
@@ -297,11 +297,33 @@ export async function checkJWT(accessJWT: string, couchBaseURL: string | null) {
     return checkResponse;
 } 
 
-export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Database) {
+async function getListGroupIDs(db: PouchDB.Database,username: string): Promise<string[]> {
+    let listGroupIDs: string[] = [];
+    let listGroupResults: PouchDB.Find.FindResponse<{}>
+    try { listGroupResults = await db.find({
+        use_index: "stdType",
+        selector: {
+          type: "listgroup",
+          "$or": [
+            { "listGroupOwner": username },
+            { "sharedWith": {"$elemMatch" : {"$eq" : username}}}
+            ] 
+        }
+      }) }
+    catch(err) {log.debug("Could not list group IDs for user:",username); return listGroupIDs}
+    if (listGroupResults.docs && listGroupResults.docs.length > 0) {
+        listGroupIDs = (listGroupResults.docs as ListGroupDocs).map(lg => (String(lg._id)));
+        log.debug("Got list group IDs: ",listGroupIDs);
+    }
+    return listGroupIDs;
+}
+
+export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Database, username: string) {
     let UUIDCheck: DBUUIDCheck = {
         checkOK: true,
         dbAvailable: true,
         schemaVersion: 0,
+        syncListGroupIDs: [],
         dbUUIDAction: DBUUIDAction.none
     }
     async function getData() {
@@ -372,14 +394,20 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
             log.error("Remote Schema greater than local");
             UUIDCheck.checkOK = false;
             UUIDCheck.dbUUIDAction = DBUUIDAction.exit_local_remote_schema_mismatch;
+            return UUIDCheck;
         }   
-        return UUIDCheck;
     } 
+
+    let remoteListGroupIDs = await getListGroupIDs(remoteDB,username);
+    let localListGroupIDs = await getListGroupIDs(db,username);
+    UUIDCheck.syncListGroupIDs = Array.from(new Set(remoteListGroupIDs.concat(localListGroupIDs)));
+
+
       // if current DBCreds doesn't have one, set it to the remote one.
     if ((localDBUUID === null || localDBUUID === "" ) && !localHasRecords) {
       return UUIDCheck;
     }
-    UUIDCheck.checkOK = false; UUIDCheck.dbUUIDAction = DBUUIDAction.destroy_needed;
+//     UUIDCheck.checkOK = false; UUIDCheck.dbUUIDAction = DBUUIDAction.destroy_needed;
     return UUIDCheck;
   }
 
