@@ -13,10 +13,11 @@ If your system administrator / installer has configured the web application, it 
 ![](https://raw.githubusercontent.com/davideshay/groceries/master/mkdocs/docs/assets/createaccount.png){align=right width=300}
 
 To create an account you must provide:
-- Username -- you will use this in the future to login to your account. It cannot be changed once created, and is case-sensitive
-- E-mail address -- this will be used to process forgotten password requests as well as friend requests. To use this, your system administrator must have enabled/configured the ability to send emails.
-- Full Name - your full name -- used primarily for the friend request screen
-- Password - to be used to login to the application. Currently no standards are applied
+
+* Username -- you will use this in the future to login to your account. It cannot be changed once created, and is case-sensitive
+* E-mail address -- this will be used to process forgotten password requests as well as friend requests. To use this, your system administrator must have enabled/configured the ability to send emails.
+* Full Name - your full name -- used primarily for the friend request screen
+* Password - to be used to login to the application. Currently no standards are applied
 
 ## Resetting your password
 
