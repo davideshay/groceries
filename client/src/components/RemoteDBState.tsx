@@ -2,14 +2,12 @@ import React, { createContext, useState, useEffect, useRef, useCallback} from "r
 import { usePouch} from 'use-pouchdb';
 import { Preferences } from '@capacitor/preferences';
 import { getUsersInfo, initialSetupActivities } from '../components/Utilities'; 
-import { Device } from '@capacitor/device';
 import { App } from '@capacitor/app';
 import { Network } from '@capacitor/network';
 import PouchDB from 'pouchdb';
 import { getTokenInfo, refreshToken, errorCheckCreds , checkJWT, checkDBUUID, getPrefsDBCreds, isServerAvailable, JWTMatchesUser, getDeviceID } from "./RemoteUtilities";
 import { useTranslation } from 'react-i18next';    
 import { UserIDList } from "./DataTypes";
-import { cloneDeep } from "lodash";
 import log from "loglevel";
 import { useHistory } from "react-router";
 import PQueue from "p-queue";
