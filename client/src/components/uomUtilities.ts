@@ -13,9 +13,9 @@ export function useDeleteUomFromItems() {
         let response: PouchResponse = cloneDeep(PouchResponseInit);
         let itemResults: PouchDB.Find.FindResponse<{}>
         try { itemResults = await db.find({
+            use_index: "stdTypeLists",
             selector: {
               type: "item",
-              name: { $exists: true },
               lists: { $elemMatch: { "uomName": uomID } }
             }
           }) }
@@ -44,9 +44,9 @@ export function useDeleteUomFromItems() {
         let response: PouchResponse = cloneDeep(PouchResponseInit);
         let recipeResults: PouchDB.Find.FindResponse<{}>
         try { recipeResults = await db.find({
+          use_index: "stdType",
           selector: {
             type: "recipe",
-            name: { $exists: true },
             "$or": [
                   {items: { $elemMatch: { "recipeUOMName": uomID } } },
                   {items: { $elemMatch: { "shoppingUOMName": uomID}} } ]

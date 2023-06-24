@@ -43,7 +43,7 @@ const GlobalItem: React.FC<HistoryProps> = (props: HistoryProps) => {
     <IonPage>
       <PageHeader title={t("general.viewing_global_item")+ " " + translatedItemName((globalItemDoc as GlobalItemDoc)._id!, globalItemDoc.name,globalItemDoc.name) } />
       <IonContent>
-          <IonList>
+          <IonList className="ion-no-padding">
             <IonItem key="name">
               <IonInput disabled={true} label={t("general.name") as string} labelPlacement="stacked" type="text" placeholder={t("general.new_placeholder") as string} value={translatedItemName((globalItemDoc as GlobalItemDoc)._id!, globalItemDoc.name,globalItemDoc.name)}></IonInput>
             </IonItem>

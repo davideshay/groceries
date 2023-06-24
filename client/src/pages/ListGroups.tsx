@@ -31,8 +31,8 @@ const ListGroups: React.FC = () => {
     <IonPage>
       <PageHeader title={t('general.listgroups')} />
       <IonContent>
-        <IonList lines="full">
-               { listCombinedRows.filter((lcr) => (lcr.rowType === RowType.listGroup)).map((row: ListCombinedRow) =>  
+        <IonList lines="full" className="ion-no-padding">
+               { listCombinedRows.filter((lcr) => (lcr.rowType === RowType.listGroup && !lcr.hidden)).map((row: ListCombinedRow) =>  
                   (<IonItem button className="list-button" key={row.rowKey} routerLink={("/listgroup/edit/" + row.listGroupID)}>{row.rowName}</IonItem>))}
         </IonList>
       </IonContent>

@@ -1,7 +1,7 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonList, IonInput,
    IonItem, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonSelectOption,
    IonReorder, IonReorderGroup,ItemReorderEventDetail, IonButtons, IonMenuButton, 
-   useIonToast, IonFooter, IonIcon, useIonAlert, IonText } from '@ionic/react';
+   useIonToast, IonFooter, IonIcon, useIonAlert, IonText, useIonLoading } from '@ionic/react';
 import { useHistory, useParams } from 'react-router-dom';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useGetOneDoc,
@@ -63,6 +63,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   const [presentAlert] = useIonAlert();
   const screenLoading = useRef(true);
   const history = useHistory();
+  const [presentDeleting,dismissDeleting] = useIonLoading();
   const { t } = useTranslation();
 
   useEffect( () => {
@@ -194,26 +195,31 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
 async function deleteListFromDB() {
-  // first, find 
+  presentDeleting(String(t("general.deleting_list")));
   let response = await deleteListFromItems(String(pageState.selectedListID));
   if (response.successful) {
     let delResponse = await deleteList((pageState.listDoc));
     if (delResponse.successful) {
+      dismissDeleting();
       setPageState(prevState => ({...prevState,deletingDoc: false}));
       history.goBack(); // back to "list"
     } else {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.could_not_delete_list"), hasError: true }}));
+      setPageState(prevState => ({...prevState,deletingDoc: false}));
+      dismissDeleting();
     }
 
   } else {
     setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.unable_remove_list_all_items"), hasError: true }}));
+    setPageState(prevState => ({...prevState,deletingDoc: false}));
+    dismissDeleting();
   }
 }
 
 function deletePrompt() {
   setPageState(prevState => ({...prevState,deletingDoc: true}));
   presentAlert({
-    header: t("general.delete_this_list"),
+    header: t("general.delete_this_list",{list: pageState.listDoc.name}),
     subHeader: t("general.really_delete_list_extended"),
     buttons: [ { text: t("general.cancel"), role: "Cancel" ,
                 handler: () => setPageState(prevState => ({...prevState,deletingDoc: false}))},
@@ -249,7 +255,7 @@ function deletePrompt() {
     const actname=active ? t("general.active") : t("general.inactive")
     return (
       <div key={actname+"-div"}>
-      <IonItemDivider key={actname}><IonLabel>{actname}</IonLabel></IonItemDivider>
+      <IonItemDivider key={actname} className="category-divider"><IonLabel>{actname}</IonLabel></IonItemDivider>
       <IonReorderGroup key={actname+"-reorder-group"} disabled={false} onIonItemReorder={handleReorder}>
           {lines}
       </IonReorderGroup>
@@ -338,7 +344,7 @@ function deletePrompt() {
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>
-          <IonList>
+          <IonList className="ion-no-padding">
             <IonItem key="name">
               <IonInput label={t("general.name") as string} labelPlacement="stacked" type="text" placeholder={t("general.new_placeholder") as string}
                         onIonInput={(e) => updateName(String(e.detail.value))} value={pageState.listDoc.name}
@@ -348,7 +354,7 @@ function deletePrompt() {
             </IonItem>
             <IonItem key="listgroup">
               <IonSelect disabled={mode!=="new"} key="listgroupsel" label={t("general.list_group") as string} labelPlacement='stacked' interface="popover" onIonChange={(e) => updateListGroup(e.detail.value)} value={pageState.listDoc.listGroupID}>
-                { (cloneDeep(listCombinedRows) as ListCombinedRows).filter(lr => (lr.rowType === RowType.listGroup)).map((lr) => 
+                { (cloneDeep(listCombinedRows) as ListCombinedRows).filter(lr => (lr.rowType === RowType.listGroup && !lr.hidden)).map((lr) => 
                   ( <IonSelectOption key={lr.rowKey} value={lr.listGroupID}>{lr.listGroupName}</IonSelectOption> )
                 )}
               </IonSelect>

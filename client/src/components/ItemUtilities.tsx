@@ -1,7 +1,7 @@
 import {initItemRow, ItemRow, ItemSearch, ListCombinedRow, ListCombinedRows,
      ListRow, RowType, ItemSearchType, CategoryRows, CategoryRow, ItemRows, initCategoryRow} from '../components/DataTypes';
 import { GlobalState } from "./GlobalState";
-import { AddListOptions, GlobalSettings } from './DBSchema';
+import { AddListOptions, CategoryColors, DefaultColor, GlobalSettings } from './DBSchema';
 import { UomDoc, ItemDoc, ItemDocs, ItemList, ListDocs, ListDoc, CategoryDoc, GlobalItemDocs } from './DBSchema';
 import { cloneDeep } from 'lodash';
 import { t } from 'i18next';
@@ -128,7 +128,7 @@ function findRightList(itemDoc: ItemDoc, listType: RowType, listOrGroupID: strin
     if (list === undefined) { return undefined} else {return cloneDeep(list)}
 }
 
-export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRow[], categoryDocs: CategoryDoc[], uomDocs: UomDoc[], listType: RowType, listOrGroupID: string | null, curCategoryRows: CategoryRows) : [ItemRows, CategoryRows] {
+export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRow[], categoryDocs: CategoryDoc[], uomDocs: UomDoc[], listType: RowType, listOrGroupID: string | null, curCategoryRows: CategoryRows, categoryColors: CategoryColors) : [ItemRows, CategoryRows] {
     let itemRows: Array<ItemRow> =[];
     let categoryRows: Array<CategoryRow> = [];
     let listRow=listCombinedRows.find((el: ListCombinedRow) => (el.rowType === listType && el.listOrGroupID === listOrGroupID));
@@ -150,17 +150,19 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
         if (itemRow.categoryID === null) {
             itemRow.categoryName = t("general.uncategorized");
             itemRow.categorySeq = -1;
-            itemRow.categoryColor = "primary"
+            itemRow.categoryColor = DefaultColor
         } else {
             let thisCat = (categoryDocs.find((element: CategoryDoc) => (element._id === itemRow.categoryID)) as CategoryDoc);
             if (thisCat !== undefined) {
                 itemRow.categoryName =  translatedCategoryName(itemRow.categoryID,thisCat.name);
-                if (thisCat.color === undefined) {
-                    itemRow.categoryColor = "primary"
-                } else { itemRow.categoryColor = thisCat.color; };    
+                if (categoryColors.hasOwnProperty(String(thisCat._id))) {
+                  itemRow.categoryColor = categoryColors[String(thisCat._id)];
+                } else {
+                  itemRow.categoryColor = DefaultColor;
+                }
             } else {
                 itemRow.categoryName = t("general.undefined");
-                itemRow.categoryColor = "primary"
+                itemRow.categoryColor = DefaultColor
             }
             if (listType === RowType.list) {
                 const tmpIdx = (listRow?.listDoc.categories.findIndex((element: string) => (element === itemRow.categoryID)));

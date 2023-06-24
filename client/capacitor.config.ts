@@ -2,13 +2,12 @@ import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'net.shaytech.groceries',
-  appName: 'groceries',
+  appName: 'Specifically Clementines',
   plugins:  {
     CapacitorCookies: { enabled: true},
     CapacitorHttp: { enabled: true}
   },
   webDir: 'build',
-  bundledWebRuntime: false,
    android: {
      captureInput: true,
   //   useLegacyBridge: true

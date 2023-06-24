@@ -79,7 +79,7 @@ const RecipeImport: React.FC<HistoryProps> = (props: HistoryProps) => {
     <IonPage>
       <PageHeader title={t("general.importing_recipe")} />
       <IonContent>
-          <IonList>
+          <IonList className="ion-no-padding">
             <IonItem key="filetype">
               <IonSelect label={t("general.recipe_import_type") as string} interface="popover" onIonChange={(ev) => {setPageState(prevState=>({...prevState,recipeFormat:ev.detail.value}))}} value={pageState.recipeFormat}>
                   {jsonFormatOptions}

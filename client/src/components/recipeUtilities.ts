@@ -21,6 +21,7 @@ export async function isRecipeItemOnList({ recipeItem, listOrGroupID,globalData,
     let itemExists=true;
     let itemResults: PouchDB.Find.FindResponse<{}> = {docs: []}
     try {itemResults = await db.find({
+        use_index: "stdTypeListGroupID",
         selector: {
             type: "item",
             listGroupID: listGroupID }

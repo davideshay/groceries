@@ -103,12 +103,14 @@ export function useDeleteItemsInListGroup() {
   return useCallback(
     async (listGroupID: string) => {
       let response: PouchResponse = cloneDeep(PouchResponseInit);
-      let itemResults = await db.find({
-        selector: {
-          type: "item",
-          name: { $exists: true },
-          listGroupID: listGroupID}
-      })
+      let itemResults : PouchDB.Find.FindResponse<{}>;
+      try { itemResults = await db.find({
+            use_index: "stdTypeListGroupID",
+            selector: {
+              type: "item",
+              listGroupID: listGroupID}
+        })}
+      catch(err) {response.successful = false; response.fullError = err; return response;}
       for (let i = 0; i < itemResults.docs.length; i++) {
         const itemDoc: ItemDoc = (itemResults.docs[i] as ItemDoc); 
         try {await db.remove(itemDoc as PouchDB.Core.RemoveDocument)}
@@ -124,13 +126,14 @@ export function useDeleteListFromItems() {
   return useCallback(
     async (listID: string) => {
       let response: PouchResponse = cloneDeep(PouchResponseInit);
-      let itemResults = await db.find({
-        selector: {
-          type: "item",
-          name: { $exists: true },
-          lists: { $elemMatch: { "listID": listID } }
-        }
-      })
+      let itemResults: PouchDB.Find.FindResponse<{}>;
+      try {  itemResults = await db.find({
+              use_index: "stdType",
+              selector: {
+              type: "item",
+              lists: { $elemMatch: { "listID": listID } }
+      }})}
+      catch(err) { response.successful = false; response.fullError = err; return response;}      
       for (let i = 0; i < itemResults.docs.length; i++) {
         const itemDoc: ItemDoc = itemResults.docs[i] as ItemDoc;
         const newLists = []
@@ -156,10 +159,10 @@ export function useDeleteCategoryFromItems() {
       let itemResults;
       try {
           itemResults = await db.find({
+          use_index: "stdType",
           selector: {
             type: "item",
-            name: { $exists: true },
-            categoryID: catID
+            lists: { $elemMatch : { categoryID: catID}}
           }
           })
       } catch(err) {response.successful=false; response.fullError=t("error.could_not_find_items"); return response}
@@ -186,9 +189,9 @@ export function useDeleteCategoryFromLists() {
       let listResults;
       try {
           listResults = await db.find({
+          use_index: "stdType",
           selector: {
             type: "list",
-            name: { $exists: true },
             categories: { $elemMatch : { $eq: catID} }
           }
           })
@@ -287,7 +290,7 @@ export function useFriends(username: string) : { useFriendState: UseFriendState,
   const [useFriendState,setUseFriendState] = useState(UseFriendState.init);
   const { t }= useTranslation();
   const { docs: friendDocs, state: friendState } = useFind({
-    index: { fields: ["type","friendID1","friendID2"]},
+    index: "stdFriend",
     selector: { "$and": [ {
         "type": "friend",
         "friendID1": { "$exists": true },
@@ -380,7 +383,7 @@ export function useConflicts() : { conflictsError: boolean, conflictDocs: Confli
   const [mostRecentDate,setMostRecentDate] = useState<Date>(new Date());
 
   const { docs: conflictDocs, loading: conflictsLoading, error: dbError } = useFind({
-    index: { fields: ["type","docType","updatedAt"]},
+    index: "stdConflict",
     selector: { type: "conflictlog", docType: { $exists: true }, updatedAt: { $gt: mostRecentDate.toISOString()} },
     sort: [ "type", "docType","updatedAt" ]
   })
@@ -399,9 +402,8 @@ export function useConflicts() : { conflictsError: boolean, conflictDocs: Confli
 
 export function useRecipes() : { recipesError: boolean, recipeDocs: RecipeDoc[], recipesLoading: boolean} {
   const { docs: recipeDocs, loading: recipesLoading, error: dbError} = useFind({
-    index: { fields: ["type","name"]},
-    selector: { type: "recipe", name: { $exists: true } },
-    sort: [ "type", "name" ]
+    index: "stdType",
+    selector: { type: "recipe" },
   });
   const [sortedRecipes,setSortedRecipes] = useState<RecipeDoc[]>()
 
@@ -422,12 +424,12 @@ export function useAddListToAllItems() {
     async ({listGroupID, listID, listDocs} : {listGroupID: string, listID: string, listDocs: ListDocs}) => {
           let updateSuccess=true;
           let itemRecords: PouchDB.Find.FindResponse<ItemDoc>
-          itemRecords = await db.find({
-            selector: { type: "item", 
-                        name: { $exists: true},
-                        listGroupID: listGroupID},
-            sort: [ "type","name"]
-          }) as PouchDB.Find.FindResponse<ItemDoc>;
+          try {itemRecords = await db.find({
+                use_index: "stdTypeListGroupID",
+                selector: { type: "item", 
+                        listGroupID: listGroupID}
+             }) as PouchDB.Find.FindResponse<ItemDoc>;}
+          catch(err) {log.error("Error finding items on listgroup",err); return false;}  
           for (let i = 0; i < itemRecords.docs.length; i++) {
             const item = itemRecords.docs[i];
             let itemUpdated=false;
@@ -448,7 +450,9 @@ export function useAddListToAllItems() {
             if (itemUpdated) {
               let curDateStr=(new Date()).toISOString()
               item.updatedAt = curDateStr;
-              let updateResponse = await db.put(item);
+              let updateResponse;
+              try {updateResponse = await db.put(item);}
+              catch(err) {log.error("Error updating list record",err); return false;}
               if (!updateResponse.ok) {updateSuccess = false;}
             }
           }

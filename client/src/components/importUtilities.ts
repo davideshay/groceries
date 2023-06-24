@@ -155,6 +155,7 @@ async function createTandoorRecipe(recipeObj: TandoorRecipe, db: PouchDB.Databas
                     recipeItem.recipeUOMName = matchGlobalItem.defaultUOM;
                 }
                 if (recipeItem.recipeUOMName === "" && (ingredient.unit.name !== "" || ingredient.unit.plural_name !== "")) {
+                    recipeItem.recipeUOMName = null;
                     recipeItem.note = t("error.could_not_match_uom",{name: ingredient.unit.name ,pluralName: ingredient.unit.plural_name});
                 }
             }
@@ -177,9 +178,10 @@ async function createTandoorRecipe(recipeObj: TandoorRecipe, db: PouchDB.Databas
 
 function findMatchingUOM(uom: string, globalData: GlobalDataState): string {
     if (uom === null || uom === undefined) {return ""};
-    let foundUOM = globalData.uomDocs.find(u => (u.description.toUpperCase() === uom.toUpperCase() || u.pluralDescription.toUpperCase() === uom.toUpperCase()));
+    let foundUOM = globalData.uomDocs.find(u => ( ["system","recipe"].includes(String(u.listGroupID)) && (u.description.toUpperCase() === uom.toUpperCase() || u.pluralDescription.toUpperCase() === uom.toUpperCase())));
     if (foundUOM === undefined) {
         foundUOM = globalData.uomDocs.find(u => {
+            if (!["system","recipe"].includes(String(u.listGroupID))) {return false}
             let foundAlt = false;
             if (u.hasOwnProperty("alternates") && u.alternates !== null) {
                 let upperAlternates = u.alternates!.map(el => (el.replace(/\W|_/g, '').toUpperCase()))
@@ -216,7 +218,6 @@ export function findMatchingGlobalItem(foodName: string|null, globalData: Global
         return(
         (t("globalitem."+(git._id as string).substring(sysItemKey.length+1),{count: 1}).toLocaleUpperCase() === foodName.toLocaleUpperCase()) || 
         (t("globalitem."+(git._id as string).substring(sysItemKey.length+1),{count: 2}).toLocaleUpperCase() === foodName.toLocaleUpperCase()) )  })
-        log.debug("translated global:",translatedGlobal);
         if (translatedGlobal === undefined) {return [null,"",returnInitGlobalItem]}
         else {return [translatedGlobal._id as string,t("globalitem."+(translatedGlobal._id as string).substring(sysItemKey.length+1),{count: 2}),translatedGlobal]}
     }
@@ -227,6 +228,7 @@ async function checkRecipeExists(recipeName: string, db: PouchDB.Database): Prom
     let exists=false;
     let recipeResults: PouchDB.Find.FindResponse<{}> = {docs: []}
     try {recipeResults = await db.find({
+        use_index: "stdTypeName",
         selector: {
           type: "recipe",
           name: recipeName }

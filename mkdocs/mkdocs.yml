@@ -1,0 +1,73 @@
+site_name: Specifically Clementines
+
+nav:
+ - About: index.md
+ - User Guide:
+    - Key Concepts: userguide/key-concepts.md
+    - Menu: userguide/menu.md
+    - Items: userguide/items.md
+    - Lists / List groups: userguide/lists.md
+    - Friends: userguide/friends.md
+    - Categories: userguide/categories.md
+    - Recipes: userguide/recipes.md
+    - Settings: userguide/settings.md
+    - Login / Logout: userguide/login.md
+ - Installation Guide:
+    - Key Concepts: installation/key-concepts.md
+    - Installation: installation/installation.md
+
+theme:
+  name: material
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.annotation
+    - content.code.copy
+  language: en
+  palette:
+      - scheme: default
+        primary: deep orange
+        toggle:
+          icon: material/brightness-7
+          name: Switch to dark mode
+      - scheme: slate
+        primary: deep orange      
+        toggle:
+          icon: material/brightness-4
+          name: Switch to light mode
+plugins:
+  - search
+extra:
+  social:
+    - icon: fontawesome/brands/github-alt
+      link: https://github.com/davideshay/groceries
+
+markdown_extensions:
+  - toc:
+      permalink: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - admonition
+  - pymdownx.arithmatex:
+      generic: true
+  - footnotes
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.mark
+  - attr_list
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+
+copyright: |
+  &copy; 2023 <a href="https://github.com/davideshay" target="_blank" rel="noopener">David Shay</a>
+

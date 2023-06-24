@@ -61,7 +61,31 @@ ion-item.itemrow-inner::part(native) {
     border: none;
     min-height: auto;
     --padding-start: 0px;
-    
+}
+
+ion-item.item-completed::part(native) {
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+    color: #808080;
+}
+
+ion-item-divider.item-category-divider {
+    margin-top: 16px;
+    font-size: smaller;
+}
+
+ion-item-divider.item-category-divider.first-category {
+    margin-top: 0px;
+}
+
+ion-item-divider.uncategorized-color {
+    border-bottom: 4px solid black;
+}
+
+@media (prefers-color-scheme: dark) {
+    ion-item-divider.uncategorized-color {
+        border-bottom: 4px solid white;
+    }
 }
 
 ion-grid.grid-no-pad {
@@ -78,4 +102,8 @@ ion-icon.note-icon {
 
 ion-icon.collapse-icon {
     padding-right: 6px
+}
+
+ion-item-divider.item-divider-wrapper {
+    justify-content: space-between;
 }

@@ -82,52 +82,65 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
     const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
     const [ dataReloadStatus, setDataReloadStatus] = useState<DataReloadStatus>(DataReloadStatus.ReloadNeeded);
 
-    const { docs: itemDocs, loading: itemsLoading, error: itemError} = useFind({
-        index: { fields: ["type","name"] },
-        selector: { 
-            "type": "item",
-            "name": { "$exists": true } 
-         }
-         });
-
     const { docs: globalItemDocs, loading: globalItemsLoading, error: globalItemError} = useFind({
-        index: { fields: ["type","name"] },
+        index: "stdTypeName",
         selector: { 
             "type": "globalitem",
             "name": { "$exists": true } 
             }
         });
 
-    const { docs: listDocs, loading: listsLoading, error: listError} = useFind({
-        index: { fields: ["type","name"] },
-        selector: { 
-            "type": "list",
-            "name": { "$exists": true } 
-            }
-        });
-
-
     const { docs: listGroupDocs, loading: listGroupsLoading, error: listGroupError} = useFind({
-        index: { fields: ["type","name"] },
+        index: "stdTypeName",
         selector: { 
             "type": "listgroup",
-            "name": { "$exists": true } 
+            "name": { "$exists": true },
+            "$or": [
+                { "listGroupOwner": remoteDBCreds.dbUsername },
+                { "sharedWith": {"$elemMatch" : {"$eq" : remoteDBCreds.dbUsername}}}
+            ] 
             }
         });
 
     const { docs: categoryDocs, loading: categoryLoading, error: categoryError} = useFind({
-        index: { fields: ["type","name"] },
+        index: "stdTypeName",
         selector: { 
             "type": "category",
-            "name": { "$exists": true } 
+            "name": { "$exists": true },
+            "$or": [
+                {"listGroupID": "system" },
+                {"listGroupID": {"$in": (listGroupDocs.map(lg => (lg._id)))}}
+            ]
             }
         });
 
+    const { docs: listDocs, loading: listsLoading, error: listError} = useFind({
+        index: "stdTypeName",
+        selector: { 
+            "type": "list",
+            "name": { "$exists": true },
+            "listGroupID": {"$in": (listGroupDocs.map(lg => (lg._id)))}
+            }
+        });
+
+    const { docs: itemDocs, loading: itemsLoading, error: itemError} = useFind({
+        index: "stdTypeName",
+        selector: { 
+            "type": "item",
+            "name": { "$exists": true },
+            "listGroupID": {"$in": (listGroupDocs.map(lg => (lg._id)))}
+            }
+            });
+        
     const { docs: uomDocs, loading: uomLoading, error: uomError} = useFind({
-        index: { fields: ["type","name"] },
+        index: "stdTypeName",
         selector: { 
             "type": "uom",
-            "name": { "$exists": true } 
+            "name": { "$exists": true }, 
+            "$or": [
+                {"listGroupID": "system" },
+                {"listGroupID": {"$in": (listGroupDocs.map(lg => (lg._id)))}}
+            ]
             }
         });
 

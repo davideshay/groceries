@@ -31,7 +31,7 @@ const Recipes: React.FC<HistoryProps> = (props: HistoryProps) => {
     <IonPage>
       <PageHeader title={t("general.recipes")} />
       <IonContent>
-        <IonList lines="full">
+        <IonList className="ion-no-padding" lines="full">
             {recipeDocs.length === 0 ? <IonItem key="none">{t("error.no_recipes_exist")}</IonItem> : 
                recipeDocs.map((doc) => (
                   <IonItem className="list-button" key={doc._id} routerLink={("/recipe/edit/" + doc._id)}>

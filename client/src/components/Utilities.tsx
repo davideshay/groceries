@@ -124,7 +124,7 @@ export async function initialSetupActivities(db: PouchDB.Database, username: str
     try {totalDocs = (await db.info()).doc_count}
     catch(err) {log.error("Cannot retrieve doc count from local database"); return false;}
     let listGroupDocs: PouchDB.Find.FindResponse<{}>
-    try {listGroupDocs = await db.find({ selector: { type: "listgroup", listGroupOwner: username, default: true},
+    try {listGroupDocs = await db.find({ use_index:"stdTypeOwnerDefault",selector: { type: "listgroup", listGroupOwner: username, default: true},
          limit: totalDocs});}
     catch(err) {log.error("Cannot retrieve list groups from local database"); return false;}
     if (listGroupDocs.docs.length === 0) {
@@ -191,28 +191,6 @@ function startLogging(level: string) {
     } else if (["5","SILENT","S","NONE","N"].includes(uLevel)) {
         targetLevel="SILENT"
     } else {targetLevel="INFO"}
-
-    //const originalFactory = log.methodFactory;
-    // log.methodFactory = (methodName, level, loggerName) => {
-    //   const rawMethod = originalFactory(methodName, level, loggerName);
-    //   function dateFormat(): string {
-    //     const d = new Date();
-    //     return d.getMilliseconds().toString();
-    //     }
-    //   return rawMethod.bind(
-    //       console,
-    //       new Date().getMilliseconds()
-    //   );
-    // };
-
-    // log.methodFactory = function (methodName, logLevel, loggerName) {
-    //     const method = originalFactory(methodName, logLevel, loggerName);
-    //     return function (...message) {;
-    //       const datetime = new Date().toISOString();
-    //       method(datetime,message);
-    //     };
-    //   };
-
     log.setLevel(targetLevel);    
 }
 

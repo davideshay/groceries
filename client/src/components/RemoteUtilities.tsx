@@ -3,14 +3,25 @@ import { CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
 import { Preferences } from '@capacitor/preferences';
 import jwt_decode from 'jwt-decode';
 import { ListCombinedRows, ListRow, RowType } from "./DataTypes";
-import { UUIDDoc, maxAppSupportedSchemaVersion } from "./DBSchema";
+import { ListGroupDocs, UUIDDoc, maxAppSupportedSchemaVersion } from "./DBSchema";
 import { DBUUIDAction, DBUUIDCheck } from "./RemoteDBState";
 import { History } from "history";
 import { urlPatternValidation, usernamePatternValidation, emailPatternValidation,
         fullnamePatternValidation, apiConnectTimeout, isJsonString, DEFAULT_API_URL, getRowTypeFromListOrGroupID } from "./Utilities";
 import { cloneDeep, pick, keys, isEqual } from 'lodash';
+import { Device } from '@capacitor/device';
 import { t } from "i18next";
 import log from "loglevel";
+
+export async function getDeviceID() : Promise<string> {
+    const devIDInfo = await Device.getId();
+    log.debug("Getting device ID...", cloneDeep(devIDInfo));
+    let devID = "";
+    if (devIDInfo.hasOwnProperty('identifier')) {
+        devID = devIDInfo.identifier;
+    }
+    return devID;
+}
 
 export async function navigateToFirstListID(phistory: History, listRows: ListRow[], listCombinedRows: ListCombinedRows, savedListID: string | undefined | null) {
 //    log.debug("Nav to first list: ",cloneDeep(remoteDBCreds),cloneDeep(listRows));
@@ -81,8 +92,8 @@ export async function isDBServerAvailable(refreshJWT: string | null, couchBaseUR
         couchBaseURL === null || couchBaseURL === undefined || couchBaseURL === "" ) {
         return response;
     }
-    let checkResponse = checkJWT(refreshJWT,couchBaseURL);
-    return (await checkResponse).DBServerAvailable;
+    let checkResponse = await checkJWT(refreshJWT,couchBaseURL);
+    return  (checkResponse.DBServerAvailable);
 }
 
 
@@ -297,16 +308,38 @@ export async function checkJWT(accessJWT: string, couchBaseURL: string | null) {
     return checkResponse;
 } 
 
-export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Database) {
+async function getListGroupIDs(db: PouchDB.Database,username: string): Promise<string[]> {
+    let listGroupIDs: string[] = [];
+    let listGroupResults: PouchDB.Find.FindResponse<{}>
+    try { listGroupResults = await db.find({
+        use_index: "stdType",
+        selector: {
+          type: "listgroup",
+          "$or": [
+            { "listGroupOwner": username },
+            { "sharedWith": {"$elemMatch" : {"$eq" : username}}}
+            ] 
+        }
+      }) }
+    catch(err) {log.debug("Could not list group IDs for user:",username); return listGroupIDs}
+    if (listGroupResults.docs && listGroupResults.docs.length > 0) {
+        listGroupIDs = (listGroupResults.docs as ListGroupDocs).map(lg => (String(lg._id)));
+    }
+    return listGroupIDs;
+}
+
+export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Database, username: string) {
     let UUIDCheck: DBUUIDCheck = {
         checkOK: true,
-        dbAvailable: false,
+        dbAvailable: true,
         schemaVersion: 0,
+        syncListGroupIDs: [],
         dbUUIDAction: DBUUIDAction.none
     }
     async function getData() {
         let results = await remoteDB.find({
-            selector: { "type": { "$eq": "dbuuid"} } })
+            use_index: "stdType",
+            selector: { "type": "dbuuid" } })
         return results;
     }
     let UUIDResults : PouchDB.Find.FindResponse<{}>
@@ -341,17 +374,17 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
       try { localDBAllDocs = await db.allDocs({include_docs: true});} catch(e) {log.error("error checking docs for uuid",e)};
       localHasRecords = false;
       if (localDBAllDocs != null) {
-        localDBAllDocs.rows.forEach(row => {
+        for (const row of localDBAllDocs.rows) {
           if ((row.doc as any).language !== "query") {
-                localHasRecords=true;
+                localHasRecords=true; break;
             }
-        });
+        };
       }
     }
     if (localHasRecords) {
         let localDBFindDocs = null;
-        try { localDBFindDocs = await db.find({selector: { "type": { "$eq": "dbuuid"} }}) }
-        catch(e) {log.error("error finding dbuuid doc",e)};
+        try { localDBFindDocs = await db.find({use_index: "stdType", selector: { "type": "dbuuid" }}) }
+        catch(e) {log.error("error finding dbuuid doc",e,localDBFindDocs)};
         if ((localDBFindDocs !== null) && localDBFindDocs.docs.length === 1) {
             localDBUUID = (localDBFindDocs.docs[0] as UUIDDoc).uuid;
             localSchemaVersion = Number((localDBFindDocs.docs[0] as UUIDDoc).schemaVersion);
@@ -371,14 +404,20 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
             log.error("Remote Schema greater than local");
             UUIDCheck.checkOK = false;
             UUIDCheck.dbUUIDAction = DBUUIDAction.exit_local_remote_schema_mismatch;
+            return UUIDCheck;
         }   
-        return UUIDCheck;
     } 
+
+    let remoteListGroupIDs = await getListGroupIDs(remoteDB,username);
+    let localListGroupIDs = await getListGroupIDs(db,username);
+    UUIDCheck.syncListGroupIDs = Array.from(new Set(remoteListGroupIDs.concat(localListGroupIDs)));
+
+
       // if current DBCreds doesn't have one, set it to the remote one.
     if ((localDBUUID === null || localDBUUID === "" ) && !localHasRecords) {
       return UUIDCheck;
     }
-    UUIDCheck.checkOK = false; UUIDCheck.dbUUIDAction = DBUUIDAction.destroy_needed;
+//     UUIDCheck.checkOK = false; UUIDCheck.dbUUIDAction = DBUUIDAction.destroy_needed;
     return UUIDCheck;
   }
 

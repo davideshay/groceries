@@ -1,6 +1,7 @@
-export const maxAppSupportedSchemaVersion = 3;
-export const appVersion = "0.8.1";
+export const maxAppSupportedSchemaVersion = 4;
+export const appVersion = "0.9.0";
 export const minimumAccessRefreshSeconds = 300;
+export const DefaultColor = "#ffffff";
 
 export interface UUIDDoc {
   _id?: string,
@@ -19,13 +20,14 @@ export interface CategoryDoc {
     _id?: string,
     _rev?: string,
     type: string,
+    listGroupID: string | null,
     name: string,
-    color: string,
+    color?: string,
     updatedAt?: string
   }
   
 export const InitCategoryDoc: CategoryDoc = {
-   type: "category", name: "", color: "", updatedAt: ""
+   type: "category", listGroupID: null, name: "", color: DefaultColor, updatedAt: ""
   }
   
 export type CategoryDocs = CategoryDoc[];
@@ -46,6 +48,7 @@ export interface UomDoc {
     _id?: string,
     _rev?: string,
     type: string,
+    listGroupID: string | null,
     name: string,
     description: string,
     pluralDescription: string,
@@ -56,6 +59,7 @@ export interface UomDoc {
 
  export const InitUomDoc: UomDoc = {
   type: "uom",
+  listGroupID: null,
   name: "",
   description: "",
   pluralDescription: "",
@@ -314,16 +318,24 @@ export const InitSettings: GlobalSettings = {
   savedListID: null
 }
 
+export type CategoryColors = {
+  [key: string]: string
+}
+
 export type SettingsDoc = {
   _id?: string,
   _rev?: string,
   type: string,
   username: string,
-  settings: GlobalSettings
+  settings: GlobalSettings,
+  categoryColors?: CategoryColors,
+  updatedAt: string
 }
 
-export const InitSettingsDoc = {
+export const InitSettingsDoc : SettingsDoc = {
   type: "settings",
   username: "",
-  settings: InitSettings
+  settings: InitSettings,
+  categoryColors: {},
+  updatedAt: ""
 }

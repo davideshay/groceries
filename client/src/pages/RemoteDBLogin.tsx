@@ -2,12 +2,12 @@ import { IonContent, IonPage, IonButton, IonList, IonInput, IonItem,
   IonText, useIonAlert, isPlatform, IonIcon, useIonLoading, AlertOptions } from '@ionic/react';
 import { useState, useEffect, useContext, useCallback } from 'react';
 import { eye, eyeOff } from 'ionicons/icons';
-import { CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
+import { Capacitor, CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
 import { usePouch} from 'use-pouchdb';
 import { ConnectionStatus, DBCreds, DBUUIDAction, LoginType } from '../components/RemoteDBState';
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
-import { createNewUser, getTokenInfo, navigateToFirstListID, errorCheckCreds, isServerAvailable, JWTMatchesUser, CreateResponse, createResponseInit, isDBServerAvailable  } from '../components/RemoteUtilities';
+import { createNewUser, getTokenInfo, navigateToFirstListID, errorCheckCreds, isServerAvailable, JWTMatchesUser, CreateResponse, createResponseInit, isDBServerAvailable, getDeviceID  } from '../components/RemoteUtilities';
 import { cloneDeep } from 'lodash';
 import { RemoteDBStateContext, SyncStatus, initialRemoteDBState } from '../components/RemoteDBState';
 import { HistoryProps} from '../components/DataTypes';
@@ -16,7 +16,7 @@ import { useTranslation } from 'react-i18next';
 import PageHeader from '../components/PageHeader';
 import { DataReloadStatus, GlobalDataContext } from '../components/GlobalDataProvider';
 import log from 'loglevel';
-import { GlobalStateContext } from '../components/GlobalState';
+import { GlobalStateContext, initialGlobalState } from '../components/GlobalState';
 import { useHistory } from 'react-router';
 
 enum LoginOptions {
@@ -106,15 +106,18 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     const { remoteDBState, remoteDBCreds, setRemoteDBState, setRemoteDBCreds,stopSyncAndCloseRemote,
       assignDB, setDBCredsValue, setLoginType, attemptFullLogin} = useContext(RemoteDBStateContext);
     const { dataReloadStatus, waitForReload, listRows, listRowsLoaded, listsLoading, listCombinedRows } = useContext(GlobalDataContext);
-    const { globalState} = useContext(GlobalStateContext);
+    const { globalState, setGlobalState} = useContext(GlobalStateContext);
     const [ present, dismiss ]= useIonLoading();
     const { t } = useTranslation();
     const history = useHistory();
 
     const exitApp = useCallback( async () => {
-      if (!(isPlatform("desktop") || isPlatform("electron"))) {App.exitApp()}
-      setRemoteDBState(initialRemoteDBState);
-      window.location.replace('about:blank');
+      if (Capacitor.isNativePlatform()) {
+        App.exitApp()
+      } else {
+        setRemoteDBState(initialRemoteDBState);
+        window.location.replace('about:blank');  
+      }
     },[setRemoteDBState])
 
     const destroyAndExit = useCallback(async () => {
@@ -137,7 +140,12 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     useEffect( () => {
       async function checkAPIServerAvailable(apiServerURL: string|null) {
           let apiServerAvailable = await isServerAvailable(apiServerURL);
-          let dbServerAvailable = await isDBServerAvailable(remoteDBCreds.refreshJWT,remoteDBCreds.couchBaseURL);
+          let dbServerAvailable = true;
+          if (apiServerAvailable && remoteDBState.loggedIn) {
+            dbServerAvailable = await isDBServerAvailable(remoteDBCreds.refreshJWT,remoteDBCreds.couchBaseURL);
+          } else {
+            dbServerAvailable = apiServerAvailable.dbServerAvailable;
+          }
           log.debug("API Server Available: ",apiServerAvailable);
           log.debug("dbServer Available:", dbServerAvailable);
           let validJWTMatch = JWTMatchesUser(remoteDBCreds.refreshJWT,remoteDBCreds.dbUsername);
@@ -149,7 +157,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       }
       log.debug("checking is API server is available in useeffect...");
       checkAPIServerAvailable(remoteDBCreds.apiServerURL);
-    },[remoteDBCreds.apiServerURL,setRemoteDBState,remoteDBCreds.refreshJWT,remoteDBCreds.dbUsername, remoteDBCreds.couchBaseURL])
+    },[remoteDBCreds.apiServerURL,setRemoteDBState,remoteDBCreds.refreshJWT,remoteDBCreds.dbUsername, remoteDBCreds.couchBaseURL, remoteDBState.loggedIn])
 
     // effect for dbuuidaction not none
     useEffect( () => {
@@ -181,7 +189,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
           return;
         }
         if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_no_uuid_on_server) {
-          log.error("No database UUID defined in server todos database. Cannot continue");
+          log.error("No database UUID defined in server database. Cannot continue");
           presentAndExit({
             header: t("error.error") as string,
             message: t("error.server_no_unique_id") as string,
@@ -253,7 +261,6 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       await dismiss();
       return;
     }
-    log.debug("creds check ok... trying to issue token...");
     let response: HttpResponse;
     const options : HttpOptions = {
         url: String(remoteDBCreds.apiServerURL+"/issuetoken"),
@@ -447,8 +454,11 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     setRemoteDBState(prevState =>({...prevState,credsError: false, credsErrorText: ""}));
   }
 
-  function forceLogin() {
-    setRemoteDBState(prevState => ({...prevState,forceShowLoginScreen: true}));
+  async function forceLogin() {
+    setRemoteDBState(initialRemoteDBState);
+    let devID = await getDeviceID();
+    setRemoteDBState(prevState => ({...prevState,forceShowLoginScreen: true, deviceUUID: devID}));
+    setGlobalState(initialGlobalState);
   }
 
   function getLoginOption() {
@@ -643,7 +653,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
         <IonPage>
             <PageHeader title={t("general.login_page")} />
             <IonContent>
-            <IonList>
+            <IonList className="ion-no-padding">
               {formElem}
               <IonItem>
                   <IonText>{remoteState.formError}</IonText>

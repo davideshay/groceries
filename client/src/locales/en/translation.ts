@@ -3,11 +3,11 @@ export const en_translations =
     "general": {
         "friends": "Friends",
         "conflict_log": "Conflict Log",
-        "groceries_menu": "Groceries Menu",
+        "groceries_menu": "Specifically Clementines",
         "lists": "Lists",
         "create_new_list": "Create New List",
         "manage_all_listgroups": "Manage All Listgroups",
-        "other_actions": "Other Actions",
+        "other_actions": "Actions",
         "manage_categories": "Manage Categories",
         "manage_all_items": "Manage All Items",
         "view_global_items": "View Global Items",
@@ -43,10 +43,10 @@ export const en_translations =
         "categories": "Categories",
         "loading_category": "Loading Category...",
         "items_using_category_one": "There is {{count}} item using this category.",
-        "items_using_category_other": "There are {{count}} items using this category",
+        "items_using_category_other": "There are {{count}} items using this category.",
         "lists_using_category_one": "There is {{count}} list using this category.",
         "lists_using_category_other": "There are {{count}} lists using this category.",
-        "delete_this_list": "Delete This List?",
+        "delete_this_list": "Delete This List: {{list}} ?",
         "really_delete_list": "Do you really want to delete this list?",
         "really_delete_list_extended": "Do you really want to delete this list?  All information on this list will be lost.",
         "all_list_info_lost": "All information on this list will be lost.",
@@ -109,7 +109,7 @@ export const en_translations =
         "you_are_listgroup_owner": "You are the list group owner",
         "is_listgroup_owner":"is the list group owner",
         "listgroup_shared_with_users":"List group is shared with these other users:",
-        "delete_this_listgroup":"Delete this list group?",
+        "delete_this_listgroup":"Delete this list group: {{listgroup}} ?",
         "delete_this_listgroup_detail":"Do you really want to delete this list group?  All information on this list group will be lost (lists and items).",
         "changing_selected_listgroup":"Changing Selected List Group",
         "changing_selected_listgroup_detail":"List group has been updated and not saved. Do you still want to change list groups?",
@@ -180,7 +180,7 @@ export const en_translations =
         "items_using_uom_other": "There are {{count}} items using this UoM",
         "recipes_using_uom_one": "There is {{count}} recipe using this UoM.",
         "recipes_using_uom_other": "There are {{count}} recipes using this UoM.",
-        "delete_this_uom": "Delete this Unit of Measure?",
+        "delete_this_uom": "Delete this Unit of Measure: {{uom}} ?",
         "really_delete_uom": "This UOM will be removed from all items and recipes. Are you sure you want to delete?",
         "all_uom_info_lost": "All unit of measure info will be lost",
         "editing_uom": "Editing UOM",
@@ -215,21 +215,22 @@ export const en_translations =
         "attempt_login_again": "Attempt Login Again",
         "must_stay_offline": "Working offline and API/database are still offline. Continue to work offline and changes will be queued.",
         "as_user": "as user",
-        "api_server_status": "API Server Status:",
-        "db_server_status": "DB Server Status:",
-        "refresh_token_valid": "Refresh Token Valid:",
-        "access_token_valid": "Access Token Valid:",
+        "api_server_status": "API Server:",
+        "db_server_status": "DB Server:",
+        "refresh_token_valid": "Refresh Token:",
+        "access_token_valid": "Access Token:",
         "expires_in": "Expires In:",
         "expired_by": "Expired By:",
         "days_one": " day",
         "days_other": " days",
         "relogin": "Relogin",
         "confirm_remove_completed_items": "Confirm that you want to remove completed items from the list",
-        "delete_this_category": "Delete This Category?",
+        "delete_this_category": "Delete This Category : {{category}} ?",
         "really_delete_category": "Do you really want to delete this category?",
         "all_category_info_lost": "All information on this category will be lost.",
-        
-
+        "deleting_category": "Deleting Category...",
+        "deleting_list": "Deleting List...",
+        "deleting_uom": "Deleting Unit of Measure..."
      },
      "error" : {
         "invalid_dbuuid" : "Invalid Database Unique Identifier",
@@ -359,7 +360,12 @@ export const en_translations =
         "friends_server_unavailable": "Cannot display or update Friends data. API and/or Database is unavailable.",
         "app_already_running":"Already running in another session, please continue using the app there.",
         "listgroup_already_exists": "There is already a list group with this name.",
-        "list_already_exists": "There is already a list with this name."
+        "list_already_exists": "There is already a list with this name.",
+        "cannot_create_category_no_listgroup_selected": "Cannot create a category with no list group selected",
+        "cannot_create_uom_no_listgroup_selected": "Cannot create a unit of measure with no list group selected",
+        "header_adding_item": "Error Adding Existing Item",
+        "header_warning_adding_item": "Warning Adding Existing Item",
+        "warning_none_set_active": "Based on settings, although the item was added, it is not currently active on any of the lists. This could be because the category is not active on the lists."
     },
     "itemtext": {
         "item_is_on_these_lists": "Item is on these lists:",
@@ -966,4 +972,3 @@ export const en_translations =
         "clementines_other":"Clementines"
         }
 }
-

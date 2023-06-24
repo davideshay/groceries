@@ -37,7 +37,7 @@ const RecipeItemSearch: React.FC<RecipeItemSearchProps> = (props: RecipeItemSear
         recipeSearchRows: [],
     });
     const {docs: itemDocs, loading: itemsLoading } = useFind({
-        index: { fields: ["type","listGroupID"] },
+        index: "stdTypeListGroupID",
         selector: { type: "item", "listGroupID": { "$in": Array.from(pageState.allListGroups)} } 
     });
     const globalData = useContext(GlobalDataContext); 

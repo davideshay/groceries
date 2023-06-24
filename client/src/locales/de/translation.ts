@@ -7,7 +7,7 @@ export const de_translations =
         "lists": "Listen",
         "create_new_list": "Neue Liste erstellen",
         "manage_all_listgroups": "Alle Listengruppen verwalten",
-        "other_actions": "Andere Aktionen",
+        "other_actions": "Aktionen",
         "manage_categories": "Kategorien verwalten",
         "manage_all_items": "Alle Elemente verwalten",
         "view_global_items": "Globale Elemente anzeigen",
@@ -46,7 +46,7 @@ export const de_translations =
         "items_using_category_other": "Es gibt {{count}} Artikel, die diese Kategorie verwenden.",
         "lists_using_category_one": "Es gibt {{count}} Liste, die diese Kategorie verwendet.",
         "lists_using_category_other": "Es gibt {{count}} Listen, die diese Kategorie verwenden.",
-        "delete_this_list": "Diese Liste löschen?",
+        "delete_this_list": "Diese Liste löschen : {{list}} ?",
         "really_delete_list": "Möchten Sie diese Liste wirklich löschen?",
         "really_delete_list_extended": "Möchten Sie diese Liste wirklich löschen? Alle Informationen von dieser Liste gehen verloren.",
         "all_list_info_lost": "Alle Informationen auf dieser Liste gehen verloren.",
@@ -109,7 +109,7 @@ export const de_translations =
         "you_are_listgroup_owner": "Sie sind der Besitzer der Listengruppe",
         "is_listgroup_owner":"ist der Besitzer der Listengruppe",
         "listgroup_shared_with_users":"Die Listengruppe wird mit diesen anderen Benutzern geteilt:",
-        "delete_this_listgroup":"Diese Listengruppe löschen?",
+        "delete_this_listgroup":"Diese Listengruppe löschen: {{listgroup}} ?",
         "delete_this_listgroup_detail":"Möchten Sie diese Listengruppe wirklich löschen? Alle Informationen zu dieser Listengruppe gehen verloren (Listen und Elemente).",
         "changing_selected_listgroup":"Ausgewählte Listengruppe wird geändert",
         "changing_selected_listgroup_detail":"Die Listengruppe wurde aktualisiert und nicht gespeichert. Möchten Sie trotzdem die Listengruppen ändern?",
@@ -153,6 +153,7 @@ export const de_translations =
         "remove_items_all_lists_purchased":"Elemente aus allen Listen in der Listengruppe entfernen, wenn sie als gekauft/abgeschlossen markiert sind",
         "delete_all_lists_when_deleting_completed":"Aus allen Listen in der Listengruppe löschen, wenn abgeschlossene Elemente gelöscht werden",
         "days_conflict_log_to_view":"Tage des Konfliktprotokolls, die angezeigt werden sollen:",
+        "language":"Sprache",
         "remove": "Entfernen",
         "loading_recipes": "Lade Rezepte...",
         "recipes": "Rezepte",
@@ -179,7 +180,7 @@ export const de_translations =
         "items_using_uom_other": "Es gibt {{count}} Zutaten, die diese Maßeinheit verwenden.",
         "recipes_using_uom_one": "Es gibt {{count}} Rezept, das diese Maßeinheit verwendet.",
         "recipes_using_uom_other": "Es gibt {{count}} Rezepte, die diese Maßeinheit verwenden.",
-        "delete_this_uom": "Diese Maßeinheit löschen?",
+        "delete_this_uom": "Diese Maßeinheit löschen: {{uom}} ?",
         "really_delete_uom": "Diese Maßeinheit wird von allen Zutaten und Rezepten entfernt. Möchten Sie wirklich löschen?",
         "all_uom_info_lost": "Alle Maßeinheit-Informationen gehen verloren.",
         "editing_uom": "Maßeinheit bearbeiten",
@@ -214,16 +215,22 @@ export const de_translations =
         "attempt_login_again": "Erneut anmelden versuchen",
         "must_stay_offline": "Arbeiten Sie offline, und die API/Datenbank sind immer noch offline. Arbeiten Sie weiterhin offline, und Änderungen werden in der Warteschlange gehalten.",
         "as_user": "als Benutzer",
-        "api_server_status": "API-Serverstatus:",
-        "db_server_status": "Datenbankserverstatus:",
-        "refresh_token_valid": "Gültiges Aktualisierungstoken:",
-        "access_token_valid": "Gültiges Zugriffstoken:",
+        "api_server_status": "API-Serverin:",
+        "db_server_status": "Datenbankserver:",
+        "refresh_token_valid": "Aktualisierungstoken:",
+        "access_token_valid": "Zugriffstoken:",
         "expires_in": "Läuft ab in:",
         "expired_by": "Abgelaufen am:",
         "days_one": " Tag",
         "days_other": " Tage",
         "relogin": "Erneut anmelden",
-        "confirm_remove_completed_items": "Bestätigen Sie, dass Sie abgeschlossene Elemente aus der Liste entfernen möchten"
+        "confirm_remove_completed_items": "Bestätigen Sie, dass Sie abgeschlossene Elemente aus der Liste entfernen möchten",
+        "delete_this_category": "Diese Kategorie löschen: {{category}}?",
+        "really_delete_category": "Möchten Sie diese Kategorie wirklich löschen?",
+        "all_category_info_lost": "Alle Informationen zu dieser Kategorie gehen verloren.",
+        "deleting_category": "Kategorie wird gelöscht...",
+        "deleting_list": "Liste wird gelöscht...",
+        "deleting_uom": "Maßeinheit wird gelöscht..."
         },
     "error": {
         "invalid_dbuuid" : "Ungültiger Datenbank-Identifier",
@@ -351,7 +358,14 @@ export const de_translations =
         "server_not_available_nor_cached_creds": "Der Server ist nicht verfügbar, um sich anzumelden. Es sind keine zwischengespeicherten Anmeldeinformationen vorhanden (oder die Anmeldeinformationen waren ungültig), um die App lokal verwenden zu können. Bitte melden Sie sich erneut an, wenn der Server verfügbar ist.",
         "unknown_login_state": "Unbekannter Anmeldestatus. Bitte starten Sie die Anwendung neu.",
         "friends_server_unavailable": "Freundesdaten können nicht angezeigt oder aktualisiert werden. Die API und/oder die Datenbank sind nicht verfügbar.",
-        "app_already_running": "Bereits in einer anderen Sitzung ausgeführt, bitte setze die Verwendung der App dort fort."
+        "app_already_running": "Bereits in einer anderen Sitzung ausgeführt, bitte setze die Verwendung der App dort fort.",
+        "listgroup_already_exists": "Es gibt bereits eine Listen-Gruppe mit diesem Namen.",
+        "list_already_exists": "Es gibt bereits eine Liste mit diesem Namen.",
+        "cannot_create_category_no_listgroup_selected": "Es kann keine Kategorie erstellt werden, wenn keine Listen-Gruppe ausgewählt ist.",
+        "cannot_create_uom_no_listgroup_selected": "Es kann keine Maßeinheit erstellt werden, wenn keine Listen-Gruppe ausgewählt ist.",
+        "header_adding_item": "Fehler beim Hinzufügen eines vorhandenen Elements",
+        "header_warning_adding_item": "Warnung beim Hinzufügen eines vorhandenen Elements",
+        "warning_none_set_active": "Basierend auf den Einstellungen ist das Element zwar hinzugefügt worden, ist jedoch derzeit auf keiner der Listen aktiv. Dies könnte daran liegen, dass die Kategorie in den Listen nicht aktiv ist."
     },
     "itemtext": {
         "item_is_on_these_lists": "Artikel ist auf diesen Listen:",
@@ -956,7 +970,5 @@ export const de_translations =
         "tea_other": "Tee",
         "clementines_one":"Clementine",
         "clementines_other":"Clementinen"
-
     }
 }
-

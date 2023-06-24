@@ -30,7 +30,7 @@ const Uoms: React.FC<HistoryProps> = (props: HistoryProps) => {
     <IonPage>
       <PageHeader title={t("general.uoms")} />
       <IonContent>
-        <IonList lines="full">
+        <IonList lines="full" className="ion-no-padding">
                {(globalData.uomDocs).map((doc) => (
                   <IonItem className="list-button" key={doc._id} routerLink={("/uom/edit/" + doc._id)}>
                     {translatedUOMName(doc._id as string,doc.description,doc.pluralDescription)}

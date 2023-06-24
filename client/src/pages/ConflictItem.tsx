@@ -64,7 +64,7 @@ const ConflictItem: React.FC<HistoryProps> = (props: HistoryProps) => {
     <IonPage>
       <PageHeader title={t("general.conflict_item")+" "+(conflictDoc as ConflictDoc).docType +" " + t("general.from") + " " +localDate} />
       <IonContent> 
-          <IonList>
+          <IonList className="ion-no-padding">
             <IonItem key="maindiffs">
               <IonLabel position="stacked">{t("general.main_differences")}</IonLabel>
               <IonTextarea>{mainDiffsText}</IonTextarea>

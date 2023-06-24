@@ -6,7 +6,7 @@ import { Device } from '@capacitor/device';
 import { App } from '@capacitor/app';
 import { Network } from '@capacitor/network';
 import PouchDB from 'pouchdb';
-import { getTokenInfo, refreshToken, errorCheckCreds , checkJWT, checkDBUUID, getPrefsDBCreds, isServerAvailable, JWTMatchesUser } from "./RemoteUtilities";
+import { getTokenInfo, refreshToken, errorCheckCreds , checkJWT, checkDBUUID, getPrefsDBCreds, isServerAvailable, JWTMatchesUser, getDeviceID } from "./RemoteUtilities";
 import { useTranslation } from 'react-i18next';    
 import { UserIDList } from "./DataTypes";
 import { cloneDeep } from "lodash";
@@ -103,6 +103,7 @@ export type DBUUIDCheck = {
     checkOK: boolean,
     dbAvailable: boolean,
     schemaVersion: Number,
+    syncListGroupIDs: string[],
     dbUUIDAction: DBUUIDAction
 }
 
@@ -368,8 +369,6 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     const stopSyncAndCloseRemote = useCallback( async () => {
         let success=true;
         if (globalRemoteDB !== undefined && globalRemoteDB !== null) {
-            log.debug("RemoteDB already exists, closing before assign.");
-            log.debug("about to close: ",globalRemoteDB);
             if (globalSync !== undefined && globalSync !== null) {
                 globalSync.cancel();
             }
@@ -401,7 +400,6 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
                     }}) }
         catch(err) {log.error("Could not assign PouchDB Remote Server:",err); return false;}        
         globalRemoteDB.setMaxListeners(40);    
-        log.debug("In assignDB, setting connection status to dbAssigned...");
         setRemoteDBState(prevState => ({...prevState,connectionStatus: ConnectionStatus.dbAssigned, 
                 accessJWT: accessJWT, accessJWTExpirationTime: tokenInfo.expireDate }));  
         await setPrefsDBCreds(); 
@@ -412,13 +410,14 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         if (appStatus.current === AppStatus.paused || appStatus.current === AppStatus.pausing) {
             log.error("Not checking ID and syncing, app pausing..."); return false;
         }
-        let DBUUIDCheck = await checkDBUUID(db as PouchDB.Database,globalRemoteDB as PouchDB.Database);
+        let DBUUIDCheck = await checkDBUUID(db as PouchDB.Database,globalRemoteDB as PouchDB.Database,String(remoteDBCreds.current.dbUsername));
         // if (appStatus.current === AppStatus.paused || appStatus.current === AppStatus.pausing) {
         //     log.error("Not checking ID and syncing, app pausing..."); return false;
         // }
         if (!DBUUIDCheck.checkOK) {
             log.debug("Did not pass DB unique ID check.");
             if (DBUUIDCheck.dbAvailable) {
+                log.debug("DBUUID Action is : ",DBUUIDCheck.dbUUIDAction, " naving to login screen...");
                 setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.invalid_dbuuid") , dbUUIDAction: DBUUIDCheck.dbUUIDAction, connectionStatus: ConnectionStatus.navToLoginScreen}))
             } else {
                 setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.db_server_not_available"), dbUUIDAction: DBUUIDAction.none}))
@@ -432,12 +431,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     },[db,startSync,t])
 
     const attemptFullLogin = useCallback( async (): Promise<[boolean,string]> => {
-        const devIDInfo = await Device.getId();
-        log.debug("Attempt Full Login: Getting device ID...", cloneDeep(devIDInfo));
-        let devID = "";
-        if (devIDInfo.hasOwnProperty('identifier')) {
-            devID = devIDInfo.identifier;
-        }
+        let devID = await getDeviceID();
         setRemoteDBState(prevState => ({...prevState,deviceUUID: devID}));
         let [initialState,credsObj] = await getPrefsDBCreds(remoteDBCreds.current);
         if (initialState) {
@@ -446,7 +440,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             await setPrefsDBCreds();
             return [false,""];
         }
-        log.debug("Got credsObj",JSON.stringify(credsObj));
+//        log.debug("Got credsObj",JSON.stringify(credsObj));
         remoteDBCreds.current = credsObj;
         let serverAvailable = await isServerAvailable(remoteDBCreds.current.apiServerURL); 
         log.debug("is api server available: ",JSON.stringify(serverAvailable));
@@ -536,7 +530,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             }
             if (refreshResponse.valid) {
                 setRemoteDBState(prevState => ({...prevState, connectionStatus: ConnectionStatus.retry, apiServerAvailable: true}));
-                log.debug("refreshJWT being set to refresh response:",refreshResponse.refreshJWT);
+//                log.debug("refreshJWT being set to refresh response:",refreshResponse.refreshJWT);
                 setDBCredsValue("refreshJWT",refreshResponse.refreshJWT);
                 let assignOK = await assignDB(refreshResponse.accessJWT);
                 log.debug("re-assigned DB: result:",assignOK);

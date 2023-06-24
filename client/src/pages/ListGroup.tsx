@@ -2,13 +2,12 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonLis
    IonItem, IonItemGroup, IonItemDivider, IonLabel, IonSelect, IonCheckbox, IonSelectOption,
   IonButtons, IonMenuButton, useIonToast, IonIcon, useIonAlert, IonFooter, IonText } from '@ionic/react';
 import { useHistory, useParams } from 'react-router-dom';
-import { useFind } from 'use-pouchdb';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useFriends, 
   UseFriendState, useDeleteGenericDocument, useDeleteItemsInListGroup, useGetOneDoc } from '../components/Usehooks';
 import { cloneDeep, isEmpty, isEqual } from 'lodash';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
-import { initUserIDList, initUsersInfo, PouchResponse, ResolvedFriendStatus, UserIDList, UsersInfo, HistoryProps, ListCombinedRow, RowType, FriendRow, ListCombinedRows } from '../components/DataTypes'
+import { initUserIDList, initUsersInfo, PouchResponse, ResolvedFriendStatus, UserIDList, UsersInfo, HistoryProps, ListCombinedRow, RowType, FriendRow } from '../components/DataTypes'
 import { ListGroupDoc, ListGroupDocInit } from '../components/DBSchema';
 import SyncIndicator from '../components/SyncIndicator';
 import { getUsersInfo } from '../components/Utilities';
@@ -58,11 +57,6 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   const [ presentToast ] = useIonToast();
   const {useFriendState, friendRows} = useFriends(String(remoteDBCreds.dbUsername));
   const { listCombinedRows, listRows, listRowsLoaded, listError } = useContext(GlobalDataContext);
-  const { docs: categoryDocs, loading: categoryLoading, error: categoryError } = useFind({
-    index: { fields: [ "type","name"] },
-    selector: { type: "category", name: { $exists: true}},
-    sort: [ "type","name"]
-  })
   const { loading: listGroupLoading, doc: listGroupDoc, dbError: listGroupError } = useGetOneDoc(pageState.selectedListGroupID);
   const [presentAlert,dismissAlert] = useIonAlert();
   const screenLoading = useRef(true);
@@ -93,7 +87,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
         setRemoteDBState(prevState => ({...prevState,apiServerAvailable: false}));
       }
     }
-    if (listRowsLoaded && (useFriendState === UseFriendState.rowsLoaded ||  !remoteDBState.dbServerAvailable) && !categoryLoading && (!listGroupLoading || mode==="new")) {
+    if (listRowsLoaded && (useFriendState === UseFriendState.rowsLoaded ||  !remoteDBState.dbServerAvailable) && (!listGroupLoading || mode==="new")) {
       let sharedWith: string[] = [];
       if (mode === "new" && pageState.needInitListGroupDoc) {
         let initListGroupDoc: ListGroupDoc = cloneDeep(ListGroupDocInit);
@@ -113,13 +107,13 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
       });
       getUI(userIDList);
     }
-  },[listGroupLoading, listGroupDoc, listRowsLoaded, mode, useFriendState,friendRows, categoryLoading,categoryDocs,pageState.selectedListGroupID, remoteDBState.accessJWT, pageState.needInitListGroupDoc,remoteDBCreds.apiServerURL,remoteDBCreds.dbUsername,remoteDBState.dbServerAvailable,setRemoteDBState]);
+  },[listGroupLoading, listGroupDoc, listRowsLoaded, mode, useFriendState,friendRows,pageState.selectedListGroupID, remoteDBState.accessJWT, pageState.needInitListGroupDoc,remoteDBCreds.apiServerURL,remoteDBCreds.dbUsername,remoteDBState.dbServerAvailable,setRemoteDBState]);
 
-  if (listError || listGroupError  || useFriendState === UseFriendState.error || categoryError) {
+  if (listError || listGroupError  || useFriendState === UseFriendState.error) {
     <ErrorPage errorText={t('error.loading_list_group') as string}></ErrorPage>
   }
 
-  if (!listRowsLoaded || (listGroupLoading && pageState.selectedListGroupID !== null) ||(useFriendState !== UseFriendState.rowsLoaded && !remoteDBState.workingOffline) || categoryLoading || isEmpty(pageState.listGroupDoc) || !pageState.usersLoaded || pageState.deletingDoc)  {
+  if (!listRowsLoaded || (listGroupLoading && pageState.selectedListGroupID !== null) ||(useFriendState !== UseFriendState.rowsLoaded && !remoteDBState.workingOffline) || isEmpty(pageState.listGroupDoc) || !pageState.usersLoaded || pageState.deletingDoc)  {
     return ( <Loading isOpen={screenLoading.current} message={t('general.loading_list_group')}  /> )
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   };
@@ -184,7 +178,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   let assignedListsElem=[];
-  assignedListsElem.push(<IonItemDivider key="assigneddivider">{t("general.lists_assigned_to_group")}</IonItemDivider>)
+  assignedListsElem.push(<IonItemDivider key="assigneddivider" className="category-divider">{t("general.lists_assigned_to_group")}</IonItemDivider>)
   listCombinedRows.forEach((lcr: ListCombinedRow)  => {
     if (lcr.rowType === RowType.list && lcr.listGroupID === pageState.selectedListGroupID) {
       assignedListsElem.push(<IonItem key={lcr.rowKey}>{lcr.rowName}</IonItem>)
@@ -202,11 +196,11 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
     ownerText = ownerRow?.targetFullName + " " +t("general.is_listgroup_owner");
   }
 
-  usersElem.push(<IonItemDivider key="listuserdivider">{ownerText}</IonItemDivider>)
+  usersElem.push(<IonItemDivider key="listuserdivider" className="category-divider">{ownerText}</IonItemDivider>)
   if (remoteDBState.workingOffline) {
     usersElem.push(<IonItem key="offline">{t("general.offline_cant_get_sharing_info")}</IonItem>)
   } else {
-    usersElem.push(<IonItemDivider key="listdivider">{t("general.listgroup_shared_with_users")}</IonItemDivider>)
+    usersElem.push(<IonItemDivider key="listdivider" className="category-divider">{t("general.listgroup_shared_with_users")}</IonItemDivider>)
   }  
 
   if (iAmListOwner) {
@@ -294,7 +288,7 @@ function deletePrompt() {
     })
   } else {
     presentAlert({
-      header: t("general.delete_this_listgroup"),
+      header: t("general.delete_this_listgroup",{listgroup: pageState.listGroupDoc.name}),
       subHeader: t("general.delete_this_listgroup_detail"),
       buttons: [ { text: t("general.cancel"), role: "Cancel" ,
                   handler: () => setPageState(prevState => ({...prevState,deletingDoc: false}))},
@@ -303,10 +297,8 @@ function deletePrompt() {
     })
   }              
 }
-  let groupOnlyRows: ListCombinedRows = cloneDeep(listCombinedRows);
-  groupOnlyRows.filter(lg => (lg.rowType === RowType.listGroup))
   let selectOptionListElem = (
-    groupOnlyRows.map((list: ListCombinedRow) => (
+    listCombinedRows.filter(lg => (lg.rowType === RowType.listGroup && !lg.hidden)).map((list: ListCombinedRow) => (
       <IonSelectOption key={list.rowKey} value={list.listGroupID}>
         {list.listGroupName}
       </IonSelectOption>) 
@@ -347,10 +339,12 @@ function deletePrompt() {
   }
 
   let updateButton=[];
-  if (mode === "new") {
-    updateButton.push(<IonButton color="primary" fill="solid" key="add" onClick={() => updateThisItem()}>{t("general.add")}<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
-  } else {
-    updateButton.push(<IonButton color="primary" fill="solid" key="update" onClick={() => updateThisItem()}>{t("general.save")}<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
+  if (iAmListOwner) {
+    if (mode === "new") {
+      updateButton.push(<IonButton color="primary" fill="solid" key="add" onClick={() => updateThisItem()}>{t("general.add")}<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
+    } else {
+      updateButton.push(<IonButton color="primary" fill="solid" key="update" onClick={() => updateThisItem()}>{t("general.save")}<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
+    }
   }
 
   let deleteButton=[];
@@ -368,7 +362,7 @@ function deletePrompt() {
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>
-          <IonList>
+          <IonList className="ion-no-padding">
             <IonItem key="name">
               <IonInput label="Name" labelPlacement='stacked'  type="text" placeholder="<New>"
                   onIonInput={(e) => updateName(String(e.detail.value))}
@@ -381,7 +375,7 @@ function deletePrompt() {
             <IonItem key="defaultlistgroup">
               <IonCheckbox labelPlacement="end" justify='start'
                   onIonChange={(evt) => {setPageState(prevState => ({...prevState,listGroupDoc: {...pageState.listGroupDoc, default: evt.detail.checked}}))}}
-                  checked={pageState.listGroupDoc.default}>
+                  checked={pageState.listGroupDoc.default} disabled={!iAmListOwner}>
                   {t("general.is_default_listgroup_for_user")}</IonCheckbox>
             </IonItem>
             <IonItemGroup key="assignedlists">
@@ -400,7 +394,9 @@ function deletePrompt() {
               {deleteButton}
             </IonButtons>
             <IonButtons slot="secondary">
-              <IonButton color="secondary" key="back" fill="outline" onClick={() => history.goBack()}>{t("general.cancel")}<IonIcon slot="start" icon={closeCircleOutline}></IonIcon></IonButton>  
+              {iAmListOwner ? (
+                <IonButton color="secondary" key="back" fill="outline" onClick={() => history.goBack()}>{t("general.cancel")}<IonIcon slot="start" icon={closeCircleOutline}></IonIcon></IonButton>  
+                ) : <></>}
             </IonButtons>
             <IonButtons slot="end">
               {updateButton}
