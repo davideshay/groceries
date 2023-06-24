@@ -1,6 +1,6 @@
 # Settings
 
-![](https://raw.githubusercontent.com/davideshay/groceries/master/docs/settings.png){align=right width=300}
+![](https://raw.githubusercontent.com/davideshay/groceries/master/mkdocs/docs/assets/settings.png){align=right width=300}
 
 The settings control how portions of the application work.
 

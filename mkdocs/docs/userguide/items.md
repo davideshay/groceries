@@ -2,7 +2,7 @@
 
 ## Item Entry / Checkoff Screen
 
-![](https://raw.githubusercontent.com/davideshay/groceries/master/docs/items.png){align=right width=300}
+![](https://raw.githubusercontent.com/davideshay/groceries/master/mkdocs/docs/assets/items.png){align=right width=300}
 
 This screen is really the heart of the application.  At the top of the application there is a search bar where you can search for and easily add items that are in the global pre-populated list or those that you have previously entered.  The next section allows you to "check the item off" the list when you have purchased it by clicking on the checkbox. If you click on the name itself, you will be taken to the item editor where you can change quantity, unit of measure, or category.
 
@@ -16,7 +16,7 @@ The item entry screen works slightly differently depending on whether you have s
 
 ## Searching for items
 
-![](https://raw.githubusercontent.com/davideshay/groceries/master/docs/search.png){align=right width=300}
+![](https://raw.githubusercontent.com/davideshay/groceries/master/mkdocs/docs/assets/search.png){align=right width=300}
 
 When you first enter the search bar, a list of all available items to add to the list will appear. Items that you've purchased before will sort towards the top of the list based on number of times purchased at the store, so you can easily add the items you always buy. 
 
@@ -25,15 +25,17 @@ As you start typing, the list will be filtered by the letters typed in to the se
 
 ## Item Editor
 
-![](https://raw.githubusercontent.com/davideshay/groceries/master/docs/itemedit.png){align=right width=300}
+![](https://raw.githubusercontent.com/davideshay/groceries/master/mkdocs/docs/assets/itemedit.png){align=right width=300}
 
 The item editor allows you to change the name of the item (only if it isn't one of the pre-supplied items).  It also allows you to select the category that the item is in (which determines the sorting position in the store). You can also change the quantity and unit of measure on this screen, as well as provide a note for the item.
 
-On this screen, if you enter those values, they will be applied to every list that the item is on.  This is probably the "standard" way you would want it to work, but there are certain cases where you might want to buy 2 bunches of bananas at Publix, where they are always greener, and 1 bunch of bananas at Wegman's where they are riper.  If you want to change any of the values individually at the list level you can click on the bottom part of the screen on the pencil button by the list.  Items will be shown there highlighted if there are any differences from that item and the rest of the items.
+A photo can also be stored to help make sure the right item for purchase can be identified.
+
+On this screen, if you enter a value for quantity, unit of measure, or note, they will be applied to every list that the item is on.  This is probably the "standard" way you would want it to work, but there are certain cases where you might want to buy 2 bunches of bananas at Publix, where they are always greener, and 1 bunch of bananas at Wegman's where they are riper.  If you want to change any of the values individually at the list level you can click on the bottom part of the screen on the pencil button by the list.  Items will be shown there highlighted if there are any differences from that item and the rest of the items.
 
 Here you will see this screen:
 
-![](https://raw.githubusercontent.com/davideshay/groceries/master/docs/itempopup.png){align=right width=300}
+![](https://raw.githubusercontent.com/davideshay/groceries/master/mkdocs/docs/assets/itempopup.png){align=right width=300}
 
 Here you can change the following values:
 

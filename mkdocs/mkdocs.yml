@@ -1,8 +1,7 @@
 site_name: Specifically Clementines
 
 nav:
- - Home: index.md
- - About: about.md
+ - About: index.md
  - User Guide:
     - Key Concepts: userguide/key-concepts.md
     - Menu: userguide/menu.md
@@ -13,7 +12,9 @@ nav:
     - Recipes: userguide/recipes.md
     - Settings: userguide/settings.md
     - Login / Logout: userguide/login.md
- - Installation Guide: about.md
+ - Installation Guide:
+    - Key Concepts: installation/key-concepts.md
+    - Installation: installation/installation.md
 
 theme:
   name: material

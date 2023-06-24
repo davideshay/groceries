@@ -1,4 +1,4 @@
-## KEY CONCEPTS FOR USERS
+# Key Concepts for End Users
 
 * Normal usage of the Groceries app involves a backend running on a server with access to a CouchDB database. This is used to sync across devices and between shared users.
 * You must register with this server, and create a username and password. Once you login to each device, you should not have to sign in again unless the app goes unused for 30 days.

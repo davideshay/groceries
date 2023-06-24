@@ -7,7 +7,7 @@ import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { cloneDeep, isEmpty, isEqual, omit } from "lodash";
 import { v4 as uuidv4} from 'uuid';
 import { uomContent, categories, globalItems, totalDocCount } from "./utilities";
-import { DocumentScope, MangoResponse, MangoQuery } from "nano";
+import { DocumentScope, MangoResponse, MangoQuery, DocumentGetResponse, MaybeDocument } from "nano";
 import { CategoryDoc, CategoryDocs, GlobalItemDoc, InitSettingsDoc, ItemDoc, ItemDocs, ListDoc, ListGroupDoc, ListGroupDocs, RecipeDoc, SettingsDoc, UUIDDoc, UomDoc, UserDoc, appVersion, maxAppSupportedSchemaVersion, minimumAccessRefreshSeconds } from "./DBSchema";
 import log, { LogLevelDesc } from "loglevel";
 import prefix from "loglevel-plugin-prefix";
@@ -974,35 +974,61 @@ async function createStandardIndexes(): Promise<boolean> {
 async function createReplicationFilter(): Promise<boolean> {
     let success=true;
     let dbresp = null;
+    let filterFunc: string =  "function(doc,req) {" +
+        "if (doc._id.startsWith('_design')) {return true}" +
+        "switch (doc.type) {" +
+            "case 'item','list':" +
+                "return (req.listgroups.includes(doc.listGroupID));" +
+                "break;" +
+            "case 'listgroup':" +
+                "return (req.listgroups.includes(doc._id));" +
+                "break;" +
+            "case 'settings':" +
+                "return (doc.username === req.username);" +
+                "break;" +
+            "case 'recipe','globalitem','dbuuid':" +
+                "return (true);" +
+                "break;" +
+            "case 'category','uom':" +
+                "return (req.listgroups.includes(doc.listGroupID) || doc.listGroupID === 'system');" +
+                "break;" +
+            "default:" +
+                "return (false);" +
+                "break;" + 
+            "}"+ 
+        "}"
+
     let ddoc = {
         "_id" : "_design/replfilter",
         "filters": {
-            "by_user" : function(doc,req) {
-                if (doc._id.startsWith("_design")) {return true}
-                switch (doc.type) {
-                    case "item":
-                        break;
-                    case "list":
-                        break;
-                    case "listgroup":
-                        break;
-                    case "settings":
-                        break;
-                    case "recipe":
-                        break;
-                    case "globalitem":
-                        break;
-                    case "category":
-                        break;
-                    case "uom":
-                        break;
-                    case "dbuuid":
-                        break;
-                    default:
-                        break;
-                } 
-            }
+            "by_user" : filterFunc
         }
+    }
+    let dbRecord: MaybeDocument = {};
+    let filterExists = true;
+    let filterNeedsUpdate = false;
+    let filterRecord: DocumentGetResponse | null = null;
+    try {filterRecord = await todosDBAsAdmin.get("_design/replfilter")}
+    catch(err) {log.info("Replication Filter does not exist... Need to create...");
+                filterExists=false;
+                dbRecord = ddoc;
+                };
+    if (filterExists) {
+        if (filterRecord === null) {filterExists = false}
+    }
+    if (filterExists && filterRecord !== null) {
+        if ((filterRecord as any).filters.by_user !== filterFunc) {
+            log.info("Replication Filter exists but is outdated, Need to update...")
+            filterNeedsUpdate = true;
+            dbRecord = ddoc;
+            dbRecord._rev = filterRecord._rev;
+        }
+        else {log.info("Replication filter exists and has correct content.")}
+    }
+    if (!filterExists || filterNeedsUpdate) {
+        try {dbresp = await todosDBAsAdmin.insert(dbRecord);}
+        catch(err) {log.debug("Could not create replication filter:",err); success=false;}
+        if (success) {log.info("Replication filter created/updated successfully.")}
     }
 
     return success;

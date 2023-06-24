@@ -2,7 +2,7 @@
 
 ## List Editor
 
-![](https://raw.githubusercontent.com/davideshay/groceries/master/docs/listedit.png){align=right width=300}
+![](https://raw.githubusercontent.com/davideshay/groceries/master/mkdocs/docs/assets/listeditor.png){align=right width=300}
 
 Within the list editor, you can change the name of the list.  The other key ability here is to re-arrange the categories within the list to represent the physical order that they appear in the store.  This allows the previously shown item screen to be shown in a logical order easy for shopping.  You can re-arrange the items by dragging on the right hand icon and dragging into the new position.
 
@@ -12,7 +12,7 @@ When you first create a list, you can assign it to a list group. After that poin
 
 ## List Group Editor
 
-![](https://raw.githubusercontent.com/davideshay/groceries/master/docs/listgroupedit.png){align=right width=300}
+![](https://raw.githubusercontent.com/davideshay/groceries/master/mkdocs/docs/assets/listgroupeditor.png){align=right width=300}
  
 In the list group editor, you can change the name of the list group. You likely want to change the name of the default list group that the application creates for you, which would not be very meaningful.
 

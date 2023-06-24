@@ -32,7 +32,7 @@ export interface GlobalStateContextType {
 }
 
 
-const initialState: GlobalState = {
+export const initialGlobalState: GlobalState = {
     itemMode: "none",
     newItemName: undefined,
     newItemGlobalItemID: null,
@@ -45,7 +45,7 @@ const initialState: GlobalState = {
 }
 
 const initialContext: GlobalStateContextType = {
-    globalState: initialState,
+    globalState: initialGlobalState,
     settingsLoading: false,
     setGlobalState: (prevState => (prevState) ),
     setStateInfo: (key: string, value: string | null | RowType) => {},
@@ -61,7 +61,7 @@ type GlobalStateProviderProps = {
 }
 
 export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: GlobalStateProviderProps) => {
-    const [globalState,setGlobalState] = useState<GlobalState>(initialState);
+    const [globalState,setGlobalState] = useState<GlobalState>(initialGlobalState);
     const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
     const { docs: settingsDocs, loading: settingsLoading, error: settingsError} = useFind({
         index: "stdTypeUsername",

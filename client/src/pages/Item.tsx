@@ -152,13 +152,15 @@ const Item: React.FC = (props) => {
       newItemDoc.pluralName = stateItemDoc.name;
     }
     let alreadyExists = false;
+    log.debug("itemRows:",cloneDeep(itemRows),"itemIDstate:",cloneDeep(stateItemDoc._id));
     itemRows.forEach((ir) => {
       if ( ir._id !== stateItemDoc._id  && ir.listGroupID === stateItemDoc.listGroupID &&
         (ir.name.toUpperCase() === stateItemDoc.name.toUpperCase() ||
-         ir.name.toUpperCase() === stateItemDoc.pluralName?.toUpperCase() ||
+         (ir.name.toUpperCase() === stateItemDoc.pluralName?.toUpperCase() && !isEmpty(stateItemDoc.pluralName))||
          ir.pluralName?.toUpperCase() === stateItemDoc.name.toUpperCase() ||
-         ir.pluralName?.toUpperCase() === stateItemDoc.pluralName?.toUpperCase()
+         (ir.pluralName?.toUpperCase() === stateItemDoc.pluralName?.toUpperCase() && !isEmpty(stateItemDoc.pluralName))
       )) {
+        log.debug("found already exists:",cloneDeep(ir));
         alreadyExists = true;
       }
     })

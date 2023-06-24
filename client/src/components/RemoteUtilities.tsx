@@ -9,8 +9,19 @@ import { History } from "history";
 import { urlPatternValidation, usernamePatternValidation, emailPatternValidation,
         fullnamePatternValidation, apiConnectTimeout, isJsonString, DEFAULT_API_URL, getRowTypeFromListOrGroupID } from "./Utilities";
 import { cloneDeep, pick, keys, isEqual } from 'lodash';
+import { Device } from '@capacitor/device';
 import { t } from "i18next";
 import log from "loglevel";
+
+export async function getDeviceID() : Promise<string> {
+    const devIDInfo = await Device.getId();
+    log.debug("Getting device ID...", cloneDeep(devIDInfo));
+    let devID = "";
+    if (devIDInfo.hasOwnProperty('identifier')) {
+        devID = devIDInfo.identifier;
+    }
+    return devID;
+}
 
 export async function navigateToFirstListID(phistory: History, listRows: ListRow[], listCombinedRows: ListCombinedRows, savedListID: string | undefined | null) {
 //    log.debug("Nav to first list: ",cloneDeep(remoteDBCreds),cloneDeep(listRows));
@@ -313,7 +324,6 @@ async function getListGroupIDs(db: PouchDB.Database,username: string): Promise<s
     catch(err) {log.debug("Could not list group IDs for user:",username); return listGroupIDs}
     if (listGroupResults.docs && listGroupResults.docs.length > 0) {
         listGroupIDs = (listGroupResults.docs as ListGroupDocs).map(lg => (String(lg._id)));
-        log.debug("Got list group IDs: ",listGroupIDs);
     }
     return listGroupIDs;
 }

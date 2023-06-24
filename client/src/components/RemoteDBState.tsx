@@ -6,7 +6,7 @@ import { Device } from '@capacitor/device';
 import { App } from '@capacitor/app';
 import { Network } from '@capacitor/network';
 import PouchDB from 'pouchdb';
-import { getTokenInfo, refreshToken, errorCheckCreds , checkJWT, checkDBUUID, getPrefsDBCreds, isServerAvailable, JWTMatchesUser } from "./RemoteUtilities";
+import { getTokenInfo, refreshToken, errorCheckCreds , checkJWT, checkDBUUID, getPrefsDBCreds, isServerAvailable, JWTMatchesUser, getDeviceID } from "./RemoteUtilities";
 import { useTranslation } from 'react-i18next';    
 import { UserIDList } from "./DataTypes";
 import { cloneDeep } from "lodash";
@@ -428,15 +428,10 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             log.debug("DB Unique ID check passed. Setup Activities complete. Starting Sync.");
             startSync();
         }
-    },[db,startSync,t,remoteDBCreds.current.dbUsername])
+    },[db,startSync,t])
 
     const attemptFullLogin = useCallback( async (): Promise<[boolean,string]> => {
-        const devIDInfo = await Device.getId();
-        log.debug("Attempt Full Login: Getting device ID...", cloneDeep(devIDInfo));
-        let devID = "";
-        if (devIDInfo.hasOwnProperty('identifier')) {
-            devID = devIDInfo.identifier;
-        }
+        let devID = await getDeviceID();
         setRemoteDBState(prevState => ({...prevState,deviceUUID: devID}));
         let [initialState,credsObj] = await getPrefsDBCreds(remoteDBCreds.current);
         if (initialState) {

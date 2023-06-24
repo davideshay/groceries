@@ -1,6 +1,6 @@
 # Friends Editor
 
-![](https://raw.githubusercontent.com/davideshay/groceries/master/docs/friends.png){align=right width=300}
+![](https://raw.githubusercontent.com/davideshay/groceries/master/mkdocs/docs/assets/friends.png){align=right width=300}
 
 From this screen, you will see a list of existing friends, and those in different statuses. In the example shown, for instance, you have already sent an invite to "Friend 5" at their GMail address, but they haven't yet registered for an account on the app. If they have misplaced their email to register, you can click on the URL button and share the URL with your friend so they can register in the app.
 
