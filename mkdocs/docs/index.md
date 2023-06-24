@@ -1,5 +1,7 @@
 # About
 
+![](https://raw.githubusercontent.com/davideshay/groceries/master/mkdocs/docs/assets/icon.png){align=right width=100}
+
 ## Why another grocery list app?
 
 Certainly there are other open source / self-hosted apps, but none had the main feature that I felt was missing from even the commercial offerings: really reliable sync. The key function my family needed was the ability to share lists across multiple devices and multiple users and have people add and check-off items with the results reflected in real-time on other devices. So many times, with other apps, the sync would just fail with no indication at all, or just stop working until a restart or account reset.
