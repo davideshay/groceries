@@ -1,4 +1,4 @@
-name: ci 
+name: mkdocs gh-pages
 on:
   workflow_dispatch:
    push:
