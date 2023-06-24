@@ -189,7 +189,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
           return;
         }
         if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_no_uuid_on_server) {
-          log.error("No database UUID defined in server todos database. Cannot continue");
+          log.error("No database UUID defined in server database. Cannot continue");
           presentAndExit({
             header: t("error.error") as string,
             message: t("error.server_no_unique_id") as string,

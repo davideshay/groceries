@@ -945,14 +945,6 @@ async function checkAndCreateIndex(index: CouchIndex): Promise<boolean> {
                       name: index.name};
     let success = true;
     let dbResp = null;
-    // try {dbResp = await todosNanoAsAdmin.request(
-    //     { db: couchDatabase,
-    //       method: 'POST',
-    //       path: "_index",
-    //       body: newIndex,
-
-    //     }
-    // )}
     try {dbResp = await todosDBAsAdmin.createIndex(newIndex)}
     catch(err) {log.error("Error creating index ",index.name, "Error:",err); success=false}
     log.debug("Response from create index:",dbResp)
@@ -979,10 +971,49 @@ async function createStandardIndexes(): Promise<boolean> {
     return success;
 }
 
+async function createReplicationFilter(): Promise<boolean> {
+    let success=true;
+    let dbresp = null;
+    let ddoc = {
+        "_id" : "_design/replfilter",
+        "filters": {
+            "by_user" : function(doc,req) {
+                if (doc._id.startsWith("_design")) {return true}
+                switch (doc.type) {
+                    case "item":
+                        break;
+                    case "list":
+                        break;
+                    case "listgroup":
+                        break;
+                    case "settings":
+                        break;
+                    case "recipe":
+                        break;
+                    case "globalitem":
+                        break;
+                    case "category":
+                        break;
+                    case "uom":
+                        break;
+                    case "dbuuid":
+                        break;
+                    default:
+                        break;
+                } 
+            }
+        }
+    }
+
+    return success;
+}
+
+
 async function checkAndCreateViews() {
     await createConflictsView();
     await createUtilitiesViews();
     await createStandardIndexes();
+    await createReplicationFilter();
 }
 
 async function checkJWTKeys() {
