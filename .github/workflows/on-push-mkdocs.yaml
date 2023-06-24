@@ -10,6 +10,9 @@ on:
        - 'mkdocs/**'
 permissions:
   contents: write
+defaults:
+  run:
+    working-directory: mkdocs  
 jobs:
   deploy:
     runs-on: ubuntu-latest
