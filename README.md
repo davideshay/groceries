@@ -23,5 +23,5 @@ One of my children has a very sincere and distinct preference for clementines ov
 ## FULL DOCUMENTATION
 
 Full documentation for Specifically Clementines
-![Full Documentation](https://davideshay.github.io/groceries/)
+[Full Documentation](https://davideshay.github.io/groceries/)
 
