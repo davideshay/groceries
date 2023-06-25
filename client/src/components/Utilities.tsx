@@ -1,6 +1,6 @@
 import { CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
 import { initUsersInfo, ListCombinedRows, RowType, UserIDList, UserInfo, UsersInfo } from './DataTypes';
-import { ListGroupDoc, ListGroupDocInit, UomDoc } from './DBSchema';
+import { ListGroupDoc, ListGroupDocInit } from './DBSchema';
 import { cloneDeep } from 'lodash';
 import { DBCreds} from './RemoteDBState';
 import { PouchResponse, PouchResponseInit } from './DataTypes';

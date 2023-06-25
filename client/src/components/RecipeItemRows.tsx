@@ -1,12 +1,11 @@
 import { useContext } from "react";
 import { GlobalDataContext } from "./GlobalDataProvider";
-import { translatedItemName, translatedUOMName, translatedUOMShortName } from "./translationUtilities";
+import { translatedItemName, translatedUOMShortName } from "./translationUtilities";
 import { RecipeDoc, UomDoc } from "./DBSchema";
 import { IonButton, IonCheckbox, IonCol, IonGrid, IonIcon, IonItem, IonRow } from "@ionic/react";
 import { useTranslation } from "react-i18next";
 import { cloneDeep } from "lodash";
 import { pencilOutline, trashOutline } from "ionicons/icons";
-import log from "loglevel";
 let fracty = require('fracty');
 
 type RecipeItemRowProps = {
