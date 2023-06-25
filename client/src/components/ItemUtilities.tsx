@@ -7,6 +7,7 @@ import { cloneDeep } from 'lodash';
 import { t } from 'i18next';
 import { translatedCategoryName, translatedItemName, translatedUOMShortName } from './translationUtilities';
 import { isEmpty } from 'lodash';
+import { getListGroupIDFromListOrGroupID } from './Utilities';
 
 export function getGroupIDForList(listID: string, listDocs: ListDocs): string | null {
     let retGID = null;
@@ -131,6 +132,7 @@ function findRightList(itemDoc: ItemDoc, listType: RowType, listOrGroupID: strin
 export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRow[], categoryDocs: CategoryDoc[], uomDocs: UomDoc[], listType: RowType, listOrGroupID: string | null, curCategoryRows: CategoryRows, categoryColors: CategoryColors) : [ItemRows, CategoryRows] {
     let itemRows: Array<ItemRow> =[];
     let categoryRows: Array<CategoryRow> = [];
+    let listGroupID = getListGroupIDFromListOrGroupID(String(listOrGroupID), listCombinedRows);
     let listRow=listCombinedRows.find((el: ListCombinedRow) => (el.rowType === listType && el.listOrGroupID === listOrGroupID));
     if (listRow === undefined) {return [itemRows,categoryRows]};
     let sortedItemDocs: ItemDocs = cloneDeep(itemDocs);
@@ -174,7 +176,7 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
         itemRow.quantity =  list.hasOwnProperty("quantity") ? list.quantity : 0;
         if (!isEmpty(list.note)) {itemRow.hasNote = true;}
         const uomName = list.hasOwnProperty("uomName") ? list.uomName : null;
-        let uomDesc=translatedUOMShortName(uomName,uomDocs,itemRow.quantity)
+        let uomDesc=translatedUOMShortName(uomName,uomDocs,String(listGroupID),itemRow.quantity)
         itemRow.uomDesc = uomDesc;
 
         let quantityUOMDesc = "";

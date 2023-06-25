@@ -22,7 +22,7 @@ const systemListCombinedRow : ListCombinedRow = {
     }
 }
 
-export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, remoteDBCreds: DBCreds) : {listRows: ListRow[], listCombinedRows: ListCombinedRows} {
+export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, remoteDBCreds: DBCreds) : {listRows: ListRow[], listCombinedRows: ListCombinedRows, recipeListGroup: string | null} {
     let curListDocs: ListDocs = cloneDeep(listDocs);
     let newListRows: ListRow[] = [];
     curListDocs.forEach((listDoc) => {
@@ -122,7 +122,7 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
     })
     }
     newCombinedRows.push(systemListCombinedRow);
-    
-    return ({listRows: newListRows, listCombinedRows: newCombinedRows});
+    let recipeLG = newCombinedRows.find(lcr => (lcr.listGroupRecipe && lcr.listGroupOwner === remoteDBCreds.dbUsername));
+    return ({listRows: newListRows, listCombinedRows: newCombinedRows, recipeListGroup: (recipeLG === undefined ? null : recipeLG.listGroupID)});
   }
   

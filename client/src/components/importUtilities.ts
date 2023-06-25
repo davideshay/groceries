@@ -178,10 +178,10 @@ async function createTandoorRecipe(recipeObj: TandoorRecipe, db: PouchDB.Databas
 
 function findMatchingUOM(uom: string, globalData: GlobalDataState): string {
     if (uom === null || uom === undefined) {return ""};
-    let foundUOM = globalData.uomDocs.find(u => ( ["system","recipe"].includes(String(u.listGroupID)) && (u.description.toUpperCase() === uom.toUpperCase() || u.pluralDescription.toUpperCase() === uom.toUpperCase())));
+    let foundUOM = globalData.uomDocs.find(u => ( ["system",globalData.recipeListGroup].includes(String(u.listGroupID)) && (u.description.toUpperCase() === uom.toUpperCase() || u.pluralDescription.toUpperCase() === uom.toUpperCase())));
     if (foundUOM === undefined) {
         foundUOM = globalData.uomDocs.find(u => {
-            if (!["system","recipe"].includes(String(u.listGroupID))) {return false}
+            if (!["system",globalData.recipeListGroup].includes(String(u.listGroupID))) {return false}
             let foundAlt = false;
             if (u.hasOwnProperty("alternates") && u.alternates !== null) {
                 let upperAlternates = u.alternates!.map(el => (el.replace(/\W|_/g, '').toUpperCase()))
@@ -198,7 +198,7 @@ function findMatchingUOM(uom: string, globalData: GlobalDataState): string {
         }
     }
     if (foundUOM === undefined) {
-        let translatedUOM = globalData.uomDocs.find(u=> ((t("uom."+u.name,{count:1})).toLocaleUpperCase() === uom.toLocaleUpperCase() ) || (t("uom."+u.name,{count: 2}).toLocaleUpperCase() === uom.toLocaleUpperCase()) );
+        let translatedUOM = globalData.uomDocs.find(u=> ( ["system",globalData.recipeListGroup].includes(u.listGroupID) && (t("uom."+u.name,{count:1})).toLocaleUpperCase() === uom.toLocaleUpperCase() ) || (t("uom."+u.name,{count: 2}).toLocaleUpperCase() === uom.toLocaleUpperCase()) );
         if (translatedUOM === undefined) {
             return "";
         } else {

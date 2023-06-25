@@ -123,17 +123,14 @@ export async function initialSetupActivities(db: PouchDB.Database, username: str
     let totalDocs: number = 0;
     try {totalDocs = (await db.info()).doc_count}
     catch(err) {log.error("Cannot retrieve doc count from local database"); return false;}
-    log.debug("SETUP: got Doc Count");
     let listGroupDocs: PouchDB.Find.FindResponse<{}>
     try {listGroupDocs = await db.find({ use_index:"stdTypeOwnerDefault",selector: { type: "listgroup", listGroupOwner: username},
          limit: totalDocs});}
     catch(err) {log.error("Cannot retrieve list groups from local database"); return false;}
-    log.debug("SETUP: List Groups Retrieved",listGroupDocs);
     let recipeGroupFound = false;
     let nonRecipeGroupFound = false;
     if (listGroupDocs.docs.length !== 0) {
         for (const lgd of listGroupDocs.docs) {
-            log.debug("Checking listgroup: ",lgd);
             if ((lgd as ListGroupDoc).recipe) { recipeGroupFound = true} else { nonRecipeGroupFound=true}
         }
     }
@@ -192,12 +189,6 @@ export function getRowTypeFromListOrGroupID(listOrGroupID: string, listCombinedR
     let newListRow = listCombinedRows.find(lcr => lcr.listOrGroupID === listOrGroupID);
     if (newListRow === undefined) {return null}
     else { return newListRow.rowType}
-}
-
-export function getUOMIDFromShortName(uomName: string, uomDocs: UomDoc[]) : string | null {
-    let foundUOM = uomDocs.find(uom => (uom.name.toUpperCase() === uomName.toUpperCase()));
-    if (foundUOM === undefined) { return null}
-    else { return (foundUOM._id as string)}
 }
 
 function startLogging(level: string) {

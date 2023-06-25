@@ -34,7 +34,7 @@ const GlobalItem: React.FC<HistoryProps> = (props: HistoryProps) => {
 };
   
   screenLoading.current=false;
-  let curUOMItem : UomDoc | undefined = (globalData.uomDocs as UomDoc[]).find((uom) => (uom.name === globalItemDoc.defaultUOM));
+  let curUOMItem : UomDoc | undefined = (globalData.uomDocs as UomDoc[]).find((uom) => (uom.listGroupID=== "system" && uom.name === globalItemDoc.defaultUOM));
   let curUOM = (curUOMItem === undefined) ? t("general.undefined")  :  translatedUOMName(curUOMItem._id as string ,curUOMItem.description, curUOMItem.pluralDescription);
   let curCategoryItem : CategoryDoc | undefined = (globalData.categoryDocs as CategoryDoc[]).find((cat) => (cat._id === globalItemDoc.defaultCategoryID));
   let curCategory = (curCategoryItem === undefined) ? t("general.undefined") : translatedCategoryName(curCategoryItem._id,curCategoryItem.name)       ;

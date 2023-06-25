@@ -229,7 +229,7 @@ const Item: React.FC = (props) => {
   async function addNewUOM(listGroupID: string, uomData: UomDoc) {
     let alreadyFound = false;
     (globalData.uomDocs as UomDoc[]).forEach((uom) => {
-      if (["system",] && uom.name.toUpperCase() === uomData.name.toUpperCase()) {alreadyFound=true;}
+      if (["system",listGroupID].includes(String(uom.listGroupID)) && uom.name.toUpperCase() === uomData.name.toUpperCase()) {alreadyFound=true;}
     });
     if (alreadyFound) {
       presentToast({message: t("error.uom_exists"), duration: 1500, position: "middle"});
@@ -246,7 +246,7 @@ const Item: React.FC = (props) => {
     }
     alreadyFound = false;
     (globalData.uomDocs as UomDoc[]).forEach((uom) => {
-      if (uom.description.toUpperCase() === uomData.description.toUpperCase()) {alreadyFound=true;}
+      if (["system",listGroupID].includes(String(uom.listGroupID)) && uom.description.toUpperCase() === uomData.description.toUpperCase()) {alreadyFound=true;}
     });
     if (alreadyFound) {
       presentToast({message: t("error.uom_description_exists"), duration: 1500, position: "middle"});
@@ -258,7 +258,7 @@ const Item: React.FC = (props) => {
     }
     alreadyFound = false;
     (globalData.uomDocs as UomDoc[]).forEach((uom) => {
-      if (uom.pluralDescription.toUpperCase() === uomData.pluralDescription.toUpperCase()) {alreadyFound=true;}
+      if (["system",listGroupID].includes(String(uom.listGroupID)) && uom.pluralDescription.toUpperCase() === uomData.pluralDescription.toUpperCase()) {alreadyFound=true;}
     });
     if (alreadyFound) {
       presentToast({message: t("error.uom_plural_description_exists"), duration: 1500, position: "middle"});

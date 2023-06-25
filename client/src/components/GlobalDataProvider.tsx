@@ -20,6 +20,7 @@ export type GlobalDataState = {
     listGroupDocs: ListGroupDocs,
     listGroupsLoading: boolean,
     listGroupError: PouchDB.Core.Error | null,
+    recipeListGroup: string | null,
     categoryDocs: CategoryDocs,
     categoryLoading: boolean,
     categoryError: PouchDB.Core.Error | null,
@@ -59,6 +60,7 @@ export const initialGlobalDataState: GlobalDataState = {
     listGroupDocs: [],
     listGroupsLoading: false,
     listGroupError: null,
+    recipeListGroup: null,
     categoryDocs: [],
     categoryLoading: false,
     categoryError: null,
@@ -85,6 +87,7 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
     const [ listRows, setListRows ] = useState<ListRow[]>();
     const [ listCombinedRows, setListCombinedRows] = useState<ListCombinedRows>();
     const [ listRowsLoaded, setListRowsLoaded] = useState(false);
+    const [ recipeListGroup, setRecipeListGroup] = useState<string|null>(null);
     const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
     const [ dataReloadStatus, setDataReloadStatus] = useState<DataReloadStatus>(DataReloadStatus.ReloadNeeded);
 
@@ -164,9 +167,10 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
         if (!listsLoading && !listGroupsLoading && 
                 (remoteDBState.initialSyncComplete || !remoteDBState.dbServerAvailable)) {
             setListRowsLoaded(false);
-            const { listRows: localListRows, listCombinedRows: localListCombinedRows} = getListRows(listDocs as ListDocs,listGroupDocs as ListGroupDocs,remoteDBCreds)
+            const { listRows: localListRows, listCombinedRows: localListCombinedRows, recipeListGroup: localRecipeListGroup} = getListRows(listDocs as ListDocs,listGroupDocs as ListGroupDocs,remoteDBCreds)
             setListRows(localListRows);
             setListCombinedRows(localListCombinedRows);
+            setRecipeListGroup(localRecipeListGroup);
             setListRowsLoaded(true);
         }
     },[listsLoading, listDocs, listGroupDocs, listGroupsLoading, remoteDBCreds, remoteDBState.workingOffline, remoteDBState.initialSyncComplete, remoteDBState.dbServerAvailable])
@@ -208,6 +212,7 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
             }),
             listGroupsLoading,
             listGroupError,
+            recipeListGroup,
             categoryDocs: (categoryDocs as CategoryDocs).sort(function (a,b) {
                 return translatedCategoryName(a._id,a.name).toUpperCase().localeCompare(translatedCategoryName(b._id,b.name).toUpperCase())
             }),

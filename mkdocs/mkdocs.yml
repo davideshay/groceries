@@ -15,6 +15,7 @@ nav:
  - Installation Guide:
     - Key Concepts: installation/key-concepts.md
     - Installation: installation/installation.md
+    - Alexa Support: installation/alexa.md
 
 theme:
   name: material

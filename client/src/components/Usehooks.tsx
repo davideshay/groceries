@@ -4,7 +4,7 @@ import { usePouch, useFind } from 'use-pouchdb'
 import { cloneDeep, pull } from 'lodash';
 import { RemoteDBStateContext } from './RemoteDBState';
 import { FriendRow,InitFriendRow, ResolvedFriendStatus, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType } from './DataTypes';
-import { FriendDocs,FriendStatus, ListDoc, ListDocs, ItemDocs, ItemDoc, ItemList, ItemListInit, ConflictDocs, RecipeDoc} from './DBSchema';
+import { FriendDocs,FriendStatus, ListDoc, ListDocs, ItemDocs, ItemDoc, ItemList, ItemListInit, ConflictDocs } from './DBSchema';
 import { GlobalStateContext } from './GlobalState';
 import { adaptResultToBase64, getUsersInfo} from './Utilities';
 import { getCommonKey } from './ItemUtilities';
