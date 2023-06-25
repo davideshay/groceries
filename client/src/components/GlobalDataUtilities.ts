@@ -10,7 +10,7 @@ const systemListCombinedRow : ListCombinedRow = {
     listOrGroupID: "system",
     listGroupID: "system",
     listGroupName: "Global",
-    listGroupDefault: false,
+    listGroupRecipe: false,
     listGroupOwner: "system",
     hidden: true,
     listDoc: {
@@ -28,14 +28,14 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
     curListDocs.forEach((listDoc) => {
         let listGroupID=null;
         let listGroupName="";
-        let listGroupDefault=false;
+        let listGroupRecipe=false;
         let listGroupOwner = "";
         for (let i = 0; i < listGroupDocs.length; i++) {
             const lgd = (listGroupDocs[i] as ListGroupDoc);
             if ( listDoc.listGroupID === lgd._id ) {
                 listGroupID=lgd._id
                 listGroupName=lgd.name
-                listGroupDefault=lgd.default;
+                listGroupRecipe=lgd.recipe;
                 listGroupOwner=lgd.listGroupOwner;
             }
         }
@@ -43,7 +43,7 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
         let listRow: ListRow ={
             listGroupID: listGroupID,
             listGroupName: listGroupName,
-            listGroupDefault: listGroupDefault,
+            listGroupRecipe: listGroupRecipe,
             listGroupOwner: listGroupOwner,
             listDoc: listDoc,
         }
@@ -51,8 +51,7 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
     });
 
     newListRows.sort(function (a: ListRow, b: ListRow) {
-    return ( (Number(b.listGroupDefault) - Number(a.listGroupDefault)) ||
-            a.listGroupName.toLocaleUpperCase().localeCompare(b.listGroupName.toLocaleUpperCase()) ||
+    return (a.listGroupName.toLocaleUpperCase().localeCompare(b.listGroupName.toLocaleUpperCase()) ||
             a.listDoc.name.toLocaleUpperCase().localeCompare(b.listDoc.name.toLocaleUpperCase()));
     })
 
@@ -74,7 +73,7 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
         listGroupID : String(listGroup._id),
         listGroupName : listGroup.name,
         listGroupOwner: listGroup.listGroupOwner,
-        listGroupDefault: listGroup.default,
+        listGroupRecipe: listGroup.recipe,
         hidden: false,
         listDoc: ListDocInit
         }
@@ -90,7 +89,7 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
             listGroupID: listRow.listGroupID,
             listGroupName: listRow.listGroupName,
             listGroupOwner: listRow.listGroupOwner,
-            listGroupDefault: listRow.listGroupDefault,
+            listGroupRecipe: listRow.listGroupRecipe,
             hidden: false,
             listDoc: listRow.listDoc
         }
@@ -104,7 +103,7 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
     let groupRow: ListCombinedRow = {
         rowType : RowType.listGroup, rowName : testRow.listGroupName,
         rowKey: "G-null", listOrGroupID: null, listGroupID : null,
-        listGroupName : testRow.listGroupName, listGroupDefault: false, listGroupOwner: null,
+        listGroupName : testRow.listGroupName, listGroupRecipe: false, listGroupOwner: null,
         hidden: false,
         listDoc: ListDocInit
     }
@@ -114,7 +113,7 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
         let listlistRow: ListCombinedRow = {
             rowType: RowType.list, rowName: newListRow.listDoc.name,
             rowKey: "L-"+newListRow.listDoc._id, listOrGroupID: String(newListRow.listDoc._id),listGroupID: null,
-            listGroupName: newListRow.listGroupName, listGroupOwner: null, listGroupDefault: false,
+            listGroupName: newListRow.listGroupName, listGroupOwner: null, listGroupRecipe: false,
             hidden: false,
             listDoc: newListRow.listDoc
         }

@@ -1,4 +1,5 @@
-# Specifically Clementines App - Open Source / Self Hosted
+# Specifically Clementines App
+# Open Source / Self Hosted Grocery List (Formerly "Groceries")
 
 ## Why another grocery list app?
 

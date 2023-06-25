@@ -115,7 +115,6 @@ export const en_translations =
         "changing_selected_listgroup_detail":"List group has been updated and not saved. Do you still want to change list groups?",
         "editing_listgroup":"Editing List Group:",
         "creating_listgroup":"Creating new list group",
-        "is_default_listgroup_for_user":"Is default list group for this user",
         "loading_listgroups": "Loading List Groups...",
         "listgroups": "List Groups",
         "all_lists": "All Lists",
@@ -230,7 +229,8 @@ export const en_translations =
         "all_category_info_lost": "All information on this category will be lost.",
         "deleting_category": "Deleting Category...",
         "deleting_list": "Deleting List...",
-        "deleting_uom": "Deleting Unit of Measure..."
+        "deleting_uom": "Deleting Unit of Measure...",
+        "is_recipe_listgroup_for_user":"Is recipe list group for this user",
      },
      "error" : {
         "invalid_dbuuid" : "Invalid Database Unique Identifier",

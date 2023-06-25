@@ -115,7 +115,6 @@ export const de_translations =
         "changing_selected_listgroup_detail":"Die Listengruppe wurde aktualisiert und nicht gespeichert. Möchten Sie trotzdem die Listengruppen ändern?",
         "editing_listgroup":"Listengruppe bearbeiten:",
         "creating_listgroup":"Neue Listengruppe erstellen",
-        "is_default_listgroup_for_user":"Ist die Standard-Listengruppe für diesen Benutzer",
         "loading_listgroups": "Listengruppen werden geladen...",
         "listgroups": "Listengruppen",
         "all_lists": "Alle Listen",
@@ -230,7 +229,8 @@ export const de_translations =
         "all_category_info_lost": "Alle Informationen zu dieser Kategorie gehen verloren.",
         "deleting_category": "Kategorie wird gelöscht...",
         "deleting_list": "Liste wird gelöscht...",
-        "deleting_uom": "Maßeinheit wird gelöscht..."
+        "deleting_uom": "Maßeinheit wird gelöscht...",
+        "is_recipe_listgroup_for_user":"Ist die Rezeptliste für diesen Benutzer gruppiert?",
         },
     "error": {
         "invalid_dbuuid" : "Ungültiger Datenbank-Identifier",

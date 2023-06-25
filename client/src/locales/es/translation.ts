@@ -115,7 +115,6 @@ export const es_translations =
         "changing_selected_listgroup_detail":"El grupo de lista se ha actualizado y no se ha guardado. ¿Aún quieres cambiar de grupo de lista?",
         "editing_listgroup":"Editando Grupo de Lista:",
         "creating_listgroup":"Creando nuevo grupo de lista",
-        "is_default_listgroup_for_user":"Es el grupo de lista predeterminado para este usuario",
         "loading_listgroups": "Cargando Grupos de Lista...",
         "listgroups": "Grupos de Lista",
         "all_lists": "Todas las Listas",
@@ -230,7 +229,8 @@ export const es_translations =
         "all_category_info_lost": "Se perderá toda la información de esta categoría.",
         "deleting_category": "Eliminando categoría...",
         "deleting_list": "Eliminando lista...",
-        "deleting_uom": "Eliminando unidad de medida..."
+        "deleting_uom": "Eliminando unidad de medida...",
+        "is_default_listgroup_for_user":"¿Es la lista de recetas un grupo para este usuario?",
          },
      "error": {
         "invalid_dbuuid" : "Identificador único de base de datos inválido",

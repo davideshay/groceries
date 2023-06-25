@@ -372,11 +372,11 @@ function deletePrompt() {
                   errorText={formErrors[ErrorLocation.Name].errorMessage}>
               </IonInput>
             </IonItem>
-            <IonItem key="defaultlistgroup">
+            <IonItem key="recipelistgroup">
               <IonCheckbox labelPlacement="end" justify='start'
-                  onIonChange={(evt) => {setPageState(prevState => ({...prevState,listGroupDoc: {...pageState.listGroupDoc, default: evt.detail.checked}}))}}
-                  checked={pageState.listGroupDoc.default} disabled={!iAmListOwner}>
-                  {t("general.is_default_listgroup_for_user")}</IonCheckbox>
+                  onIonChange={(evt) => {setPageState(prevState => ({...prevState,listGroupDoc: {...pageState.listGroupDoc, recipe: evt.detail.checked}}))}}
+                  checked={pageState.listGroupDoc.recipe} disabled={!iAmListOwner}>
+                  {t("general.is_recipe_listgroup_for_user")}</IonCheckbox>
             </IonItem>
             <IonItemGroup key="assignedlists">
               {assignedListsElem}
