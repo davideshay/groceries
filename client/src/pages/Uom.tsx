@@ -3,7 +3,7 @@ import { IonContent, IonPage, IonButton, IonList, IonInput,
 import { useParams } from 'react-router-dom';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteGenericDocument,
-    useGetOneDoc, useItems, useRecipes } from '../components/Usehooks';
+    useGetOneDoc, useItems } from '../components/Usehooks';
 import { cloneDeep } from 'lodash';
 import { PouchResponse, HistoryProps, RowType, ListCombinedRows} from '../components/DataTypes';
 import { ItemDoc, UomDoc, InitUomDoc } from '../components/DBSchema';
@@ -50,7 +50,7 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
   const deleteUomFromRecipes = useDeleteUomFromRecipes();
   const { doc: uomDoc, loading: uomLoading} = useGetOneDoc(routeID);
   const { dbError: itemError, itemRowsLoaded, itemRows } = useItems({selectedListGroupID: null, isReady: true, needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
-  const { recipesError,recipesLoading,recipeDocs} = useRecipes()
+  const { recipesError,recipesLoading,recipeDocs} = useContext(GlobalDataContext)
   const {goBack} = useContext(NavContext);
   const screenLoading = useRef(true);
   const globalData = useContext(GlobalDataContext);

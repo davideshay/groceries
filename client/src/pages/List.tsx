@@ -73,7 +73,6 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   useEffect( () => {
     if (!listsLoading && listRowsLoaded && !categoryLoading) {
       if (mode === "new" && pageState.needInitListDoc) {
-        let initCategories= categoryDocs.length > 0 ? categoryDocs.map(cat => String(cat._id)) : [];
         let initListDoc : ListDoc = cloneDeep(ListDocInit);
         let newListGroupOwner: string|null = null;
         if (listCombinedRows.length > 0) {
@@ -82,6 +81,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
         } else {
           initListDoc.listGroupID=null
         }
+        let initCategories= categoryDocs.length > 0 ? categoryDocs.filter(cat => (["system",initListDoc.listGroupID].includes(cat.listGroupID))).map(cat => String(cat._id)) : [];
         initListDoc.categories = initCategories;
         setPageState(prevState => ({...prevState,listDoc: initListDoc,listGroupID: initListDoc.listGroupID, listGroupOwner: newListGroupOwner, needInitListDoc: false, changesMade: false}))
       }
@@ -119,7 +119,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.must_enter_a_name"), hasError: true }}));
       return false;
     }
-    log.debug("listRows:",listRows,"page name",pageState.listDoc.name,"filtered",listRows.filter(lr => (lr.listDoc.name.toUpperCase() === pageState.listDoc.name && lr.listDoc._id !== pageState.listDoc._id)));
+//    log.debug("listRows:",listRows,"page name",pageState.listDoc.name,"filtered",listRows.filter(lr => (lr.listDoc.name.toUpperCase() === pageState.listDoc.name && lr.listDoc._id !== pageState.listDoc._id)));
     if (listRows.filter(lr => (lr.listDoc.name.toUpperCase() === pageState.listDoc.name.toUpperCase() && lr.listGroupID === pageState.listDoc.listGroupID && lr.listDoc._id !== pageState.listDoc._id)).length > 0) {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.list_already_exists"), hasError: true }}));
       return false;
@@ -188,9 +188,21 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
     }  
   }
 
+  function getNewCategories(existingCategories: string[],newListGroupID: string) {
+    let newCategories: string[] = [];
+    for (let i = 0; i < existingCategories.length; i++) {
+      const existingCat = existingCategories[i];
+      if (categoryDocs.filter(cat => (["system",newListGroupID].includes(String(cat.listGroupID)))).map(cat => (String(cat._id))).includes(existingCat)) {
+        newCategories.push(existingCat);
+      }
+    }
+    return newCategories;
+  }
+
   function updateListGroup(updGroup: string) {
     if (pageState.listGroupID !== updGroup) {
-      setPageState(prevState => ({...prevState, changesMade: true, listDoc: {...prevState.listDoc, listGroupID: updGroup}, listGroupID: updGroup}))
+      let newCategories = getNewCategories(pageState.listDoc.categories,updGroup);
+      setPageState(prevState => ({...prevState, changesMade: true, listDoc: {...prevState.listDoc, categories: newCategories, listGroupID: updGroup}, listGroupID: updGroup}))
     }
   }
 
@@ -271,10 +283,10 @@ function deletePrompt() {
   }
   categoryElem.push(catItemDivider(true,categoryLines));
   categoryLines=[];
-  for (let i = 0; i < categoryDocs.length; i++) {
-    const inList = pageState.listDoc.categories.includes(String(categoryDocs[i]._id));
+  for (const category of categoryDocs.filter(cat => (["system",pageState.listGroupID].includes(cat.listGroupID)))) {
+    const inList = pageState.listDoc.categories.includes(String(category._id));
     if (!inList) {
-      categoryLines.push(catItem(String(categoryDocs[i]._id),false))
+      categoryLines.push(catItem(String(category._id),false))
     }
   }
   if (categoryLines.length > 0) {
@@ -354,7 +366,7 @@ function deletePrompt() {
             </IonItem>
             <IonItem key="listgroup">
               <IonSelect disabled={mode!=="new"} key="listgroupsel" label={t("general.list_group") as string} labelPlacement='stacked' interface="popover" onIonChange={(e) => updateListGroup(e.detail.value)} value={pageState.listDoc.listGroupID}>
-                { (cloneDeep(listCombinedRows) as ListCombinedRows).filter(lr => (lr.rowType === RowType.listGroup && !lr.hidden)).map((lr) => 
+                { (cloneDeep(listCombinedRows) as ListCombinedRows).filter(lr => (lr.rowType === RowType.listGroup && !lr.hidden && !lr.listGroupRecipe)).map((lr) => 
                   ( <IonSelectOption key={lr.rowKey} value={lr.listGroupID}>{lr.listGroupName}</IonSelectOption> )
                 )}
               </IonSelect>

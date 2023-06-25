@@ -3,7 +3,7 @@ import { IonContent, IonPage, IonButton, IonList, IonInput,
 import { useParams } from 'react-router-dom';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteGenericDocument,
-   useGetOneDoc, useItems, useRecipes } from '../components/Usehooks';
+   useGetOneDoc, useItems } from '../components/Usehooks';
 import { cloneDeep } from 'lodash';
 import { PouchResponse, HistoryProps, RowType} from '../components/DataTypes';
 import { RecipeDoc, InitRecipeDoc, RecipeItem, ItemDoc, ItemDocInit, RecipeInstruction } from '../components/DBSchema';
@@ -58,7 +58,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
   const createRecipe = useCreateGenericDocument();
   const deleteRecipe = useDeleteGenericDocument();
   const { doc: recipeDoc, loading: recipeLoading, dbError: recipeError} = useGetOneDoc(routeID);
-  const { recipeDocs, recipesLoading, recipesError } = useRecipes();
+  const { recipeDocs, recipesLoading, recipesError } = useContext(GlobalDataContext);
   const { dbError: itemError, itemRowsLoaded } = useItems({selectedListGroupID: null, isReady: true, 
         needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const {goBack} = useContext(NavContext);

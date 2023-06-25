@@ -56,7 +56,7 @@ const ItemListsModal: React.FC<ModalProps> = (props: ModalProps) => {
         <IonItem>
           <IonSelect label={t('general.category') as string} labelPlacement="stacked" interface="popover" onIonChange={(ev) => props.setModalState(prevState => ({...prevState, itemList: {...prevState.itemList, categoryID: ev.detail.value}}))} value={props.modalState.itemList.categoryID}>
                   <IonSelectOption key="cat-undefined" value={null}>{t('general.uncategorized')}</IonSelectOption>
-                  {globalData.categoryDocs.map((cat) => { return (
+                  {globalData.categoryDocs.filter(cat => (["system",props.stateItemDoc.listGroupID].includes(cat.listGroupID))).map((cat) => { return (
                       <IonSelectOption key={cat._id} value={cat._id}>
                         {translatedCategoryName(cat._id as string,cat.name)}
                       </IonSelectOption>
@@ -70,7 +70,7 @@ const ItemListsModal: React.FC<ModalProps> = (props: ModalProps) => {
           <IonInput key="modal-qty" label={t("general.quantity") as string} labelPlacement="stacked" type="number" min="0" max="9999" value={props.modalState.itemList.quantity} onIonInput={(e) => props.setModalState(prevState => ({...prevState,itemList: {...prevState.itemList,quantity: Number(e.detail.value)}}))}></IonInput>
           <IonSelect label={t('general.uom_abbrev') as string} labelPlacement="stacked" interface="popover" onIonChange={(ev) => props.setModalState(prevState => ({...prevState, itemList: {...prevState.itemList, uomName: ev.detail.value}}))} value={props.modalState.itemList.uomName}>
                     <IonSelectOption key="uom-undefined" value={null}>{t('general.no_uom')}</IonSelectOption>
-                    {globalData.uomDocs.map((uom) => (
+                    {globalData.uomDocs.filter(uom => (["system",props.stateItemDoc.listGroupID].includes(uom.listGroupID))).map((uom) => (
                       <IonSelectOption key={uom.name} value={uom.name}>
                         {translatedUOMName(uom._id as string,uom.description,uom.pluralDescription)}
                       </IonSelectOption>

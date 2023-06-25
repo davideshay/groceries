@@ -400,24 +400,6 @@ export function useConflicts() : { conflictsError: boolean, conflictDocs: Confli
   return({conflictsError: dbError !== null, conflictDocs: (conflictDocs as ConflictDocs), conflictsLoading});
 }
 
-export function useRecipes() : { recipesError: boolean, recipeDocs: RecipeDoc[], recipesLoading: boolean} {
-  const { docs: recipeDocs, loading: recipesLoading, error: dbError} = useFind({
-    index: "stdType",
-    selector: { type: "recipe" },
-  });
-  const [sortedRecipes,setSortedRecipes] = useState<RecipeDoc[]>()
-
-  useEffect( () => {
-    let sorted=cloneDeep(recipeDocs) as RecipeDoc[];
-    sorted.sort(function(a,b) {
-      return a.name.toUpperCase().localeCompare(b.name.toUpperCase())
-    });
-    setSortedRecipes(sorted);
-  },[recipeDocs,recipesLoading])
-
-  return ({recipesError: dbError !== null, recipeDocs: (sortedRecipes as RecipeDoc[]), recipesLoading})
-}
-
 export function useAddListToAllItems() {
   const db = usePouch();
   return useCallback(

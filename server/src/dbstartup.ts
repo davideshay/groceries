@@ -576,9 +576,10 @@ async function updateSystemUOM(uomDoc: UomDoc): Promise<boolean> {
     return success;             
 }
 
-async function updateCustomUOM(uomDoc: UomDoc, itemDocs: ItemDocs, recipeDocs: RecipeDoc[]): Promise<boolean> {
+async function updateCustomUOM(uomDoc: UomDoc, itemDocs: ItemDocs, recipeDocs: RecipeDoc[], listGroupDocs: ListGroupDocs): Promise<boolean> {
     let success = true;
     let listGroups = new Set<string>();
+    let recipeListGroups = listGroupDocs.filter(lgd => (lgd.recipe));
     for (let i = 0; i < itemDocs.length; i++) {
         const item = itemDocs[i];
         if (item.lists.filter(il => (il.uomName === uomDoc.name)).length > 0) {
@@ -601,14 +602,19 @@ async function updateCustomUOM(uomDoc: UomDoc, itemDocs: ItemDocs, recipeDocs: R
                 success = false;}
             if (success) { log.info("Assigned unused by item UOM",uomDoc.description, " to the unused list group ");}   
         } else {
-            let newUOMDoc: UomDoc = cloneDeep(uomDoc);
-            newUOMDoc.listGroupID = "recipe";
-            newUOMDoc.updatedAt = (new Date().toISOString());
-            let dbResp = null;
-            try { dbResp = await todosDBAsAdmin.insert(newUOMDoc)}
-            catch(err) { log.error("Couldn't set UOM ",uomDoc.description," to recipe list group");
-                success = false;}
-            if (success) { log.info("Assigned unused by item UOM",uomDoc.description, " to the recipe list group ");}   
+            // custom uom, used in a recipe but not by any items ==> add to every recipe listgroup
+            for (const recipeLG of recipeListGroups) {
+                let newUOMDoc: UomDoc = cloneDeep(uomDoc);
+                delete newUOMDoc._id;
+                delete newUOMDoc._rev;
+                newUOMDoc.listGroupID = String(recipeLG._id);
+                newUOMDoc.updatedAt = (new Date().toISOString());
+                let dbResp = null;
+                try { dbResp = await todosDBAsAdmin.insert(newUOMDoc)}
+                catch(err) { log.error("Couldn't set UOM ",uomDoc.description," to recipe list group ",recipeLG.name, err);
+                    success = false;}
+                if (success) { log.info("Assigned UOM used in ",usedRecipeCount," recipes:",uomDoc.description, " to the recipe list group ",recipeLG.name);}       
+            }
         }
     }
     else {
@@ -922,23 +928,21 @@ async function restructureCategoriesUOMRecipesSchema() {
     let [uomSuccess,foundUOMDocs] = await getLatestUOMDocs();
     if (!uomSuccess) {return false};
     log.info("About to update units of measure with listgroup data. Found: ",foundUOMDocs.length);
-    const recipeq: MangoQuery = { selector: { type: "recipe", name: {$exists: true}}, limit: await totalDocCount(todosDBAsAdmin)};
-    let foundRecipeDocs: MangoResponse<RecipeDoc>;
-    try {foundRecipeDocs = (await todosDBAsAdmin.find(recipeq) as MangoResponse<RecipeDoc>);}
-    catch(err) {log.error("Could not find Recipes during schema update:",err); return false;}
-    log.info("About to create units of measure for Recipes. Found recipes: ",foundRecipeDocs. docs.length);
+    let [recipeSuccess,foundRecipeDocs] = await getLatestRecipeDocs();
+    if (!recipeSuccess) {return false;}
+    log.info("About to create units of measure for Recipes. Found recipes: ",foundRecipeDocs.length);
     for (let i = 0; i < foundUOMDocs.length; i++) {
         const uom = foundUOMDocs[i];
         if (uom && uom._id && uom._id?.startsWith("system:uom:")) {
             updateSuccess = await updateSystemUOM(uom);
         } else {
-            updateSuccess = await updateCustomUOM(uom,foundItemDocs.docs,foundRecipeDocs.docs);
+            updateSuccess = await updateCustomUOM(uom,foundItemDocs.docs,foundRecipeDocs, foundListGroupDocs);
         }
         if (!updateSuccess) {break;}
     }
     log.info("UOMs by item classified/created");
-    updateSuccess = await generateRecipeUOMs(foundRecipeDocs.docs);
-    if (!updateSuccess) {return false};
+//    updateSuccess = await generateRecipeUOMs(foundRecipeDocs);
+//    if (!updateSuccess) {return false};
     log.info("Deleting color field from categories");
     updateSuccess = await deleteColorFieldFromCategories()
     return updateSuccess;

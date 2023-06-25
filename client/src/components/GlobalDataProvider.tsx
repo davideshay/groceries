@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useContext, useCallback} from "react";
 import { useFind} from 'use-pouchdb';
-import { CategoryDocs, GlobalItemDocs, ItemDocs, ListDocs, ListGroupDocs, UomDoc } from "./DBSchema";
+import { CategoryDocs, GlobalItemDocs, ItemDocs, ListDocs, ListGroupDocs, RecipeDoc, UomDoc } from "./DBSchema";
 import { ListCombinedRows, ListRow } from "./DataTypes";
 import { getListRows } from "./GlobalDataUtilities";
 import { RemoteDBStateContext } from "./RemoteDBState";
@@ -26,6 +26,9 @@ export type GlobalDataState = {
     uomDocs: UomDoc[],
     uomLoading: boolean,
     uomError: PouchDB.Core.Error | null,
+    recipeDocs: RecipeDoc[],
+    recipesLoading: boolean,
+    recipesError: PouchDB.Core.Error | null,
     listRowsLoaded: boolean,
     listRows: ListRow[],
     listCombinedRows: ListCombinedRows,
@@ -62,6 +65,9 @@ export const initialGlobalDataState: GlobalDataState = {
     uomDocs: [],
     uomLoading: false,
     uomError: null,
+    recipeDocs: [],
+    recipesLoading: false,
+    recipesError: null,
     listRowsLoaded: false,
     listRows: [],
     listCombinedRows: [],
@@ -123,7 +129,16 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
             }
         });
 
-    const { docs: itemDocs, loading: itemsLoading, error: itemError} = useFind({
+    const { docs: recipeDocs, loading: recipesLoading, error: recipesError} = useFind({
+        index: "stdTypeName",
+        selector: { 
+            "type": "recipe",
+            "name": { "$exists": true },
+            "listGroupID": {"$in": (listGroupDocs.map(lg => (lg._id)))}
+            }
+        });
+    
+        const { docs: itemDocs, loading: itemsLoading, error: itemError} = useFind({
         index: "stdTypeName",
         selector: { 
             "type": "item",
@@ -203,6 +218,11 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
             }),
             uomLoading,
             uomError,
+            recipeDocs: (recipeDocs as RecipeDoc[]).sort(function(a,b) {
+                return a.name.toLocaleUpperCase().localeCompare(b.name.toLocaleUpperCase())
+            }),
+            recipesLoading,
+            recipesError,
             listRows: listRows as ListRow[],
             listRowsLoaded,
             listCombinedRows: listCombinedRows as ListCombinedRows,

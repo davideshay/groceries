@@ -1,19 +1,19 @@
 import { IonContent, IonPage, IonList, IonItem, IonFab,
      IonFabButton, IonIcon, IonFooter, IonButton } from '@ionic/react';
-import { useRef } from 'react';
+import { useContext, useRef } from 'react';
 import { add } from 'ionicons/icons';
 import { HistoryProps } from '../components/DataTypes';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
-import { useRecipes } from '../components/Usehooks';
 import { useHistory } from 'react-router';
+import { GlobalDataContext } from '../components/GlobalDataProvider';
 
 const Recipes: React.FC<HistoryProps> = (props: HistoryProps) => {
   const screenLoading=useRef(true);
   const { t } = useTranslation();
-  const { recipeDocs, recipesLoading, recipesError} = useRecipes();
+  const { recipeDocs, recipesLoading, recipesError} = useContext(GlobalDataContext);
   const history = useHistory()
 
   if (recipesError) { return (

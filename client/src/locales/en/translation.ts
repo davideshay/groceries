@@ -230,7 +230,7 @@ export const en_translations =
         "deleting_category": "Deleting Category...",
         "deleting_list": "Deleting List...",
         "deleting_uom": "Deleting Unit of Measure...",
-        "is_recipe_listgroup_for_user":"Is recipe list group for this user",
+        "is_recipe_listgroup_for_user":"Is a recipe list group",
      },
      "error" : {
         "invalid_dbuuid" : "Invalid Database Unique Identifier",
