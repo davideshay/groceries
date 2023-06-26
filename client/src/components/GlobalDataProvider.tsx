@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useContext, useCallback} from "react";
 import { useFind} from 'use-pouchdb';
-import { CategoryDocs, GlobalItemDocs, ItemDocs, ListDocs, ListGroupDocs, UomDoc } from "./DBSchema";
+import { CategoryDocs, GlobalItemDocs, ItemDocs, ListDocs, ListGroupDocs, RecipeDoc, UomDoc } from "./DBSchema";
 import { ListCombinedRows, ListRow } from "./DataTypes";
 import { getListRows } from "./GlobalDataUtilities";
 import { RemoteDBStateContext } from "./RemoteDBState";
@@ -20,12 +20,16 @@ export type GlobalDataState = {
     listGroupDocs: ListGroupDocs,
     listGroupsLoading: boolean,
     listGroupError: PouchDB.Core.Error | null,
+    recipeListGroup: string | null,
     categoryDocs: CategoryDocs,
     categoryLoading: boolean,
     categoryError: PouchDB.Core.Error | null,
     uomDocs: UomDoc[],
     uomLoading: boolean,
     uomError: PouchDB.Core.Error | null,
+    recipeDocs: RecipeDoc[],
+    recipesLoading: boolean,
+    recipesError: PouchDB.Core.Error | null,
     listRowsLoaded: boolean,
     listRows: ListRow[],
     listCombinedRows: ListCombinedRows,
@@ -56,12 +60,16 @@ export const initialGlobalDataState: GlobalDataState = {
     listGroupDocs: [],
     listGroupsLoading: false,
     listGroupError: null,
+    recipeListGroup: null,
     categoryDocs: [],
     categoryLoading: false,
     categoryError: null,
     uomDocs: [],
     uomLoading: false,
     uomError: null,
+    recipeDocs: [],
+    recipesLoading: false,
+    recipesError: null,
     listRowsLoaded: false,
     listRows: [],
     listCombinedRows: [],
@@ -79,6 +87,7 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
     const [ listRows, setListRows ] = useState<ListRow[]>();
     const [ listCombinedRows, setListCombinedRows] = useState<ListCombinedRows>();
     const [ listRowsLoaded, setListRowsLoaded] = useState(false);
+    const [ recipeListGroup, setRecipeListGroup] = useState<string|null>(null);
     const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
     const [ dataReloadStatus, setDataReloadStatus] = useState<DataReloadStatus>(DataReloadStatus.ReloadNeeded);
 
@@ -123,7 +132,16 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
             }
         });
 
-    const { docs: itemDocs, loading: itemsLoading, error: itemError} = useFind({
+    const { docs: recipeDocs, loading: recipesLoading, error: recipesError} = useFind({
+        index: "stdTypeName",
+        selector: { 
+            "type": "recipe",
+            "name": { "$exists": true },
+            "listGroupID": {"$in": (listGroupDocs.map(lg => (lg._id)))}
+            }
+        });
+    
+        const { docs: itemDocs, loading: itemsLoading, error: itemError} = useFind({
         index: "stdTypeName",
         selector: { 
             "type": "item",
@@ -149,9 +167,10 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
         if (!listsLoading && !listGroupsLoading && 
                 (remoteDBState.initialSyncComplete || !remoteDBState.dbServerAvailable)) {
             setListRowsLoaded(false);
-            const { listRows: localListRows, listCombinedRows: localListCombinedRows} = getListRows(listDocs as ListDocs,listGroupDocs as ListGroupDocs,remoteDBCreds)
+            const { listRows: localListRows, listCombinedRows: localListCombinedRows, recipeListGroup: localRecipeListGroup} = getListRows(listDocs as ListDocs,listGroupDocs as ListGroupDocs,remoteDBCreds)
             setListRows(localListRows);
             setListCombinedRows(localListCombinedRows);
+            setRecipeListGroup(localRecipeListGroup);
             setListRowsLoaded(true);
         }
     },[listsLoading, listDocs, listGroupDocs, listGroupsLoading, remoteDBCreds, remoteDBState.workingOffline, remoteDBState.initialSyncComplete, remoteDBState.dbServerAvailable])
@@ -193,6 +212,7 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
             }),
             listGroupsLoading,
             listGroupError,
+            recipeListGroup,
             categoryDocs: (categoryDocs as CategoryDocs).sort(function (a,b) {
                 return translatedCategoryName(a._id,a.name).toUpperCase().localeCompare(translatedCategoryName(b._id,b.name).toUpperCase())
             }),
@@ -203,6 +223,11 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
             }),
             uomLoading,
             uomError,
+            recipeDocs: (recipeDocs as RecipeDoc[]).sort(function(a,b) {
+                return a.name.toLocaleUpperCase().localeCompare(b.name.toLocaleUpperCase())
+            }),
+            recipesLoading,
+            recipesError,
             listRows: listRows as ListRow[],
             listRowsLoaded,
             listCombinedRows: listCombinedRows as ListCombinedRows,

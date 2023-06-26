@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { GlobalDataContext } from "./GlobalDataProvider";
-import { translatedItemName } from "./translationUtilities";
+import { translatedItemName, translatedUOMShortName } from "./translationUtilities";
 import { RecipeDoc, UomDoc } from "./DBSchema";
 import { IonButton, IonCheckbox, IonCol, IonGrid, IonIcon, IonItem, IonRow } from "@ionic/react";
 import { useTranslation } from "react-i18next";
@@ -44,9 +44,9 @@ const RecipeItemRows: React.FC<RecipeItemRowProps> = (props: RecipeItemRowProps)
       let itemName = translatedItemName(item.globalItemID,item.name,item.name,item.recipeQuantity)
       let uomDesc = "";
       if (item.recipeUOMName !== null && item.recipeUOMName !== "") {
-          const uomDoc = globalData.uomDocs.find((el: UomDoc) => (el.name === item.recipeUOMName && ["system","recipe"].includes(String(el.listGroupID))));
+          const uomDoc = globalData.uomDocs.find((el: UomDoc) => (el.name === item.recipeUOMName && ["system",globalData.recipeListGroup].includes(String(el.listGroupID))));
           if (uomDoc !== undefined) {
-              uomDesc = t("uom."+item.recipeUOMName,{ count: item.recipeQuantity});
+              uomDesc = translatedUOMShortName(item.recipeUOMName,globalData.uomDocs,props.recipeDoc.listGroupID,item.recipeQuantity)
           }
       }
       let quantityUOMDesc = "";

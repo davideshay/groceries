@@ -189,7 +189,8 @@ export interface ListGroupDoc {
   _rev?: string,
   type: string,
   name: string,
-  default: boolean,
+  recipe: boolean,
+  default?: boolean,
   listGroupOwner: string,
   sharedWith: string[];
   updatedAt: string
@@ -200,7 +201,7 @@ export type ListGroupDocs = ListGroupDoc[];
 export const ListGroupDocInit:ListGroupDoc = {
   type: "listgroup",
   name: "",
-  default: false,
+  recipe: false,
   listGroupOwner: "",
   sharedWith: [],
   updatedAt: ""
@@ -280,6 +281,7 @@ export type RecipeDoc = {
   _id?: string,
   _rev?: string,
   type: string,
+  listGroupID: string,
   name: string,
   items: RecipeItem[],
   instructions: RecipeInstruction[],
@@ -288,6 +290,7 @@ export type RecipeDoc = {
 
 export const InitRecipeDoc : RecipeDoc = {
   type: "recipe",
+  listGroupID: "",
   name: "",
   items: [],
   instructions: [],

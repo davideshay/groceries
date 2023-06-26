@@ -95,7 +95,9 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
     let categoryDup=false;
     (globalData.categoryDocs as CategoryDoc[]).forEach((doc) => {
-      if ((["SYSTEM",stateCategoryDoc.listGroupID?.toUpperCase()].includes(doc.listGroupID?.toUpperCase(  ))) && (doc._id !== stateCategoryDoc._id) && (doc.name.toUpperCase() === stateCategoryDoc.name.toUpperCase() || translatedCategoryName(doc._id,doc.name).toUpperCase() === stateCategoryDoc.name.toUpperCase())) {
+      if ((["system",stateCategoryDoc.listGroupID].includes(String(doc.listGroupID))) && 
+          (doc._id !== stateCategoryDoc._id) && 
+          (doc.name.toUpperCase() === stateCategoryDoc.name.toUpperCase() || translatedCategoryName(doc._id,doc.name).toUpperCase() === stateCategoryDoc.name.toUpperCase())) {
         categoryDup = true;
       }
     });

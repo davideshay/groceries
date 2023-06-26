@@ -348,7 +348,7 @@ function deletePrompt() {
   }
 
   let deleteButton=[];
-  if (iAmListOwner) {
+  if (iAmListOwner && !pageState.listGroupDoc.recipe) {
     deleteButton.push(<IonButton key="delete" fill="outline" color="danger"  onClick={() => deletePrompt()}>{t("general.delete")}<IonIcon slot="start" icon={trashOutline}></IonIcon></IonButton>)
   }
 
@@ -372,15 +372,15 @@ function deletePrompt() {
                   errorText={formErrors[ErrorLocation.Name].errorMessage}>
               </IonInput>
             </IonItem>
-            <IonItem key="defaultlistgroup">
-              <IonCheckbox labelPlacement="end" justify='start'
-                  onIonChange={(evt) => {setPageState(prevState => ({...prevState,listGroupDoc: {...pageState.listGroupDoc, default: evt.detail.checked}}))}}
-                  checked={pageState.listGroupDoc.default} disabled={!iAmListOwner}>
-                  {t("general.is_default_listgroup_for_user")}</IonCheckbox>
-            </IonItem>
-            <IonItemGroup key="assignedlists">
+            { (pageState.listGroupDoc.recipe) ? (
+              <IonItemDivider className="category-divider">
+                {t("general.is_recipe_listgroup_for_user")}
+              </IonItemDivider>
+            ): (
+              <IonItemGroup key="assignedlists">
               {assignedListsElem}
             </IonItemGroup>
+            )}
             <IonItemGroup key="userlist">
             {usersElem}
             </IonItemGroup>

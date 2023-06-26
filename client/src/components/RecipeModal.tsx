@@ -59,7 +59,7 @@ return (
                     updRecipeDoc.items[props.selectedItemIdx].recipeUOMName = ev.detail.value;
                     props.updateRecipeDoc(updRecipeDoc); }}>
                 <IonSelectOption key="uom-undefined" value={null}>{t('general.no_uom')}</IonSelectOption>
-                {globalData.uomDocs.map((uom) => (
+                {globalData.uomDocs.filter(uom => (["system",props.recipeDoc.listGroupID].includes(String(uom.listGroupID)))).map((uom) => (
                         <IonSelectOption key={uom.name} value={uom.name}>
                         {translatedUOMName(uom._id as string,uom.description,uom.pluralDescription)}
                         </IonSelectOption>
@@ -80,7 +80,7 @@ return (
                     updRecipeDoc.items[props.selectedItemIdx].shoppingUOMName = ev.detail.value;
                     props.updateRecipeDoc(updRecipeDoc);}}>
                 <IonSelectOption key="uom-undefined" value={null}>{t('general.no_uom')}</IonSelectOption>
-                {globalData.uomDocs.map((uom) => (
+                {globalData.uomDocs.filter(uom => (["system",props.recipeDoc.listGroupID].includes(String(uom.listGroupID)))).map((uom) => (
                         <IonSelectOption key={uom.name} value={uom.name}>
                         {translatedUOMName(uom._id as string,uom.description, uom.pluralDescription)}
                         </IonSelectOption>

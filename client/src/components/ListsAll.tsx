@@ -41,7 +41,7 @@ const ListsAll: React.FC<ListsAllProps> = (props: ListsAllProps) => {
   let listsElem: JSX.Element[] = [];
   
   listCombinedRows.forEach(combinedRow => {
-    if (combinedRow.hidden) {return;}
+    if (combinedRow.hidden || combinedRow.listGroupRecipe) {return;}
     if (combinedRow.rowType === RowType.listGroup ) {
       listsElem.push(
           addRow({separatePage: props.separatePage, showLinkID:"/items/group/"+combinedRow.listGroupID,

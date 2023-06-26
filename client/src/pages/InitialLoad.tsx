@@ -4,7 +4,6 @@ import { useContext, useEffect, useRef} from 'react';
 import { usePouch } from 'use-pouchdb';
 import { ConnectionStatus, LoginType, RemoteDBStateContext } from '../components/RemoteDBState';
 import { navigateToFirstListID } from '../components/RemoteUtilities';
-import { initialSetupActivities } from '../components/Utilities';
 import ErrorPage from './ErrorPage';
 import { History } from 'history';
 import { DataReloadStatus, GlobalDataContext } from '../components/GlobalDataProvider';
@@ -39,7 +38,6 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
 
     useEffect(() => {
         async function initialStartup() {
-            await initialSetupActivities(remoteDB as PouchDB.Database, String(remoteDBCreds.dbUsername));
             screenLoading.current=false;
             log.debug("In Initial Load, naving to first list id");
             await navigateToFirstListID(history,listRows,listCombinedRows, globalState.settings.savedListID);

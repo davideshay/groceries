@@ -3,7 +3,7 @@ import { IonContent, IonPage, IonButton, IonList, IonInput,
 import { useParams } from 'react-router-dom';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteGenericDocument,
-   useGetOneDoc, useItems, useRecipes } from '../components/Usehooks';
+   useGetOneDoc, useItems } from '../components/Usehooks';
 import { cloneDeep } from 'lodash';
 import { PouchResponse, HistoryProps, RowType} from '../components/DataTypes';
 import { RecipeDoc, InitRecipeDoc, RecipeItem, ItemDoc, ItemDocInit, RecipeInstruction } from '../components/DBSchema';
@@ -58,7 +58,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
   const createRecipe = useCreateGenericDocument();
   const deleteRecipe = useDeleteGenericDocument();
   const { doc: recipeDoc, loading: recipeLoading, dbError: recipeError} = useGetOneDoc(routeID);
-  const { recipeDocs, recipesLoading, recipesError } = useRecipes();
+  const { recipeDocs, recipesLoading, recipesError } = useContext(GlobalDataContext);
   const { dbError: itemError, itemRowsLoaded } = useItems({selectedListGroupID: null, isReady: true, 
         needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const {goBack} = useContext(NavContext);
@@ -69,20 +69,18 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
   const [ present] = useIonAlert();
 
   useEffect( () => {
-    log.debug("RecipeDoc changed, now:",pageState.recipeDoc);
-  },[pageState.recipeDoc])
-
-  useEffect( () => {
     if (!recipeLoading && pageState.needInitDoc) {
       let newRecipeDoc: RecipeDoc 
       if (mode === "new" && pageState.needInitDoc) {
         newRecipeDoc = cloneDeep(InitRecipeDoc);
+        newRecipeDoc.listGroupID = String(globalData.recipeListGroup);
+        log.debug("Got rlg",globalData.recipeListGroup)
       } else {
         newRecipeDoc = recipeDoc;
       }
       setPageState(prevState => ({...prevState, needInitDoc: false, recipeDoc: newRecipeDoc}))
     }
-  },[recipeLoading,recipeDoc,mode,pageState.needInitDoc]);
+  },[recipeLoading,recipeDoc,mode,pageState.needInitDoc,globalData.recipeListGroup]);
 
   useEffect( () => {
     if (pageState.selectedListOrGroupID === null && globalData.listRowsLoaded && globalData.listCombinedRows.length > 0) {
@@ -131,8 +129,8 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
   
   async function deleteRecipeFromDB() {
-   let catDelResponse = await deleteRecipe(pageState.recipeDoc);
-   if (!catDelResponse.successful) {
+   let recDelResponse = await deleteRecipe(pageState.recipeDoc);
+   if (!recDelResponse.successful) {
     setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.unable_delete_recipe"), hasError: true }}));
 
     setPageState(prevState=>({...prevState,deletingRecipe: false}))
@@ -254,8 +252,8 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
     })
   }
 
-  let recipeItem = pageState.selectedItemIdx <= (pageState.recipeDoc.items.length + 1) ? 
-      pageState.recipeDoc.items[pageState.selectedItemIdx] : null;
+  let recipeItem = pageState.selectedItemIdx >= (pageState.recipeDoc.items.length) ? 
+      null : pageState.recipeDoc.items[pageState.selectedItemIdx];
 
   return (
     <IonPage>
@@ -282,12 +280,24 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
                         errorText={formErrors[ErrorLocation.Name].errorMessage}>
               </IonInput>
             </IonItem>
+            <IonItem key="recipelistgroup">
+            <IonSelect label="Recipe list group:" className="select-list-selector" aria-label=""
+                        interface="popover" disabled={mode !== "new"}
+                        onIonChange={(ev) => (setPageState(prevState=>({...prevState,recipeDoc: {...prevState.recipeDoc, listGroupID: ev.detail.value}})))}
+                        value={pageState.recipeDoc.listGroupID}>              
+                  { globalData.listCombinedRows.filter(lcr => (!lcr.hidden && lcr.listGroupRecipe)).map(lcr => (
+                  <IonSelectOption disabled={lcr.rowKey==="G-null"} className={lcr.rowType === RowType.list ? "indented" : ""} key={lcr.listOrGroupID} value={lcr.listOrGroupID}>
+                    {lcr.rowName}
+                  </IonSelectOption>
+                  ))
+                  }
+                </IonSelect>
+            </IonItem>
             <IonItemDivider className="category-divider">{t("general.items_in_recipe")}</IonItemDivider>
             <RecipeItemRows 
               recipeDoc={pageState.recipeDoc}
               updateRecipeDoc={(newDoc: RecipeDoc) => {setPageState(prevState => ({...prevState,recipeDoc: newDoc}))}}
               editItemModal={(index) =>{editItemModal(index)}}
-
             />
             <RecipeItemSearch rowSelected={addExistingRecipeItem} addItemWithoutRow={addNewRecipeItem}/>
             <IonItemDivider className="category-divider">{t("general.recipe_steps")}</IonItemDivider>
@@ -316,7 +326,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
                 </IonCol>
                 <IonCol size="7">
                 <IonSelect className="select-list-selector" aria-label="" interface="popover" onIonChange={(ev) => (setPageState(prevState=>({...prevState,selectedListOrGroupID: ev.detail.value})))} value={pageState.selectedListOrGroupID}>
-                  { globalData.listCombinedRows.map(lcr => (
+                  { globalData.listCombinedRows.filter(lcr => (!lcr.hidden && !lcr.listGroupRecipe)).map(lcr => (
                   <IonSelectOption disabled={lcr.rowKey==="G-null"} className={lcr.rowType === RowType.list ? "indented" : ""} key={lcr.listOrGroupID} value={lcr.listOrGroupID}>
                     {lcr.rowName}
                   </IonSelectOption>

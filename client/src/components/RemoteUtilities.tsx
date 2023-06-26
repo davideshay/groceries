@@ -381,14 +381,20 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
         };
       }
     }
+    let foundDBUUIDOK = true;
     if (localHasRecords) {
         let localDBFindDocs = null;
         try { localDBFindDocs = await db.find({use_index: "stdType", selector: { "type": "dbuuid" }}) }
-        catch(e) {log.error("error finding dbuuid doc",e,localDBFindDocs)};
+        catch(e) {log.error("error finding dbuuid doc",e,localDBFindDocs); foundDBUUIDOK = false};
         if ((localDBFindDocs !== null) && localDBFindDocs.docs.length === 1) {
             localDBUUID = (localDBFindDocs.docs[0] as UUIDDoc).uuid;
             localSchemaVersion = Number((localDBFindDocs.docs[0] as UUIDDoc).schemaVersion);
         }
+    }
+    if (!foundDBUUIDOK && localHasRecords) {
+        UUIDCheck.checkOK = false;
+        UUIDCheck.dbUUIDAction = DBUUIDAction.exit_local_remote_schema_mismatch;
+        return UUIDCheck;
     }
     log.info("maxAppSupportedVersion",maxAppSupportedSchemaVersion)
     if (Number(UUIDCheck.schemaVersion) > maxAppSupportedSchemaVersion) {

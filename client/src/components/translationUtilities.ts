@@ -31,9 +31,9 @@ export function translatedUOMName(id: string, name: string, pluralName: string, 
     }
 }
 
-export function translatedUOMShortName(shortName: string | null,uomDocs: UomDoc[], count: number = 1) : string {
+export function translatedUOMShortName(shortName: string | null,uomDocs: UomDoc[], listGroupID: string, count: number = 1) : string {
     if (shortName === null) {return ""};
-    const foundUOM = uomDocs.find(uom => (uom.name === shortName));
+    const foundUOM = uomDocs.find(uom => (uom.name === shortName && ["system",listGroupID].includes(String(uom.listGroupID))));
     if (foundUOM === undefined) {log.error("no found UOM...",shortName); return "";}
     return(translatedUOMName(foundUOM._id!,foundUOM.description, foundUOM.pluralDescription, count))
 }

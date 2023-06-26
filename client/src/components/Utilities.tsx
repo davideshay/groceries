@@ -1,6 +1,6 @@
 import { CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
 import { initUsersInfo, ListCombinedRows, RowType, UserIDList, UserInfo, UsersInfo } from './DataTypes';
-import { ListGroupDoc, ListGroupDocInit, UomDoc } from './DBSchema';
+import { ListGroupDoc, ListGroupDocInit } from './DBSchema';
 import { cloneDeep } from 'lodash';
 import { DBCreds} from './RemoteDBState';
 import { PouchResponse, PouchResponseInit } from './DataTypes';
@@ -124,13 +124,20 @@ export async function initialSetupActivities(db: PouchDB.Database, username: str
     try {totalDocs = (await db.info()).doc_count}
     catch(err) {log.error("Cannot retrieve doc count from local database"); return false;}
     let listGroupDocs: PouchDB.Find.FindResponse<{}>
-    try {listGroupDocs = await db.find({ use_index:"stdTypeOwnerDefault",selector: { type: "listgroup", listGroupOwner: username, default: true},
+    try {listGroupDocs = await db.find({ use_index:"stdTypeOwnerDefault",selector: { type: "listgroup", listGroupOwner: username},
          limit: totalDocs});}
     catch(err) {log.error("Cannot retrieve list groups from local database"); return false;}
-    if (listGroupDocs.docs.length === 0) {
+    let recipeGroupFound = false;
+    let nonRecipeGroupFound = false;
+    if (listGroupDocs.docs.length !== 0) {
+        for (const lgd of listGroupDocs.docs) {
+            if ((lgd as ListGroupDoc).recipe) { recipeGroupFound = true} else { nonRecipeGroupFound=true}
+        }
+    }
+    if (!nonRecipeGroupFound) {
         log.info("No default group found for ",username, "... creating now ...");
         const defaultListGroupDoc : ListGroupDoc = cloneDeep(ListGroupDocInit);
-        defaultListGroupDoc.default = true;
+        defaultListGroupDoc.recipe = false;
         defaultListGroupDoc.name = username+" (default)";
         defaultListGroupDoc.listGroupOwner = username;
         let curDateStr=(new Date()).toISOString()
@@ -141,6 +148,21 @@ export async function initialSetupActivities(db: PouchDB.Database, username: str
         if (!response.pouchData.ok) { response.successful = false;}
         if (!response.successful) { log.error("Could not create new default listGroup for ",username); return;}
     }
+    if (!recipeGroupFound) {
+        log.info("No recipe group found for ",username, "... creating now ...");
+        const recipeListGroupDoc : ListGroupDoc = cloneDeep(ListGroupDocInit);
+        recipeListGroupDoc.recipe = true;
+        recipeListGroupDoc.name = username+" (Recipes)";
+        recipeListGroupDoc.listGroupOwner = username;
+        let curDateStr=(new Date()).toISOString()
+        recipeListGroupDoc.updatedAt = curDateStr;
+        let response: PouchResponse = cloneDeep(PouchResponseInit);
+        try { response.pouchData = await db.post(recipeListGroupDoc);}
+        catch(err) { response.successful = false; response.fullError = err;}
+        if (!response.pouchData.ok) { response.successful = false;}
+        if (!response.successful) { log.error("Could not create new recipe listGroup for ",username); return;}
+    }
+    log.debug("SETUP: Initial Setup Complete")
 }
 
 export async function adaptResultToBase64(res: Blob): Promise<string> {
@@ -167,12 +189,6 @@ export function getRowTypeFromListOrGroupID(listOrGroupID: string, listCombinedR
     let newListRow = listCombinedRows.find(lcr => lcr.listOrGroupID === listOrGroupID);
     if (newListRow === undefined) {return null}
     else { return newListRow.rowType}
-}
-
-export function getUOMIDFromShortName(uomName: string, uomDocs: UomDoc[]) : string | null {
-    let foundUOM = uomDocs.find(uom => (uom.name.toUpperCase() === uomName.toUpperCase()));
-    if (foundUOM === undefined) { return null}
-    else { return (foundUOM._id as string)}
 }
 
 function startLogging(level: string) {

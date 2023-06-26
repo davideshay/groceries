@@ -229,7 +229,7 @@ const Item: React.FC = (props) => {
   async function addNewUOM(listGroupID: string, uomData: UomDoc) {
     let alreadyFound = false;
     (globalData.uomDocs as UomDoc[]).forEach((uom) => {
-      if (["system",] && uom.name.toUpperCase() === uomData.name.toUpperCase()) {alreadyFound=true;}
+      if (["system",listGroupID].includes(String(uom.listGroupID)) && uom.name.toUpperCase() === uomData.name.toUpperCase()) {alreadyFound=true;}
     });
     if (alreadyFound) {
       presentToast({message: t("error.uom_exists"), duration: 1500, position: "middle"});
@@ -246,7 +246,7 @@ const Item: React.FC = (props) => {
     }
     alreadyFound = false;
     (globalData.uomDocs as UomDoc[]).forEach((uom) => {
-      if (uom.description.toUpperCase() === uomData.description.toUpperCase()) {alreadyFound=true;}
+      if (["system",listGroupID].includes(String(uom.listGroupID)) && uom.description.toUpperCase() === uomData.description.toUpperCase()) {alreadyFound=true;}
     });
     if (alreadyFound) {
       presentToast({message: t("error.uom_description_exists"), duration: 1500, position: "middle"});
@@ -258,7 +258,7 @@ const Item: React.FC = (props) => {
     }
     alreadyFound = false;
     (globalData.uomDocs as UomDoc[]).forEach((uom) => {
-      if (uom.pluralDescription.toUpperCase() === uomData.pluralDescription.toUpperCase()) {alreadyFound=true;}
+      if (["system",listGroupID].includes(String(uom.listGroupID)) && uom.pluralDescription.toUpperCase() === uomData.pluralDescription.toUpperCase()) {alreadyFound=true;}
     });
     if (alreadyFound) {
       presentToast({message: t("error.uom_plural_description_exists"), duration: 1500, position: "middle"});
@@ -397,7 +397,7 @@ const Item: React.FC = (props) => {
                   <IonCol className="ion-no-padding" size="8">
                     <IonSelect label={t("general.uom_abbrev") as string} labelPlacement='stacked' interface="popover" onIonChange={(ev) => updateAllKey("uomName", ev.detail.value)} value={getCommonKey(stateItemDoc,"uomName",globalData.listDocs)}>
                     <IonSelectOption key="uom-undefined" value={null}>{t("general.no_uom")}</IonSelectOption>
-                    {(globalData.uomDocs as UomDoc[]).map((uom) => (
+                    {globalData.uomDocs.filter(uom => (["system",stateItemDoc.listGroupID].includes(uom.listGroupID))).map((uom) => (
                       <IonSelectOption key={uom.name} value={uom.name}>{translatedUOMName(uom._id!,uom.description,uom.pluralDescription)}</IonSelectOption>
                     ))}
                     </IonSelect>
@@ -409,7 +409,7 @@ const Item: React.FC = (props) => {
               <IonItem key="category">
                 <IonSelect label={t("general.category") as string} labelPlacement="stacked" interface="popover" onIonChange={(ev) => updateAllKey("categoryID",ev.detail.value)} value={getCommonKey(stateItemDoc,"categoryID",globalData.listDocs)}>
                   <IonSelectOption key="cat-undefined" value={null}>{t("general.uncategorized")}</IonSelectOption>
-                  {(globalData.categoryDocs as CategoryDoc[]).map((cat) => (
+                  {(globalData.categoryDocs).filter(cat => (["system",stateItemDoc.listGroupID].includes(cat.listGroupID))).map((cat) => (
                       <IonSelectOption key={cat._id} value={cat._id}>
                         {translatedCategoryName(cat._id,cat.name)}
                       </IonSelectOption>

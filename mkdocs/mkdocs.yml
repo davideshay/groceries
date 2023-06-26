@@ -12,9 +12,11 @@ nav:
     - Recipes: userguide/recipes.md
     - Settings: userguide/settings.md
     - Login / Logout: userguide/login.md
+    - Upgrading: userguide/upgrading.md
  - Installation Guide:
     - Key Concepts: installation/key-concepts.md
     - Installation: installation/installation.md
+    - Alexa Support: installation/alexa.md
 
 theme:
   name: material

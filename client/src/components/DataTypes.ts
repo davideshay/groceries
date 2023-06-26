@@ -102,7 +102,7 @@ export enum ItemSearchType {
   export type ListRow = {
     listGroupID: string | null,
     listGroupName: string,
-    listGroupDefault: boolean,
+    listGroupRecipe: boolean,
     listGroupOwner: string | null,
     listDoc: ListDoc,
   }
@@ -119,7 +119,7 @@ export enum ItemSearchType {
     listOrGroupID: string | null,
     listGroupID: string | null,
     listGroupName: string,
-    listGroupDefault: boolean,
+    listGroupRecipe: boolean,
     listGroupOwner: string | null,
     hidden: boolean
     listDoc: ListDoc

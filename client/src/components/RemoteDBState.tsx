@@ -313,6 +313,11 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         catch(err) {log.debug("Error in setting up live sync", err); setSyncStatus(SyncStatus.offline);}                         
     },[db,checkRetryNetworkIsUp]);
 
+    const beginLiveSync = useCallback( async () => {
+        await initialSetupActivities(db,String(remoteDBCreds.current.dbUsername));
+        liveSync()
+    },[db,liveSync])
+
     const startSync = useCallback( () => {
         log.debug("Starting initial sync of database");
         if (appStatus.current === AppStatus.paused || appStatus.current === AppStatus.pausing) {
@@ -343,7 +348,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
                                     if (appStatus.current === AppStatus.paused || appStatus.current === AppStatus.pausing) {
                                         log.debug("Not proceeding to live sync, operations have been paused.")
                                     } else {
-                                        liveSync()
+                                        beginLiveSync()
                                     }
                                     })
             .on('denied', (err) => { setSyncStatus(SyncStatus.denied);
@@ -357,7 +362,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             }
         catch(err) {log.debug("Error setting up initial sync",err); setSyncStatus(SyncStatus.error)}                    
         setRemoteDBState(prevState=>({...prevState,initialSyncStarted: true}))
-    },[db,liveSync,checkRetryNetworkIsUp]);
+    },[db,beginLiveSync,checkRetryNetworkIsUp]);
     
     async function setPrefsDBCreds() {
         let credsStr = JSON.stringify(remoteDBCreds.current);
@@ -422,7 +427,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             }    
         } else {
             setRemoteDBState(prevState => ({...prevState,connectionStatus: ConnectionStatus.syncStarted}));
-            await initialSetupActivities(globalRemoteDB as PouchDB.Database,remoteDBCreds.current.dbUsername as string)
+//            await initialSetupActivities(globalRemoteDB as PouchDB.Database,remoteDBCreds.current.dbUsername as string)
             log.debug("DB Unique ID check passed. Setup Activities complete. Starting Sync.");
             startSync();
         }
