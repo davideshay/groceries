@@ -573,19 +573,13 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     let rowVisible = getCategoryExpanded(item.categoryID,Boolean(item.completed));
     currentRows.push(
       <IonItem style={{display: rowVisible ? "block" : "none"}} className="itemrow-outer" key={pageState.itemRows[i].itemID} >
-        <IonGrid className="grid-no-pad"><IonRow>
-        <IonCol className="col-no-pad" size="1">
         <IonCheckbox aria-label=""
             onIonChange={(e) => completeItemRow(item.itemID,e.detail.checked)}
             color={"medium"}
-            checked={Boolean(item.completed)} className={item.completed ? "item-completed" : ""}></IonCheckbox>
-        </IonCol>
-        <IonCol className="col-no-pad" size="11">
+            checked={Boolean(item.completed)} className={"item-on-list "+ (item.completed ? "item-completed" : "")}></IonCheckbox>
           <IonItem className={"itemrow-inner"+(item.completed ? " item-completed": "")} routerLink={"/item/edit/"+item.itemID} key={pageState.itemRows[i].itemID+"mynewbutton"}>{item.itemName + (item.quantityUOMDesc === "" ? "" : " ("+ item.quantityUOMDesc+")")}
           {item.hasNote ? <IonIcon className="note-icon" icon={documentTextOutline}></IonIcon> : <></>}
           </IonItem>
-        </IonCol>
-        </IonRow></IonGrid>
       </IonItem>);
     if (lastCategoryFinished && !createdFinished) {
       listContent.push(completedDivider);

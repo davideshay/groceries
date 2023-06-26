@@ -47,8 +47,10 @@ ion-item.item-search::part(native) {
 
 ion-item.itemrow-outer {
     --min-height: 6px;
-    --padding-top: 9px;
-    --padding-bottom: 9px;
+}
+
+ion-item.itemrow-inner {
+    width: 100%;
 }
 
 ion-item.itemrow-outer::part(native) {
@@ -59,7 +61,7 @@ ion-item.itemrow-inner::part(native) {
     background: none;
     --background-hover: none;
     border: none;
-    min-height: auto;
+    height: 100%;
     --padding-start: 0px;
 }
 
@@ -80,6 +82,10 @@ ion-item-divider.item-category-divider.first-category {
 
 ion-item-divider.uncategorized-color {
     border-bottom: 4px solid black;
+}
+
+ion-checkbox.item-on-list {
+    width: 3em;
 }
 
 @media (prefers-color-scheme: dark) {

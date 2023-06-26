@@ -1,5 +1,5 @@
 import { IonMenu, IonContent, IonMenuToggle, IonList, 
-     IonItem, IonItemDivider, IonListHeader, IonBadge } from '@ionic/react';
+     IonItem, IonItemDivider, IonListHeader, IonBadge, IonIcon } from '@ionic/react';
 import { useContext } from 'react';    
 import { useConflicts, useFriends, UseFriendState } from './Usehooks';    
 import ListsAll from './ListsAll';
@@ -79,7 +79,10 @@ const AppMenu: React.FC = () => {
   <IonMenu contentId="main" type="overlay">
     <IonContent className="ion-no-padding">
       <IonList className="ion-no-padding">
-        <IonListHeader className="app-name ion-text-center ion-justify-content-center">{t('general.groceries_menu')}</IonListHeader>
+        <IonListHeader className="app-name ion-text-center ion-justify-content-center">
+          <img className="app-icon" src="assets/icon/favicon.svg" />
+          {t('general.groceries_menu')}
+        </IonListHeader>
         {contentElem}
       </IonList>
     </IonContent>
