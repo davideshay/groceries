@@ -116,12 +116,12 @@ const Item: React.FC = (props) => {
 
   useEffect( () => {
     if (!itemLoading && mode === "new" && !globalData.listsLoading && globalData.listRowsLoaded && needInitItemDoc) {
-        let newItemDoc = createEmptyItemDoc(globalData.listRows,globalState)
+        let newItemDoc = createEmptyItemDoc(globalData.listRows,globalState,globalData.globalItemDocs)
         setStateInfo("newItemMode","none");
         setNeedInitItemDoc(false);
         setStateItemDoc(newItemDoc);
     }
-  },[globalState,mode,setStateInfo,itemLoading,itemDoc,globalData.listsLoading,globalData.listDocs,globalData.listRowsLoaded, globalData.listRows,globalState.itemMode,globalState.newItemName, globalState.callingListID, needInitItemDoc]);
+  },[globalState,mode,setStateInfo,itemLoading,itemDoc,globalData.listsLoading,globalData.listDocs,globalData.listRowsLoaded, globalData.listRows, globalData.globalItemDocs,globalState.itemMode,globalState.newItemName, globalState.callingListID, needInitItemDoc]);
 
   if (itemError || imageError || globalData.listError || globalData.categoryError || globalData.uomError || itemsError) { log.error("loading item info");return (
     <ErrorPage errorText={t("error.loading_item_info_restart") as string}></ErrorPage>

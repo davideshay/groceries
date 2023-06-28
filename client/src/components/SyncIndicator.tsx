@@ -1,5 +1,5 @@
 import { IonIcon, IonButton } from '@ionic/react';
-import { cloudDoneOutline, cloudDownloadOutline, cloudOfflineOutline, warningOutline } from 'ionicons/icons';
+import { cloudDoneOutline, cloudDownloadOutline, cloudOfflineOutline, cloudUploadOutline, warningOutline } from 'ionicons/icons';
 import { useContext } from 'react';
 import { RemoteDBStateContext, SyncStatus } from '../components/RemoteDBState';
 import { useConflicts } from './Usehooks';
@@ -13,6 +13,12 @@ const SyncIndicator: React.FC = () => {
     const iconSize="medium"
     let iconElem;
     switch (remoteDBState.syncStatus) {
+        case SyncStatus.up:
+            iconElem=(<IonIcon slot="end" className="ion-no-margin ion-margin-start" size={iconSize} icon={cloudUploadOutline} />)
+            break;
+        case SyncStatus.down:
+            iconElem=(<IonIcon slot="end" className="ion-no-margin ion-margin-start" size={iconSize} icon={cloudDownloadOutline} />)
+            break;
         case SyncStatus.active:
             iconElem=(<IonIcon slot="end" className="ion-no-margin ion-margin-start" size={iconSize} icon={cloudDownloadOutline} />)
             break;

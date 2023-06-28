@@ -16,3 +16,8 @@ For all upgrades, but particularly those with a schema upgrade, you should ensur
 The above documented database delete/resync process applies. In addition, the name of the Android application file (".apk") has been changed along with the application name change to "Specifically Clementines". You will need to delete any existing copy of the "groceries" app as it will no longer work and won't be upgraded appropriately in the future. Please switch to using "clementines.apk" as provided with the bundled release.
 
 This release, in addition, has a significant change in the schema, so it may take a minute or two to update on the backend.  To avoid problems, all local clients should not be online while the backend is updating, as noted above.
+
+The major functional changes with release 0.9.x include:
+- Any custom / user-created category or unit of measure is now tied to the list group where that category or unit of measure is used, and is only available within that list group.  The upgrade process will try to assign these custom categories and units of measure to the right list group.
+- Recipes are now tied to a new user-specific recipe list group. Just like standard list groups, they can be shared with other users to share your recipe content. The upgrade process will create the recipes list group.
+- Linking these items to list groups will in a future release enable decreased unnecessary data synchronization as well as an easier ability to host a single server with a larger number of "unrelated" end users with increased performance.

@@ -263,7 +263,7 @@ export function getCommonKey(stateItemDoc: ItemDoc, key: string, listDocs: ListD
     return maxKey;
   }
 
-  export function createEmptyItemDoc(listRows:ListRow[], globalState: GlobalState) {
+  export function createEmptyItemDoc(listRows:ListRow[], globalState: GlobalState, globalItems: GlobalItemDocs) {
     let newItemLists: ItemList[] =[];
     let listGroupID = "";
     if (globalState.callingListType === RowType.listGroup) {
@@ -272,6 +272,7 @@ export function getCommonKey(stateItemDoc: ItemDoc, key: string, listDocs: ListD
       let baseList=listRows.find((listRow:ListRow) => listRow.listDoc._id === globalState.callingListID);
       listGroupID = String(baseList?.listGroupID);  
     }
+    let foundGlobalItem = globalItems.find(gi => (gi._id === globalState.newItemGlobalItemID));
     listRows.forEach((listRow: ListRow) => {
       if (listRow.listGroupID === listGroupID) {
         let newListDoc: ItemList ={
@@ -279,8 +280,8 @@ export function getCommonKey(stateItemDoc: ItemDoc, key: string, listDocs: ListD
           quantity: 1,
           boughtCount: 0,
           note: "",
-          uomName: null,
-          categoryID: null,
+          uomName: (foundGlobalItem === undefined) ? null : foundGlobalItem.defaultUOM,
+          categoryID: (foundGlobalItem === undefined) ? null : foundGlobalItem.defaultCategoryID,
           active: true,
           completed: false,
           stockedAt: true
@@ -298,7 +299,7 @@ export function getCommonKey(stateItemDoc: ItemDoc, key: string, listDocs: ListD
     });
     let newItemDoc: ItemDoc ={
       type: "item",
-      name: String(globalState.newItemName),
+      name: (foundGlobalItem === undefined) ? String(globalState.newItemName) : foundGlobalItem.name,
       pluralName: String(globalState.newItemName),
       globalItemID: globalState.newItemGlobalItemID,
       listGroupID: String(listGroupID),

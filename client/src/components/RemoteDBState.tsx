@@ -76,11 +76,13 @@ export interface RemoteDBStateContextType {
 
 export enum SyncStatus {
     init = 0,
-    active = 1,
-    paused = 2,
-    error = 3,
-    denied = 4,
-    offline = 5
+    up = 1,
+    down = 2,
+    active = up || down,
+    paused = 3,
+    error = 4,
+    denied = 5,
+    offline = 6
   }
 
 export enum DBUUIDAction {
@@ -301,6 +303,8 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             .on('active', () => { log.debug("live sync active");
                                     setSyncStatus(SyncStatus.active);
                                     setDBServerAvailable(true)})
+            .on('change', (info) => {
+                                    info.direction === "push" ? setSyncStatus(SyncStatus.up) : setSyncStatus(SyncStatus.down);  })                   
             .on('denied', (err) => { setSyncStatus(SyncStatus.denied);
 //                                    setDBServerAvailable(false)
                                     log.debug("live sync denied: ",{err})})

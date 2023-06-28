@@ -84,8 +84,8 @@ type GlobalDataProviderProps = {
 }
 
 export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: GlobalDataProviderProps) => {
-    const [ listRows, setListRows ] = useState<ListRow[]>();
-    const [ listCombinedRows, setListCombinedRows] = useState<ListCombinedRows>();
+    const [ listRows, setListRows ] = useState<ListRow[]>([]);
+    const [ listCombinedRows, setListCombinedRows] = useState<ListCombinedRows>([]);
     const [ listRowsLoaded, setListRowsLoaded] = useState(false);
     const [ recipeListGroup, setRecipeListGroup] = useState<string|null>(null);
     const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);

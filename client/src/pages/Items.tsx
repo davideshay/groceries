@@ -119,11 +119,19 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     <ErrorPage errorText={t("general.loading_item_info_restart") as string}></ErrorPage>
   )}
 
-  if (!baseItemRowsLoaded || !baseSearchItemRowsLoaded || !listRowsLoaded || categoryLoading || globalData.globalItemsLoading || uomLoading || pageState.doingUpdate )  {
+/*   if (!baseItemRowsLoaded || !baseSearchItemRowsLoaded || !listRowsLoaded || categoryLoading || globalData.globalItemsLoading || uomLoading || pageState.doingUpdate )  {
+    log.debug(cloneDeep({baseItemRowsLoaded,baseSearchItemRowsLoaded,listRowsLoaded,categoryLoading,gil: globalData.globalItemsLoading, uomLoading, doingupate: pageState.doingUpdate}))
     return ( <Loading isOpen={screenLoading.current} message={t("general.loading_items")} /> )
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   };
+ */
 
+// Reduce states that cause showing of loading screen to reduce page blink effect when clicking on-off items
+  
+   if (!listRowsLoaded || categoryLoading || globalData.globalItemsLoading || uomLoading)  {
+    return ( <Loading isOpen={screenLoading.current} message={t("general.loading_items")} /> )
+  };
+  
   screenLoading.current=false;
 
   function updateSearchCriteria(event: CustomEvent) {
@@ -351,11 +359,12 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
                     handler: () => dismissAlert()},
                     { text: t("general.continue_ignore"), role: "confirm",
                     handler: () => {setPageState(prevState => ({...prevState,ignoreCheckOffWarning: true})); dismissAlert()}}]
-      })
+      });
+      return;
     }
+    setPageState(prevState=> ({...prevState,doingUpdate: true}));
     // make the update in the database, let the refresh of the view change state
     let itemDoc: ItemDoc = cloneDeep(baseItemDocs.find(element => (element._id === id)))
-    setPageState(prevState=> ({...prevState,doingUpdate: true}));
     let listChanged=false;
     itemDoc.lists.forEach((list: ItemList) => {
       let updateThisList=false;
@@ -378,6 +387,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         presentToast({message: t("error.updating_item_completed"), duration: 1500, position: "middle"})
       }
     }
+    setPageState(prevState=> ({...prevState,doingUpdate: false}));
     shouldScroll.current = true;
   }
 
@@ -447,11 +457,11 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     keyboardClose: false,
     onDidDismiss: () => {leaveSearchBox()},
   }
-  if (globalData.listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length >0) {
+  if (globalData.listRows && globalData.listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length >0) {
     popOverProps.trigger = "item-search-box-id"
   }
   let popOverElem = (
-    <IonPopover {...popOverProps}>
+    <IonPopover key="popoverseach" {...popOverProps}>
     <IonContent><IonList key="popoverItemList">
       {(searchState.filteredSearchRows).map((item: ItemSearch) => (
         <IonItem button key={pageState.selectedListOrGroupID+"-poilist-"+item.itemID} onClick={(e) => {chooseSearchItem(item)}}>{item.itemName}</IonItem>
@@ -472,23 +482,23 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   )
 
   let headerElem=(
-    <IonHeader><IonToolbar><IonButtons slot="start"><IonMenuButton className={"ion-no-padding small-menu-button"} /></IonButtons>
-    <IonTitle className="ion-no-padding item-outer"></IonTitle>
-        <IonItem id="item-list-selector-id" className="item-list-selector" key="listselector">
-        <IonSelect id="select-list-selector-id" className="select-list-selector" label={t("general.items_on") as string} aria-label={t("general.items_on") as string} interface="popover"
+    <IonHeader key="pageheader"><IonToolbar key="pagetoolbar"><IonButtons key="headerbuttons" slot="start"><IonMenuButton key="headermenubutton" className={"ion-no-padding small-menu-button"} /></IonButtons>
+    <IonTitle key="pagetitle" className="ion-no-padding item-outer"></IonTitle>
+        <IonItem id="item-list-selector-id" className="item-list-selector" key="listselectoritem">
+        <IonSelect key="listselectorselect" id="select-list-selector-id" className="select-list-selector" label={t("general.items_on") as string} aria-label={t("general.items_on") as string} interface="popover"
               onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListOrGroupID} >
-            {listCombinedRows.filter(lcr => (!lcr.hidden)).map((listCombinedRow: ListCombinedRow) => (
+            {listCombinedRows !== undefined ? listCombinedRows.filter(lcr => (!lcr.hidden && !lcr.listGroupRecipe)).map((listCombinedRow: ListCombinedRow) => (
                 <IonSelectOption disabled={listCombinedRow.rowKey==="G-null"} className={listCombinedRow.rowType === RowType.list ? "indented" : ""} key={listCombinedRow.listOrGroupID} value={listCombinedRow.listOrGroupID}>
                   {listCombinedRow.rowName}
                 </IonSelectOption>
-            ))}
+            )) : <></>}
           </IonSelect>
          <SyncIndicator />
          </IonItem>
         <IonItem key="searchbar" className="item-search">
            <IonIcon icon={searchOutline} />
-           <IonInput id="item-search-box-id" aria-label="" className="ion-no-padding input-search" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="text" enterkeyhint="enter"
-              disabled={globalData.listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length <=0}
+           <IonInput key="itemsearchbox" id="item-search-box-id" aria-label="" className="ion-no-padding input-search" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="text" enterkeyhint="enter"
+              disabled={globalData.listRows !== undefined ? globalData.listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length <=0 : true}
               clearInput={true}  placeholder={t("general.search") as string} fill="solid"
               onKeyDown= {(e) => searchKeyPress(e)}
               onIonInput={(e) => updateSearchCriteria(e)}
@@ -503,13 +513,13 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     </IonToolbar></IonHeader>)
 
   let fabContent =  (
-      <IonFab slot="fixed" vertical="bottom" horizontal="end">
-        <IonFabButton onClick={() => addNewItemToList("")}>
+      <IonFab key="fab" slot="fixed" vertical="bottom" horizontal="end">
+        <IonFabButton key="fabbutton" onClick={() => addNewItemToList("")}>
           <IonIcon icon={add}></IonIcon>
         </IonFabButton>
       </IonFab>)
 
-  if (globalData.listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length <=0) {return(
+  if (globalData.listRows && globalData.listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length <=0) {return(
     <IonPage>{headerElem}<IonContent><IonItem key="nonefound"><IonLabel key="nothinghere">{t("error.please_create_list_before_adding_items")}</IonLabel></IonItem></IonContent></IonPage>
   )};
 
@@ -534,11 +544,12 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
     listCont.push(
         <IonItemGroup key={"cat"+String(catID)+Boolean(completed).toString()}>
-          <IonItemDivider {...dividerProps} 
-              key={"cat"+String(catID)+Boolean(completed).toString()}>
-            <IonGrid className="ion-no-padding"><IonRow className="ion-no-padding ion-align-items-center">
-              <IonCol className="ion-no-padding ion-float-left">{catName}</IonCol>
-              <IonCol className="ion-no-padding ion-float-right"><IonIcon className="collapse-icon ion-float-right" icon={isExpanded ? chevronUp : chevronDown } size="large" onClick={() => {collapseExpandCategory(catID,Boolean(completed))}} /></IonCol>
+          <IonItemDivider key={"itemdivider"+String(catID)+Boolean(completed)} {...dividerProps} >
+            <IonGrid className="ion-no-padding" key={"itemdividergrid"+String(catID)+Boolean(completed)}>
+              <IonRow className="ion-no-padding ion-align-items-center" key={"itemdividerrow"+String(catID)+Boolean(completed)}>
+              <IonCol className="ion-no-padding ion-float-left" key={"itemdividercol1"+String(catID)+Boolean(completed)}>{catName}</IonCol>
+              <IonCol className="ion-no-padding ion-float-right" key={"itemdividercol2"+String(catID)+Boolean(completed)}>
+                <IonIcon className="collapse-icon ion-float-right" key={"itemdividericon"+String(catID)+Boolean(completed)} icon={isExpanded ? chevronUp : chevronDown } size="large" onClick={() => {collapseExpandCategory(catID,Boolean(completed))}} /></IonCol>
             </IonRow></IonGrid>
           </IonItemDivider>
         {curRows}
@@ -556,7 +567,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   const completedDivider=(
         <IonItemGroup key="completeddividergroup"><IonItemDivider key="Completed" className="category-divider">
         <IonLabel key="completed-divider-label">{t("general.completed")}</IonLabel>
-        <IonButton slot="end" onClick={() => deleteCompletedItemsPrompt()}>{t("general.delete_completed_items")}</IonButton>
+        <IonButton key="completeddividerbutton" slot="end" onClick={() => deleteCompletedItemsPrompt()}>{t("general.delete_completed_items")}</IonButton>
         </IonItemDivider></IonItemGroup>);
   for (let i = 0; i < pageState.itemRows.length; i++) {
     const item = pageState.itemRows[i];
@@ -572,13 +583,14 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
     let rowVisible = getCategoryExpanded(item.categoryID,Boolean(item.completed));
     currentRows.push(
-      <IonItem style={{display: rowVisible ? "block" : "none"}} className="itemrow-outer" key={pageState.itemRows[i].itemID} >
-        <IonCheckbox aria-label=""
+      <IonItem style={{display: rowVisible ? "block" : "none"}} className="itemrow-outer" key={"itemouter"+pageState.itemRows[i].itemID} >
+        <IonCheckbox key={"itemcheckbox"+pageState.itemRows[i].itemID} aria-label=""
             onIonChange={(e) => completeItemRow(item.itemID,e.detail.checked)}
-            color={"medium"}
+            color={"medium"} disabled={pageState.doingUpdate}
             checked={Boolean(item.completed)} className={"item-on-list "+ (item.completed ? "item-completed" : "")}></IonCheckbox>
-          <IonItem className={"itemrow-inner"+(item.completed ? " item-completed": "")} routerLink={"/item/edit/"+item.itemID} key={pageState.itemRows[i].itemID+"mynewbutton"}>{item.itemName + (item.quantityUOMDesc === "" ? "" : " ("+ item.quantityUOMDesc+")")}
-          {item.hasNote ? <IonIcon className="note-icon" icon={documentTextOutline}></IonIcon> : <></>}
+          <IonItem className={"itemrow-inner"+(item.completed ? " item-completed": "")} routerLink={"/item/edit/"+item.itemID}
+            key={"iteminner"+pageState.itemRows[i].itemID}>{item.itemName + (item.quantityUOMDesc === "" ? "" : " ("+ item.quantityUOMDesc+")")}
+          {item.hasNote ? <IonIcon key={"itemnoteicon"+pageState.itemRows[i].itemID} className="note-icon" icon={documentTextOutline}></IonIcon> : <></>}
           </IonItem>
       </IonItem>);
     if (lastCategoryFinished && !createdFinished) {
@@ -588,7 +600,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
   addCurrentRows(listContent,currentRows,lastCategoryID,lastCategoryName,lastCategoryColor,lastCategoryFinished);
   if (!createdFinished) {listContent.push(completedDivider)};
-  let contentElem=(<IonList className="ion-no-padding" lines="full">{listContent}</IonList>)
+  let contentElem=(<IonList key="overallitemlist" className="ion-no-padding" lines="full">{listContent}</IonList>)
 
   function resumeScroll() {
     let content = contentRef.current;
@@ -606,7 +618,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   return (
     <IonPage>
       {headerElem}
-      <IonContent ref={contentRef} scrollEvents={true} onIonScroll={(e) => {scrollTopRef.current = e.detail.scrollTop}}>
+      <IonContent key="itemscontent" ref={contentRef} scrollEvents={true} onIonScroll={(e) => {scrollTopRef.current = e.detail.scrollTop}}>
           {contentElem}
       </IonContent>
       {fabContent}
