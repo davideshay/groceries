@@ -193,7 +193,8 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
           presentAndExit({
             header: t("error.error") as string,
             message: t("error.server_no_unique_id") as string,
-            buttons: [t("general.ok") as string]
+            buttons: [
+              {text: t("general.ok"),handler: () => exitApp()}]
           });
           return;
         } else if (remoteDBState.dbUUIDAction === DBUUIDAction.destroy_needed) {

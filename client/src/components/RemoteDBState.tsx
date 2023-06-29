@@ -14,6 +14,7 @@ import PQueue from "p-queue";
 import { Capacitor } from "@capacitor/core";
 
 import { minimumAccessRefreshSeconds } from "./DBSchema";
+import { cloneDeep } from "lodash";
 
 const secondsBetweenRefreshRetries = 30;
 
@@ -423,11 +424,12 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         // }
         if (!DBUUIDCheck.checkOK) {
             log.debug("Did not pass DB unique ID check.");
+            log.debug("logged in?",cloneDeep({remoteDBState}))
             if (DBUUIDCheck.dbAvailable) {
                 log.debug("DBUUID Action is : ",DBUUIDCheck.dbUUIDAction, " naving to login screen...");
                 setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.invalid_dbuuid") , dbUUIDAction: DBUUIDCheck.dbUUIDAction, connectionStatus: ConnectionStatus.navToLoginScreen}))
             } else {
-                setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.db_server_not_available"), dbUUIDAction: DBUUIDAction.none}))
+                setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.db_server_not_available"), dbUUIDAction: DBUUIDAction.exit_no_uuid_on_server, connectionStatus: ConnectionStatus.navToLoginScreen}))
             }    
         } else {
             setRemoteDBState(prevState => ({...prevState,connectionStatus: ConnectionStatus.syncStarted}));

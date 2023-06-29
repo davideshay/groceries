@@ -2,6 +2,7 @@ import { IonItem,  IonPopover, IonContent, IonList, IonSearchbar } from "@ionic/
 import { cloneDeep } from "lodash"
 import { useEffect, useState, KeyboardEvent, forwardRef, useImperativeHandle, Ref, useId } from "react"
 import "./GenericSearchBar.css"
+import log from "loglevel"
 
 export type SearchRow = {
     id: string,
@@ -90,9 +91,11 @@ function  GenericSearchBar(props: SearchBarProps,ref: Ref<SearchRefType>) {
         </IonPopover>
         <IonSearchbar id={componentID} aria-label="" className="ion-no-padding generic-input-search generic-input-search-class"
                     debounce={5} value={searchState.searchCriteria} inputmode="text" enterkeyhint="enter"
-                    onIonInput={(e: any) => {updateSearchCriteria(e)}}
+                    onIonInput={(e: any) => {log.debug("ioninp",e);updateSearchCriteria(e)}}
+                    onInputCapture={(e:any) => {log.debug("inpcap",e)}}
+                    onInput={(e:any) => {log.debug("inp",e,e.nativeEvent, e.nativeEvent.data,e.nativeEvent.inputType)}}
 //                    onIonChange={(e: any) =>{console.log("search change:",e); searchInputChange(e)}}
-                    onKeyDown={(e) => searchKeyPress(e)}
+                    onKeyDown={(e:any) => {log.debug("keydown",e,e.nativeEvent,e.nativeEvent.code,e.nativeEvent.keyCode,e.nativeEvent.key,e.nativeEvent.charCode,e.nativeEvent.type,e.nativeEvent.returnValue); searchKeyPress(e)}}
                     onClick={() => enterSearchBox()}>
          </IonSearchbar>           
      </IonItem>

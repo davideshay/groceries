@@ -74,7 +74,6 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
       if (mode === "new" && pageState.needInitDoc) {
         newRecipeDoc = cloneDeep(InitRecipeDoc);
         newRecipeDoc.listGroupID = String(globalData.recipeListGroup);
-        log.debug("Got rlg",globalData.recipeListGroup)
       } else {
         newRecipeDoc = recipeDoc;
       }

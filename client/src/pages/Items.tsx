@@ -10,14 +10,14 @@ import './Items.css';
 import { useUpdateGenericDocument, useCreateGenericDocument, useItems } from '../components/Usehooks';
 import { GlobalStateContext } from '../components/GlobalState';
 import { AddListOptions, DefaultColor } from '../components/DBSchema';
-import { ItemSearch, SearchState, PageState, ListCombinedRow, HistoryProps, RowType, ItemSearchType, CategoryRows} from '../components/DataTypes'
+import { ItemSearch, SearchState, PageState, ListCombinedRow, HistoryProps, RowType, ItemSearchType, CategoryRows, ItemRows} from '../components/DataTypes'
 import { ItemDoc, ItemDocs, ItemListInit, ItemList, ItemDocInit, CategoryDoc, UomDoc, GlobalItemDocs } from '../components/DBSchema';
 import { getAllSearchRows, getItemRows, filterSearchRows } from '../components/ItemUtilities';
 import SyncIndicator from '../components/SyncIndicator';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
-import { isEqual } from 'lodash';
+import { isEqual, debounce } from 'lodash';
 import { useTranslation } from 'react-i18next';
 import log from 'loglevel';
 import { navigateToFirstListID } from '../components/RemoteUtilities';
@@ -30,8 +30,9 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
           selectedListType: (routeMode === "list" ? RowType.list : RowType.listGroup) ,
           ignoreCheckOffWarning: false,
           groupIDforSelectedList: null,
-          doingUpdate: false, itemRows: [], categoryRows: [],showAlert: false, alertHeader: "", alertMessage: ""});
+          itemRows: [], categoryRows: [],showAlert: false, alertHeader: "", alertMessage: ""});
   const searchRef=useRef<HTMLIonInputElement>(null);
+  const doingUpdate=useRef(false);
   const [presentToast] = useIonToast();
   const [presentAlert, dismissAlert] = useIonAlert();
   const updateItemInList = useUpdateGenericDocument();
@@ -114,6 +115,52 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   useEffect( () => {
     filterAndCheckRows(searchState.searchCriteria,searchState.isFocused);
   },[searchRows,searchState.isFocused,searchState.searchCriteria,filterAndCheckRows])
+
+  const completeItemRow = useCallback( async(id: String, index: number, newStatus: boolean | null) => {
+    if (pageState.selectedListType === RowType.listGroup && !pageState.ignoreCheckOffWarning) {
+       await presentAlert({
+        header: t("error.checking_items_list_group_header"),
+        subHeader: t("error.checking_items_list_group_detail"),
+        buttons: [ { text: t("general.cancel"), role: "Cancel" ,
+                    handler: () => dismissAlert()},
+                    { text: t("general.continue_ignore"), role: "confirm",
+                    handler: () => {setPageState(prevState => ({...prevState,ignoreCheckOffWarning: true})); dismissAlert()}}]
+      });
+      return;
+    }
+    // make the update in the database, let the refresh of the view change state
+    let itemDoc: ItemDoc = cloneDeep(baseItemDocs.find(element => (element._id === id)))
+    let listChanged=false;
+    itemDoc.lists.forEach((list: ItemList) => {
+      let updateThisList=false;
+      if (pageState.selectedListOrGroupID === list.listID) { updateThisList = true;}
+      if (pageState.selectedListType === RowType.listGroup) { updateThisList = true};
+      if (pageState.selectedListType === RowType.list &&
+          globalState.settings.removeFromAllLists &&
+          newStatus) { updateThisList = true;}
+      if (updateThisList) {
+        list.completed = Boolean(newStatus);
+        if (newStatus) {
+          list.boughtCount=list.boughtCount+1;
+        }
+        listChanged=true;
+      }
+    });
+    if (listChanged) {
+      let response = await updateItemInList(itemDoc);
+      if (!response.successful) {
+        presentToast({message: t("error.updating_item_completed"), duration: 1500, position: "middle"})
+      }
+    }
+    doingUpdate.current = false;
+    shouldScroll.current = true;
+  },[baseItemDocs,dismissAlert,globalState.settings.removeFromAllLists,pageState.ignoreCheckOffWarning,pageState.selectedListOrGroupID,
+     pageState.selectedListType,presentAlert,presentToast,t,updateItemInList,pageState.itemRows])
+
+  const completeItemRowStub = useCallback( async (id: string, index: number, newStatus: boolean|null) => {
+    const completeRowFunc = debounce((did: string,didx: number,dstatus: boolean|null) => completeItemRow(did,didx,dstatus),350,{leading: true, trailing: false})
+    completeRowFunc(id,index,newStatus);
+  },[completeItemRow])
 
   if (baseItemError || baseSearchError || listError || categoryError  || uomError || globalData.globalItemError) {return (
     <ErrorPage errorText={t("general.loading_item_info_restart") as string}></ErrorPage>
@@ -350,46 +397,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     }      
   }
 
-  async function completeItemRow(id: String, newStatus: boolean | null) {
-    if (pageState.selectedListType === RowType.listGroup && !pageState.ignoreCheckOffWarning) {
-       await presentAlert({
-        header: t("error.checking_items_list_group_header"),
-        subHeader: t("error.checking_items_list_group_detail"),
-        buttons: [ { text: t("general.cancel"), role: "Cancel" ,
-                    handler: () => dismissAlert()},
-                    { text: t("general.continue_ignore"), role: "confirm",
-                    handler: () => {setPageState(prevState => ({...prevState,ignoreCheckOffWarning: true})); dismissAlert()}}]
-      });
-      return;
-    }
-    setPageState(prevState=> ({...prevState,doingUpdate: true}));
-    // make the update in the database, let the refresh of the view change state
-    let itemDoc: ItemDoc = cloneDeep(baseItemDocs.find(element => (element._id === id)))
-    let listChanged=false;
-    itemDoc.lists.forEach((list: ItemList) => {
-      let updateThisList=false;
-      if (pageState.selectedListOrGroupID === list.listID) { updateThisList = true;}
-      if (pageState.selectedListType === RowType.listGroup) { updateThisList = true};
-      if (pageState.selectedListType === RowType.list &&
-          globalState.settings.removeFromAllLists &&
-          newStatus) { updateThisList = true;}
-      if (updateThisList) {
-        list.completed = Boolean(newStatus);
-        if (newStatus) {
-          list.boughtCount=list.boughtCount+1;
-        }
-        listChanged=true;
-      }
-    });
-    if (listChanged) {
-      let response = await updateItemInList(itemDoc);
-      if (!response.successful) {
-        presentToast({message: t("error.updating_item_completed"), duration: 1500, position: "middle"})
-      }
-    }
-    setPageState(prevState=> ({...prevState,doingUpdate: false}));
-    shouldScroll.current = true;
-  }
 
   function selectList(listOrGroupID: string) {
     if (listOrGroupID === "null" ) { return }
@@ -581,8 +588,8 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     currentRows.push(
       <IonItem className={"itemrow-outer "+(rowVisible ? "itemrow-display" : "itemrow-hidden")} key={"itemouter"+pageState.itemRows[i].itemID} >
         <IonCheckbox key={"itemcheckbox"+pageState.itemRows[i].itemID} aria-label=""
-            onIonChange={(e) => completeItemRow(item.itemID,e.detail.checked)}
-            color={"medium"} disabled={pageState.doingUpdate}
+            onIonChange={(e: any) => {if (!doingUpdate.current) {e.currentTarget.disabled = true; doingUpdate.current=true; completeItemRowStub(item.itemID,i,e.detail.checked)}}}
+            color={"medium"} disabled={doingUpdate.current}
             checked={Boolean(item.completed)} className={"item-on-list "+ (item.completed ? "item-completed" : "")}></IonCheckbox>
           <IonItem className={"itemrow-inner"+(item.completed ? " item-completed": "")} routerLink={"/item/edit/"+item.itemID}
             key={"iteminner"+pageState.itemRows[i].itemID}>{item.itemName + (item.quantityUOMDesc === "" ? "" : " ("+ item.quantityUOMDesc+")")}

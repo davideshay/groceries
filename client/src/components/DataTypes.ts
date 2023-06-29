@@ -67,7 +67,6 @@ export enum ItemSearchType {
     selectedListOrGroupID: string | null,
     selectedListType: RowType,
     groupIDforSelectedList: null | string,
-    doingUpdate: boolean,
     itemRows: Array<ItemRow>,
     categoryRows: Array<CategoryRow>,
     ignoreCheckOffWarning: boolean,

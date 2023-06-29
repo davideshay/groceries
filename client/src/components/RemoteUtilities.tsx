@@ -351,6 +351,7 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
                 catch(err) {log.error("Retry of DBUUID from remote also failed");
                             UUIDCheck.dbAvailable = false;
                             UUIDCheck.checkOK = false;
+                            UUIDCheck.dbUUIDAction = DBUUIDAction.exit_no_uuid_on_server;
                             return UUIDCheck;}
     }
     let UUIDResult : null|string = null;
