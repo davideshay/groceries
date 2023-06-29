@@ -12,7 +12,7 @@ const PageHeader: React.FC<HeaderProps> = (props: HeaderProps) => {
             <IonToolbar>
             <IonButtons slot="start"><IonMenuButton className="ion-no-padding small-menu-button" /></IonButtons>
             <IonTitle className="">{props.title}</IonTitle>
-            <SyncIndicator />
+            <SyncIndicator addPadding={true}/>
             </IonToolbar>
         </IonHeader>
     )

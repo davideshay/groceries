@@ -1,8 +1,8 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonItemGroup,
   IonItemDivider, IonButton, IonButtons, IonFab, IonFabButton, IonIcon, IonCheckbox, IonLabel, IonSelect,
-  IonSelectOption, IonInput, IonPopover, IonAlert,IonMenuButton, useIonToast, IonGrid, IonRow, 
-  IonCol, useIonAlert } from '@ionic/react';
-import { add,chevronDown,chevronUp,documentTextOutline,searchOutline } from 'ionicons/icons';
+  IonSelectOption, IonInput, IonPopover, IonAlert,IonMenuButton, useIonToast, 
+  useIonAlert } from '@ionic/react';
+import { add,chevronUp,documentTextOutline,searchOutline } from 'ionicons/icons';
 import React, { useState, useEffect, useContext, useRef, KeyboardEvent, useCallback } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { cloneDeep } from 'lodash';
@@ -493,7 +493,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
                 </IonSelectOption>
             )) : <></>}
           </IonSelect>
-         <SyncIndicator />
+         <SyncIndicator addPadding={false}/>
          </IonItem>
         <IonItem key="searchbar" className="item-search">
            <IonIcon icon={searchOutline} />
@@ -534,7 +534,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     let isExpanded = getCategoryExpanded(catID,Boolean(completed));
     dividerCount++;
     let dividerProps = {
-      className: "category-divider item-category-divider " + 
+      className: "ion-justify-content-between category-divider item-category-divider " + 
           (dividerCount === 1 ? " first-category " : "") +
           (catID === null ? " uncategorized-color" : ""),
       style: {}
@@ -545,12 +545,8 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     listCont.push(
         <IonItemGroup key={"cat"+String(catID)+Boolean(completed).toString()}>
           <IonItemDivider key={"itemdivider"+String(catID)+Boolean(completed)} {...dividerProps} >
-            <IonGrid className="ion-no-padding" key={"itemdividergrid"+String(catID)+Boolean(completed)}>
-              <IonRow className="ion-no-padding ion-align-items-center" key={"itemdividerrow"+String(catID)+Boolean(completed)}>
-              <IonCol className="ion-no-padding ion-float-left" key={"itemdividercol1"+String(catID)+Boolean(completed)}>{catName}</IonCol>
-              <IonCol className="ion-no-padding ion-float-right" key={"itemdividercol2"+String(catID)+Boolean(completed)}>
-                <IonIcon className="collapse-icon ion-float-right" key={"itemdividericon"+String(catID)+Boolean(completed)} icon={isExpanded ? chevronUp : chevronDown } size="large" onClick={() => {collapseExpandCategory(catID,Boolean(completed))}} /></IonCol>
-            </IonRow></IonGrid>
+              <IonLabel className="ion-no-padding ion-float-left" slot="start" key={"itemdividercol1"+String(catID)+Boolean(completed)}>{catName}</IonLabel>
+              <IonIcon slot="end" className={"ion-float-right collapse-icon" + (isExpanded ? " category-collapsed" : " category-expanded")} key={"itemdividericon"+String(catID)+Boolean(completed)} icon={chevronUp} size="large" onClick={() => {collapseExpandCategory(catID,Boolean(completed))}} />
           </IonItemDivider>
         {curRows}
         </IonItemGroup>
@@ -583,7 +579,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
     let rowVisible = getCategoryExpanded(item.categoryID,Boolean(item.completed));
     currentRows.push(
-      <IonItem style={{display: rowVisible ? "block" : "none"}} className="itemrow-outer" key={"itemouter"+pageState.itemRows[i].itemID} >
+      <IonItem className={"itemrow-outer "+(rowVisible ? "itemrow-display" : "itemrow-hidden")} key={"itemouter"+pageState.itemRows[i].itemID} >
         <IonCheckbox key={"itemcheckbox"+pageState.itemRows[i].itemID} aria-label=""
             onIonChange={(e) => completeItemRow(item.itemID,e.detail.checked)}
             color={"medium"} disabled={pageState.doingUpdate}
@@ -600,7 +596,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
   addCurrentRows(listContent,currentRows,lastCategoryID,lastCategoryName,lastCategoryColor,lastCategoryFinished);
   if (!createdFinished) {listContent.push(completedDivider)};
-  let contentElem=(<IonList key="overallitemlist" className="ion-no-padding" lines="full">{listContent}</IonList>)
+  let contentElem=(<IonList key="overallitemlist" className="ion-no-padding" lines="none">{listContent}</IonList>)
 
   function resumeScroll() {
     let content = contentRef.current;

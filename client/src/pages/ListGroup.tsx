@@ -358,7 +358,7 @@ function deletePrompt() {
         <IonToolbar>
         <IonButtons slot="start"><IonMenuButton /></IonButtons>
             {selectDropDown}
-            <SyncIndicator />
+            <SyncIndicator addPadding={true}/>
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>

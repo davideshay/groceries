@@ -12,6 +12,7 @@ import log from 'loglevel';
 import { GlobalStateContext } from '../components/GlobalState';
 import { useHistory } from 'react-router';
 import { App } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 
 type InitialLoadProps = {
   history : History
@@ -26,7 +27,7 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
     const history = useHistory();
     const { t } = useTranslation();
   
-    if (globalState.initialLoadCompleted) {
+    if (globalState.initialLoadCompleted && Capacitor.isNativePlatform()) {
         App.exitApp();
     }
 

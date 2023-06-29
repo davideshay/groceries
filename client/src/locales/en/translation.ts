@@ -98,7 +98,7 @@ export const en_translations =
         "continue_ignore": "Continue/Ignore",
         "items_on": "Items On :",
         "search": "Search",
-        "delete_completed_items": "DELETE COMPLETED ITEMS",
+        "delete_completed_items": "REMOVE COMPLETED",
         "loading_list": "Loading List...",
         "changing_selected_list":"Changing Selected List",
         "list_updated_not_saved_still_change":"List has been updated and not saved. Do you still want to change lists?",

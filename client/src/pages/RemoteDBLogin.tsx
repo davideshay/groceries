@@ -1,5 +1,5 @@
 import { IonContent, IonPage, IonButton, IonList, IonInput, IonItem,
-  IonText, useIonAlert, isPlatform, IonIcon, useIonLoading, AlertOptions } from '@ionic/react';
+  IonText, useIonAlert, IonIcon, useIonLoading, AlertOptions } from '@ionic/react';
 import { useState, useEffect, useContext, useCallback } from 'react';
 import { eye, eyeOff } from 'ionicons/icons';
 import { Capacitor, CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
@@ -408,9 +408,10 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     await stopSyncAndCloseRemote();
     let credsStr=JSON.stringify({});
     await Preferences.set({key: 'dbcreds', value: credsStr})
-    if (!(isPlatform("desktop") || isPlatform("electron"))) {App.exitApp()}
+//    if (!(isPlatform("desktop") || isPlatform("electron"))) {App.exitApp()}
+    if (Capacitor.isNativePlatform()) {App.exitApp()}
     setRemoteDBState(initialRemoteDBState);
-    window.location.replace('/');
+    //window.location.replace('/');
     return false;
   }
 
