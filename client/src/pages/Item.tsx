@@ -152,7 +152,6 @@ const Item: React.FC = (props) => {
       newItemDoc.pluralName = stateItemDoc.name;
     }
     let alreadyExists = false;
-    log.debug("itemRows:",cloneDeep(itemRows),"itemIDstate:",cloneDeep(stateItemDoc._id));
     itemRows.forEach((ir) => {
       if ( ir._id !== stateItemDoc._id  && ir.listGroupID === stateItemDoc.listGroupID &&
         (ir.name.toUpperCase() === stateItemDoc.name.toUpperCase() ||
@@ -168,7 +167,8 @@ const Item: React.FC = (props) => {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.cannot_use_name_existing_item"), hasError: true}}))
       return false;
     }
-    if ( stateItemDoc.globalItemID == null && await checkNameInGlobalItems(globalData.globalItemDocs,stateItemDoc.name, String(stateItemDoc.pluralName))) {
+    let [globalExists,] = checkNameInGlobalItems(globalData.globalItemDocs,stateItemDoc.name, String(stateItemDoc.pluralName));
+    if ( stateItemDoc.globalItemID == null && globalExists) {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.cannot_use_name_existing_globalitem"), hasError: true}}))
       return false;
     }

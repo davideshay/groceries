@@ -4,7 +4,6 @@ import { GlobalDataContext } from "./GlobalDataProvider";
 import { translatedItemName } from "./translationUtilities";
 import { ItemDoc, ItemDocs } from "./DBSchema";
 import GenericSearchBar, { SearchRefType } from "./GenericSearchBar";
-import log from "loglevel";
 
 type PageState = {
     allListGroups: Set<string>,
@@ -83,7 +82,6 @@ const RecipeItemSearch: React.FC<RecipeItemSearchProps> = (props: RecipeItemSear
     function addNewRecipeItem(name: string) {
         props.addItemWithoutRow(name);
         if (searchRef.current) {
-            log.debug("Resetting the search state...",searchRef.current);
             searchRef.current.resetSearch()
         }    
     }

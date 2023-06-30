@@ -343,8 +343,9 @@ export function listIsDifferentThanCommon(sortedLists: ItemList[], listIdx: numb
     return ((combinedKeys[thisKey] < maxCnt) || (maxCheckCount > 1)) ;
 }
 
-export function checkNameInGlobalItems(globalItemDocs: GlobalItemDocs, name: string, pluralName: string): boolean {
+export function checkNameInGlobalItems(globalItemDocs: GlobalItemDocs, name: string, pluralName: string): [boolean, string|null] {
   let nameExists=false;
+  let globalID: string|null = null;
   const sysItemKey="system:item";
   const compName = name.toLocaleUpperCase();
   const compPluralName = pluralName.toLocaleUpperCase();
@@ -358,8 +359,9 @@ export function checkNameInGlobalItems(globalItemDocs: GlobalItemDocs, name: str
         t(tkey, {count: 2}).toLocaleUpperCase() === compPluralName  
         ) {
           nameExists = true;
+          globalID = item._id!;
         }
         return !nameExists;
   });
-  return nameExists;
+  return [nameExists,globalID];
 }

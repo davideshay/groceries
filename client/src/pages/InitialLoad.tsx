@@ -40,7 +40,7 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
     useEffect(() => {
         async function initialStartup() {
             screenLoading.current=false;
-            log.debug("In Initial Load, naving to first list id");
+            log.debug("In Initial Load, naving to first list id. Saved:",globalState.settings.savedListID);
             await navigateToFirstListID(history,listRows,listCombinedRows, globalState.settings.savedListID);
             setRemoteDBState(prevState => ({...prevState,initialNavComplete: true}));
             setGlobalState(prevState => ({...prevState,initialLoadCompleted: true}));

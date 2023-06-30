@@ -14,7 +14,6 @@ import PQueue from "p-queue";
 import { Capacitor } from "@capacitor/core";
 
 import { minimumAccessRefreshSeconds } from "./DBSchema";
-import { cloneDeep } from "lodash";
 
 const secondsBetweenRefreshRetries = 30;
 
@@ -207,6 +206,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     const loginAttempted = useRef(false);
     const loginType = useRef<LoginType>(LoginType.autoLoginSpecificURL);
     const remoteDBCreds = useRef<DBCreds>(DBCredsInit);
+    const syncListGroupIDs = useRef<string[]>([]);
     const [, forceUpdateState] = React.useState<{}>();
     const forceUpdate = React.useCallback(() => forceUpdateState({}), []);
     const db=usePouch();
@@ -284,7 +284,11 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             log.debug("Not starting live sync... App being paused...");
         }
         setRemoteDBState(prevState=>({...prevState,initialSyncComplete: true}));
+        let queryParams = {username: remoteDBCreds.current.dbUsername, listgroups: syncListGroupIDs.current};
+        log.debug("Syncing with query params:",queryParams);
         try {globalSync = db.sync((globalRemoteDB as PouchDB.Database), {
+            filter: 'replfilter/by_user',
+            query_params: queryParams,
             back_off_function: function(delay) {
                 async function takeAction () {
                     log.debug("live sync going offline",db,globalRemoteDB);
@@ -324,11 +328,15 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     },[db,liveSync])
 
     const startSync = useCallback( () => {
-        log.debug("Starting initial sync of database");
+        log.debug("Starting initial sync of database. List groups engaged:",syncListGroupIDs.current);
         if (appStatus.current === AppStatus.paused || appStatus.current === AppStatus.pausing) {
             log.debug("Not starting initial sync... App being paused...");
         }
+        let queryParams = {username: remoteDBCreds.current.dbUsername, listgroups: syncListGroupIDs.current};
+        log.debug("Syncing with query params:",queryParams);
         try { globalSync = db.sync((globalRemoteDB as PouchDB.Database), {
+            filter: 'replfilter/by_user',
+            query_params: queryParams,
             back_off_function: function(delay) {
                 async function takeAction () {
                     log.debug("initial sync going offline",db,globalRemoteDB);
@@ -424,7 +432,6 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         // }
         if (!DBUUIDCheck.checkOK) {
             log.debug("Did not pass DB unique ID check.");
-            log.debug("logged in?",cloneDeep({remoteDBState}))
             if (DBUUIDCheck.dbAvailable) {
                 log.debug("DBUUID Action is : ",DBUUIDCheck.dbUUIDAction, " naving to login screen...");
                 setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.invalid_dbuuid") , dbUUIDAction: DBUUIDCheck.dbUUIDAction, connectionStatus: ConnectionStatus.navToLoginScreen}))
@@ -432,6 +439,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
                 setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.db_server_not_available"), dbUUIDAction: DBUUIDAction.exit_no_uuid_on_server, connectionStatus: ConnectionStatus.navToLoginScreen}))
             }    
         } else {
+            syncListGroupIDs.current = DBUUIDCheck.syncListGroupIDs;
             setRemoteDBState(prevState => ({...prevState,connectionStatus: ConnectionStatus.syncStarted}));
 //            await initialSetupActivities(globalRemoteDB as PouchDB.Database,remoteDBCreds.current.dbUsername as string)
             log.debug("DB Unique ID check passed. Setup Activities complete. Starting Sync.");

@@ -10,9 +10,9 @@ import './Items.css';
 import { useUpdateGenericDocument, useCreateGenericDocument, useItems } from '../components/Usehooks';
 import { GlobalStateContext } from '../components/GlobalState';
 import { AddListOptions, DefaultColor } from '../components/DBSchema';
-import { ItemSearch, SearchState, PageState, ListCombinedRow, HistoryProps, RowType, ItemSearchType, CategoryRows, ItemRows} from '../components/DataTypes'
+import { ItemSearch, SearchState, PageState, ListCombinedRow, HistoryProps, RowType, ItemSearchType, CategoryRows, SearchStateInit} from '../components/DataTypes'
 import { ItemDoc, ItemDocs, ItemListInit, ItemList, ItemDocInit, CategoryDoc, UomDoc, GlobalItemDocs } from '../components/DBSchema';
-import { getAllSearchRows, getItemRows, filterSearchRows } from '../components/ItemUtilities';
+import { getAllSearchRows, getItemRows, filterSearchRows, checkNameInGlobalItems } from '../components/ItemUtilities';
 import SyncIndicator from '../components/SyncIndicator';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
@@ -21,17 +21,19 @@ import { isEqual, debounce } from 'lodash';
 import { useTranslation } from 'react-i18next';
 import log from 'loglevel';
 import { navigateToFirstListID } from '../components/RemoteUtilities';
+import { Capacitor } from '@capacitor/core';
 
 const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode: routeMode, id: routeListID  } = useParams<{mode: string, id: string}>();
   const [searchRows,setSearchRows] = useState<ItemSearch[]>();
-  const [searchState,setSearchState] = useState<SearchState>({searchCriteria:"",isOpen: false,isFocused: false, filteredSearchRows: [], dismissEvent: undefined});
+  const [searchState,setSearchState] = useState<SearchState>(SearchStateInit);
   const [pageState, setPageState] = useState<PageState>({selectedListOrGroupID: routeListID,
           selectedListType: (routeMode === "list" ? RowType.list : RowType.listGroup) ,
           ignoreCheckOffWarning: false,
           groupIDforSelectedList: null,
           itemRows: [], categoryRows: [],showAlert: false, alertHeader: "", alertMessage: ""});
   const searchRef=useRef<HTMLIonInputElement>(null);
+  const enterKeyValueRef=useRef<string>("");
   const doingUpdate=useRef(false);
   const [presentToast] = useIonToast();
   const [presentAlert, dismissAlert] = useIonAlert();
@@ -116,6 +118,45 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     filterAndCheckRows(searchState.searchCriteria,searchState.isFocused);
   },[searchRows,searchState.isFocused,searchState.searchCriteria,filterAndCheckRows])
 
+  const isItemAlreadyInList = useCallback( (itemName: string) => {
+    if (itemName === "") {return false;}
+    let existingItem = (baseItemDocs as ItemDocs).find((el) => (el.name.toUpperCase() === itemName.toUpperCase() || el.pluralName?.toUpperCase() === itemName.toUpperCase()));
+    return(!(existingItem === undefined));
+  },[baseItemDocs])
+
+  const addNewItemToList = useCallback( (itemName: string) => {
+      if (isItemAlreadyInList(itemName)) {
+        setPageState(prevState => ({...prevState, showAlert: true, alertHeader: t("error.adding_to_list") , alertMessage: t("error.item_exists_current_list")}))
+        setSearchState(prevState => ({...prevState, isOpen: false, searchCriteria: "", filteredSearchRows: [], isFocused: false}))
+      } else {
+        setGlobalStateInfo("itemMode","new");
+        setGlobalStateInfo("callingListID",pageState.selectedListOrGroupID);
+        setGlobalStateInfo("callingListType",pageState.selectedListType);
+        let [,globalItemID] = checkNameInGlobalItems(globalData.globalItemDocs,itemName,itemName);
+        setGlobalStateInfo("newItemGlobalItemID",globalItemID)
+        setGlobalStateInfo("newItemName",itemName);
+        setSearchState(prevState => ({...prevState, isOpen: false,searchCriteria:"",filteredSearchRows: [],isFocused: false}))
+        history.push("/item/new/");
+      }
+    }
+  ,[history,isItemAlreadyInList,pageState.selectedListOrGroupID,pageState.selectedListType,setGlobalStateInfo,t,globalData.globalItemDocs])
+  
+  useEffect( () => {
+    function beforeInputData(e:any) {
+      if (e && e.data && e.data.includes("\n")) {
+          enterKeyValueRef.current= e.data.length > 1 ? e.data.slice(0,-1) : "";
+          addNewItemToList(searchState.searchCriteria);
+      }
+    }
+    if (searchRef && searchRef.current && (Capacitor.getPlatform() === "android")) {
+      let localRef=searchRef.current;
+      localRef.addEventListener('beforeinput',beforeInputData,false)
+      return () => {
+          localRef.removeEventListener('beforeinput',beforeInputData,false)
+      }
+    }
+  },[addNewItemToList,searchState.searchCriteria])
+
   const completeItemRow = useCallback( async(id: String, index: number, newStatus: boolean | null) => {
     if (pageState.selectedListType === RowType.listGroup && !pageState.ignoreCheckOffWarning) {
        await presentAlert({
@@ -155,7 +196,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     doingUpdate.current = false;
     shouldScroll.current = true;
   },[baseItemDocs,dismissAlert,globalState.settings.removeFromAllLists,pageState.ignoreCheckOffWarning,pageState.selectedListOrGroupID,
-     pageState.selectedListType,presentAlert,presentToast,t,updateItemInList,pageState.itemRows])
+     pageState.selectedListType,presentAlert,presentToast,t,updateItemInList])
 
   const completeItemRowStub = useCallback( async (id: string, index: number, newStatus: boolean|null) => {
     const completeRowFunc = debounce((did: string,didx: number,dstatus: boolean|null) => completeItemRow(did,didx,dstatus),350,{leading: true, trailing: false})
@@ -167,7 +208,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   )}
 
 /*   if (!baseItemRowsLoaded || !baseSearchItemRowsLoaded || !listRowsLoaded || categoryLoading || globalData.globalItemsLoading || uomLoading || pageState.doingUpdate )  {
-    log.debug(cloneDeep({baseItemRowsLoaded,baseSearchItemRowsLoaded,listRowsLoaded,categoryLoading,gil: globalData.globalItemsLoading, uomLoading, doingupate: pageState.doingUpdate}))
     return ( <Loading isOpen={screenLoading.current} message={t("general.loading_items")} /> )
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   };
@@ -182,54 +222,19 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   screenLoading.current=false;
 
   function updateSearchCriteria(event: CustomEvent) {
-//    let toOpen=true;
-//    if (event.detail.value.length === 0) {toOpen = false}
-    setSearchState(prevState => ({...prevState, isFocused: true}));
-    filterAndCheckRows(event.detail.value,true)
-  }
-
-  function isItemAlreadyInList(itemName: string): boolean {
-    if (itemName === "") {return false;}
-    let existingItem = (baseItemDocs as ItemDocs).find((el) => (el.name.toUpperCase() === itemName.toUpperCase() || el.pluralName?.toUpperCase() === itemName.toUpperCase()));
-    return(!(existingItem === undefined));
-  }
-
-  function getGlobalItemID(itemName: string): string|null {
-    let globalItemID: string|null = null;
-    let sysItemKey = "system:item";
-    let sysItemKeyLength = sysItemKey.length + 1;
-    globalData.globalItemDocs.every(gi => {
-      let giItemTransKey="globalitem."+(String(gi._id).substring(sysItemKeyLength));
-      if (itemName.toLocaleUpperCase().localeCompare(gi.name.toLocaleUpperCase()) === 0 ||
-          itemName.toLocaleUpperCase().localeCompare(t(giItemTransKey,{count: 1}).toLocaleUpperCase()) === 0 || 
-          itemName.toLocaleUpperCase().localeCompare(t(giItemTransKey,{count: 2}).toLocaleUpperCase()) === 0 )
-       {
-        globalItemID = gi._id!;
-        return false;
-      } else { return true; }
-    })
-    return globalItemID;
-  }
-
-  function addNewItemToList(itemName: string) {
-    if (isItemAlreadyInList(itemName)) {
-      setPageState(prevState => ({...prevState, showAlert: true, alertHeader: t("error.adding_to_list") , alertMessage: t("error.item_exists_current_list")}))
-      setSearchState(prevState => ({...prevState, isOpen: false, searchCriteria: "", filteredSearchRows: [], isFocused: false}))
+    if (event.detail.value !== enterKeyValueRef.current) {
+        setSearchState(prevState => ({...prevState, searchCriteria: event.detail.value, isFocused:true}));
+        filterAndCheckRows(event.detail.value,true)
+        enterKeyValueRef.current="";
     } else {
-      setGlobalStateInfo("itemMode","new");
-      setGlobalStateInfo("callingListID",pageState.selectedListOrGroupID);
-      setGlobalStateInfo("callingListType",pageState.selectedListType);
-      let globalItemID = getGlobalItemID(itemName)
-      setGlobalStateInfo("newItemGlobalItemID",globalItemID)
-      setGlobalStateInfo("newItemName",itemName);
-      setSearchState(prevState => ({...prevState, isOpen: false,searchCriteria:"",filteredSearchRows: [],isFocused: false}))
-      history.push("/item/new/");
+        setSearchState(prevState => ({...prevState,isFocused: false, isOpen: false, searchCriteria: ""}));
     }
   }
 
   function searchKeyPress(event: KeyboardEvent<HTMLElement>) {
     if (event.key === "Enter") {
-      addNewItemToList(searchState.searchCriteria)
+      addNewItemToList(searchState.searchCriteria);
+      enterKeyValueRef.current= searchState.searchCriteria.length > 1 ? searchState.searchCriteria.slice(0,-1) : "";
     }
   }
 

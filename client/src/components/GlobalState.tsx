@@ -8,6 +8,7 @@ import { useCreateGenericDocument, useUpdateGenericDocument } from "./Usehooks";
 import { RemoteDBStateContext } from "./RemoteDBState";
 import { useFind } from "use-pouchdb";
 import { isEmpty } from "lodash";
+import log from "loglevel";
 
 export type GlobalState = {
     itemMode?: string,
@@ -166,12 +167,14 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
             let newSettingsDoc: SettingsDoc = cloneDeep(InitSettingsDoc);
             newSettingsDoc.username = String(remoteDBCreds.dbUsername);
             newSettingsDoc.settings = cloneDeep(storageSettings);
+            log.debug("Created Settings Doc: settings exist in localstorage, not on DB")
             await createSettingDoc(newSettingsDoc);
             await Preferences.remove({ key: "settings"});
             finalSettings = cloneDeep(newSettingsDoc.settings);
         } else if (!storageSettingsExist && !dbSettingsExist) {
             let newSettingsDoc: SettingsDoc = cloneDeep(InitSettingsDoc);
             newSettingsDoc.username = String(remoteDBCreds.dbUsername);
+            log.debug("Created Settings Doc: no settings exist at all");
             await createSettingDoc(newSettingsDoc)
             finalSettings = cloneDeep(newSettingsDoc.settings);
         } else if (storageSettingsExist && dbSettingsExist) {
@@ -179,6 +182,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
             if (dbUpdated) {
                 let newSettingsDoc:SettingsDoc = cloneDeep(settingsDocs[0]);
                 newSettingsDoc.settings = cloneDeep(dbSettingsDoc.settings);
+                log.debug("Updating settings on DB")
                 await updateSettingDoc(newSettingsDoc)
             }
             finalSettings = cloneDeep(dbSettingsDoc.settings);
@@ -192,6 +196,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         }
         setGlobalState(prevState => ({...prevState,settings: finalSettings, categoryColors: dbCategoryColors}))
         setGlobalState(prevState => ({...prevState,settingsLoaded: true}));
+        log.debug("Settings in state set to:",finalSettings)
         return (finalSettings);
     },[createSettingDoc,remoteDBCreds.dbUsername,settingsDocs,updateSettingDoc])
 
