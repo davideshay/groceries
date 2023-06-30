@@ -1,8 +1,9 @@
 import { IonItem,  IonPopover, IonContent, IonList, IonSearchbar } from "@ionic/react"
 import { cloneDeep } from "lodash"
-import { useEffect, useState, KeyboardEvent, forwardRef, useImperativeHandle, Ref, useId } from "react"
+import { useEffect, useState, KeyboardEvent, forwardRef, useImperativeHandle, Ref, useId, useRef } from "react"
 import "./GenericSearchBar.css"
 import log from "loglevel"
+import { Capacitor } from "@capacitor/core"
 
 export type SearchRow = {
     id: string,
@@ -37,6 +38,8 @@ export type SearchBarProps = {
 function  GenericSearchBar(props: SearchBarProps,ref: Ref<SearchRefType>) {
     const [searchState, setSearchState] = useState<SearchState>(searchStateInit)
     const componentID = useId()
+    const localSearchRef=useRef<any>(null);
+    const enterKeyValueRef=useRef<string>("");
 
     function resetSearch() {
 //        setSearchState(searchStateInit)
@@ -44,6 +47,23 @@ function  GenericSearchBar(props: SearchBarProps,ref: Ref<SearchRefType>) {
     }
 
     useImperativeHandle(ref, () => ({resetSearch}));
+
+    useEffect( () => {
+        function logit(e:any) {
+            log.debug("data from beforeinput:",e.data);
+            if (e && e.data && e.data.includes("\n")) {
+                log.debug("enter key pressed, criteria was ",cloneDeep(searchState.searchCriteria));
+                enterKeyValueRef.current= e.data.length > 1 ? e.data.slice(0,-1) : "";
+                props.addItemWithoutRow(searchState.searchCriteria)
+            }
+        }
+        if (localSearchRef && localSearchRef.current && (Capacitor.getPlatform() === "android")) {
+            localSearchRef.current.addEventListener('beforeinput',logit,false)
+            return () => {
+                localSearchRef.current.removeEventListener('beforeinput',logit,false)
+            }
+        }
+    },[searchState.searchCriteria,localSearchRef])
 
     useEffect( () => {
     },[searchState.filteredRows,searchState.isFocused,searchState.isOpen,searchState.searchCriteria])
@@ -66,7 +86,16 @@ function  GenericSearchBar(props: SearchBarProps,ref: Ref<SearchRefType>) {
     }
     
     function updateSearchCriteria(event: CustomEvent) {
-        setSearchState(prevState => ({...prevState, searchCriteria: event.detail.value}));
+        log.debug("Update Search Criteria to:",event.detail.value,"compared to enterkeyref:",enterKeyValueRef.current);
+        log.debug("e.d.v len:",event.detail.value.length,"ekr len",enterKeyValueRef.current.length)
+        if (event.detail.value !== enterKeyValueRef.current) {
+            log.debug("Was not the same, normally updating search criteria")
+            setSearchState(prevState => ({...prevState, searchCriteria: event.detail.value}));
+            enterKeyValueRef.current="";
+        } else {
+            log.debug("was the same, resetting search...")
+            resetSearch();
+        }
     }
     
     function enterSearchBox() {
@@ -90,12 +119,11 @@ function  GenericSearchBar(props: SearchBarProps,ref: Ref<SearchRefType>) {
             </IonContent>
         </IonPopover>
         <IonSearchbar id={componentID} aria-label="" className="ion-no-padding generic-input-search generic-input-search-class"
-                    debounce={5} value={searchState.searchCriteria} inputmode="text" enterkeyhint="enter"
-                    onIonInput={(e: any) => {log.debug("ioninp",e);updateSearchCriteria(e)}}
-                    onInputCapture={(e:any) => {log.debug("inpcap",e)}}
-                    onInput={(e:any) => {log.debug("inp",e,e.nativeEvent, e.nativeEvent.data,e.nativeEvent.inputType)}}
-//                    onIonChange={(e: any) =>{console.log("search change:",e); searchInputChange(e)}}
-                    onKeyDown={(e:any) => {log.debug("keydown",e,e.nativeEvent,e.nativeEvent.code,e.nativeEvent.keyCode,e.nativeEvent.key,e.nativeEvent.charCode,e.nativeEvent.type,e.nativeEvent.returnValue); searchKeyPress(e)}}
+                    debounce={5} value={searchState.searchCriteria} inputmode="search" enterkeyhint="enter" ref={localSearchRef}
+                    onIonInput={(e: any) => {updateSearchCriteria(e)}}
+//                    onInput={(e: any) => {console.log("oninput",e.nativeEvent.data)}}
+//                    onIonChange={(e:any) => {console.log("onionchange",e)}}
+                    onKeyDown={(e:any) => {searchKeyPress(e)}}
                     onClick={() => enterSearchBox()}>
          </IonSearchbar>           
      </IonItem>
