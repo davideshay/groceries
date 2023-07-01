@@ -1076,31 +1076,7 @@ async function createStandardIndexes(): Promise<boolean> {
 async function createReplicationFilter(): Promise<boolean> {
     let success=true;
     let dbresp = null;
-    let filterFunc: string =  "function(doc,req) {" +
-        "if (doc._id.startsWith('_design')) {return true}" +
-        "switch (doc.type) {" +
-            "case 'item','list','recipe':" +
-                "return (req.listgroups.includes(doc.listGroupID));" +
-                "break;" +
-            "case 'listgroup':" +
-                "return (req.listgroups.includes(doc._id));" +
-                "break;" +
-            "case 'settings':" +
-                "return (doc.username === req.username);" +
-                "break;" +
-            "case 'globalitem','dbuuid':" +
-                "return (true);" +
-                "break;" +
-            "case 'category','uom':" +
-                "return (req.listgroups.includes(doc.listGroupID) || doc.listGroupID === 'system');" +
-                "break;" +
-            "default:" +
-                "return (false);" +
-                "break;" + 
-            "}"+ 
-        "}"
-
-    filterFunc = "function(doc,req) {"+
+    let filterFunc = "function(doc,req) {"+
         "if (doc._id.startsWith('_design')) {return true;};" +
          "if (!doc.hasOwnProperty('type')) {return false;};" +
          "if (doc.type === undefined || doc.type === null) {return false;};" +
@@ -1108,16 +1084,29 @@ async function createReplicationFilter(): Promise<boolean> {
             "case 'item': "+
             "case 'list':"+
             "case 'recipe':" +
-                "return (true);"+
+                "return (req.query.listgroups.includes(doc.listGroupID));"+
+                "break;" +
+            "case 'listgroup':" +
+                "return (req.query.listgroups.includes(doc._id));" +
                 "break;" +
             "case 'settings':" +
-                "return (doc.username === req.username);" +
-                "break;" +    
+                "return (doc.username === req.query.username);" +
+                "break;" +
+            "case 'friend':" +
+                "return (doc.friendID1 === req.query.username || doc.friendID2 === req.query.username);" +    
+            "case 'globalitem':" +
+            "case 'dbuuid':" +
+            "case 'trigger':" +
+                "return (true);" +
+                "break;" +
+            "case 'category':" +
+            "case 'uom':" +
+                "return (req.query.listgroups.includes(doc.listGroupID) || doc.listGroupID === 'system');" +
+                "break;" +
             "default:"+
                 "return (false);"+
                 "break;" +
          "  }"+
-        // "return true" +
          "}"
 
     let ddoc = {

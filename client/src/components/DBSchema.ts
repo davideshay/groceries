@@ -342,3 +342,11 @@ export const InitSettingsDoc : SettingsDoc = {
   categoryColors: {},
   updatedAt: ""
 }
+
+export type TriggerDoc = {
+  _id?: string,
+  _rev?: string,
+  type: string,
+  triggerData: any,
+  updatedAt: string
+}

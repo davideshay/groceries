@@ -172,6 +172,8 @@ export async function refreshToken(req: Request, res: Response) : Promise<{statu
         return({status, response});
     }
     if (tokenDecode.payload.deviceUUID !== deviceUUID) {
+        log.debug("Token Payload device id: ",tokenDecode.payload.deviceUUID);
+        log.debug("device UUID from body of request: ",deviceUUID);
         log.warn("SECURITY: Attempt to use refresh token with mis-matched device UUIDs. Invalidating all JWTs for ",tokenDecode.payload.sub);
         invalidateToken(String(tokenDecode.payload.sub),deviceUUID,true)
         status = 403;

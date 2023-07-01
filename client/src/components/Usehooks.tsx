@@ -90,7 +90,9 @@ export function useDeleteGenericDocument() {
   return useCallback(
     async (updatedDoc: any) => {
           let response: PouchResponse = cloneDeep(PouchResponseInit);
-          try { response.pouchData = await db.remove(updatedDoc);}
+//          try { response.pouchData = await db.remove(updatedDoc);}
+          updatedDoc._deleted=true;
+          try { response.pouchData = await db.put(updatedDoc);}
           catch(err) { response.successful = false; response.fullError = err;}
           if (!response.pouchData.ok) { response.successful = false;}
       return response
@@ -113,7 +115,9 @@ export function useDeleteItemsInListGroup() {
       catch(err) {response.successful = false; response.fullError = err; return response;}
       for (let i = 0; i < itemResults.docs.length; i++) {
         const itemDoc: ItemDoc = (itemResults.docs[i] as ItemDoc); 
-        try {await db.remove(itemDoc as PouchDB.Core.RemoveDocument)}
+//        try {await db.remove(itemDoc as PouchDB.Core.RemoveDocument)}
+        (itemDoc as any)._deleted = true;
+        try {response.pouchData = await db.put(itemDoc)}
         catch(err) { response.successful= false; response.fullError = err; }
         }
       return response;
