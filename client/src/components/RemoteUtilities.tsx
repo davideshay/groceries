@@ -3,7 +3,7 @@ import { CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
 import { Preferences } from '@capacitor/preferences';
 import jwt_decode from 'jwt-decode';
 import { ListCombinedRows, ListRow, RowType } from "./DataTypes";
-import { ListGroupDocs, UUIDDoc, maxAppSupportedSchemaVersion } from "./DBSchema";
+import { ListGroupDocs, TriggerDoc, UUIDDoc, maxAppSupportedSchemaVersion } from "./DBSchema";
 import { DBUUIDAction, DBUUIDCheck } from "./RemoteDBState";
 import { History } from "history";
 import { urlPatternValidation, usernamePatternValidation, emailPatternValidation,
@@ -351,6 +351,7 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
                 catch(err) {log.error("Retry of DBUUID from remote also failed");
                             UUIDCheck.dbAvailable = false;
                             UUIDCheck.checkOK = false;
+                            UUIDCheck.dbUUIDAction = DBUUIDAction.exit_no_uuid_on_server;
                             return UUIDCheck;}
     }
     let UUIDResult : null|string = null;
@@ -425,6 +426,35 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
     }
 //     UUIDCheck.checkOK = false; UUIDCheck.dbUUIDAction = DBUUIDAction.destroy_needed;
     return UUIDCheck;
+  }
+
+  export async function updateTriggerDoc(remoteDB: PouchDB.Database,data: {}) {
+    log.debug("updating trigger doc...");
+    let results: PouchDB.Find.FindResponse<{}> | null = null;
+    try { results = await remoteDB.find({
+        use_index: "stdType",
+        selector: { "type": "trigger" } })}
+    catch(err) {log.error("Could not find trigger doc, DB error"); return false;}
+    let triggerExists = false;
+    if (results !== null  && results.docs && results.docs.length > 0) {triggerExists = true};
+    if (triggerExists) {
+        let triggerDoc: TriggerDoc = results.docs[0] as TriggerDoc;
+        triggerDoc.triggerData = data;
+        triggerDoc.updatedAt = new Date().toISOString();
+        try { await remoteDB.put(triggerDoc)}
+        catch(err) {log.error("Could not update trigger doc, DB error"); return false;}
+        log.debug("Trigger Doc updated with new data");
+    } else {
+        let triggerDoc: TriggerDoc = {
+            type: "trigger",
+            triggerData: data,
+            updatedAt: new Date().toISOString()
+        }
+        try {await remoteDB.post(triggerDoc)}
+        catch(err) {log.error("Could not create trigger doc, DB Error"); return false;}
+        log.debug("Trigger doc created with new data");
+    }
+    return true;
   }
 
   export async function  getPrefsDBCreds(curCreds: DBCreds): Promise<[boolean,DBCreds]>  {

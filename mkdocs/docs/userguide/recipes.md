@@ -6,6 +6,14 @@
 
 In this app, a recipe is a collection of items and a set of preparation steps.  Each item can either be one of the global items that come with the app, or a custom one for the recipe. Every item has a separate "recipe" and "shopping" unit of measure and quantity. For instance, you might need 2 cups of sugar for the recipe, but you wouldn't buy 2 cups of sugar, but perhaps 1 pound.
 
+## General Approach
+
+Every user of the application will have a special list group created for recipes. The default name until you change it is "username (recipes)". 
+
+Like the other list groups, the name can be edited and you can share the list with other app users once you have a confirmed "friend" relationship in the application.
+
+Unlike the other list groups, you can't "shop" from the recipes list. Instead, you add the items on a given recipe to one of the other shopping lists or list groups.
+
 ## Recipe Import
 
 ![](https://raw.githubusercontent.com/davideshay/groceries/master/mkdocs/docs/assets/recipeimport-1.png){align=right width=300}

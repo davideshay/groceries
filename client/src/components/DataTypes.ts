@@ -63,11 +63,18 @@ export enum ItemSearchType {
     dismissEvent: CustomEvent | undefined
   }
 
+  export const SearchStateInit: SearchState  = {
+    searchCriteria: "",
+    isOpen: false,
+    isFocused: false,
+    filteredSearchRows: [],
+    dismissEvent: undefined
+  }
+
   export interface PageState {
     selectedListOrGroupID: string | null,
     selectedListType: RowType,
     groupIDforSelectedList: null | string,
-    doingUpdate: boolean,
     itemRows: Array<ItemRow>,
     categoryRows: Array<CategoryRow>,
     ignoreCheckOffWarning: boolean,

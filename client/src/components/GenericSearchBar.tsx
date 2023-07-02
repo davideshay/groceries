@@ -1,7 +1,8 @@
 import { IonItem,  IonPopover, IonContent, IonList, IonSearchbar } from "@ionic/react"
 import { cloneDeep } from "lodash"
-import { useEffect, useState, KeyboardEvent, forwardRef, useImperativeHandle, Ref, useId } from "react"
+import { useEffect, useState, KeyboardEvent, forwardRef, useImperativeHandle, Ref, useId, useRef } from "react"
 import "./GenericSearchBar.css"
+import { Capacitor } from "@capacitor/core"
 
 export type SearchRow = {
     id: string,
@@ -33,9 +34,11 @@ export type SearchBarProps = {
     addItemWithoutRow: (name: string) => void,
 }
 
-function  GenericSearchBar(props: SearchBarProps,ref: Ref<SearchRefType>) {
+function  GenericSearchBar({searchRows, rowSelected, addItemWithoutRow}: SearchBarProps,ref: Ref<SearchRefType>) {
     const [searchState, setSearchState] = useState<SearchState>(searchStateInit)
     const componentID = useId()
+    const localSearchRef=useRef<any>(null);
+    const enterKeyValueRef=useRef<string>("");
 
     function resetSearch() {
 //        setSearchState(searchStateInit)
@@ -45,10 +48,23 @@ function  GenericSearchBar(props: SearchBarProps,ref: Ref<SearchRefType>) {
     useImperativeHandle(ref, () => ({resetSearch}));
 
     useEffect( () => {
-    },[searchState.filteredRows,searchState.isFocused,searchState.isOpen,searchState.searchCriteria])
+        function beforeInputData(e:any) {
+            if (e && e.data && e.data.includes("\n")) {
+                enterKeyValueRef.current= e.data.length > 1 ? e.data.slice(0,-1) : "";
+                addItemWithoutRow(searchState.searchCriteria)
+            }
+        }
+        if (localSearchRef && localSearchRef.current && (Capacitor.getPlatform() === "android")) {
+            let localRef=localSearchRef.current;
+            localRef.addEventListener('beforeinput',beforeInputData,false)
+            return () => {
+                localRef.removeEventListener('beforeinput',beforeInputData,false)
+            }
+        }
+    },[searchState.searchCriteria,localSearchRef,addItemWithoutRow])
 
     useEffect( () => {
-        let newFilteredRows: SearchRow[] = cloneDeep(props.searchRows.filter(sr => (sr.display.toUpperCase().includes(searchState.searchCriteria.toUpperCase()))))
+        let newFilteredRows: SearchRow[] = cloneDeep(searchRows.filter(sr => (sr.display.toUpperCase().includes(searchState.searchCriteria.toUpperCase()))))
         newFilteredRows.sort((a,b)=> (
             (Number(b.display.toLocaleUpperCase().startsWith(searchState.searchCriteria.toLocaleUpperCase())) -
             Number(a.display.toLocaleUpperCase().startsWith(searchState.searchCriteria.toLocaleUpperCase()))) ||
@@ -56,16 +72,22 @@ function  GenericSearchBar(props: SearchBarProps,ref: Ref<SearchRefType>) {
            ))
         let toOpen = newFilteredRows.length > 0 && (searchState.isFocused || searchState.searchCriteria.length > 0)
         setSearchState(prevState=>({...prevState,filteredRows: newFilteredRows, isOpen: toOpen}))   
-    },[props.searchRows,searchState.searchCriteria,searchState.isFocused])
+    },[searchRows,searchState.searchCriteria,searchState.isFocused])
 
     function searchKeyPress(event: KeyboardEvent<HTMLElement>) {
         if (event.key === "Enter") {
-          props.addItemWithoutRow(searchState.searchCriteria)
+          addItemWithoutRow(searchState.searchCriteria)
+          enterKeyValueRef.current= searchState.searchCriteria.length > 1 ? searchState.searchCriteria.slice(0,-1) : "";
         }
     }
     
     function updateSearchCriteria(event: CustomEvent) {
-        setSearchState(prevState => ({...prevState, searchCriteria: event.detail.value}));
+        if (event.detail.value !== enterKeyValueRef.current) {
+            setSearchState(prevState => ({...prevState, searchCriteria: event.detail.value}));
+            enterKeyValueRef.current="";
+        } else {
+            resetSearch();
+        }
     }
     
     function enterSearchBox() {
@@ -83,16 +105,17 @@ function  GenericSearchBar(props: SearchBarProps,ref: Ref<SearchRefType>) {
             <IonContent>
                 <IonList key="popoverItemList">
                  {searchState.filteredRows.map((sr) => (
-                  <IonItem button key={sr.id} onClick={(e) => {props.rowSelected(sr.id,sr.data)}}>{sr.display}</IonItem>
+                  <IonItem button key={sr.id} onClick={(e) => {rowSelected(sr.id,sr.data)}}>{sr.display}</IonItem>
                  ))}
                 </IonList>
             </IonContent>
         </IonPopover>
         <IonSearchbar id={componentID} aria-label="" className="ion-no-padding generic-input-search generic-input-search-class"
-                    debounce={5} value={searchState.searchCriteria} inputmode="text" enterkeyhint="enter"
+                    debounce={5} value={searchState.searchCriteria} inputmode="search" enterkeyhint="enter" ref={localSearchRef}
                     onIonInput={(e: any) => {updateSearchCriteria(e)}}
-//                    onIonChange={(e: any) =>{console.log("search change:",e); searchInputChange(e)}}
-                    onKeyDown={(e) => searchKeyPress(e)}
+//                    onInput={(e: any) => {console.log("oninput",e.nativeEvent.data)}}
+//                    onIonChange={(e:any) => {console.log("onionchange",e)}}
+                    onKeyDown={(e:any) => {searchKeyPress(e)}}
                     onClick={() => enterSearchBox()}>
          </IonSearchbar>           
      </IonItem>

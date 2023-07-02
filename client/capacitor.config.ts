@@ -9,7 +9,7 @@ const config: CapacitorConfig = {
   },
   webDir: 'build',
    android: {
-     captureInput: true,
+  //   captureInput: true,
   //   useLegacyBridge: true
    },
 };

@@ -12,6 +12,7 @@ import log from 'loglevel';
 import { GlobalStateContext } from '../components/GlobalState';
 import { useHistory } from 'react-router';
 import { App } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 
 type InitialLoadProps = {
   history : History
@@ -26,7 +27,7 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
     const history = useHistory();
     const { t } = useTranslation();
   
-    if (globalState.initialLoadCompleted) {
+    if (globalState.initialLoadCompleted && Capacitor.isNativePlatform()) {
         App.exitApp();
     }
 
@@ -39,7 +40,7 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
     useEffect(() => {
         async function initialStartup() {
             screenLoading.current=false;
-            log.debug("In Initial Load, naving to first list id");
+            log.debug("In Initial Load, naving to first list id. Saved:",globalState.settings.savedListID);
             await navigateToFirstListID(history,listRows,listCombinedRows, globalState.settings.savedListID);
             setRemoteDBState(prevState => ({...prevState,initialNavComplete: true}));
             setGlobalState(prevState => ({...prevState,initialLoadCompleted: true}));

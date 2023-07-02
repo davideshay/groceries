@@ -11,8 +11,9 @@
 }
 
 ion-list-header.app-name {
+    font-style: italic;
     font-family: "Lobster Two", sans-serif;
-    font-size: 28px;
+    font-size: 24px;
     padding-top: 14px;
     padding-bottom: 14px;
     padding-right: 14px;
@@ -21,4 +22,9 @@ ion-list-header.app-name {
 
 ion-list-header.app-name.list-header-inner {
     color:aquamarine
+}
+
+.app-icon {
+    height: 1em;
+    margin-right: 10px;
 }

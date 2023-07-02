@@ -17,6 +17,9 @@ import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
 import { useTranslation } from 'react-i18next';
+import log from 'loglevel';
+import { updateTriggerDoc } from '../components/RemoteUtilities';
+import { usePouch } from 'use-pouchdb';
 
 interface PageState {
   needInitListGroupDoc: boolean,
@@ -53,7 +56,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   const deleteListGroup = useDeleteGenericDocument();
   const deleteList = useDeleteGenericDocument();
   const deleteItemsInListGroup = useDeleteItemsInListGroup();
-  const { remoteDBState, remoteDBCreds, setRemoteDBState } = useContext(RemoteDBStateContext);
+  const { remoteDBState, remoteDBCreds, setRemoteDBState, restartSync } = useContext(RemoteDBStateContext);
   const [ presentToast ] = useIonToast();
   const {useFriendState, friendRows} = useFriends(String(remoteDBCreds.dbUsername));
   const { listCombinedRows, listRows, listRowsLoaded, listError } = useContext(GlobalDataContext);
@@ -62,6 +65,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   const screenLoading = useRef(true);
   const history = useHistory();
   const { t } = useTranslation();
+  const db = usePouch();
 
   useEffect( () => {
     setPageState(prevState => ({...prevState,
@@ -142,6 +146,9 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
       response = await updateListGroupWhole(pageState.listGroupDoc);
     }
     if (response.successful) {
+      log.debug("List Group updated, about to restart sync...");
+      await updateTriggerDoc(db as PouchDB.Database,{triggerUpdate: "listgroup"})
+      restartSync()
       history.goBack();  // back("lists")
     } else {
       presentToast({message: t("error.creating_updating_listgroup"), duration: 1500, position: "middle"});
@@ -252,6 +259,7 @@ async function deleteListGroupFromDB() {
   if (response.successful) {
     let delResponse = await deleteListGroup(pageState.listGroupDoc);
     if (delResponse.successful) {
+      restartSync()
       setPageState(prevState => ({...prevState,deletingDoc: false}));
       dismissAlert();
       history.goBack(); // back to "list"
@@ -358,7 +366,7 @@ function deletePrompt() {
         <IonToolbar>
         <IonButtons slot="start"><IonMenuButton /></IonButtons>
             {selectDropDown}
-            <SyncIndicator />
+            <SyncIndicator addPadding={true}/>
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>

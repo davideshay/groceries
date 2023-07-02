@@ -3,7 +3,7 @@ import { IonTitle,  IonButton, IonList, IonInput, IonItem, IonSelect, IonCheckbo
 import { addCircleOutline, closeCircleOutline, saveOutline } from 'ionicons/icons';    
 import { SetStateAction, useContext } from 'react';    
 import {  ModalState, ModalStateInit } from '../components/DataTypes';
-import {  ItemDoc, ItemList} from '../components/DBSchema';
+import {  CategoryDocs, ItemDoc, ItemList} from '../components/DBSchema';
 import { cloneDeep } from 'lodash';
 import { GlobalDataContext } from './GlobalDataProvider';
 import { useTranslation } from 'react-i18next';
@@ -22,22 +22,34 @@ const ItemListsModal: React.FC<ModalProps> = (props: ModalProps) => {
     const globalData = useContext(GlobalDataContext);
     const { t } = useTranslation()
     
-      function saveModal() {
-        let newItemLists: ItemList[] = cloneDeep(props.stateItemDoc.lists);
-        for (let i = 0; i < newItemLists.length; i++) {
-          if (newItemLists[i].listID === props.modalState.selectedListId) {
-            newItemLists[i]=cloneDeep(props.modalState.itemList); break;
-          }
+    function saveModal() {
+      let newItemLists: ItemList[] = cloneDeep(props.stateItemDoc.lists);
+      for (let i = 0; i < newItemLists.length; i++) {
+        if (newItemLists[i].listID === props.modalState.selectedListId) {
+          newItemLists[i]=cloneDeep(props.modalState.itemList); break;
         }
-        props.setStateItemDoc(prevState => ({...prevState, lists : newItemLists}))
-        props.setModalState(cloneDeep(ModalStateInit));
       }
+      props.setStateItemDoc(prevState => ({...prevState, lists : newItemLists}))
+      props.setModalState(cloneDeep(ModalStateInit));
+    }
     
-      function cancelModal() {
-        props.setModalState(cloneDeep(ModalStateInit));
+    function cancelModal() {
+      props.setModalState(cloneDeep(ModalStateInit));
+    }
+    
+    function getActiveCategories(): CategoryDocs {
+      let catDocs: CategoryDocs = [];
+      const thisListDoc = globalData.listDocs.find(ld => ld._id === props.modalState.selectedListId);
+      if (thisListDoc === undefined) {return catDocs;}
+      for (const cat of thisListDoc.categories) {
+        const thisCat = globalData.categoryDocs.find(cds => cds._id === cat);
+        if (thisCat !== undefined) {catDocs.push(thisCat)}
       }
-    
-     return ( 
+      return catDocs.sort(function (a,b) {
+        return translatedCategoryName(a._id,a.name).toUpperCase().localeCompare(translatedCategoryName(b._id,b.name).toUpperCase())});
+    }
+
+    return ( 
     <IonModal key="item-modal" id="item-list" isOpen={props.modalState.isOpen}>
      <IonTitle className="modal-title">{t('general.editing')} {props.modalState.selectedListName} {t('itemtext.list_values')}</IonTitle>
      <IonList>
@@ -56,7 +68,7 @@ const ItemListsModal: React.FC<ModalProps> = (props: ModalProps) => {
         <IonItem>
           <IonSelect label={t('general.category') as string} labelPlacement="stacked" interface="popover" onIonChange={(ev) => props.setModalState(prevState => ({...prevState, itemList: {...prevState.itemList, categoryID: ev.detail.value}}))} value={props.modalState.itemList.categoryID}>
                   <IonSelectOption key="cat-undefined" value={null}>{t('general.uncategorized')}</IonSelectOption>
-                  {globalData.categoryDocs.filter(cat => (["system",props.stateItemDoc.listGroupID].includes(cat.listGroupID))).map((cat) => { return (
+                  {getActiveCategories().map((cat) => { return (
                       <IonSelectOption key={cat._id} value={cat._id}>
                         {translatedCategoryName(cat._id as string,cat.name)}
                       </IonSelectOption>

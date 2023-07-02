@@ -42,7 +42,8 @@ export type RemoteDBState = {
     loggedIn: boolean,
     retryCount: number,
     tokenTimerAction: TokenTimerAction,
-    dupCheck: DupCheckStatus
+    dupCheck: DupCheckStatus,
+    restartAction: RestartAction
 }
 
 enum TokenTimerAction {
@@ -52,6 +53,12 @@ enum TokenTimerAction {
     NeedToStop = "NST",
     Stopped = "ST",
     NeedToRestart = "NR"
+}
+
+export enum RestartAction {
+    None = "X",
+    RestartNeeded = "N",
+    Restarted = "R"
 }
 
 export enum LoginType {
@@ -68,6 +75,7 @@ export interface RemoteDBStateContextType {
     setRemoteDBState: React.Dispatch<React.SetStateAction<RemoteDBState>>,
     setRemoteDBCreds: (newCreds: DBCreds) => void,
     stopSyncAndCloseRemote: () => Promise<boolean>,
+    restartSync: () => Promise<boolean>,
     assignDB: (accessJWT: string) => Promise<boolean>,
     setDBCredsValue: (key: string, value: string|null) => void,
     setLoginType: (lType: LoginType) => void,
@@ -76,11 +84,13 @@ export interface RemoteDBStateContextType {
 
 export enum SyncStatus {
     init = 0,
-    active = 1,
-    paused = 2,
-    error = 3,
-    denied = 4,
-    offline = 5
+    up = 1,
+    down = 2,
+    active = up || down,
+    paused = 3,
+    error = 4,
+    denied = 5,
+    offline = 6
   }
 
 export enum DBUUIDAction {
@@ -177,7 +187,8 @@ export const initialRemoteDBState: RemoteDBState = {
     loggedIn: false,
     retryCount: 0,
     tokenTimerAction: TokenTimerAction.NeedToStart,
-    dupCheck: DupCheckStatus.channelNeedsRegistered
+    dupCheck: DupCheckStatus.channelNeedsRegistered,
+    restartAction: RestartAction.None
 }
 
 const initialContext: RemoteDBStateContextType = {
@@ -187,6 +198,7 @@ const initialContext: RemoteDBStateContextType = {
     setRemoteDBState: (prevState => (prevState)),
     setRemoteDBCreds: (dbCreds: DBCreds) => {},
     stopSyncAndCloseRemote: async () => {return false},
+    restartSync: async () => {return false},
     assignDB: async (accessJWT: string): Promise<boolean> => {return false},
     setDBCredsValue: (key: string, value: string | null) => {},
     setLoginType: (lType: LoginType) => {},
@@ -204,6 +216,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     const loginAttempted = useRef(false);
     const loginType = useRef<LoginType>(LoginType.autoLoginSpecificURL);
     const remoteDBCreds = useRef<DBCreds>(DBCredsInit);
+    const syncListGroupIDs = useRef<string[]>([]);
     const [, forceUpdateState] = React.useState<{}>();
     const forceUpdate = React.useCallback(() => forceUpdateState({}), []);
     const db=usePouch();
@@ -275,16 +288,29 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         return true
     },[])
 
+    const checkTriggers = useCallback( (docs: any) => {
+        for (const doc of docs) {
+            if (doc.hasOwnProperty("type") && doc.type && doc.type === "trigger") {
+                log.debug("Trigger received to restart sync via change...");
+                setRemoteDBState(prevState => ({...prevState,restartAction: RestartAction.RestartNeeded}))
+                break;
+            }
+        }
+    },[])
+
     const liveSync = useCallback(() => {
         log.debug("Starting live sync of database");
         if (appStatus.current === AppStatus.paused || appStatus.current === AppStatus.pausing) {
             log.debug("Not starting live sync... App being paused...");
         }
         setRemoteDBState(prevState=>({...prevState,initialSyncComplete: true}));
+        let queryParams = {username: remoteDBCreds.current.dbUsername, listgroups: syncListGroupIDs.current};
         try {globalSync = db.sync((globalRemoteDB as PouchDB.Database), {
+            filter: 'replfilter/by_user',
+            query_params: queryParams,
             back_off_function: function(delay) {
                 async function takeAction () {
-                    log.debug("live sync going offline",db,globalRemoteDB);
+                    log.debug("live sync going offline: delay: ",delay);
                     setSyncStatus(SyncStatus.offline);
                     setDBServerAvailable(false);
                     await checkRetryNetworkIsUp();
@@ -301,6 +327,9 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             .on('active', () => { log.debug("live sync active");
                                     setSyncStatus(SyncStatus.active);
                                     setDBServerAvailable(true)})
+            .on('change', (info) => {
+                                    info.direction === "push" ? setSyncStatus(SyncStatus.up) : setSyncStatus(SyncStatus.down);  
+                                    checkTriggers(info.change.docs)})
             .on('denied', (err) => { setSyncStatus(SyncStatus.denied);
 //                                    setDBServerAvailable(false)
                                     log.debug("live sync denied: ",{err})})
@@ -311,7 +340,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
                                 })
             }
         catch(err) {log.debug("Error in setting up live sync", err); setSyncStatus(SyncStatus.offline);}                         
-    },[db,checkRetryNetworkIsUp]);
+    },[db,checkRetryNetworkIsUp,checkTriggers]);
 
     const beginLiveSync = useCallback( async () => {
         await initialSetupActivities(db,String(remoteDBCreds.current.dbUsername));
@@ -319,16 +348,19 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     },[db,liveSync])
 
     const startSync = useCallback( () => {
-        log.debug("Starting initial sync of database");
+        log.debug("Starting initial sync of database. List groups engaged:",syncListGroupIDs.current.length);
         if (appStatus.current === AppStatus.paused || appStatus.current === AppStatus.pausing) {
             log.debug("Not starting initial sync... App being paused...");
         }
+        let queryParams = {username: remoteDBCreds.current.dbUsername, listgroups: syncListGroupIDs.current};
         try { globalSync = db.sync((globalRemoteDB as PouchDB.Database), {
+            filter: 'replfilter/by_user',
+            query_params: queryParams,
             back_off_function: function(delay) {
                 async function takeAction () {
-                    log.debug("initial sync going offline",db,globalRemoteDB);
+                    log.debug("initial sync going offline, delay is:",delay);
                     setSyncStatus(SyncStatus.offline);
-                    setDBServerAvailable(false);
+                    // setDBServerAvailable(false);  Normal 404s were triggering
                     await checkRetryNetworkIsUp();
                 }
                 takeAction();
@@ -423,9 +455,10 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
                 log.debug("DBUUID Action is : ",DBUUIDCheck.dbUUIDAction, " naving to login screen...");
                 setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.invalid_dbuuid") , dbUUIDAction: DBUUIDCheck.dbUUIDAction, connectionStatus: ConnectionStatus.navToLoginScreen}))
             } else {
-                setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.db_server_not_available"), dbUUIDAction: DBUUIDAction.none}))
+                setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.db_server_not_available"), dbUUIDAction: DBUUIDAction.exit_no_uuid_on_server, connectionStatus: ConnectionStatus.navToLoginScreen}))
             }    
         } else {
+            syncListGroupIDs.current = DBUUIDCheck.syncListGroupIDs;
             setRemoteDBState(prevState => ({...prevState,connectionStatus: ConnectionStatus.syncStarted}));
 //            await initialSetupActivities(globalRemoteDB as PouchDB.Database,remoteDBCreds.current.dbUsername as string)
             log.debug("DB Unique ID check passed. Setup Activities complete. Starting Sync.");
@@ -600,7 +633,25 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         return () => {clearTimeout(checkDupTimer) }
     },[remoteDBState.dupCheck])
 
+    const restartSync = useCallback( async () => {
+        log.debug("Restarting sync, likely due to list group change");
+        appStatus.current = AppStatus.pausing;
+        setRemoteDBState(prevState => ({...prevState,tokenTimerAction: TokenTimerAction.NeedToStop}));
+        appStatus.current = AppStatus.resuming;
+        if (await checkAndRefreshToken()) {
+            setRemoteDBState(prevState => ({...prevState,tokenTimerAction: TokenTimerAction.NeedToStart, restartAction: RestartAction.Restarted}))
+        } else {
+            setRemoteDBState(prevState => ({...prevState,restartAction: RestartAction.None}))
+        }
+        return true;
+    },[checkAndRefreshToken])
     
+    useEffect( () => {
+        if (remoteDBState.restartAction === RestartAction.RestartNeeded) {
+                restartSync();
+            }
+    },[remoteDBState.restartAction,restartSync])
+
     useEffect(() => {
         if (Capacitor.isNativePlatform()) {
             log.debug("Back Button listener registering now...");
@@ -646,7 +697,6 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
       },[remoteDBState.dupCheck,loginAttempted,remoteDBState.connectionStatus,attemptFullLogin])
   
     useEffect(() => {
-//        log.debug("Connection Status:",cloneDeep(remoteDBState.connectionStatus));
         if (remoteDBState.connectionStatus === ConnectionStatus.dbAssigned) {
             checkDBUUIDAndStartSync();
         }
@@ -733,7 +783,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
 
 
     let value: RemoteDBStateContextType = {remoteDBState, remoteDBCreds: remoteDBCreds.current, remoteDB: globalRemoteDB as PouchDB.Database<{}> , setRemoteDBState, setRemoteDBCreds,
-            stopSyncAndCloseRemote, assignDB, setDBCredsValue,setLoginType, attemptFullLogin};
+            stopSyncAndCloseRemote, restartSync, assignDB, setDBCredsValue,setLoginType, attemptFullLogin};
     return (
         <RemoteDBStateContext.Provider value={value}>{props.children}</RemoteDBStateContext.Provider>
       );

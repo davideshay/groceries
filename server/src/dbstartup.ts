@@ -924,7 +924,7 @@ async function restructureCategoriesUOMRecipesSchema() {
     log.info("Found list groups to create color specific categories: ", foundListGroupDocs.length);
     updateSuccess = await generateUserColors(foundCatDocs,foundUserDocs.docs, foundSettingsDocs.docs, foundListGroupDocs);
     if (!updateSuccess) {return false};
-    log.info("User Color settings all crated/updated ");
+    log.info("User Color settings all created/updated ");
     let [uomSuccess,foundUOMDocs] = await getLatestUOMDocs();
     if (!uomSuccess) {return false};
     log.info("About to update units of measure with listgroup data. Found: ",foundUOMDocs.length);
@@ -985,12 +985,15 @@ async function checkAndUpdateSchema() {
 }
 
 async function createConflictsView() {
-    let viewFound=true; let existingView;
+    let viewFound=true;
+    let existingView: any;
+    log.info("Checking/Creating conflicts view...");
     try {existingView = await todosDBAsAdmin.get("_design/"+conflictsViewID)}
     catch(err) {viewFound = false;}
     if (!viewFound) {
         let viewCreated=true;
         let viewDoc = {
+            "type": "view",
             "views": { "conflicts_view" : {
                 "map": "function(doc) { if (doc._conflicts) { emit (doc._conflicts, null)}}"
         }}}
@@ -999,30 +1002,14 @@ async function createConflictsView() {
         }
         catch(err) {log.error("View not created:",{err}); viewCreated=false;}
         log.info("View created/ updated");
-    }
-}
-
-async function createUtilitiesViews() {
-    let viewFound=true; let existingView;
-    try {existingView = await todosDBAsAdmin.get("_design/"+utilitiesViewID)}
-    catch(err) {viewFound = false;}
-    if (!viewFound) {
-        let viewCreated=true;
-        let viewDoc = {
-            "views": {
-                "ucase-items" : 
-                    { "map": 'function(doc) { if (doc.type && doc.name) {if (doc.type==="item") { emit (doc.name.toUpperCase(), doc._id)}}}'},
-                 "ucase-globalitems" : 
-                    { "map": "function(doc) { if (doc.type=='globalitem') { emit (doc.name.toUpperCase(), doc._id)}}"},
-                 "ucase-categories" : 
-                    { "map": "function(doc) { if (doc.type=='category') { emit (doc.name.toUpperCase(), doc._id)}}"}
-                }
-            }
-        try {
-            await todosDBAsAdmin.insert(viewDoc as any,"_design/"+utilitiesViewID)
+    } else {
+        if (existingView && existingView.hasOwnProperty('type')) {
+            log.info("Conflicts View existed with correct content");
+        } else {
+            existingView.type = "view";
+            try {await todosDBAsAdmin.insert(existingView)}
+            catch(err) {log.error("Could not update view with type",err)}
         }
-        catch(err) {log.error("Utilities View not created:",{err}); viewCreated=false;}
-        log.info("Utilities View created/ updated");
     }
 }
 
@@ -1032,15 +1019,37 @@ type CouchIndex = {
 }
 
 async function checkAndCreateIndex(index: CouchIndex): Promise<boolean> {
-    log.info("Creating index ",index.name);
-    const newIndex = {index: { fields: index.fields},
-                      ddoc: "_design/"+index.name,
-                      name: index.name};
+    log.info("Checking/Creating index ",index.name);
+    let docID = "_design/"+index.name;
     let success = true;
-    let dbResp = null;
-    try {dbResp = await todosDBAsAdmin.createIndex(newIndex)}
-    catch(err) {log.error("Error creating index ",index.name, "Error:",err); success=false}
-    log.debug("Response from create index:",dbResp)
+    let dbResp : any = null;
+    let indexExists=true;
+    let currentType=undefined;
+    let currentIdxDoc: any = undefined;
+    try {dbResp= await todosDBAsAdmin.get(docID)}
+    catch(err) {log.info("Could not retrieve index "+index.name+ "... Creating..."); indexExists=false;}
+    if (indexExists) {
+        log.info("Index "+index.name+" already exists... skipping...");
+        currentIdxDoc=cloneDeep(dbResp);
+        currentType=dbResp.type;
+    } else {
+        const newIndex = {index: { fields: index.fields},
+            ddoc: docID,
+            name: index.name};
+        try {dbResp = await todosDBAsAdmin.createIndex(newIndex)}
+        catch(err) {log.error("Error creating index ",index.name, "Error:",err); success=false}
+        log.debug("Response from create index:",dbResp);
+        try {dbResp = await todosDBAsAdmin.get(docID)}
+        catch(err){ log.error("Could not read created index",err); return false;}
+        currentType=undefined;
+        currentIdxDoc=cloneDeep(dbResp);
+    }
+    if (currentType===undefined && currentIdxDoc !== null && currentIdxDoc !== undefined) {
+        log.info("Adding type label to index...");
+        currentIdxDoc.type="index";
+        try {dbResp = await todosDBAsAdmin.insert(currentIdxDoc)}
+        catch(err) {log.error("Could not add type label to index..."); return false}
+    }
     return success;
 }
 
@@ -1067,32 +1076,42 @@ async function createStandardIndexes(): Promise<boolean> {
 async function createReplicationFilter(): Promise<boolean> {
     let success=true;
     let dbresp = null;
-    let filterFunc: string =  "function(doc,req) {" +
-        "if (doc._id.startsWith('_design')) {return true}" +
-        "switch (doc.type) {" +
-            "case 'item','list':" +
-                "return (req.listgroups.includes(doc.listGroupID));" +
+    let filterFunc = "function(doc,req) {"+
+        "if (doc._id.startsWith('_design')) {return true;};" +
+         "if (!doc.hasOwnProperty('type')) {return false;};" +
+         "if (doc.type === undefined || doc.type === null) {return false;};" +
+         "switch (doc.type) {"+
+            "case 'item': "+
+            "case 'list':"+
+            "case 'recipe':" +
+                "return (req.query.listgroups.includes(doc.listGroupID));"+
                 "break;" +
             "case 'listgroup':" +
-                "return (req.listgroups.includes(doc._id));" +
+                "return (req.query.listgroups.includes(doc._id));" +
                 "break;" +
             "case 'settings':" +
-                "return (doc.username === req.username);" +
+                "return (doc.username === req.query.username);" +
                 "break;" +
-            "case 'recipe','globalitem','dbuuid':" +
+            "case 'friend':" +
+                "return (doc.friendID1 === req.query.username || doc.friendID2 === req.query.username);" +    
+            "case 'globalitem':" +
+            "case 'dbuuid':" +
+            "case 'trigger':" +
                 "return (true);" +
                 "break;" +
-            "case 'category','uom':" +
-                "return (req.listgroups.includes(doc.listGroupID) || doc.listGroupID === 'system');" +
+            "case 'category':" +
+            "case 'uom':" +
+                "return (req.query.listgroups.includes(doc.listGroupID) || doc.listGroupID === 'system');" +
                 "break;" +
-            "default:" +
-                "return (false);" +
-                "break;" + 
-            "}"+ 
-        "}"
+            "default:"+
+                "return (false);"+
+                "break;" +
+         "  }"+
+         "}"
 
     let ddoc = {
         "_id" : "_design/replfilter",
+        "type" : "replfilter",
         "filters": {
             "by_user" : filterFunc
         }
@@ -1110,7 +1129,8 @@ async function createReplicationFilter(): Promise<boolean> {
         if (filterRecord === null) {filterExists = false}
     }
     if (filterExists && filterRecord !== null) {
-        if ((filterRecord as any).filters.by_user !== filterFunc) {
+        if ((filterRecord as any).filters.by_user !== filterFunc || 
+            (filterRecord as any).type !== "replfilter") {
             log.info("Replication Filter exists but is outdated, Need to update...")
             filterNeedsUpdate = true;
             dbRecord = ddoc;
@@ -1130,7 +1150,6 @@ async function createReplicationFilter(): Promise<boolean> {
 
 async function checkAndCreateViews() {
     await createConflictsView();
-    await createUtilitiesViews();
     await createStandardIndexes();
     await createReplicationFilter();
 }

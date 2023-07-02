@@ -42,7 +42,7 @@ const ConflictLog: React.FC<HistoryProps> = (props: HistoryProps) => {
           <IonButtons slot="start"><IonMenuButton /></IonButtons>
           <IonTitle className="ion-no-padding">{t("general.conflict_log")}</IonTitle>
           <IonButton size="small" slot="end" onClick={() => {setConflictsAsViewed()}}>{t("general.set_as_viewed")}</IonButton>
-          <SyncIndicator/>
+          <SyncIndicator addPadding={true}/>
         </IonToolbar>
       </IonHeader>
       <IonContent>

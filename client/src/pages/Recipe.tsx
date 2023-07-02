@@ -24,6 +24,7 @@ import { RecipeItemInit } from '../components/DBSchema';
 import RecipeModal from '../components/RecipeModal';
 import log from 'loglevel';
 import RecipeItemRows from '../components/RecipeItemRows';
+import { checkNameInGlobalItems } from '../components/ItemUtilities';
 
 type PageState = {
   recipeDoc: RecipeDoc,
@@ -74,7 +75,6 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
       if (mode === "new" && pageState.needInitDoc) {
         newRecipeDoc = cloneDeep(InitRecipeDoc);
         newRecipeDoc.listGroupID = String(globalData.recipeListGroup);
-        log.debug("Got rlg",globalData.recipeListGroup)
       } else {
         newRecipeDoc = recipeDoc;
       }
@@ -201,8 +201,15 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
   function addNewRecipeItem(name: string) {
     let updItems: RecipeItem[] = cloneDeep(pageState.recipeDoc.items);
     let newItem:RecipeItem = cloneDeep(RecipeItemInit);
+    let [globalExists,globalID] = checkNameInGlobalItems(globalData.globalItemDocs,name,name);
+    let globalShoppingUOM = null;
+    if (globalExists) {
+      let globalItem=globalData.globalItemDocs.find(gi => (gi._id === globalID));
+      if (globalItem !== undefined) {globalShoppingUOM = globalItem.defaultUOM;}
+    }
     newItem.addToList = true;
-    newItem.globalItemID = null;
+    newItem.globalItemID = globalID;
+    newItem.shoppingUOMName = globalShoppingUOM;
     newItem.name=name;
     updItems.push(newItem)
     setPageState(prevState=>({...prevState,recipeDoc:{...prevState.recipeDoc,items: updItems}}))

@@ -1,6 +1,6 @@
 import { IonContent, IonPage, IonList, IonItem,
         IonButton, useIonAlert, IonInput,
-        IonRadioGroup, IonRadio, IonCheckbox, isPlatform, IonItemDivider, IonSelect, IonSelectOption, IonButtons, IonToolbar, IonText, IonIcon, IonGrid, IonRow, IonCol } from '@ionic/react';
+        IonRadioGroup, IonRadio, IonCheckbox, IonItemDivider, IonSelect, IonSelectOption, IonButtons, IonToolbar, IonText, IonIcon, IonGrid, IonRow, IonCol } from '@ionic/react';
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';        
 import { closeCircle, checkmarkCircle } from 'ionicons/icons';
 import { usePouch } from 'use-pouchdb';
@@ -21,6 +21,7 @@ import { cloneDeep } from 'lodash';
 import Loading from '../components/Loading';
 import { getTokenInfo, isDBServerAvailable, isServerAvailable } from '../components/RemoteUtilities';
 import log from 'loglevel';
+import { Capacitor } from '@capacitor/core';
 
 type ErrorInfo = {
   isError: boolean,
@@ -91,7 +92,8 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
     await db.destroy();
     let credsStr=JSON.stringify({});
     await Preferences.set({key: 'dbcreds', value: credsStr})
-    if (!(isPlatform("desktop") || isPlatform("electron"))) {App.exitApp()}
+//    if (!(isPlatform("desktop") || isPlatform("electron"))) {App.exitApp()}
+    if (Capacitor.isNativePlatform()) {App.exitApp();}
     setRemoteDBState(initialRemoteDBState);
     window.location.replace('/');
     return false;

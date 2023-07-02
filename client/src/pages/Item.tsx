@@ -13,7 +13,7 @@ import './Item.css';
 import ItemLists from '../components/ItemLists';
 import { getCommonKey, createEmptyItemDoc, checkNameInGlobalItems  } from '../components/ItemUtilities';
 import { PouchResponse, ListRow, RowType, PouchResponseInit} from '../components/DataTypes';
-import { UomDoc, ItemDoc, ItemDocInit, ItemList, ItemListInit, CategoryDoc, ImageDoc, ImageDocInit, InitUomDoc, InitCategoryDoc } from '../components/DBSchema';
+import { UomDoc, ItemDoc, ItemDocInit, ItemList, ItemListInit, CategoryDoc, ImageDoc, ImageDocInit, InitUomDoc, InitCategoryDoc, CategoryDocs } from '../components/DBSchema';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
@@ -88,8 +88,18 @@ const Item: React.FC = (props) => {
     }
     // now loop through all the lists on the item, and see if they are in the right listgroup.
     // if not, delete the list from the item
-    let currentLists=cloneDeep(newItemDoc.lists);
+    let currentLists: ItemList[]=cloneDeep(newItemDoc.lists);
     remove(currentLists, (list: ItemList) => { return groupIDForList(list.listID) !== newItemDoc.listGroupID})
+    // check if any of the item-lists has a categoryID that is no longer in the active categories 
+    // in the list, if so, set to null
+    for (const itemList of currentLists) {
+      let listDoc = globalData.listDocs.find(list => list._id === itemList.listID);
+      if (listDoc === undefined)  { // shouldn't happen at list point... 
+          itemList.categoryID = null
+      } else {
+        if (!listDoc.categories.includes(String(itemList.categoryID))) {itemList.categoryID = null}
+      }
+    }
     newItemDoc.lists=currentLists;
     return(newItemDoc);
   },[globalData.listRows, globalData.listDocs,groupIDForList])
@@ -116,12 +126,12 @@ const Item: React.FC = (props) => {
 
   useEffect( () => {
     if (!itemLoading && mode === "new" && !globalData.listsLoading && globalData.listRowsLoaded && needInitItemDoc) {
-        let newItemDoc = createEmptyItemDoc(globalData.listRows,globalState)
+        let newItemDoc = createEmptyItemDoc(globalData.listRows,globalState,globalData.globalItemDocs)
         setStateInfo("newItemMode","none");
         setNeedInitItemDoc(false);
         setStateItemDoc(newItemDoc);
     }
-  },[globalState,mode,setStateInfo,itemLoading,itemDoc,globalData.listsLoading,globalData.listDocs,globalData.listRowsLoaded, globalData.listRows,globalState.itemMode,globalState.newItemName, globalState.callingListID, needInitItemDoc]);
+  },[globalState,mode,setStateInfo,itemLoading,itemDoc,globalData.listsLoading,globalData.listDocs,globalData.listRowsLoaded, globalData.listRows, globalData.globalItemDocs,globalState.itemMode,globalState.newItemName, globalState.callingListID, needInitItemDoc]);
 
   if (itemError || imageError || globalData.listError || globalData.categoryError || globalData.uomError || itemsError) { log.error("loading item info");return (
     <ErrorPage errorText={t("error.loading_item_info_restart") as string}></ErrorPage>
@@ -152,7 +162,6 @@ const Item: React.FC = (props) => {
       newItemDoc.pluralName = stateItemDoc.name;
     }
     let alreadyExists = false;
-    log.debug("itemRows:",cloneDeep(itemRows),"itemIDstate:",cloneDeep(stateItemDoc._id));
     itemRows.forEach((ir) => {
       if ( ir._id !== stateItemDoc._id  && ir.listGroupID === stateItemDoc.listGroupID &&
         (ir.name.toUpperCase() === stateItemDoc.name.toUpperCase() ||
@@ -160,7 +169,6 @@ const Item: React.FC = (props) => {
          ir.pluralName?.toUpperCase() === stateItemDoc.name.toUpperCase() ||
          (ir.pluralName?.toUpperCase() === stateItemDoc.pluralName?.toUpperCase() && !isEmpty(stateItemDoc.pluralName))
       )) {
-        log.debug("found already exists:",cloneDeep(ir));
         alreadyExists = true;
       }
     })
@@ -168,7 +176,8 @@ const Item: React.FC = (props) => {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.cannot_use_name_existing_item"), hasError: true}}))
       return false;
     }
-    if ( stateItemDoc.globalItemID == null && await checkNameInGlobalItems(globalData.globalItemDocs,stateItemDoc.name, String(stateItemDoc.pluralName))) {
+    let [globalExists,] = checkNameInGlobalItems(globalData.globalItemDocs,stateItemDoc.name, String(stateItemDoc.pluralName));
+    if ( stateItemDoc.globalItemID == null && globalExists) {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.cannot_use_name_existing_globalitem"), hasError: true}}))
       return false;
     }
@@ -199,7 +208,18 @@ const Item: React.FC = (props) => {
   function updateAllKey(key: string, val: string | boolean | number| null) {
     let newItemDoc: ItemDoc = cloneDeep(stateItemDoc);
     newItemDoc.lists.forEach((list: ItemList) => {
-      (list as any)[key] = val;
+      if (key === "categoryID") {
+        let listDoc = globalData.listDocs.find(ld => ld._id === list.listID);
+        if (listDoc !== undefined) {
+          if (listDoc.categories.includes(String(val))) {
+            (list as any)[key] = val;
+          } else {
+            (list as any)[key] = null;
+          }
+        }
+      } else {
+        (list as any)[key] = val;
+      }
     })
     setStateItemDoc(newItemDoc);
   }
@@ -357,6 +377,28 @@ const Item: React.FC = (props) => {
     photoBase64=pictureSrcPrefix + stateImageDoc.imageBase64;
   }
 
+  function getCombinedCategories(): CategoryDocs {
+    let catDocs:CategoryDocs = [];
+    let activeCatIDs = new Set<string>();
+    for (const list of stateItemDoc.lists) {
+      const thisList = globalData.listDocs.find(ld => ld._id === list.listID);
+      if (thisList !== undefined) {
+        for (const cat of thisList.categories) {
+          activeCatIDs.add(cat)
+        }
+      } 
+    }
+    activeCatIDs.forEach(catID => {
+      let catDoc = globalData.categoryDocs.find(cat => cat._id === catID);
+      if (catDoc !== undefined) {
+        catDocs.push(catDoc);
+      }
+    })
+    return catDocs.sort(function (a,b) {
+      return translatedCategoryName(a._id,a.name).toUpperCase().localeCompare(translatedCategoryName(b._id,b.name).toUpperCase())});
+  }
+
+
   return (
     <IonPage>
       <PageHeader title={t("general.editing_item")+" "+ translatedItemName(stateItemDoc.globalItemID,stateItemDoc.name,stateItemDoc.pluralName)} />
@@ -409,7 +451,7 @@ const Item: React.FC = (props) => {
               <IonItem key="category">
                 <IonSelect label={t("general.category") as string} labelPlacement="stacked" interface="popover" onIonChange={(ev) => updateAllKey("categoryID",ev.detail.value)} value={getCommonKey(stateItemDoc,"categoryID",globalData.listDocs)}>
                   <IonSelectOption key="cat-undefined" value={null}>{t("general.uncategorized")}</IonSelectOption>
-                  {(globalData.categoryDocs).filter(cat => (["system",stateItemDoc.listGroupID].includes(cat.listGroupID))).map((cat) => (
+                  {getCombinedCategories().map((cat) => (
                       <IonSelectOption key={cat._id} value={cat._id}>
                         {translatedCategoryName(cat._id,cat.name)}
                       </IonSelectOption>

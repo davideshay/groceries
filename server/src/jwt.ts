@@ -28,7 +28,7 @@ export type TokenReturnType = {
 }
 
 export async function isValidToken(refreshJWT: string) {
-    log.debug("Validating token:",refreshJWT);
+//    log.debug("Validating token:",refreshJWT);
     let jwtResponse = null;
     let returnValue: TokenReturnType = {
         isValid: false,
@@ -48,7 +48,7 @@ export async function isValidToken(refreshJWT: string) {
             returnValue.payload = jwtResponse.payload as TokenPayload;
         }
     }
-    log.debug("Returning JWT data:",returnValue);
+//    log.debug("Returning JWT data:",returnValue);
     return returnValue;
 }
 
@@ -111,10 +111,9 @@ export async function expireJWTs() {
         const userDoc: UserDoc = (res.rows[i].doc as UserDoc);
         log.debug("Checking JWT for "+userDoc.name)
         if (userDoc.hasOwnProperty("refreshJWTs")) {
-            log.debug("Initial JWTs:",userDoc.refreshJWTs);
             let updateJWTs: any = {};
             for (const [device,jwt] of Object.entries(userDoc.refreshJWTs)) {
-                log.debug("Checking JWT for ",device);
+//                log.debug("Checking JWT for ",device);
                 if (isEmpty(jwt)) {continue;}
                 let jwtVerify = await isValidToken(String(jwt));
                 if (jwtVerify.isValid) {updateJWTs[device] = jwt}

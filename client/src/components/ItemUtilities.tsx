@@ -263,7 +263,7 @@ export function getCommonKey(stateItemDoc: ItemDoc, key: string, listDocs: ListD
     return maxKey;
   }
 
-  export function createEmptyItemDoc(listRows:ListRow[], globalState: GlobalState) {
+  export function createEmptyItemDoc(listRows:ListRow[], globalState: GlobalState, globalItems: GlobalItemDocs) {
     let newItemLists: ItemList[] =[];
     let listGroupID = "";
     if (globalState.callingListType === RowType.listGroup) {
@@ -272,6 +272,7 @@ export function getCommonKey(stateItemDoc: ItemDoc, key: string, listDocs: ListD
       let baseList=listRows.find((listRow:ListRow) => listRow.listDoc._id === globalState.callingListID);
       listGroupID = String(baseList?.listGroupID);  
     }
+    let foundGlobalItem = globalItems.find(gi => (gi._id === globalState.newItemGlobalItemID));
     listRows.forEach((listRow: ListRow) => {
       if (listRow.listGroupID === listGroupID) {
         let newListDoc: ItemList ={
@@ -279,17 +280,23 @@ export function getCommonKey(stateItemDoc: ItemDoc, key: string, listDocs: ListD
           quantity: 1,
           boughtCount: 0,
           note: "",
-          uomName: null,
-          categoryID: null,
+          uomName: (foundGlobalItem === undefined) ? null : foundGlobalItem.defaultUOM,
+          categoryID: (foundGlobalItem === undefined) ? null : foundGlobalItem.defaultCategoryID,
           active: true,
           completed: false,
           stockedAt: true
         };
         if (globalState.settings.addListOption === AddListOptions.addToAllListsAutomatically) {
           newListDoc.active = true;
+        } else if (globalState.settings.addListOption === AddListOptions.addToListsWithCategoryAutomatically) {
+          if (isEmpty(globalState.newItemGlobalItemID)) {
+            newListDoc.active = true
+          } else {
+            newListDoc.active = listRow.listDoc.categories.includes(String(newListDoc.categoryID))
+            if (!newListDoc.active) {newListDoc.categoryID = null;}
+          }
         } else if (listRow.listDoc._id !== globalState.callingListID && globalState.callingListType !== RowType.listGroup) {
-          newListDoc.active = false;
-          newListDoc.stockedAt = false;
+          newListDoc.active = false;;
           newListDoc.quantity = 0;
         }
         newItemLists.push(newListDoc);
@@ -298,7 +305,7 @@ export function getCommonKey(stateItemDoc: ItemDoc, key: string, listDocs: ListD
     });
     let newItemDoc: ItemDoc ={
       type: "item",
-      name: String(globalState.newItemName),
+      name: (foundGlobalItem === undefined) ? String(globalState.newItemName) : foundGlobalItem.name,
       pluralName: String(globalState.newItemName),
       globalItemID: globalState.newItemGlobalItemID,
       listGroupID: String(listGroupID),
@@ -342,8 +349,9 @@ export function listIsDifferentThanCommon(sortedLists: ItemList[], listIdx: numb
     return ((combinedKeys[thisKey] < maxCnt) || (maxCheckCount > 1)) ;
 }
 
-export function checkNameInGlobalItems(globalItemDocs: GlobalItemDocs, name: string, pluralName: string): boolean {
+export function checkNameInGlobalItems(globalItemDocs: GlobalItemDocs, name: string, pluralName: string): [boolean, string|null] {
   let nameExists=false;
+  let globalID: string|null = null;
   const sysItemKey="system:item";
   const compName = name.toLocaleUpperCase();
   const compPluralName = pluralName.toLocaleUpperCase();
@@ -357,8 +365,9 @@ export function checkNameInGlobalItems(globalItemDocs: GlobalItemDocs, name: str
         t(tkey, {count: 2}).toLocaleUpperCase() === compPluralName  
         ) {
           nameExists = true;
+          globalID = item._id!;
         }
         return !nameExists;
   });
-  return nameExists;
+  return [nameExists,globalID];
 }
