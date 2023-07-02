@@ -88,8 +88,18 @@ const Item: React.FC = (props) => {
     }
     // now loop through all the lists on the item, and see if they are in the right listgroup.
     // if not, delete the list from the item
-    let currentLists=cloneDeep(newItemDoc.lists);
+    let currentLists: ItemList[]=cloneDeep(newItemDoc.lists);
     remove(currentLists, (list: ItemList) => { return groupIDForList(list.listID) !== newItemDoc.listGroupID})
+    // check if any of the item-lists has a categoryID that is no longer in the active categories 
+    // in the list, if so, set to null
+    for (const itemList of currentLists) {
+      let listDoc = globalData.listDocs.find(list => list._id === itemList.listID);
+      if (listDoc === undefined)  { // shouldn't happen at list point... 
+          itemList.categoryID = null
+      } else {
+        if (!listDoc.categories.includes(String(itemList.categoryID))) {itemList.categoryID = null}
+      }
+    }
     newItemDoc.lists=currentLists;
     return(newItemDoc);
   },[globalData.listRows, globalData.listDocs,groupIDForList])

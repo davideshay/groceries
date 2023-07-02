@@ -360,7 +360,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
                 async function takeAction () {
                     log.debug("initial sync going offline, delay is:",delay);
                     setSyncStatus(SyncStatus.offline);
-                    setDBServerAvailable(false);
+                    // setDBServerAvailable(false);  Normal 404s were triggering
                     await checkRetryNetworkIsUp();
                 }
                 takeAction();
