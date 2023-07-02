@@ -177,8 +177,8 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       if (pageState.selectedListOrGroupID === list.listID) { updateThisList = true;}
       if (pageState.selectedListType === RowType.listGroup) { updateThisList = true};
       if (pageState.selectedListType === RowType.list &&
-          globalState.settings.removeFromAllLists &&
-          newStatus) { updateThisList = true;}
+          globalState.settings.removeFromAllLists)
+          { updateThisList = true;}
       if (updateThisList) {
         list.completed = Boolean(newStatus);
         if (newStatus) {
@@ -251,7 +251,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     setSearchState(prevState => ({...prevState, isFocused: true,isOpen: toOpen}));
   }
 
-  function shouldBeActive(itemList: ItemList, newRow: boolean): boolean {
+  function shouldBeActive(itemList: ItemList, newRow: boolean, allItemLists: ItemList[]): boolean {
     if (!newRow && !itemList.stockedAt) {
       if (pageState.selectedListType === RowType.list && itemList.listID === pageState.selectedListOrGroupID) {
         return true;
@@ -280,7 +280,14 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       }
     }
     // add by category mode, either in listgroup mode or are in list mode and we are on a different list
-    if (itemList.categoryID === null) { return true}
+    if (itemList.categoryID === null) {
+      if (newRow) {return false}
+      let allUncategorized=true;
+      for (const il of allItemLists) {
+        if (il.categoryID !== null) {allUncategorized=false}
+      }
+      return allUncategorized;
+    }
     let matchingListRow = listRows.find((lr) => lr.listDoc._id === itemList.listID)
     if (matchingListRow === undefined) {return false}
     if (matchingListRow.listDoc.categories.includes(String(itemList.categoryID))) {
@@ -335,10 +342,12 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
           if (lr.listGroupID === pageState.groupIDforSelectedList) {
             let newItemList: ItemList = cloneDeep(ItemListInit); // sets to active true by default
             newItemList.listID = String(lr.listDoc._id);
-            newItemList.categoryID = itemSearch.globalItemCategoryID;
+            if (lr.listDoc.categories.includes(String(itemSearch.globalItemCategoryID))) {
+              newItemList.categoryID = itemSearch.globalItemCategoryID
+            }
             newItemList.uomName = itemSearch.globalItemUOM;
             newItemList.quantity = 1;
-            newItemList.active = shouldBeActive(newItemList,true);
+            newItemList.active = shouldBeActive(newItemList,true,[]);
             activeCount = newItemList.active ? (activeCount + 1) : activeCount;
             newItem.lists.push(newItemList);
           }
@@ -353,7 +362,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
             let newItemList: ItemList = cloneDeep(ItemListInit);
             newItemList.listID = String(lr.listDoc._id);
             newItemList.quantity = 1;
-            newItemList.active = shouldBeActive(newItemList,true);
+            newItemList.active = shouldBeActive(newItemList,true,[]);
             activeCount = newItemList.active ? (activeCount + 1) : activeCount;
             newItem.lists.push(newItemList);
           }
@@ -370,12 +379,11 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       }
       return response;
     }
-
 // Finished adding new item where it didn't exist. Now update existing item, active on no or some lists
     let activeCount = 0;
     let origLists = cloneDeep(testItemDoc!.lists);
     testItemDoc!.lists.forEach(il => {
-      il.active = shouldBeActive(il,false);
+      il.active = shouldBeActive(il,false,origLists);
       activeCount = il.active ? (activeCount + 1) : activeCount;
       if (il.active) { il.completed = false;}
     })

@@ -288,9 +288,15 @@ export function getCommonKey(stateItemDoc: ItemDoc, key: string, listDocs: ListD
         };
         if (globalState.settings.addListOption === AddListOptions.addToAllListsAutomatically) {
           newListDoc.active = true;
+        } else if (globalState.settings.addListOption === AddListOptions.addToListsWithCategoryAutomatically) {
+          if (isEmpty(globalState.newItemGlobalItemID)) {
+            newListDoc.active = true
+          } else {
+            newListDoc.active = listRow.listDoc.categories.includes(String(newListDoc.categoryID))
+            if (!newListDoc.active) {newListDoc.categoryID = null;}
+          }
         } else if (listRow.listDoc._id !== globalState.callingListID && globalState.callingListType !== RowType.listGroup) {
-          newListDoc.active = false;
-          newListDoc.stockedAt = false;
+          newListDoc.active = false;;
           newListDoc.quantity = 0;
         }
         newItemLists.push(newListDoc);

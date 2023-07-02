@@ -13,7 +13,7 @@ import './Item.css';
 import ItemLists from '../components/ItemLists';
 import { getCommonKey, createEmptyItemDoc, checkNameInGlobalItems  } from '../components/ItemUtilities';
 import { PouchResponse, ListRow, RowType, PouchResponseInit} from '../components/DataTypes';
-import { UomDoc, ItemDoc, ItemDocInit, ItemList, ItemListInit, CategoryDoc, ImageDoc, ImageDocInit, InitUomDoc, InitCategoryDoc } from '../components/DBSchema';
+import { UomDoc, ItemDoc, ItemDocInit, ItemList, ItemListInit, CategoryDoc, ImageDoc, ImageDocInit, InitUomDoc, InitCategoryDoc, CategoryDocs } from '../components/DBSchema';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
@@ -159,7 +159,6 @@ const Item: React.FC = (props) => {
          ir.pluralName?.toUpperCase() === stateItemDoc.name.toUpperCase() ||
          (ir.pluralName?.toUpperCase() === stateItemDoc.pluralName?.toUpperCase() && !isEmpty(stateItemDoc.pluralName))
       )) {
-        log.debug("found already exists:",cloneDeep(ir));
         alreadyExists = true;
       }
     })
@@ -199,7 +198,18 @@ const Item: React.FC = (props) => {
   function updateAllKey(key: string, val: string | boolean | number| null) {
     let newItemDoc: ItemDoc = cloneDeep(stateItemDoc);
     newItemDoc.lists.forEach((list: ItemList) => {
-      (list as any)[key] = val;
+      if (key === "categoryID") {
+        let listDoc = globalData.listDocs.find(ld => ld._id === list.listID);
+        if (listDoc !== undefined) {
+          if (listDoc.categories.includes(String(val))) {
+            (list as any)[key] = val;
+          } else {
+            (list as any)[key] = null;
+          }
+        }
+      } else {
+        (list as any)[key] = val;
+      }
     })
     setStateItemDoc(newItemDoc);
   }
@@ -357,6 +367,28 @@ const Item: React.FC = (props) => {
     photoBase64=pictureSrcPrefix + stateImageDoc.imageBase64;
   }
 
+  function getCombinedCategories(): CategoryDocs {
+    let catDocs:CategoryDocs = [];
+    let activeCatIDs = new Set<string>();
+    for (const list of stateItemDoc.lists) {
+      const thisList = globalData.listDocs.find(ld => ld._id === list.listID);
+      if (thisList !== undefined) {
+        for (const cat of thisList.categories) {
+          activeCatIDs.add(cat)
+        }
+      } 
+    }
+    activeCatIDs.forEach(catID => {
+      let catDoc = globalData.categoryDocs.find(cat => cat._id === catID);
+      if (catDoc !== undefined) {
+        catDocs.push(catDoc);
+      }
+    })
+    return catDocs.sort(function (a,b) {
+      return translatedCategoryName(a._id,a.name).toUpperCase().localeCompare(translatedCategoryName(b._id,b.name).toUpperCase())});
+  }
+
+
   return (
     <IonPage>
       <PageHeader title={t("general.editing_item")+" "+ translatedItemName(stateItemDoc.globalItemID,stateItemDoc.name,stateItemDoc.pluralName)} />
@@ -409,7 +441,7 @@ const Item: React.FC = (props) => {
               <IonItem key="category">
                 <IonSelect label={t("general.category") as string} labelPlacement="stacked" interface="popover" onIonChange={(ev) => updateAllKey("categoryID",ev.detail.value)} value={getCommonKey(stateItemDoc,"categoryID",globalData.listDocs)}>
                   <IonSelectOption key="cat-undefined" value={null}>{t("general.uncategorized")}</IonSelectOption>
-                  {(globalData.categoryDocs).filter(cat => (["system",stateItemDoc.listGroupID].includes(cat.listGroupID))).map((cat) => (
+                  {getCombinedCategories().map((cat) => (
                       <IonSelectOption key={cat._id} value={cat._id}>
                         {translatedCategoryName(cat._id,cat.name)}
                       </IonSelectOption>
