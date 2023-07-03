@@ -57,5 +57,5 @@ jobs:
      - name: Upload APK
        uses: actions/upload-artifact@v1
        with:
-        name: groceries.apk
+        name: clementines.apk
         path: client/android/app/build/outputs/apk/debug/clementines.apk
