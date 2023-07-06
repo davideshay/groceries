@@ -16,6 +16,7 @@ nav:
  - Installation Guide:
     - Key Concepts: installation/key-concepts.md
     - Installation: installation/installation.md
+    - Docker Instructions: installation/docker-setup.md
     - Alexa Support: installation/alexa.md
 
 theme:
