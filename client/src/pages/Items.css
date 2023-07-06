@@ -1,6 +1,9 @@
+ion-item.select-interface-option.listgroup::part(native) {
+    padding-left: 1rem;
+}
 
-ion-item.select-interface-option.indented,ion-item.select-interface-option.indented:hover {
-    margin-left: 1rem;
+ion-item.select-interface-option::part(native) {
+    padding-left: 2.25rem;
 }
 
 ion-item.item-list-selector {
@@ -12,43 +15,22 @@ ion-item.item-list-selector {
     --background-hover: none;
 }
 
-ion-item.item-list-selector::part(native) {
-    --min-height: 0px;
-    min-height: 0px;
-}
-
-ion-item.item-list-selector::part(native) input-wrapper {
-    --min-height: auto;
-    min-height: auto;
-}
-
-#item-list-selector-id item-inner {
-    --min-height: auto;
-    min-height: auto;
-}
-
-
-#select-list-selector-id {
-    --min-height: auto;
-    min-height: auto;
-}
-
 ion-item.item-search::part(native) {
     min-height: auto;
     padding-top: 4px;
-    padding-bottom: 4px;
-    
+    padding-bottom: 4px;   
 }
 
 #item-search-box-id {
-    --min-height: auto;
     min-height: auto;
 }
 
 ion-item.itemrow-outer {
-    height: 2.5rem;
+    max-height: 8em;
+    height: min-content;
+    padding: 0.8em;
     border-bottom: 1px solid #cacaca;
-    transition: height 250ms ease-in-out;
+    transition:max-height 250ms ease-in-out;
 }
 @media (prefers-color-scheme: dark) {
     ion-item.itemrow-outer {
@@ -57,14 +39,14 @@ ion-item.itemrow-outer {
 }
 
 ion-item.itemrow-outer.itemrow-hidden {
-    height: 0;
+    max-height: 0;
     pointer-events: none;
     cursor: default;
 }
 
 ion-item.itemrow-inner {
     width: 100%;
-    --min-height: 2.5rem;
+    --min-height: none;
 }
 
 ion-item.itemrow-outer::part(native) {

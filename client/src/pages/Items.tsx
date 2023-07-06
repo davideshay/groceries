@@ -508,7 +508,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         <IonSelect key="listselectorselect" id="select-list-selector-id" className="select-list-selector" label={t("general.items_on") as string} aria-label={t("general.items_on") as string} interface="popover"
               onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListOrGroupID} >
             {listCombinedRows !== undefined ? listCombinedRows.filter(lcr => (!lcr.hidden && !lcr.listGroupRecipe)).map((listCombinedRow: ListCombinedRow) => (
-                <IonSelectOption disabled={listCombinedRow.rowKey==="G-null"} className={listCombinedRow.rowType === RowType.list ? "indented" : ""} key={listCombinedRow.listOrGroupID} value={listCombinedRow.listOrGroupID}>
+                <IonSelectOption disabled={listCombinedRow.rowKey==="G-null"} className={"ion-no-padding "+ (listCombinedRow.rowType === RowType.list ? "indented" : "listgroup")} key={listCombinedRow.listOrGroupID} value={listCombinedRow.listOrGroupID}>
                   {listCombinedRow.rowName}
                 </IonSelectOption>
             )) : <></>}
@@ -581,7 +581,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   let currentRows=[];
   let createdFinished=false;
   const completedDivider=(
-        <IonItemGroup key="completeddividergroup"><IonItemDivider key="Completed" className="category-divider">
+        <IonItemGroup key="completeddividergroup"><IonItemDivider key="Completed" className="category-divider item-category-divider">
         <IonLabel key="completed-divider-label">{t("general.completed")}</IonLabel>
         <IonButton key="completeddividerbutton" slot="end" onClick={() => deleteCompletedItemsPrompt()}>{t("general.delete_completed_items")}</IonButton>
         </IonItemDivider></IonItemGroup>);
@@ -616,7 +616,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
   addCurrentRows(listContent,currentRows,lastCategoryID,lastCategoryName,lastCategoryColor,lastCategoryFinished);
   if (!createdFinished) {listContent.push(completedDivider)};
-  let contentElem=(<IonList key="overallitemlist" className="ion-no-padding" lines="none">{listContent}</IonList>)
+  let contentElem=(<IonList key="overallitemlist" className="ion-no-padding ion-items-list" lines="none">{listContent}</IonList>)
 
   function resumeScroll() {
     let content = contentRef.current;

@@ -1,0 +1,11 @@
+ionic-config.json
+public/index.html
+package.json
+android/app/build.gradle
+capacitor.config.ts
+src/locales/de/translation.ts
+src/locales/en/translation.ts
+src/locales/es/translation.ts
+
+
+Visual references:

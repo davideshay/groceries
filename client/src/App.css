@@ -1,25 +1,46 @@
 ion-item, ion-list-header, ion-header, ion-toolbar, ion-list, #item-search-box-id  {
     --background: #fafafa;
+    background: #fafafa;
 }
-ion-item:hover, ion-list-header:hover, ion-header:hover, ion-toolbar:hover, ion-list:hover, #item-search-box-id:hover  {
-        --background: #fefefe;
+ion-item:hover, ion-list-header:hover, ion-header:hover, ion-toolbar:hover, #item-search-box-id:hover  {
+        --background: #f0f0f0;
+        background: #f0f0f0;
+        --background-activated: none;
+        --background-focused: none;
+        --background-hover: none;
     }
 ion-item-divider.category-divider {
     --color: var(--ion-text-color);
     text-transform: uppercase;
     font-weight: bold;
     --background: #ededed;
+    background: #ededed;
+}
+ion-list.ion-items-list {
+    background: #ffffff;
 }
 @media (prefers-color-scheme: dark) {
     ion-item, ion-list-header, ion-header, ion-toolbar, ion-list, #item-search-box-id  {
-        --background: #242424;
+        --background: #202020;
+        background: #202020;
     }
-    ion-item:hover, ion-list-header:hover, ion-header:hover, ion-toolbar:hover, ion-list:hover, #item-search-box-id:hover  {
-        --background: #282828;
+    ion-item:hover, ion-list-header:hover, ion-header:hover, ion-toolbar:hover, #item-search-box-id:hover  {
+        --background: #2d2d2d;
+        background: #2d2d2d;
+        --background-activated: none;
+        --background-focused: none;
+        --background-hover: none;
     }
     ion-item-divider.category-divider {
         --background: #393939;
+        background: #393939;
     }
+    ion-list.ion-items-list {
+        background: #000000;
+    }
+}
+ion-item.itemrow-inner {
+    background: none;
 }
 
 ion-item.list-button::part(native) { 
