@@ -48,7 +48,7 @@ export function dbStartup() {
     log.info("Starting up Alexa server");
     log.info("App Version: ",appVersion);
     log.info("Database Schema Version:",maxAppSupportedSchemaVersion);
-    if (couchdbUrl == "") {log.error("ENo environment variable for CouchDB URL"); return false;}
+    if (couchdbUrl == "") {log.error("No environment variable for CouchDB URL"); return false;}
     if (couchdbInternalUrl == "") {log.error("No environment variable for internal CouchDB URL"); return false;}
     log.info("Database URL: ",couchdbUrl);
     log.info("Internal Database URL: ",couchdbInternalUrl);

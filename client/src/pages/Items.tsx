@@ -157,18 +157,34 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   },[addNewItemToList,searchState.searchCriteria])
 
-  const completeItemRow = useCallback( async(id: String, index: number, newStatus: boolean | null) => {
-    if (pageState.selectedListType === RowType.listGroup && !pageState.ignoreCheckOffWarning) {
-       await presentAlert({
+  const warnCheckingOffItemsInListGroup = useCallback( (): Promise<boolean> => {
+    return new Promise((resolve,reject) => {
+      presentAlert({
         header: t("error.checking_items_list_group_header"),
         subHeader: t("error.checking_items_list_group_detail"),
         buttons: [ { text: t("general.cancel"), role: "Cancel" ,
-                    handler: () => dismissAlert()},
+                    handler: () => {dismissAlert(); resolve(false)}},
                     { text: t("general.continue_ignore"), role: "confirm",
-                    handler: () => {setPageState(prevState => ({...prevState,ignoreCheckOffWarning: true})); dismissAlert()}}]
+                    handler: () => {setPageState(prevState => ({...prevState,ignoreCheckOffWarning: true})); dismissAlert(); resolve(true);}}]
       });
-      return;
+      })
+  },[dismissAlert,presentAlert,t])    
+  
+  const completeItemRow = useCallback( async(id: String, index: number, event: any) => {
+    if (pageState.selectedListType === RowType.listGroup && !pageState.ignoreCheckOffWarning) {
+      if (await warnCheckingOffItemsInListGroup()) {
+        log.debug("chose to continue/ignore... let fall through");
+      } else {
+        log.debug("chose to cancel the check");
+        log.debug(cloneDeep(event.detail));
+        event.detail.checked = !event.detail.checked;
+        event.detail.value = "off";
+        log.debug("after change:",cloneDeep(event.detail));
+        return;
+      }
     }
+    let newStatus = event.detail.checked;
+    log.debug("past check for list group checkoff warning");
     // make the update in the database, let the refresh of the view change state
     let itemDoc: ItemDoc = cloneDeep(baseItemDocs.find(element => (element._id === id)))
     let listChanged=false;
@@ -195,8 +211,8 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
     doingUpdate.current = false;
     shouldScroll.current = true;
-  },[baseItemDocs,dismissAlert,globalState.settings.removeFromAllLists,pageState.ignoreCheckOffWarning,pageState.selectedListOrGroupID,
-     pageState.selectedListType,presentAlert,presentToast,t,updateItemInList])
+  },[baseItemDocs,globalState.settings.removeFromAllLists,pageState.ignoreCheckOffWarning,pageState.selectedListOrGroupID,
+     pageState.selectedListType,presentToast,warnCheckingOffItemsInListGroup,t,updateItemInList])
 
   const completeItemRowStub = useCallback( async (id: string, index: number, newStatus: boolean|null) => {
     const completeRowFunc = debounce((did: string,didx: number,dstatus: boolean|null) => completeItemRow(did,didx,dstatus),350,{leading: true, trailing: false})
@@ -601,7 +617,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     currentRows.push(
       <IonItem className={"itemrow-outer "+(rowVisible ? "itemrow-display" : "itemrow-hidden")} key={"itemouter"+pageState.itemRows[i].itemID} >
         <IonCheckbox key={"itemcheckbox"+pageState.itemRows[i].itemID} aria-label=""
-            onIonChange={(e: any) => {if (!doingUpdate.current) {e.currentTarget.disabled = true; doingUpdate.current=true; completeItemRowStub(item.itemID,i,e.detail.checked)}}}
+            onIonChange={(e: any) => {if (!doingUpdate.current) {e.currentTarget.disabled = true; doingUpdate.current=true; completeItemRowStub(item.itemID,i,e)}}}
             color={"medium"} disabled={doingUpdate.current}
             checked={Boolean(item.completed)} className={"item-on-list "+ (item.completed ? "item-completed" : "")}></IonCheckbox>
           <IonItem className={"itemrow-inner"+(item.completed ? " item-completed": "")} routerLink={"/item/edit/"+item.itemID}

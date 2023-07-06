@@ -110,6 +110,7 @@ export enum ItemSearchType {
     listGroupID: string | null,
     listGroupName: string,
     listGroupRecipe: boolean,
+    listGroupAlexaDefault: boolean,
     listGroupOwner: string | null,
     listDoc: ListDoc,
   }
@@ -127,6 +128,7 @@ export enum ItemSearchType {
     listGroupID: string | null,
     listGroupName: string,
     listGroupRecipe: boolean,
+    listGroupAlexaDefault: boolean,
     listGroupOwner: string | null,
     hidden: boolean
     listDoc: ListDoc

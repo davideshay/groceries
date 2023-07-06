@@ -191,6 +191,7 @@ export interface ListGroupDoc {
   name: string,
   recipe: boolean,
   default?: boolean,
+  alexaDefault: boolean,
   listGroupOwner: string,
   sharedWith: string[];
   updatedAt: string
@@ -202,6 +203,7 @@ export const ListGroupDocInit:ListGroupDoc = {
   type: "listgroup",
   name: "",
   recipe: false,
+  alexaDefault: false,
   listGroupOwner: "",
   sharedWith: [],
   updatedAt: ""
