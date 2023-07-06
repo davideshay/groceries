@@ -1,6 +1,9 @@
+ion-item.select-interface-option.listgroup::part(native) {
+    padding-left: 1rem;
+}
 
-ion-item.select-interface-option.indented,ion-item.select-interface-option.indented:hover {
-    margin-left: 1rem;
+ion-item.select-interface-option::part(native) {
+    padding-left: 2.25rem;
 }
 
 ion-item.item-list-selector {
@@ -24,7 +27,8 @@ ion-item.item-search::part(native) {
 
 ion-item.itemrow-outer {
     max-height: 8em;
-    height: auto;
+    height: min-content;
+    padding: 0.8em;
     border-bottom: 1px solid #cacaca;
     transition:max-height 250ms ease-in-out;
 }
@@ -42,7 +46,7 @@ ion-item.itemrow-outer.itemrow-hidden {
 
 ion-item.itemrow-inner {
     width: 100%;
-    --min-height: 2.5rem;
+    --min-height: none;
 }
 
 ion-item.itemrow-outer::part(native) {
