@@ -196,7 +196,6 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         }
         setGlobalState(prevState => ({...prevState,settings: finalSettings, categoryColors: dbCategoryColors}))
         setGlobalState(prevState => ({...prevState,settingsLoaded: true}));
-        log.debug("Settings in state set to:",finalSettings)
         return (finalSettings);
     },[createSettingDoc,remoteDBCreds.dbUsername,settingsDocs,updateSettingDoc])
 
