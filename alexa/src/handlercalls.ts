@@ -240,7 +240,7 @@ export async function getListGroups(username: string) {
                 return []};
     let simpleListGroups: SimpleListGroups = [];
     foundListGroupDocs.docs.forEach(lg => {
-        let simpleListGroup: SimpleListGroup = { _id: lg._id, name: lg.name, default: lg.default}
+        let simpleListGroup: SimpleListGroup = { _id: lg._id, name: lg.name, default: lg.alexaDefault}
         simpleListGroups.push(simpleListGroup);
     })
     return simpleListGroups;

@@ -1,7 +1,8 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonItemGroup,
   IonItemDivider, IonButton, IonButtons, IonFab, IonFabButton, IonIcon, IonCheckbox, IonLabel, IonSelect,
   IonSelectOption, IonInput, IonPopover, IonAlert,IonMenuButton, useIonToast, 
-  useIonAlert } from '@ionic/react';
+  useIonAlert, 
+  CheckboxChangeEventDetail} from '@ionic/react';
 import { add,chevronUp,documentTextOutline,searchOutline } from 'ionicons/icons';
 import React, { useState, useEffect, useContext, useRef, KeyboardEvent, useCallback } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
@@ -157,18 +158,29 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   },[addNewItemToList,searchState.searchCriteria])
 
-  const completeItemRow = useCallback( async(id: String, index: number, newStatus: boolean | null) => {
-    if (pageState.selectedListType === RowType.listGroup && !pageState.ignoreCheckOffWarning) {
-       await presentAlert({
+  const warnCheckingOffItemsInListGroup = useCallback( (): Promise<boolean> => {
+    return new Promise((resolve,reject) => {
+      presentAlert({
         header: t("error.checking_items_list_group_header"),
         subHeader: t("error.checking_items_list_group_detail"),
         buttons: [ { text: t("general.cancel"), role: "Cancel" ,
-                    handler: () => dismissAlert()},
+                    handler: () => {dismissAlert(); resolve(false)}},
                     { text: t("general.continue_ignore"), role: "confirm",
-                    handler: () => {setPageState(prevState => ({...prevState,ignoreCheckOffWarning: true})); dismissAlert()}}]
+                    handler: () => {setPageState(prevState => ({...prevState,ignoreCheckOffWarning: true})); dismissAlert(); resolve(true);}}]
       });
-      return;
+      })
+  },[dismissAlert,presentAlert,t])    
+  
+  const completeItemRow = useCallback( async(id: String, index: number, event: CustomEvent<CheckboxChangeEventDetail>) => {
+    if (pageState.selectedListType === RowType.listGroup && !pageState.ignoreCheckOffWarning) {
+      if (! (await warnCheckingOffItemsInListGroup())) {
+        (event.target as any).checked = false;
+        (event.target as any).disabled = false;
+        doingUpdate.current = false;
+        return;
+      }
     }
+    let newStatus = event.detail.checked;
     // make the update in the database, let the refresh of the view change state
     let itemDoc: ItemDoc = cloneDeep(baseItemDocs.find(element => (element._id === id)))
     let listChanged=false;
@@ -195,12 +207,12 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
     doingUpdate.current = false;
     shouldScroll.current = true;
-  },[baseItemDocs,dismissAlert,globalState.settings.removeFromAllLists,pageState.ignoreCheckOffWarning,pageState.selectedListOrGroupID,
-     pageState.selectedListType,presentAlert,presentToast,t,updateItemInList])
+  },[baseItemDocs,globalState.settings.removeFromAllLists,pageState.ignoreCheckOffWarning,pageState.selectedListOrGroupID,
+     pageState.selectedListType,presentToast,warnCheckingOffItemsInListGroup,t,updateItemInList])
 
-  const completeItemRowStub = useCallback( async (id: string, index: number, newStatus: boolean|null) => {
-    const completeRowFunc = debounce((did: string,didx: number,dstatus: boolean|null) => completeItemRow(did,didx,dstatus),350,{leading: true, trailing: false})
-    completeRowFunc(id,index,newStatus);
+  const completeItemRowStub = useCallback( async (id: string, index: number, event: CustomEvent<CheckboxChangeEventDetail>) => {
+    const completeRowFunc = debounce((did: string,didx: number,devent: CustomEvent<CheckboxChangeEventDetail>) => completeItemRow(did,didx,devent),350,{leading: true, trailing: false})
+    completeRowFunc(id,index,event);
   },[completeItemRow])
 
   if (baseItemError || baseSearchError || listError || categoryError  || uomError || globalData.globalItemError) {return (
@@ -601,7 +613,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     currentRows.push(
       <IonItem className={"itemrow-outer "+(rowVisible ? "itemrow-display" : "itemrow-hidden")} key={"itemouter"+pageState.itemRows[i].itemID} >
         <IonCheckbox key={"itemcheckbox"+pageState.itemRows[i].itemID} aria-label=""
-            onIonChange={(e: any) => {if (!doingUpdate.current) {e.currentTarget.disabled = true; doingUpdate.current=true; completeItemRowStub(item.itemID,i,e.detail.checked)}}}
+            onIonChange={(e: CustomEvent<CheckboxChangeEventDetail>) => {if (!doingUpdate.current) { (e.target as any).disabled = true; doingUpdate.current=true; completeItemRowStub(item.itemID,i,e)}}}
             color={"medium"} disabled={doingUpdate.current}
             checked={Boolean(item.completed)} className={"item-on-list "+ (item.completed ? "item-completed" : "")}></IonCheckbox>
           <IonItem className={"itemrow-inner"+(item.completed ? " item-completed": "")} routerLink={"/item/edit/"+item.itemID}

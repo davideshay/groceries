@@ -109,6 +109,8 @@ export async function expireJWTs() {
     if (res == null || !res.hasOwnProperty("rows")) { log.error("No user rows found"); return false;}
     for (let i = 0; i < res.rows.length; i++) {
         const userDoc: UserDoc = (res.rows[i].doc as UserDoc);
+        if (!userDoc.hasOwnProperty("type")) {continue;}
+        if (userDoc.type !== "user") {continue;}
         log.debug("Checking JWT for "+userDoc.name)
         if (userDoc.hasOwnProperty("refreshJWTs")) {
             let updateJWTs: any = {};

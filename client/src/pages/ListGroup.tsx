@@ -103,7 +103,9 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
       }
       else if (mode !== "new") {
         sharedWith = (listGroupDoc as ListGroupDoc).sharedWith;
-        setPageState(prevState => ({...prevState,listGroupDoc: listGroupDoc, changesMade: false}))
+        let newDoc: ListGroupDoc = cloneDeep(listGroupDoc);
+        if(!newDoc.hasOwnProperty("alexaDefault")) {newDoc.alexaDefault = false;}
+        setPageState(prevState => ({...prevState,listGroupDoc: newDoc, changesMade: false}))
       }
       let userIDList: UserIDList = cloneDeep(initUserIDList);
       sharedWith.forEach((user: string) => {
@@ -124,6 +126,14 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   
   screenLoading.current=false;
 
+  function showAlexaAlert(alexaDefaultCount: number): Promise<boolean> {
+    return new Promise((resolve,reject) => {
+      presentAlert(t("error.need_one_alexa_default",{count: alexaDefaultCount}),
+      [{text:t("general.continue_ignore"),role:"confirm",handler:() => resolve(true)},
+      {text:t("general.cancel"),role:"cancel", handler:() => {setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("general.listgroup_not_updated"), hasError: true}})); resolve(false)}}])
+    })
+  }
+
   async function updateThisItem() {
     setFormErrors(prevState=>(FormErrorInit))
     if (pageState.listGroupDoc.name === "" || pageState.listGroupDoc.name === undefined || pageState.listGroupDoc.name === null) {
@@ -138,6 +148,12 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.listgroup_already_exists"), hasError: true}}));
       return false;
     }
+    let otherAlexaDefaultCount = listCombinedRows.filter(lcr => lcr.rowType === RowType.listGroup && lcr.listGroupID!==pageState.listGroupDoc._id && lcr.listGroupAlexaDefault && !lcr.listGroupRecipe).length;
+    let alexaDefaultCount = otherAlexaDefaultCount + (pageState.listGroupDoc.alexaDefault ? 1 : 0)
+    if (alexaDefaultCount !== 1) {
+      if (!await showAlexaAlert(alexaDefaultCount)) {return false;}
+    }
+
     let response: PouchResponse;
     if (mode === "new") {
       response = await createListGroup(pageState.listGroupDoc);
@@ -182,6 +198,13 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
       setPageState(prevState => (
         {...prevState, changesMade: true, listGroupDoc: {...prevState.listGroupDoc, name: updName}}));
     }  
+  }
+
+  function updateAlexaDefault(updDefault: boolean) {
+    if (pageState.listGroupDoc.alexaDefault !== updDefault) {
+      setPageState(prevState => (
+        {...prevState, changesMade: true, listGroupDoc: {...prevState.listGroupDoc, alexaDefault: updDefault}}));
+    }
   }
 
   let assignedListsElem=[];
@@ -282,7 +305,8 @@ function deletePrompt() {
   let ownListGroupsCount=0;
   for (let i = 0; i < listCombinedRows.length; i++) {
     if (listCombinedRows[i].rowType === RowType.listGroup && 
-       listCombinedRows[i].listGroupOwner === remoteDBCreds.dbUsername ) {
+       listCombinedRows[i].listGroupOwner === remoteDBCreds.dbUsername && 
+       !listCombinedRows[i].listGroupRecipe) {
         ownListGroupsCount++;
        }
   }
@@ -355,8 +379,11 @@ function deletePrompt() {
     }
   }
 
+  let lastRemainingListGroup = listCombinedRows.filter( lcr =>
+      lcr.rowType === RowType.listGroup && !lcr.listGroupRecipe  &&
+      lcr.listGroupOwner === remoteDBCreds.dbUsername).length <= 1;
   let deleteButton=[];
-  if (iAmListOwner && !pageState.listGroupDoc.recipe) {
+  if (iAmListOwner && !pageState.listGroupDoc.recipe && !lastRemainingListGroup) {
     deleteButton.push(<IonButton key="delete" fill="outline" color="danger"  onClick={() => deletePrompt()}>{t("general.delete")}<IonIcon slot="start" icon={trashOutline}></IonIcon></IonButton>)
   }
 
@@ -380,6 +407,14 @@ function deletePrompt() {
                   errorText={formErrors[ErrorLocation.Name].errorMessage}>
               </IonInput>
             </IonItem>
+            {pageState.listGroupDoc.recipe ? <></> :
+              <IonItem key="alexa">
+                <IonCheckbox slot="start" labelPlacement="end" checked={pageState.listGroupDoc.alexaDefault}
+                  onIonChange={(e) => updateAlexaDefault(e.detail.checked)}>
+                <IonLabel>{t("general.alexa_default")}</IonLabel>
+                </IonCheckbox>
+              </IonItem>
+            }
             { (pageState.listGroupDoc.recipe) ? (
               <IonItemDivider className="category-divider">
                 {t("general.is_recipe_listgroup_for_user")}

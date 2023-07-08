@@ -487,7 +487,7 @@ async function restructureListGroupSchema() {
             let newCurDateStr = (new Date()).toISOString()
             const newListGroupDoc: ListGroupDoc = {
                 type: "listgroup", name: (foundUserDoc.name + " (default)"),
-                default: true, recipe: false, listGroupOwner: foundUserDoc.name, sharedWith: [], updatedAt: newCurDateStr
+                default: true, recipe: false, alexaDefault: false, listGroupOwner: foundUserDoc.name, sharedWith: [], updatedAt: newCurDateStr
             }
             let dbResp = null;
             try { dbResp = await todosDBAsAdmin.insert(newListGroupDoc)}

@@ -11,6 +11,7 @@ const systemListCombinedRow : ListCombinedRow = {
     listGroupID: "system",
     listGroupName: "Global",
     listGroupRecipe: false,
+    listGroupAlexaDefault: false,
     listGroupOwner: "system",
     hidden: true,
     listDoc: {
@@ -29,6 +30,7 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
         let listGroupID=null;
         let listGroupName="";
         let listGroupRecipe=false;
+        let listGroupAlexaDefault=false;
         let listGroupOwner = "";
         for (let i = 0; i < listGroupDocs.length; i++) {
             const lgd = (listGroupDocs[i] as ListGroupDoc);
@@ -37,6 +39,7 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
                 listGroupName=lgd.name
                 listGroupRecipe=lgd.recipe;
                 listGroupOwner=lgd.listGroupOwner;
+                listGroupAlexaDefault=lgd.alexaDefault;
             }
         }
         if (listGroupID === null) { return };
@@ -45,6 +48,7 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
             listGroupName: listGroupName,
             listGroupRecipe: listGroupRecipe,
             listGroupOwner: listGroupOwner,
+            listGroupAlexaDefault: listGroupAlexaDefault,
             listDoc: listDoc,
         }
         newListRows.push(listRow);
@@ -74,6 +78,7 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
         listGroupName : listGroup.name,
         listGroupOwner: listGroup.listGroupOwner,
         listGroupRecipe: listGroup.recipe,
+        listGroupAlexaDefault: listGroup.alexaDefault,
         hidden: false,
         listDoc: ListDocInit
         }
@@ -90,6 +95,7 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
             listGroupName: listRow.listGroupName,
             listGroupOwner: listRow.listGroupOwner,
             listGroupRecipe: listRow.listGroupRecipe,
+            listGroupAlexaDefault: listRow.listGroupAlexaDefault,
             hidden: false,
             listDoc: listRow.listDoc
         }
@@ -103,7 +109,8 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
     let groupRow: ListCombinedRow = {
         rowType : RowType.listGroup, rowName : testRow.listGroupName,
         rowKey: "G-null", listOrGroupID: null, listGroupID : null,
-        listGroupName : testRow.listGroupName, listGroupRecipe: false, listGroupOwner: null,
+        listGroupName : testRow.listGroupName, listGroupRecipe: false, 
+        listGroupAlexaDefault: false, listGroupOwner: null,
         hidden: false,
         listDoc: ListDocInit
     }
@@ -113,7 +120,8 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
         let listlistRow: ListCombinedRow = {
             rowType: RowType.list, rowName: newListRow.listDoc.name,
             rowKey: "L-"+newListRow.listDoc._id, listOrGroupID: String(newListRow.listDoc._id),listGroupID: null,
-            listGroupName: newListRow.listGroupName, listGroupOwner: null, listGroupRecipe: false,
+            listGroupName: newListRow.listGroupName, listGroupOwner: null,
+            listGroupRecipe: false, listGroupAlexaDefault: newListRow.listGroupAlexaDefault,
             hidden: false,
             listDoc: newListRow.listDoc
         }

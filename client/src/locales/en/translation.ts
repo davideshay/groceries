@@ -231,6 +231,8 @@ export const en_translations =
         "deleting_list": "Deleting List...",
         "deleting_uom": "Deleting Unit of Measure...",
         "is_recipe_listgroup_for_user":"Is a recipe list group",
+        "alexa_default": "Default list group for Alexa",
+        "listgroup_not_updated": "List group was not updated/saved"
      },
      "error" : {
         "invalid_dbuuid" : "Invalid Database Unique Identifier",
@@ -365,7 +367,10 @@ export const en_translations =
         "cannot_create_uom_no_listgroup_selected": "Cannot create a unit of measure with no list group selected",
         "header_adding_item": "Error Adding Existing Item",
         "header_warning_adding_item": "Warning Adding Existing Item",
-        "warning_none_set_active": "Based on settings, although the item was added, it is not currently active on any of the lists. This could be because the category is not active on the lists."
+        "warning_none_set_active": "Based on settings, although the item was added, it is not currently active on any of the lists. This could be because the category is not active on the lists.",
+        "deleting_listgroup": "Error Deleting List Group",
+        "deleting_listgroup_detail": "Cannot delete the last remaining list group. Please add another one first if you really wish to delete.",
+        "need_one_alexa_default": "There should be one list group marked as the Alexa default. Currently there are {{count}} list groups marked as the default if you save this list group. If one is not specified, Alexa will use the first available list group. If more than one is specified, it will use the first one alphabetically."
     },
     "itemtext": {
         "item_is_on_these_lists": "Item is on these lists:",
