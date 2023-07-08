@@ -1,0 +1,61 @@
+name: build-publish-client-android-debug
+on:
+   workflow_dispatch:
+   push:
+     branches:
+       - master
+     tags:
+       - 'v*'  
+     paths:
+       - 'client/**'
+defaults:
+  run:
+    working-directory: client
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}-client    
+jobs:
+  build-it:
+    runs-on: ubuntu-latest
+    steps:
+     - name: Clone repository
+       uses: actions/checkout@v3
+       with:
+         ref: ${{ steps.vars.outputs.tag }}
+     - name: Set up JDK
+       uses: actions/setup-java@v3
+       with:
+         java-version: 17
+         distribution: 'temurin'
+         cache: gradle
+     - name: Set up Node.js
+       uses: actions/setup-node@v3
+       with:
+         node-version: 20.3.0
+     - name: Install Ionic
+       run: npm install -g @ionic/cli
+     - name: Build app dependencies
+       run: npm install
+     - name: Build Ionic app
+       run: ionic build
+     - name: Android Copy
+       run: ionic capacitor copy android
+     - name: Setup Capacitor Build
+       run: ionic capacitor build android        
+     - name: Setup Gradle Exec
+       run: chmod +x android/gradlew
+     - name: Bundle release
+       working-directory: client/android/
+       run: ./gradlew bundle
+       id: bundle
+     - name: Assemble release
+       working-directory: client/android/
+       run: ./gradlew assembleDebug
+       id: assembleDebug
+#     - name: List Files
+#       run: find $PWD
+     - name: Upload APK
+       uses: actions/upload-artifact@v1
+       with:
+        name: clementines.apk
+        path: client/android/app/build/outputs/apk/debug/clementines.apk
