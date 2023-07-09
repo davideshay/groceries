@@ -48,14 +48,29 @@ jobs:
        working-directory: client/android/
        run: ./gradlew bundle
        id: bundle
-     - name: Assemble release
+     - name: Extract Android signing key from env
        working-directory: client/android/
-       run: ./gradlew assemble
-       id: assemble
+       run: |
+          echo "${{ secrets.RELEASE_KEYSTORE }}" > release.jks.base64
+          base64 -d release.jks.base64 > release.decrypted.jks
+     - name: Sign dev build
+       working-directory: client/android
+       run: jarsigner -keystore release.decrypted.jks -storepass "${{ secrets.RELEASE_KEYSTORE_PASSWORD }}" -signedjar ./app/build/outputs/bundle/release/app-release-signed.aab ./app/build/outputs/bundle/release/app-release.aab release
+     - name: Convert AAB to APK
+       id: convert_aab
+       uses: amirisback/bundletool-action-apk@v1.0.0  
+       with:
+        aabFile: client/android/app/build/outputs/bundle/release/app-release.aab
+        bundleToolVersion: '1.15.1'
+     
+#     - name: Assemble release
+#       working-directory: client/android/
+#       run: ./gradlew assemble
+#       id: assemble
 #     - name: List Files
 #       run: find $PWD
      - name: Upload APK
        uses: actions/upload-artifact@v1
        with:
         name: clementines.apk
-        path: client/android/app/build/outputs/apk/debug/clementines.apk
+        path: ${{ steps.convert_aab.outputs.apkPath }}

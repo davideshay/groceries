@@ -30,3 +30,5 @@ yarn-error.log*
 
 # Optional eslint cache
 .eslintcache
+client/android/release.jks
+client/android/release.jks.base64
