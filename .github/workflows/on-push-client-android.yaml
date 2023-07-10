@@ -63,7 +63,7 @@ jobs:
           downloadUrl=$(echo $json | jq -r ".assets | .[].browser_download_url")
           curl $downloadUrl -4 -sL -o 'bundletool.jar'
           java -jar bundletool.jar version
-          java -jar bundletool.jar build-apks --bundle=./app/build/outputs/bundle/release/app-release.aab --output=/tmp/app-release.apks --mode=universal --ks=clementines.jks --ks-pass=pass:{{ secrets.RELEASE_KEYSTORE_PASSWORD }} --ks-key-alias={{ secrets.RELEASE_KEY_ALIAS }} --key-pass=pass:{{ secrets.RELEASE_KEY_PASSWORD }}
+          java -jar bundletool.jar build-apks --bundle=./app/build/outputs/bundle/release/app-release.aab --output=/tmp/app-release.apks --mode=universal --ks=clementines.jks --ks-pass="pass:${{ secrets.RELEASE_KEYSTORE_PASSWORD }}" --ks-key-alias="${{ secrets.RELEASE_KEY_ALIAS }}" --key-pass="pass:${{ secrets.RELEASE_KEY_PASSWORD }}"
           mv /tmp/app-release.apks /tmp/app-release.zip
           unzip /tmp/app-release.zip
           mv /tmp/app-release.apk /tmp/clementines.apk
