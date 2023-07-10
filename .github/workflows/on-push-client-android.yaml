@@ -67,23 +67,14 @@ jobs:
           mv /tmp/app-release.apks /tmp/app-release.zip
           unzip /tmp/app-release.zip -d /tmp
           cp /tmp/universal.apk /tmp/clementines.apk
-#          ls -larRt /tmp
-#          mv /tmp/universal.apk /tmp/clementines.apk
-#     - name: Convert AAB to APK
-#       id: convert_aab
-#       uses: amirisback/bundletool-action-apk@v1.0.0  
-#       with:
-#       aabFile: client/android/app/build/outputs/bundle/release/app-release.aab
-#       bundleToolVersion: '1.15.1'
-     
-#     - name: Assemble release
-#       working-directory: client/android/
-#       run: ./gradlew assemble
-#       id: assemble
-#     - name: List Files
-#       run: find $PWD
      - name: Upload APK
-       uses: actions/upload-artifact@v1
+       uses: actions/upload-artifact@v3
        with:
         name: clementines.apk
         path: /tmp/clementines.apk
+     - name: Upload AAB
+       uses: actions/upload-artifact@v3
+       with:
+        name: clementines.aab
+        path: client/android/app/build/outputs/bundle/release/app-release.aab
+        
