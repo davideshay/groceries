@@ -66,7 +66,7 @@ jobs:
           java -jar bundletool.jar build-apks --bundle=./app/build/outputs/bundle/release/app-release.aab --output=/tmp/app-release.apks --mode=universal --ks=clementines.jks --ks-pass="pass:${{ secrets.RELEASE_KEYSTORE_PASSWORD }}" --ks-key-alias="${{ secrets.RELEASE_KEY_ALIAS }}" --key-pass="pass:${{ secrets.RELEASE_KEY_PASSWORD }}"
           mv /tmp/app-release.apks /tmp/app-release.zip
           unzip /tmp/app-release.zip
-          mv /tmp/app-release.apk /tmp/clementines.apk
+          mv /tmp/universal.apk /tmp/clementines.apk
 #     - name: Convert AAB to APK
 #       id: convert_aab
 #       uses: amirisback/bundletool-action-apk@v1.0.0  
