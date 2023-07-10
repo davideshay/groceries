@@ -133,7 +133,9 @@ const Item: React.FC = (props) => {
     }
   },[globalState,mode,setStateInfo,itemLoading,itemDoc,globalData.listsLoading,globalData.listDocs,globalData.listRowsLoaded, globalData.listRows, globalData.globalItemDocs,globalState.itemMode,globalState.newItemName, globalState.callingListID, needInitItemDoc]);
 
-  if (itemError || imageError || globalData.listError || globalData.categoryError || globalData.uomError || itemsError) { log.error("loading item info");return (
+  if (itemError || imageError || globalData.listError || globalData.categoryError || globalData.uomError || itemsError) { 
+    log.error("Error loading item info:",cloneDeep({itemError,imageError,listError: globalData.listError, categoryError: globalData.categoryError, uomError: globalData.uomError, itemsError}));
+    return (
     <ErrorPage errorText={t("error.loading_item_info_restart") as string}></ErrorPage>
   )}
 

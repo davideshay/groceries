@@ -215,7 +215,9 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     completeRowFunc(id,index,event);
   },[completeItemRow])
 
-  if (baseItemError || baseSearchError || listError || categoryError  || uomError || globalData.globalItemError) {return (
+  if (baseItemError || baseSearchError || listError || categoryError  || uomError || globalData.globalItemError) {
+    log.error("Error loading items:",cloneDeep({baseItemError,baseSearchError,listError,categoryError, uomError, globalItemError: globalData.globalItemError}));
+    return (
     <ErrorPage errorText={t("general.loading_item_info_restart") as string}></ErrorPage>
   )}
 

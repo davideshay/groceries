@@ -32,3 +32,5 @@ yarn-error.log*
 .eslintcache
 client/android/release.jks
 client/android/release.jks.base64
+client/android/clementines.jks
+client/android/clementines.jks.base64
