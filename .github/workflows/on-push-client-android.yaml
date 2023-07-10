@@ -67,7 +67,7 @@ jobs:
           mv /tmp/app-release.apks /tmp/app-release.zip
           unzip /tmp/app-release.zip -d /tmp
           ls -larRt /tmp
-          mv /tmp/universal.apk /tmp/clementines.apk
+#          mv /tmp/universal.apk /tmp/clementines.apk
 #     - name: Convert AAB to APK
 #       id: convert_aab
 #       uses: amirisback/bundletool-action-apk@v1.0.0  
@@ -85,4 +85,4 @@ jobs:
        uses: actions/upload-artifact@v1
        with:
         name: clementines.apk
-        path: /tmp/clementines.apk
+        path: /tmp/universal.apk
