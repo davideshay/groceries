@@ -6,6 +6,7 @@ import { getListRows } from "./GlobalDataUtilities";
 import { RemoteDBStateContext } from "./RemoteDBState";
 import { translatedCategoryName, translatedItemName, translatedUOMName } from "./translationUtilities";
 import log from "loglevel";
+import { cloneDeep } from "lodash";
 
 export type GlobalDataState = {
     itemDocs: ItemDocs,
@@ -194,6 +195,12 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
         log.debug("Wait for Reload Triggered")
         setDataReloadStatus(DataReloadStatus.ReloadNeeded);
     },[setDataReloadStatus])
+
+    useEffect( () => {
+        if (globalItemError || listGroupError || categoryError || listError || recipesError || itemError || uomError) {
+            log.error("Error retrieving global data:",cloneDeep({globalItemError,listGroupError,categoryError,listError,recipesError,itemError,uomError}))
+        }    
+    },[globalItemError,listGroupError,categoryError,listError,recipesError,itemError,uomError])
 
     let value: GlobalDataState = {
             itemDocs: itemDocs as ItemDocs,

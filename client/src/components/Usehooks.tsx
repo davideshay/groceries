@@ -38,7 +38,7 @@ export function useGetOneDoc(docID: string | null, attachments: boolean = false)
       let success=true; setDBError(false);
       let docRet = null;
       try  {docRet = await db.get(id,{attachments: attachments});}
-      catch(err) {success=false; setDBError(true);}
+      catch(err) {success=false; setDBError(true); log.error("Error retrieving doc:",err);}
       let docAtt: Blob| null = null;
       let attSuccess=true;
       try {docAtt = (await db.getAttachment(id,"item.jpg") as Blob)}
@@ -260,7 +260,7 @@ export function useItems({selectedListGroupID,isReady, needListGroupID, activeOn
 
   const checkAndBuild = useCallback( () => {
   if (itemsLoading || !listRowsLoaded || !isReady || (isReady && selectedListGroupID === null && needListGroupID)) { setItemRowsLoaded(false); return };
-    if (itemError !== null || listDBError) { setDBError(true); return;}
+    if (itemError !== null || listDBError) { log.error("Error on item/list:",cloneDeep({itemError,listDBError})); setDBError(true); return;}
     setDBError(false);
     if ( !itemsLoading && listRowsLoaded)  {
       setItemRowsLoading(true);

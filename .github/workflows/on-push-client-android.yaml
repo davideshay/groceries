@@ -51,17 +51,28 @@ jobs:
      - name: Extract Android signing key from env
        working-directory: client/android/
        run: |
-          echo "${{ secrets.RELEASE_KEYSTORE }}" > release.jks.base64
-          base64 -d release.jks.base64 > release.decrypted.jks
+          echo "${{ secrets.RELEASE_KEYSTORE }}" > clementines.jks.base64
+          base64 -d clementines.jks.base64 > clementines.jks
      - name: Sign dev build
        working-directory: client/android
-       run: jarsigner -keystore release.decrypted.jks -storepass "${{ secrets.RELEASE_KEYSTORE_PASSWORD }}" -signedjar ./app/build/outputs/bundle/release/app-release-signed.aab ./app/build/outputs/bundle/release/app-release.aab release
+       run: jarsigner -keystore clementines.jks -storepass "${{ secrets.RELEASE_KEYSTORE_PASSWORD }}" -signedjar ./app/build/outputs/bundle/release/app-release-signed.aab ./app/build/outputs/bundle/release/app-release.aab clementines
      - name: Convert AAB to APK
-       id: convert_aab
-       uses: amirisback/bundletool-action-apk@v1.0.0  
-       with:
-        aabFile: client/android/app/build/outputs/bundle/release/app-release.aab
-        bundleToolVersion: '1.15.1'
+       working-directory: client/android
+       run: |
+          json=$(curl -s https://api.github.com/repos/google/bundletool/releases/latest)
+          downloadUrl=$(echo $json | jq -r ".assets | .[].browser_download_url")
+          curl $downloadUrl -4 -sL -o 'bundletool.jar'
+          java -jar bundletool.jar version
+          java -jar bundletool.jar build-apks --bundle=./app/build/outputs/bundle/release/app-release.aab --output=/tmp/app-release.apks --mode=universal --ks=clementines.jks --ks-pass=pass:{{ secrets.RELEASE_KEYSTORE_PASSWORD }} --ks-key-alias={{ secrets.RELEASE_KEY_ALIAS }} --key-pass=pass:{{ secrets.RELEASE_KEY_PASSWORD }}
+          mv /tmp/app-release.apks /tmp/app-release.zip
+          unzip /tmp/app-release.zip
+          mv /tmp/app-release.apk /tmp/clementines.apk
+#     - name: Convert AAB to APK
+#       id: convert_aab
+#       uses: amirisback/bundletool-action-apk@v1.0.0  
+#       with:
+#       aabFile: client/android/app/build/outputs/bundle/release/app-release.aab
+#       bundleToolVersion: '1.15.1'
      
 #     - name: Assemble release
 #       working-directory: client/android/
@@ -73,4 +84,4 @@ jobs:
        uses: actions/upload-artifact@v1
        with:
         name: clementines.apk
-        path: ${{ steps.convert_aab.outputs.apkPath }}
+        path: /tmp/clementines.apk
