@@ -66,6 +66,7 @@ jobs:
           java -jar bundletool.jar build-apks --bundle=./app/build/outputs/bundle/release/app-release.aab --output=/tmp/app-release.apks --mode=universal --ks=clementines.jks --ks-pass="pass:${{ secrets.RELEASE_KEYSTORE_PASSWORD }}" --ks-key-alias="${{ secrets.RELEASE_KEY_ALIAS }}" --key-pass="pass:${{ secrets.RELEASE_KEY_PASSWORD }}"
           mv /tmp/app-release.apks /tmp/app-release.zip
           unzip /tmp/app-release.zip -d /tmp
+          cp /tmp/universal.apk /tmp/clementines.apk
 #          ls -larRt /tmp
 #          mv /tmp/universal.apk /tmp/clementines.apk
 #     - name: Convert AAB to APK
@@ -85,4 +86,4 @@ jobs:
        uses: actions/upload-artifact@v1
        with:
         name: clementines.apk
-        path: /tmp/universal.apk
+        path: /tmp/clementines.apk
