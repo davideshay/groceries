@@ -951,7 +951,7 @@ async function restructureCategoriesUOMRecipesSchema() {
 async function restructureImagesListgroups() {
     log.info("Adding list group field to all images...")
     log.info("Finding all items that have an image...")
-    let updateSuccess=false;
+    let updateSuccess=true;
     const itemq: MangoQuery = { selector: { type: "item", name: {$exists: true}, imageID: {$ne: null}}, limit: await totalDocCount(todosDBAsAdmin)};
     let foundItemDocs: MangoResponse<ItemDoc>;
     try {foundItemDocs = (await todosDBAsAdmin.find(itemq) as MangoResponse<ItemDoc>);}
