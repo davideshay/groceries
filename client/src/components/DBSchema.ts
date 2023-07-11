@@ -1,5 +1,5 @@
-export const maxAppSupportedSchemaVersion = 4;
-export const appVersion = "1.0.2";
+export const maxAppSupportedSchemaVersion = 5;
+export const appVersion = "1.0.3";
 export const minimumAccessRefreshSeconds = 300;
 export const DefaultColor = "#ffffff";
 
@@ -135,12 +135,14 @@ export interface ImageDoc {
   _id? : string,
   _rev?: string,
   type: string,
+  listGroupID: string | null,
   imageBase64: string | null,
   updatedAt?: string;
 }
 
 export const ImageDocInit: ImageDoc = {
   type: "image",
+  listGroupID: null,
   imageBase64: null,
   updatedAt: ""
 }

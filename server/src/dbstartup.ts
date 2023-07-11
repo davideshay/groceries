@@ -21,7 +21,7 @@ const targetCategoriesVersion = 2;
 let globalItemVersion = 0;
 const targetGlobalItemVersion = 2;
 let schemaVersion = 0;
-const targetSchemaVersion = 4;
+const targetSchemaVersion = 5;
 
 
 export let todosDBAsAdmin: DocumentScope<unknown>;
@@ -948,6 +948,20 @@ async function restructureCategoriesUOMRecipesSchema() {
     return updateSuccess;
 }    
 
+async function restructureImagesListgroups() {
+    log.info("Adding list group field to all images...")
+    log.info("Finding all items that have an image...")
+    let updateSuccess=false;
+    const itemq: MangoQuery = { selector: { type: "item", name: {$exists: true}, imageID: {}}, limit: await totalDocCount(todosDBAsAdmin)};
+    let foundItemDocs: MangoResponse<ItemDoc>;
+    try {foundItemDocs = (await todosDBAsAdmin.find(itemq) as MangoResponse<ItemDoc>);}
+    catch(err) {log.error("Could not find items during schema update:",err); return false;}
+    log.info("Found images to process: ", foundItemDocs.docs.length);
+
+    return updateSuccess;
+}
+
+
 async function setSchemaVersion(updSchemaVersion: number) {
     log.info("Finished schema updates, updating database to :",updSchemaVersion);
     let foundIDDoc = await getLatestDBUUIDDoc();
@@ -981,6 +995,11 @@ async function checkAndUpdateSchema() {
         log.info("Updating schema to rev. 4: Make Categories/UOMs listgroup specific ");
         let schemaUpgradeSuccess = await restructureCategoriesUOMRecipesSchema();
         if (schemaUpgradeSuccess) { schemaVersion = 4; await setSchemaVersion(schemaVersion);}
+    }
+    if (schemaVersion < 5) {
+        log.info("Updating schema to rev 5: Make Images for items listgroup specific ");
+        let schemaUpgradeSuccess = await restructureImagesListgroups();
+        if (schemaUpgradeSuccess) { schemaVersion = 5; await setSchemaVersion(schemaVersion);}
     }
 }
 
@@ -1081,7 +1100,8 @@ async function createReplicationFilter(): Promise<boolean> {
          "if (!doc.hasOwnProperty('type')) {return false;};" +
          "if (doc.type === undefined || doc.type === null) {return false;};" +
          "switch (doc.type) {"+
-            "case 'item': "+
+            "case 'item':"+
+            "case 'image':"+
             "case 'list':"+
             "case 'recipe':" +
                 "return (req.query.listgroups.includes(doc.listGroupID));"+
