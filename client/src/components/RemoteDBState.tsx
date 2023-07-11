@@ -375,6 +375,8 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             .on('active', () => { log.debug("Initial sync active");
                                     setSyncStatus(SyncStatus.active);
                                     setDBServerAvailable(true)})
+            .on('change', (info) => {
+                                    setSyncStatus(SyncStatus.down);})  
             .on('complete', () => {log.debug("Initial sync complete");
                                     globalSync.cancel();
                                     if (appStatus.current === AppStatus.paused || appStatus.current === AppStatus.pausing) {
