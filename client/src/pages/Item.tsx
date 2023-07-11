@@ -362,7 +362,7 @@ const Item: React.FC = (props) => {
   
   async function getNewPhoto() {
     let newPhoto = await takePhoto();
-    if (newPhoto !== undefined) {
+    if (newPhoto !== undefined && newPhoto !== null) {
       setStateImageDoc(prevState => ({...prevState, imageBase64: (newPhoto as string)}))
     }
     else { log.error("Photo undefined....")};

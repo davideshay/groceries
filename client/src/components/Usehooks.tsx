@@ -1,5 +1,5 @@
 import { useCallback, useState, useEffect, useContext, useRef } from 'react'
-import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { Camera, CameraResultType, CameraSource, Photo } from '@capacitor/camera';
 import { usePouch, useFind } from 'use-pouchdb'
 import { cloneDeep, pull } from 'lodash';
 import { RemoteDBStateContext } from './RemoteDBState';
@@ -450,7 +450,8 @@ export function useAddListToAllItems() {
 export function usePhotoGallery() {
   const { t } = useTranslation();
   const takePhoto = async () => {
-    let rPhoto = await Camera.getPhoto({
+    let rPhoto: Photo|null = null;
+    try { rPhoto = await Camera.getPhoto({
       resultType: CameraResultType.Base64,
       source: CameraSource.Prompt,
       quality: imageQuality,
@@ -459,7 +460,9 @@ export function usePhotoGallery() {
       allowEditing: false,
       saveToGallery: false,
       promptLabelHeader: t("general.take_picture_for_item") as string
-    });
+    });}
+    catch(err) {log.error("Photo could not be saved")}
+    if (rPhoto === null) {return null;}
     let photoString = rPhoto.base64String;
     if (photoString !== undefined && (isPlatform("desktop") || isPlatform("electron"))) {
       //image needs resizing -- desktop doesn't obey size constraints
