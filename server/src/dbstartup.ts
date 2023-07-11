@@ -8,7 +8,7 @@ import { cloneDeep, isEmpty, isEqual, omit } from "lodash";
 import { v4 as uuidv4} from 'uuid';
 import { uomContent, categories, globalItems, totalDocCount } from "./utilities";
 import { DocumentScope, MangoResponse, MangoQuery, DocumentGetResponse, MaybeDocument } from "nano";
-import { CategoryDoc, CategoryDocs, GlobalItemDoc, InitSettingsDoc, ItemDoc, ItemDocs, ListDoc, ListGroupDoc, ListGroupDocInit, ListGroupDocs, RecipeDoc, SettingsDoc, UUIDDoc, UomDoc, UserDoc, appVersion, maxAppSupportedSchemaVersion, minimumAccessRefreshSeconds } from "./DBSchema";
+import { CategoryDoc, CategoryDocs, GlobalItemDoc, ImageDoc, ImageDocInit, InitSettingsDoc, ItemDoc, ItemDocs, ListDoc, ListGroupDoc, ListGroupDocInit, ListGroupDocs, RecipeDoc, SettingsDoc, UUIDDoc, UomDoc, UserDoc, appVersion, maxAppSupportedSchemaVersion, minimumAccessRefreshSeconds } from "./DBSchema";
 import log, { LogLevelDesc } from "loglevel";
 import prefix from "loglevel-plugin-prefix";
 import { timeSpan } from "./timeutils";
@@ -952,12 +952,36 @@ async function restructureImagesListgroups() {
     log.info("Adding list group field to all images...")
     log.info("Finding all items that have an image...")
     let updateSuccess=false;
-    const itemq: MangoQuery = { selector: { type: "item", name: {$exists: true}, imageID: {}}, limit: await totalDocCount(todosDBAsAdmin)};
+    const itemq: MangoQuery = { selector: { type: "item", name: {$exists: true}, imageID: {$ne: null}}, limit: await totalDocCount(todosDBAsAdmin)};
     let foundItemDocs: MangoResponse<ItemDoc>;
     try {foundItemDocs = (await todosDBAsAdmin.find(itemq) as MangoResponse<ItemDoc>);}
     catch(err) {log.error("Could not find items during schema update:",err); return false;}
     log.info("Found images to process: ", foundItemDocs.docs.length);
-
+    if (foundItemDocs.docs.length === 0) {return true;}
+    for (const itemDoc of foundItemDocs.docs) {
+        let imageDoc : ImageDoc = ImageDocInit;
+        let imageSuccess: boolean = true;
+        try {imageDoc = await todosDBAsAdmin.get(String(itemDoc.imageID)) as ImageDoc}
+        catch(err) {log.error("Could not find image doc during schema update:",err); imageSuccess=false;}
+        if (imageSuccess) {
+            imageDoc.listGroupID = itemDoc.listGroupID;
+            try {await todosDBAsAdmin.insert(imageDoc)}
+            catch(err) {log.error("Could not update image doc during schema update:",err); imageSuccess=false;}
+        }
+        if (imageSuccess) {
+            log.info("Image for ",itemDoc.name," updated with list group ID");
+        }
+        let itemUpdateSuccess=true;
+        if (!imageSuccess) {
+            itemDoc.imageID=null;
+            try {await todosDBAsAdmin.insert(itemDoc)}
+            catch(err) {log.error("Could not update item ID setting image ID to null",err); itemUpdateSuccess=false;}
+        }
+        if (!itemUpdateSuccess) {
+            updateSuccess=false;
+            break;
+        }
+    }
     return updateSuccess;
 }
 

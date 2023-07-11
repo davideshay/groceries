@@ -185,9 +185,11 @@ const Item: React.FC = (props) => {
     }
     if ((mode === "new" && stateImageDoc.imageBase64 !== null) ||
          (mode !== "new" && stateImageDoc.imageBase64 !== null && (newItemDoc.imageID === null))) {
+          stateImageDoc.listGroupID=stateItemDoc.listGroupID;
           imgResult = await addImage(stateImageDoc);
           newItemDoc.imageID = imgResult.pouchData.id as string;
     } else if (mode !== "new" && stateImageDoc.imageBase64 !== null && newItemDoc.imageID !== null && newItemDoc.imageID !== undefined) { 
+        stateImageDoc.listGroupID=stateItemDoc.listGroupID;
         imgResult = await updateImage(stateImageDoc);
         newItemDoc.imageID = imgResult.pouchData.id as string;
     } else if (mode !== "new" && stateImageDoc._id !== null && stateImageDoc._id !== undefined && stateItemDoc.imageID === null){
