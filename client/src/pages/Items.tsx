@@ -587,6 +587,16 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     )
   }
 
+  function getCompletedDivider(count: number) {
+    return (
+      <IonItemGroup key="completeddividergroup">
+        <IonItemDivider key="Completed" className={"category-divider item-category-divider "+(count===0 ? "first-category": "")}>
+          <IonLabel key="completed-divider-label">{t("general.completed")}</IonLabel>
+          <IonButton key="completeddividerbutton" slot="end" onClick={() => deleteCompletedItemsPrompt()}>{t("general.delete_completed_items")}</IonButton>
+        </IonItemDivider>
+      </IonItemGroup>)
+  }
+
   let dividerCount = 0;
   let lastCategoryID : string | null = null;
   let lastCategoryName="<INITIAL>";
@@ -594,11 +604,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   let lastCategoryFinished: boolean | null = null;
   let currentRows=[];
   let createdFinished=false;
-  const completedDivider=(
-        <IonItemGroup key="completeddividergroup"><IonItemDivider key="Completed" className="category-divider item-category-divider">
-        <IonLabel key="completed-divider-label">{t("general.completed")}</IonLabel>
-        <IonButton key="completeddividerbutton" slot="end" onClick={() => deleteCompletedItemsPrompt()}>{t("general.delete_completed_items")}</IonButton>
-        </IonItemDivider></IonItemGroup>);
   for (let i = 0; i < pageState.itemRows.length; i++) {
     const item = pageState.itemRows[i];
     if ((lastCategoryName !== item.categoryName )||(lastCategoryFinished !== item.completed)) {
@@ -624,12 +629,13 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
           </IonItem>
       </IonItem>);
     if (lastCategoryFinished && !createdFinished) {
-      listContent.push(completedDivider);
+      listContent.push(getCompletedDivider(dividerCount));
+      dividerCount++;
       createdFinished=true;
     }
   }
   addCurrentRows(listContent,currentRows,lastCategoryID,lastCategoryName,lastCategoryColor,lastCategoryFinished);
-  if (!createdFinished) {listContent.push(completedDivider)};
+  if (!createdFinished) {listContent.push(getCompletedDivider(dividerCount)); dividerCount++;};
   let contentElem=(<IonList key="overallitemlist" className="ion-no-padding ion-items-list" lines="none">{listContent}</IonList>)
 
   function resumeScroll() {
