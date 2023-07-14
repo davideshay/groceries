@@ -1,4 +1,4 @@
-import { todosNanoAsAdmin, usersNanoAsAdmin, couchDatabase, couchAdminPassword, couchAdminUser, couchdbUrl, couchdbInternalUrl, couchStandardRole,
+import { groceriesNanoAsAdmin, usersNanoAsAdmin, couchDatabase, couchAdminPassword, couchAdminUser, couchdbUrl, couchdbInternalUrl, couchStandardRole,
 couchAdminRole, conflictsViewID, conflictsViewName, utilitiesViewID, refreshTokenExpires, accessTokenExpires,
 enableScheduling, resolveConflictsFrequencyMinutes,expireJWTFrequencyMinutes, disableAccountCreation, logLevel, couchKey } from "./apicalls";
 import { resolveConflicts } from "./apicalls";
@@ -24,7 +24,7 @@ let schemaVersion = 0;
 const targetSchemaVersion = 5;
 
 
-export let todosDBAsAdmin: DocumentScope<unknown>;
+export let groceriesDBAsAdmin: DocumentScope<unknown>;
 export let usersDBAsAdmin: DocumentScope<unknown>;
 
 export async function couchLogin(username: string, password: string) {
@@ -71,7 +71,7 @@ export async function couchLogin(username: string, password: string) {
 export async function doesDBExist() {
     let retrieveError = false;
     let res = null;
-    try { res = await todosNanoAsAdmin.db.get(couchDatabase)}
+    try { res = await groceriesNanoAsAdmin.db.get(couchDatabase)}
     catch(err) { retrieveError = true }
     if (retrieveError || res == null) {
         log.error("could not retrieve database info.");
@@ -83,7 +83,7 @@ export async function doesDBExist() {
 
 async function createDB() {
     let createError = false;
-    try { await todosNanoAsAdmin.db.create(couchDatabase)}
+    try { await groceriesNanoAsAdmin.db.create(couchDatabase)}
     catch(err) {  createError = true }
     if (createError) return (false);
     log.info("Initiatialization, Database "+couchDatabase+" created.");
@@ -161,7 +161,7 @@ async function getLatestDBUUIDDoc(): Promise<UUIDDoc | null> {
         selector: { type: { "$eq": "dbuuid" }}
     }
     let foundIDDocs: MangoResponse<unknown> | null = null;
-    try {foundIDDocs =  await todosDBAsAdmin.find(dbidq);}
+    try {foundIDDocs =  await groceriesDBAsAdmin.find(dbidq);}
     catch(err) {log.error("ERROR: could not read dbUUID record"); return null;}
     let foundIDDoc: UUIDDoc | null = null;
     if (foundIDDocs && foundIDDocs.hasOwnProperty('docs')) {
@@ -173,7 +173,7 @@ async function getLatestDBUUIDDoc(): Promise<UUIDDoc | null> {
 async function updateDBUUIDDoc(dbuuidDoc: UUIDDoc) {
     dbuuidDoc.updatedAt = (new Date()).toISOString();
     let dbResp = null;
-    try {dbResp = await todosDBAsAdmin.insert(dbuuidDoc);}
+    try {dbResp = await groceriesDBAsAdmin.insert(dbuuidDoc);}
     catch(err) {log.error("ERROR: could not update dbUUID record:",JSON.stringify(err)); return null;}
     return dbResp;
 }
@@ -242,9 +242,9 @@ async function addDBIdentifier() {
 async function createUOMContent() {
     const dbuomq = {
         selector: { type: { "$eq": "uom" }, listGroupID: "system"},
-        limit: await totalDocCount(todosDBAsAdmin)
+        limit: await totalDocCount(groceriesDBAsAdmin)
     }
-    let foundUOMDocs: MangoResponse<UomDoc> =  (await todosDBAsAdmin.find(dbuomq) as MangoResponse<UomDoc>);
+    let foundUOMDocs: MangoResponse<UomDoc> =  (await groceriesDBAsAdmin.find(dbuomq) as MangoResponse<UomDoc>);
     for (let i = 0; i < uomContent.length; i++) {
         let uom: UomDoc = uomContent[i];
         const docIdx=foundUOMDocs.docs.findIndex((el) => (el.name.toUpperCase() === uom.name.toUpperCase() || el._id === uom._id));
@@ -267,12 +267,12 @@ async function createUOMContent() {
                     }
                     log.info("UOM ",uom.name," exists but needs updating...");
                     let dbResp = null;
-                    try { dbResp = await todosDBAsAdmin.insert(thisDoc)}
+                    try { dbResp = await groceriesDBAsAdmin.insert(thisDoc)}
                     catch(err) {log.error("updating existing UOM", "err")}
                 }
             } else {
                 let dbResp = null;
-                try { dbResp = await todosDBAsAdmin.destroy(thisDoc._id!,thisDoc._rev!)}
+                try { dbResp = await groceriesDBAsAdmin.destroy(thisDoc._id!,thisDoc._rev!)}
                 catch(err) {log.error("Deleting / replacing existing UOM: ", err);}
             }
         }
@@ -281,7 +281,7 @@ async function createUOMContent() {
             uom.listGroupID = "system";
             uom.updatedAt = (new Date().toISOString());
             let dbResp = null;
-            try { dbResp = await todosDBAsAdmin.insert(uom);}
+            try { dbResp = await groceriesDBAsAdmin.insert(uom);}
             catch(err) { log.error("Adding uom ",uom.name, " error: ",err);}
         } else if (needsUpdated) {
             log.info("UOM ",uom.name," already exists...updated with new content");
@@ -302,9 +302,9 @@ async function createUOMContent() {
 async function createCategoriesContent() {
     const dbcatq = {
         selector: { type: { "$eq": "category" }, listGroupID: "system"},
-        limit: await totalDocCount(todosDBAsAdmin)
+        limit: await totalDocCount(groceriesDBAsAdmin)
     }
-    let foundCategoryDocs: MangoResponse<CategoryDoc> =  (await todosDBAsAdmin.find(dbcatq) as MangoResponse<CategoryDoc>);
+    let foundCategoryDocs: MangoResponse<CategoryDoc> =  (await groceriesDBAsAdmin.find(dbcatq) as MangoResponse<CategoryDoc>);
     for (let i = 0; i < categories.length; i++) {
         let category: CategoryDoc = categories[i];
         category.type = "category";
@@ -318,7 +318,7 @@ async function createCategoriesContent() {
                 needsAdded=false;
             } else {
                 let dbResp = null;
-                try { dbResp = await todosDBAsAdmin.destroy(thisDoc._id,thisDoc._rev)}
+                try { dbResp = await groceriesDBAsAdmin.destroy(thisDoc._id,thisDoc._rev)}
                 catch(err) { log.error("Deleting category for replacement:", err);}
             }
         }
@@ -327,7 +327,7 @@ async function createCategoriesContent() {
             category.listGroupID = "system",
             category.updatedAt = (new Date().toISOString());
             let dbResp = null;
-            try { dbResp = await todosDBAsAdmin.insert(category);}
+            try { dbResp = await groceriesDBAsAdmin.insert(category);}
             catch(err) { log.error("Adding category ",category.name, " error: ",err);}
         } 
     };
@@ -339,7 +339,7 @@ async function createCategoriesContent() {
         foundIDDoc.categoriesVersion = targetCategoriesVersion;
         foundIDDoc.updatedAt = (new Date().toISOString());
         let dbResp = null;
-        try { dbResp = await todosDBAsAdmin.insert(foundIDDoc)}
+        try { dbResp = await groceriesDBAsAdmin.insert(foundIDDoc)}
         catch(err) { log.error("Couldn't update Categories target version.")};
         log.info("Updated Categories Target Version successfully.");
     }
@@ -348,9 +348,9 @@ async function createCategoriesContent() {
 async function createGlobalItemContent() {
     const dbglobalq = {
         selector: { type: { "$eq": "globalitem" }},
-        limit: await totalDocCount(todosDBAsAdmin)
+        limit: await totalDocCount(groceriesDBAsAdmin)
     }
-    let foundGlobalItemDocs: MangoResponse<GlobalItemDoc> =  (await todosDBAsAdmin.find(dbglobalq) as MangoResponse<GlobalItemDoc>);
+    let foundGlobalItemDocs: MangoResponse<GlobalItemDoc> =  (await groceriesDBAsAdmin.find(dbglobalq) as MangoResponse<GlobalItemDoc>);
     for (let i = 0; i < globalItems.length; i++) {
         let globalItem: GlobalItemDoc = globalItems[i];
         globalItem.type = "globalitem";
@@ -359,7 +359,7 @@ async function createGlobalItemContent() {
             log.info("Adding global item ",globalItem.name);
             globalItem.updatedAt = (new Date().toISOString());
             let dbResp = null;
-            try { dbResp = await todosDBAsAdmin.insert(globalItem);}
+            try { dbResp = await groceriesDBAsAdmin.insert(globalItem);}
             catch(err) { log.error("Adding global item ",globalItem.name, " error: ",err);}
         } else {
             log.info("Global Item ",globalItem.name," already exists...comparing values...");
@@ -381,7 +381,7 @@ async function createGlobalItemContent() {
                 log.info("Item "+globalItem.name+ " had changed values. Reverting to original...");
                 globalItem.updatedAt = (new Date().toISOString());
                 let dbResp = null;
-                try {dbResp = await todosDBAsAdmin.insert(compareDoc)}
+                try {dbResp = await groceriesDBAsAdmin.insert(compareDoc)}
                 catch(err) {log.error("Error reverting values on doc "+globalItem.name,"error:",err)}
             }
         }
@@ -426,9 +426,9 @@ async function addStockedAtIndicatorToSchema() {
     let updateSuccess = true;
     log.info("Upgrading schema to support stocked at indicators.");
     const itemq = { selector: { type: { "$eq": "item"}},
-                    limit: await totalDocCount(todosDBAsAdmin)};
+                    limit: await totalDocCount(groceriesDBAsAdmin)};
     let foundItemDocs: MangoResponse<ItemDoc>;
-    try {foundItemDocs = (await todosDBAsAdmin.find(itemq) as MangoResponse<ItemDoc>);}                
+    try {foundItemDocs = (await groceriesDBAsAdmin.find(itemq) as MangoResponse<ItemDoc>);}                
     catch(err) {log.error("Could not find item docs to update during schema update"); return false;}
     log.info("Found items to update :", foundItemDocs.docs.length)
     for (let i = 0; i < foundItemDocs.docs.length; i++) {
@@ -447,7 +447,7 @@ async function addStockedAtIndicatorToSchema() {
         }
         if (docChanged) {
             let dbResp = null;
-            try { dbResp = await todosDBAsAdmin.insert(foundItemDoc)}
+            try { dbResp = await groceriesDBAsAdmin.insert(foundItemDoc)}
             catch(err) { log.error("Couldn't update item with stocked indicator.");
                          updateSuccess = false;}
         }
@@ -460,14 +460,14 @@ async function restructureListGroupSchema() {
     log.info("Upgrading schema to support listGroups. Most data will be lost in this upgrade.");
     // Delete both lists and items because of structure changes and because categories in list are most likely
     // completely replaced with new Category content/system IDs at same time
-    const delq: MangoQuery = { selector: { type : { "$in": ["list","item","category"]}}, limit: await totalDocCount(todosDBAsAdmin)};
+    const delq: MangoQuery = { selector: { type : { "$in": ["list","item","category"]}}, limit: await totalDocCount(groceriesDBAsAdmin)};
     let foundDelDocs: MangoResponse<ListDoc | ItemDoc>;
-    try { foundDelDocs = (await todosDBAsAdmin.find(delq) as MangoResponse<ListDoc | ItemDoc>)}
+    try { foundDelDocs = (await groceriesDBAsAdmin.find(delq) as MangoResponse<ListDoc | ItemDoc>)}
     catch(err) { log.error("Could not find items/lists/categories to delete:",err); return false;}
     log.debug("Found items/lists/categories to delete:",foundDelDocs.docs.length);
     for (let i = 0; i < foundDelDocs.docs.length; i++) {
         let dbResp=null;
-        try { dbResp=await todosDBAsAdmin.destroy(foundDelDocs.docs[i]._id,foundDelDocs.docs[i]._rev)}
+        try { dbResp=await groceriesDBAsAdmin.destroy(foundDelDocs.docs[i]._id,foundDelDocs.docs[i]._rev)}
         catch(err) {log.error("ERROR deleting list/item:",err);}        
     }
     log.info("Finished deleting lists, items, and categories.");
@@ -480,8 +480,8 @@ async function restructureListGroupSchema() {
     for (let i = 0; i < foundUserDocs.docs.length; i++) {
         const foundUserDoc = foundUserDocs.docs[i];
         const listgroupq = { selector: { type: "listgroup", listGroupOwner: foundUserDoc.name, default: true},
-                             limit: await totalDocCount(todosDBAsAdmin)};
-        let foundListGroupDocs = await todosDBAsAdmin.find(listgroupq);
+                             limit: await totalDocCount(groceriesDBAsAdmin)};
+        let foundListGroupDocs = await groceriesDBAsAdmin.find(listgroupq);
         if (foundListGroupDocs.docs.length == 0) {
             log.info("No default listgroup found for :",foundUserDoc.name," ... creating...");
             let newCurDateStr = (new Date()).toISOString()
@@ -490,7 +490,7 @@ async function restructureListGroupSchema() {
                 default: true, recipe: false, alexaDefault: false, listGroupOwner: foundUserDoc.name, sharedWith: [], updatedAt: newCurDateStr
             }
             let dbResp = null;
-            try { dbResp = await todosDBAsAdmin.insert(newListGroupDoc)}
+            try { dbResp = await groceriesDBAsAdmin.insert(newListGroupDoc)}
             catch(err) { log.error("Couldn't create new list group:",newListGroupDoc.name, "err:",JSON.stringify(err))
                          updateSuccess = false;}
         } else {
@@ -505,7 +505,7 @@ async function updateSystemCategory(catDoc: CategoryDoc): Promise<boolean> {
     catDoc.listGroupID = "system";
     catDoc.updatedAt = (new Date().toISOString());
     let dbResp = null;
-    try { dbResp = await todosDBAsAdmin.insert(catDoc)}
+    try { dbResp = await groceriesDBAsAdmin.insert(catDoc)}
     catch(err) { log.error("Couldn't update system category with list group system.");
                  success = false;}
     if (success) { log.info("Updated category ",catDoc.name," to system list group.");}
@@ -527,7 +527,7 @@ async function updateCustomCategory(catDoc: CategoryDoc, itemDocs: ItemDocs): Pr
         newCatDoc.listGroupID = null;
         newCatDoc.updatedAt = (new Date().toISOString());
         let dbResp = null;
-        try { dbResp = await todosDBAsAdmin.insert(newCatDoc)}
+        try { dbResp = await groceriesDBAsAdmin.insert(newCatDoc)}
         catch(err) { log.error("Couldn't set category ",catDoc.name," to an unused list group");
             success = false;}
         if (success) { log.info("Assigned unused by item category ",catDoc.name, " to the unused list group ");}   
@@ -542,7 +542,7 @@ async function updateCustomCategory(catDoc: CategoryDoc, itemDocs: ItemDocs): Pr
                 newCatDoc.listGroupID = lg;
                 newCatDoc.updatedAt = (new Date().toISOString());
                 let dbResp = null;
-                try { dbResp = await todosDBAsAdmin.insert(newCatDoc)}
+                try { dbResp = await groceriesDBAsAdmin.insert(newCatDoc)}
                 catch(err) { log.error("Couldn't add category ",catDoc.name," with list group ",lg);
                     success = false;}
                 if (success) { log.info("Created new category ",catDoc.name, " in list group ",lg)}   
@@ -551,7 +551,7 @@ async function updateCustomCategory(catDoc: CategoryDoc, itemDocs: ItemDocs): Pr
                 newCatDoc.listGroupID = lg;
                 newCatDoc.updatedAt = (new Date().toISOString());
                 let dbResp = null;
-                try { dbResp = await todosDBAsAdmin.insert(newCatDoc)}
+                try { dbResp = await groceriesDBAsAdmin.insert(newCatDoc)}
                 catch(err) { log.error("Couldn't update category ",catDoc.name," with list group ",lg);
                     success = false;}
                 if (success) { log.info("Updated category ",catDoc.name," with list group ",lg)}
@@ -569,7 +569,7 @@ async function updateSystemUOM(uomDoc: UomDoc): Promise<boolean> {
     updatedUOMDoc.listGroupID = "system";
     updatedUOMDoc.updatedAt = (new Date().toISOString());
     let dbResp = null;
-    try { dbResp = await todosDBAsAdmin.insert(updatedUOMDoc)}
+    try { dbResp = await groceriesDBAsAdmin.insert(updatedUOMDoc)}
     catch(err) { log.error("Couldn't update system UOM with list group system.");
                  success = false;}
     if (success) { log.info("Updated UOM ",uomDoc.description," to system list group.");}
@@ -597,7 +597,7 @@ async function updateCustomUOM(uomDoc: UomDoc, itemDocs: ItemDocs, recipeDocs: R
             newUOMDoc.listGroupID = null;
             newUOMDoc.updatedAt = (new Date().toISOString());
             let dbResp = null;
-            try { dbResp = await todosDBAsAdmin.insert(newUOMDoc)}
+            try { dbResp = await groceriesDBAsAdmin.insert(newUOMDoc)}
             catch(err) { log.error("Couldn't set UOM ",uomDoc.description," to an unused list group");
                 success = false;}
             if (success) { log.info("Assigned unused by item UOM",uomDoc.description, " to the unused list group ");}   
@@ -610,7 +610,7 @@ async function updateCustomUOM(uomDoc: UomDoc, itemDocs: ItemDocs, recipeDocs: R
                 newUOMDoc.listGroupID = String(recipeLG._id);
                 newUOMDoc.updatedAt = (new Date().toISOString());
                 let dbResp = null;
-                try { dbResp = await todosDBAsAdmin.insert(newUOMDoc)}
+                try { dbResp = await groceriesDBAsAdmin.insert(newUOMDoc)}
                 catch(err) { log.error("Couldn't set UOM ",uomDoc.description," to recipe list group ",recipeLG.name, err);
                     success = false;}
                 if (success) { log.info("Assigned UOM used in ",usedRecipeCount," recipes:",uomDoc.description, " to the recipe list group ",recipeLG.name);}       
@@ -627,7 +627,7 @@ async function updateCustomUOM(uomDoc: UomDoc, itemDocs: ItemDocs, recipeDocs: R
                 newUomDoc.listGroupID = lg;
                 newUomDoc.updatedAt = (new Date().toISOString());
                 let dbResp = null;
-                try { dbResp = await todosDBAsAdmin.insert(newUomDoc)}
+                try { dbResp = await groceriesDBAsAdmin.insert(newUomDoc)}
                 catch(err) { log.error("Couldn't add UOM ",uomDoc.description," with list group ",lg);
                     success = false;}
                 if (success) { log.info("Created new UOM ",uomDoc.description, " in list group ",lg)}   
@@ -636,7 +636,7 @@ async function updateCustomUOM(uomDoc: UomDoc, itemDocs: ItemDocs, recipeDocs: R
                 newUomDoc.listGroupID = lg;
                 newUomDoc.updatedAt = (new Date().toISOString());
                 let dbResp = null;
-                try { dbResp = await todosDBAsAdmin.insert(newUomDoc)}
+                try { dbResp = await groceriesDBAsAdmin.insert(newUomDoc)}
                 catch(err) { log.error("Couldn't update UOM ",uomDoc.description," with list group ",lg);
                     success = false;}
                 if (success) { log.info("Updated UOM ",uomDoc.description," with list group ",lg)}
@@ -688,7 +688,7 @@ async function generateUserColors(catDocs: CategoryDocs, userDocs: UserDoc[], se
             newSettingDoc.categoryColors = newCategoryColors;
             newSettingDoc.updatedAt = (new Date().toISOString());
             let dbResp = null;
-            try { dbResp = await todosDBAsAdmin.insert(newSettingDoc)}
+            try { dbResp = await groceriesDBAsAdmin.insert(newSettingDoc)}
             catch(err) { log.error("Couldn't create user setting ",user.name," with category colors ");
                 success = false;}
             if (success) {log.info("User setting doc created for ",user.name," didn't previously exist")};    
@@ -697,7 +697,7 @@ async function generateUserColors(catDocs: CategoryDocs, userDocs: UserDoc[], se
             foundSetting.categoryColors = newCategoryColors;
             foundSetting.updatedAt = (new Date().toISOString());
             let dbResp = null;
-            try { dbResp = await todosDBAsAdmin.insert(foundSetting)}
+            try { dbResp = await groceriesDBAsAdmin.insert(foundSetting)}
             catch(err) { log.error("Couldn't update user setting ",user.name," with category colors ");
                 success = false;}
             if (success) {log.info("User setting doc updated for user ",user.name)}    
@@ -707,33 +707,33 @@ async function generateUserColors(catDocs: CategoryDocs, userDocs: UserDoc[], se
 }
 
 async function getLatestUOMDocs(): Promise<[boolean,UomDoc[]]> {
-    const uomq: MangoQuery = { selector: { type: "uom", name: {$exists: true}}, limit: await totalDocCount(todosDBAsAdmin)};
+    const uomq: MangoQuery = { selector: { type: "uom", name: {$exists: true}}, limit: await totalDocCount(groceriesDBAsAdmin)};
     let foundUOMDocs: MangoResponse<UomDoc>;
-    try {foundUOMDocs = (await todosDBAsAdmin.find(uomq) as MangoResponse<UomDoc>);}
+    try {foundUOMDocs = (await groceriesDBAsAdmin.find(uomq) as MangoResponse<UomDoc>);}
     catch(err) {log.error("Could not find Units of Measure during schema update:",err); return [false,[]];}
     return [true,foundUOMDocs.docs];
 }
 
 async function getLatestCategoryDocs(): Promise<[boolean,CategoryDocs]> {
-    const catq: MangoQuery = { selector: { type: "category", name: {$exists: true}}, limit: await totalDocCount(todosDBAsAdmin)};
+    const catq: MangoQuery = { selector: { type: "category", name: {$exists: true}}, limit: await totalDocCount(groceriesDBAsAdmin)};
     let foundCatDocs: MangoResponse<CategoryDoc>;
-    try {foundCatDocs = (await todosDBAsAdmin.find(catq) as MangoResponse<CategoryDoc>);}
+    try {foundCatDocs = (await groceriesDBAsAdmin.find(catq) as MangoResponse<CategoryDoc>);}
     catch(err) {log.error("Could not find Categories during schema update::",err); return [false,[]];}
     return [true,foundCatDocs.docs];
 }
 
 async function getLatestListGroupDocs(): Promise<[boolean,ListGroupDocs]> {
-    const lgq: MangoQuery = { selector: { type: "listgroup", name: {$exists: true}}, limit: await totalDocCount(todosDBAsAdmin)};
+    const lgq: MangoQuery = { selector: { type: "listgroup", name: {$exists: true}}, limit: await totalDocCount(groceriesDBAsAdmin)};
     let foundListGroupDocs: MangoResponse<ListGroupDoc>;
-    try {foundListGroupDocs = (await todosDBAsAdmin.find(lgq) as MangoResponse<ListGroupDoc>);}
+    try {foundListGroupDocs = (await groceriesDBAsAdmin.find(lgq) as MangoResponse<ListGroupDoc>);}
     catch(err) {log.error("Could not find List Groups during schema update::",err); return [false,[]];}
     return [true,foundListGroupDocs.docs];
 }
 
 async function getLatestRecipeDocs(): Promise<[boolean,RecipeDoc[]]> {
-    const recipeq: MangoQuery = { selector: { type: "recipe", name: {$exists: true}}, limit: await totalDocCount(todosDBAsAdmin)};
+    const recipeq: MangoQuery = { selector: { type: "recipe", name: {$exists: true}}, limit: await totalDocCount(groceriesDBAsAdmin)};
     let foundRecipeDocs: MangoResponse<RecipeDoc>;
-    try {foundRecipeDocs = (await todosDBAsAdmin.find(recipeq) as MangoResponse<RecipeDoc>);}
+    try {foundRecipeDocs = (await groceriesDBAsAdmin.find(recipeq) as MangoResponse<RecipeDoc>);}
     catch(err) {log.error("Could not find Recipes during schema update::",err); return [false,[]];}
     return [true,foundRecipeDocs.docs];
 }
@@ -755,7 +755,7 @@ async function checkAndCreateNewUOMForRecipeItem(uomName: string): Promise<boole
             newUOMDoc.listGroupID = "recipe";
             newUOMDoc.updatedAt = (new Date().toISOString());
             let dbResp = null;
-            try { dbResp = await todosDBAsAdmin.insert(newUOMDoc)}
+            try { dbResp = await groceriesDBAsAdmin.insert(newUOMDoc)}
             catch(err) { log.error("Couldn't create new UOM for recipe:",uomName);
                 success = false;}
             if (success) {log.info("Created new UOM ",uomName, " and assigned to recipe group");}    
@@ -802,7 +802,7 @@ async function deleteColorFieldFromCategories(): Promise<boolean> {
         delete newCatDoc.color;
         newCatDoc.updatedAt = (new Date().toISOString());
         let dbResp = null;
-        try { dbResp = await todosDBAsAdmin.insert(newCatDoc)}
+        try { dbResp = await groceriesDBAsAdmin.insert(newCatDoc)}
         catch(err) { log.error("Couldn't delete color from category:",newCatDoc.name);
             success = false;}
         if (success) {log.info("Deleted color field from category ",newCatDoc.name);}    
@@ -821,7 +821,7 @@ async function removeDefaultFieldFromListgroups() {
         newListGroupDoc.updatedAt = (new Date().toISOString());
         let dbResp = null;
         let changeSuccess = true;
-        try { dbResp = await todosDBAsAdmin.insert(newListGroupDoc)}
+        try { dbResp = await groceriesDBAsAdmin.insert(newListGroupDoc)}
         catch(err) { log.error("Couldn't delete default flag from list group:",newListGroupDoc.name);
             changeSuccess = false; success=false;}
         if (changeSuccess) {log.info("Deleted default flag from list group ",newListGroupDoc.name);}    
@@ -844,7 +844,7 @@ async function addRecipeListGroupsForUsers(userDocs: UserDoc[]) {
             newRecipeLG.updatedAt = new Date().toISOString();
             let dbResp = null;
             let addSuccess = true;
-            try { dbResp = await todosDBAsAdmin.insert(newRecipeLG)}
+            try { dbResp = await groceriesDBAsAdmin.insert(newRecipeLG)}
             catch(err) { log.error("Couldn't add recipe list group for user:",user.name); success = false; addSuccess = false;}
             if (addSuccess) {log.info("Created recipe list group for user:",user.name)}
         }
@@ -869,7 +869,7 @@ async function copyRecipesToListGroups() {
             newRecipeDoc.updatedAt = new Date().toISOString();
             let dbResp = null;
             let addSuccess = true;
-            try { dbResp = await todosDBAsAdmin.insert(newRecipeDoc)}
+            try { dbResp = await groceriesDBAsAdmin.insert(newRecipeDoc)}
             catch(err) { log.error("Couldn't add new recipe in list group:",lg.name); success=false; addSuccess=false}
             if (addSuccess) {log.info("Copied recipe ",recipe.name," to list group ",lg.name)}
         }
@@ -884,9 +884,9 @@ async function restructureCategoriesUOMRecipesSchema() {
     let [getSuccess,foundCatDocs] = await getLatestCategoryDocs();
     if (!getSuccess) {return false;}
     log.info("Found categories to process: ", foundCatDocs.length);
-    const itemq: MangoQuery = { selector: { type: "item", name: {$exists: true}}, limit: await totalDocCount(todosDBAsAdmin)};
+    const itemq: MangoQuery = { selector: { type: "item", name: {$exists: true}}, limit: await totalDocCount(groceriesDBAsAdmin)};
     let foundItemDocs: MangoResponse<ItemDoc>;
-    try {foundItemDocs = (await todosDBAsAdmin.find(itemq) as MangoResponse<ItemDoc>);}
+    try {foundItemDocs = (await groceriesDBAsAdmin.find(itemq) as MangoResponse<ItemDoc>);}
     catch(err) {log.error("Could not find items during schema update:",err); return false;}
     log.info("Found items to process: ", foundItemDocs.docs.length);
     const userq: MangoQuery = { selector: { type: "user", name: {$exists: true}}, limit: await totalDocCount(usersDBAsAdmin)};
@@ -894,9 +894,9 @@ async function restructureCategoriesUOMRecipesSchema() {
     try {foundUserDocs = (await usersDBAsAdmin.find(userq) as MangoResponse<UserDoc>);}
     catch(err) {log.error("Could not find user list during schema update:",err); return false;}
     log.info("Found users to create listgroups: ", foundUserDocs.docs.length);
-    const settingsq: MangoQuery = { selector: { type: "settings", username: {$exists: true}}, limit: await totalDocCount(todosDBAsAdmin)};
+    const settingsq: MangoQuery = { selector: { type: "settings", username: {$exists: true}}, limit: await totalDocCount(groceriesDBAsAdmin)};
     let foundSettingsDocs: MangoResponse<SettingsDoc>;
-    try {foundSettingsDocs = (await todosDBAsAdmin.find(settingsq) as MangoResponse<SettingsDoc>);}
+    try {foundSettingsDocs = (await groceriesDBAsAdmin.find(settingsq) as MangoResponse<SettingsDoc>);}
     catch(err) {log.error("Could not find settings list during schema update:",err); return false;}
     log.info("Found settings to create color specific categories: ", foundSettingsDocs.docs.length);
     let lgChangeSuccess = await removeDefaultFieldFromListgroups();
@@ -952,20 +952,20 @@ async function restructureImagesListgroups() {
     log.info("Adding list group field to all images...")
     log.info("Finding all items that have an image...")
     let updateSuccess=true;
-    const itemq: MangoQuery = { selector: { type: "item", name: {$exists: true}, imageID: {$ne: null}}, limit: await totalDocCount(todosDBAsAdmin)};
+    const itemq: MangoQuery = { selector: { type: "item", name: {$exists: true}, imageID: {$ne: null}}, limit: await totalDocCount(groceriesDBAsAdmin)};
     let foundItemDocs: MangoResponse<ItemDoc>;
-    try {foundItemDocs = (await todosDBAsAdmin.find(itemq) as MangoResponse<ItemDoc>);}
+    try {foundItemDocs = (await groceriesDBAsAdmin.find(itemq) as MangoResponse<ItemDoc>);}
     catch(err) {log.error("Could not find items during schema update:",err); return false;}
     log.info("Found images to process: ", foundItemDocs.docs.length);
     if (foundItemDocs.docs.length === 0) {return true;}
     for (const itemDoc of foundItemDocs.docs) {
         let imageDoc : ImageDoc = ImageDocInit;
         let imageSuccess: boolean = true;
-        try {imageDoc = await todosDBAsAdmin.get(String(itemDoc.imageID)) as ImageDoc}
+        try {imageDoc = await groceriesDBAsAdmin.get(String(itemDoc.imageID)) as ImageDoc}
         catch(err) {log.error("Could not find image doc during schema update:",err); imageSuccess=false;}
         if (imageSuccess) {
             imageDoc.listGroupID = itemDoc.listGroupID;
-            try {await todosDBAsAdmin.insert(imageDoc)}
+            try {await groceriesDBAsAdmin.insert(imageDoc)}
             catch(err) {log.error("Could not update image doc during schema update:",err); imageSuccess=false;}
         }
         if (imageSuccess) {
@@ -974,7 +974,7 @@ async function restructureImagesListgroups() {
         let itemUpdateSuccess=true;
         if (!imageSuccess) {
             itemDoc.imageID=null;
-            try {await todosDBAsAdmin.insert(itemDoc)}
+            try {await groceriesDBAsAdmin.insert(itemDoc)}
             catch(err) {log.error("Could not update item ID setting image ID to null",err); itemUpdateSuccess=false;}
         }
         if (!itemUpdateSuccess) {
@@ -1031,7 +1031,7 @@ async function createConflictsView() {
     let viewFound=true;
     let existingView: any;
     log.info("Checking/Creating conflicts view...");
-    try {existingView = await todosDBAsAdmin.get("_design/"+conflictsViewID)}
+    try {existingView = await groceriesDBAsAdmin.get("_design/"+conflictsViewID)}
     catch(err) {viewFound = false;}
     if (!viewFound) {
         let viewCreated=true;
@@ -1041,7 +1041,7 @@ async function createConflictsView() {
                 "map": "function(doc) { if (doc._conflicts) { emit (doc._conflicts, null)}}"
         }}}
         try {
-            await todosDBAsAdmin.insert(viewDoc as any,"_design/"+conflictsViewID)
+            await groceriesDBAsAdmin.insert(viewDoc as any,"_design/"+conflictsViewID)
         }
         catch(err) {log.error("View not created:",{err}); viewCreated=false;}
         log.info("View created/ updated");
@@ -1050,7 +1050,7 @@ async function createConflictsView() {
             log.info("Conflicts View existed with correct content");
         } else {
             existingView.type = "view";
-            try {await todosDBAsAdmin.insert(existingView)}
+            try {await groceriesDBAsAdmin.insert(existingView)}
             catch(err) {log.error("Could not update view with type",err)}
         }
     }
@@ -1069,7 +1069,7 @@ async function checkAndCreateIndex(index: CouchIndex): Promise<boolean> {
     let indexExists=true;
     let currentType=undefined;
     let currentIdxDoc: any = undefined;
-    try {dbResp= await todosDBAsAdmin.get(docID)}
+    try {dbResp= await groceriesDBAsAdmin.get(docID)}
     catch(err) {log.info("Could not retrieve index "+index.name+ "... Creating..."); indexExists=false;}
     if (indexExists) {
         log.info("Index "+index.name+" already exists... skipping...");
@@ -1079,10 +1079,10 @@ async function checkAndCreateIndex(index: CouchIndex): Promise<boolean> {
         const newIndex = {index: { fields: index.fields},
             ddoc: docID,
             name: index.name};
-        try {dbResp = await todosDBAsAdmin.createIndex(newIndex)}
+        try {dbResp = await groceriesDBAsAdmin.createIndex(newIndex)}
         catch(err) {log.error("Error creating index ",index.name, "Error:",err); success=false}
         log.debug("Response from create index:",dbResp);
-        try {dbResp = await todosDBAsAdmin.get(docID)}
+        try {dbResp = await groceriesDBAsAdmin.get(docID)}
         catch(err){ log.error("Could not read created index",err); return false;}
         currentType=undefined;
         currentIdxDoc=cloneDeep(dbResp);
@@ -1090,7 +1090,7 @@ async function checkAndCreateIndex(index: CouchIndex): Promise<boolean> {
     if (currentType===undefined && currentIdxDoc !== null && currentIdxDoc !== undefined) {
         log.info("Adding type label to index...");
         currentIdxDoc.type="index";
-        try {dbResp = await todosDBAsAdmin.insert(currentIdxDoc)}
+        try {dbResp = await groceriesDBAsAdmin.insert(currentIdxDoc)}
         catch(err) {log.error("Could not add type label to index..."); return false}
     }
     return success;
@@ -1164,7 +1164,7 @@ async function createReplicationFilter(): Promise<boolean> {
     let filterExists = true;
     let filterNeedsUpdate = false;
     let filterRecord: DocumentGetResponse | null = null;
-    try {filterRecord = await todosDBAsAdmin.get("_design/replfilter")}
+    try {filterRecord = await groceriesDBAsAdmin.get("_design/replfilter")}
     catch(err) {log.info("Replication Filter does not exist... Need to create...");
                 filterExists=false;
                 dbRecord = ddoc;
@@ -1183,7 +1183,7 @@ async function createReplicationFilter(): Promise<boolean> {
         else {log.info("Replication filter exists and has correct content.")}
     }
     if (!filterExists || filterNeedsUpdate) {
-        try {dbresp = await todosDBAsAdmin.insert(dbRecord);}
+        try {dbresp = await groceriesDBAsAdmin.insert(dbRecord);}
         catch(err) {log.debug("Could not create replication filter:",err); success=false;}
         if (success) {log.info("Replication filter created/updated successfully.")}
     }
@@ -1278,8 +1278,8 @@ export async function dbStartup() {
     log.info("STATUS: User Account Creation is: ",disableAccountCreation ? "DISABLED" : "ENABLED");
     await createDBIfNotExists();
     await setDBSecurity();
-    try {todosDBAsAdmin = todosNanoAsAdmin.use(couchDatabase);}
-    catch(err) {log.error("Could not open todo database:",err); return false;}
+    try {groceriesDBAsAdmin = groceriesNanoAsAdmin.use(couchDatabase);}
+    catch(err) {log.error("Could not open grocery database:",err); return false;}
     try {usersDBAsAdmin = usersNanoAsAdmin.use("_users");}
     catch(err) {log.error("Could not open users database:", err); return false;}
     let keysOK = await checkJWTKeys();

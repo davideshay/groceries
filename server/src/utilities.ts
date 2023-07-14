@@ -1,5 +1,5 @@
 import { couchUserPrefix, couchStandardRole, accessTokenExpires, refreshTokenExpires } from "./apicalls";
-import { usersDBAsAdmin, todosDBAsAdmin } from './dbstartup';
+import { usersDBAsAdmin, groceriesDBAsAdmin } from './dbstartup';
 import { generateJWT } from "./jwt";
 import { UserDoc, FriendDoc, FriendDocs} from './DBSchema'
 import { DatabaseGetResponse, DocumentScope, MangoQuery, MangoResponse, MaybeDocument } from "nano";
@@ -137,10 +137,10 @@ export async function createNewUser(userObj: UserObj, deviceUUID: string) {
 export async function updateUnregisteredFriends(req: CustomRequest<NewUserReqBody>,email: string) {
     const emailq = {
         selector: { type: { "$eq": "friend" }, inviteEmail: { "$eq": email}},
-        limit: await totalDocCount(todosDBAsAdmin)
+        limit: await totalDocCount(groceriesDBAsAdmin)
     }
     let foundFriendDocs;
-    try {foundFriendDocs =  await todosDBAsAdmin.find(emailq);}
+    try {foundFriendDocs =  await groceriesDBAsAdmin.find(emailq);}
     catch(err) {log.error("Could not find friend documents:",err); return false;}
     let foundFriendDoc = undefined;
 //    if (foundFriendDocs.docs.length > 0) {foundFriendDoc = foundFriendDocs.docs[0]}
@@ -150,7 +150,7 @@ export async function updateUnregisteredFriends(req: CustomRequest<NewUserReqBod
             doc.friendStatus = "PENDFROM1";
             doc.updatedAt = (new Date()).toISOString();
             let update2success=true;
-            try { await todosDBAsAdmin.insert(doc);} 
+            try { await groceriesDBAsAdmin.insert(doc);} 
             catch(e) {update2success = false;}
         }
     });
@@ -159,10 +159,10 @@ export async function updateUnregisteredFriends(req: CustomRequest<NewUserReqBod
 export async function getFriendDocByUUID(uuid: string): Promise<FriendDoc|null> {
     const uuidq = {
         selector: { type: { "$eq": "friend" }, inviteUUID: { "$eq": uuid}},
-        limit: await totalDocCount(todosDBAsAdmin)
+        limit: await totalDocCount(groceriesDBAsAdmin)
     }
     let foundFriendDocs: MangoResponse<FriendDoc>;
-    try {foundFriendDocs =  (await todosDBAsAdmin.find(uuidq) as MangoResponse<FriendDoc>);}
+    try {foundFriendDocs =  (await groceriesDBAsAdmin.find(uuidq) as MangoResponse<FriendDoc>);}
     catch(err) {log.error("Could not find friend documents:", err); return null;};
     let foundFriendDoc: FriendDoc | null = null;
     if (foundFriendDocs.docs.length > 0) {foundFriendDoc = foundFriendDocs.docs[0]}

@@ -3,7 +3,7 @@ import { CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
 import { Preferences } from '@capacitor/preferences';
 import jwt_decode from 'jwt-decode';
 import { ListCombinedRows, ListRow, RowType } from "./DataTypes";
-import { ListGroupDocs, TriggerDoc, UUIDDoc, maxAppSupportedSchemaVersion } from "./DBSchema";
+import { ListGroupDocs, TriggerDoc, UUIDDoc, appVersion, maxAppSupportedSchemaVersion } from "./DBSchema";
 import { DBUUIDAction, DBUUIDCheck } from "./RemoteDBState";
 import { History } from "history";
 import { urlPatternValidation, usernamePatternValidation, emailPatternValidation,
@@ -328,7 +328,7 @@ async function getListGroupIDs(db: PouchDB.Database,username: string): Promise<s
     return listGroupIDs;
 }
 
-export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Database, username: string) {
+export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Database, username: string, remoteAppVersion: string) {
     let UUIDCheck: DBUUIDCheck = {
         checkOK: true,
         dbAvailable: true,
@@ -397,7 +397,7 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
         UUIDCheck.dbUUIDAction = DBUUIDAction.exit_local_remote_schema_mismatch;
         return UUIDCheck;
     }
-    log.info("maxAppSupportedVersion",maxAppSupportedSchemaVersion)
+    log.info("maxAppSupportedSchemaVersion",maxAppSupportedSchemaVersion)
     if (Number(UUIDCheck.schemaVersion) > maxAppSupportedSchemaVersion) {
         UUIDCheck.checkOK = false;
         UUIDCheck.dbUUIDAction = DBUUIDAction.exit_app_schema_mismatch;
@@ -419,6 +419,11 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
     let localListGroupIDs = await getListGroupIDs(db,username);
     UUIDCheck.syncListGroupIDs = Array.from(new Set(remoteListGroupIDs.concat(localListGroupIDs)));
 
+    if (appVersion !== remoteAppVersion) {
+        UUIDCheck.checkOK = false;
+        UUIDCheck.dbUUIDAction = DBUUIDAction.warning_app_version_mismatch;
+        return UUIDCheck;
+    }
 
       // if current DBCreds doesn't have one, set it to the remote one.
     if ((localDBUUID === null || localDBUUID === "" ) && !localHasRecords) {
