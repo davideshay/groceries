@@ -231,7 +231,9 @@ export const de_translations =
         "deleting_list": "Liste wird gelöscht...",
         "deleting_uom": "Maßeinheit wird gelöscht...",
         "is_recipe_listgroup_for_user":"Ist die Rezeptliste für diesen Benutzer gruppiert?",
-        },
+        "alexa_default": "Standard-Listengruppe für Alexa",
+        "listgroup_not_updated": "Die Listengruppe wurde nicht aktualisiert/gespeichert",
+        "exit": "App beenden"        },
     "error": {
         "invalid_dbuuid" : "Ungültiger Datenbank-Identifier",
         "could_not_contact_api_server": "API-Server konnte nicht erreicht werden",
@@ -365,7 +367,10 @@ export const de_translations =
         "cannot_create_uom_no_listgroup_selected": "Es kann keine Maßeinheit erstellt werden, wenn keine Listen-Gruppe ausgewählt ist.",
         "header_adding_item": "Fehler beim Hinzufügen eines vorhandenen Elements",
         "header_warning_adding_item": "Warnung beim Hinzufügen eines vorhandenen Elements",
-        "warning_none_set_active": "Basierend auf den Einstellungen ist das Element zwar hinzugefügt worden, ist jedoch derzeit auf keiner der Listen aktiv. Dies könnte daran liegen, dass die Kategorie in den Listen nicht aktiv ist."
+        "warning_none_set_active": "Basierend auf den Einstellungen ist das Element zwar hinzugefügt worden, ist jedoch derzeit auf keiner der Listen aktiv. Dies könnte daran liegen, dass die Kategorie in den Listen nicht aktiv ist.",
+        "deleting_listgroup": "Fehler beim Löschen der Listen-Gruppe",
+        "deleting_listgroup_detail": "Die letzte verbleibende Listen-Gruppe kann nicht gelöscht werden. Fügen Sie bitte zuerst eine weitere Gruppe hinzu, wenn Sie wirklich löschen möchten.",
+        "need_one_alexa_default": "Es sollte eine Listen-Gruppe als Standard für Alexa markiert sein. Derzeit sind {{count}} Listen-Gruppen als Standard markiert, wenn Sie diese Liste speichern. Wenn keine spezifiziert ist, verwendet Alexa die erste verfügbare Listen-Gruppe. Wenn mehr als eine spezifiziert ist, wird die alphabetisch erste verwendet."
     },
     "itemtext": {
         "item_is_on_these_lists": "Artikel ist auf diesen Listen:",

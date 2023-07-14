@@ -160,7 +160,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     },[remoteDBCreds.apiServerURL,setRemoteDBState,remoteDBCreds.refreshJWT,remoteDBCreds.dbUsername, remoteDBCreds.couchBaseURL, remoteDBState.loggedIn])
 
     const continueDifferentVersion = useCallback( () => {
-      setRemoteDBState(prevState => ({...prevState,dbUUIDAction: DBUUIDAction.none}))
+      setRemoteDBState(prevState => ({...prevState,dbUUIDAction: DBUUIDAction.none,ignoreAppVersionWarning: true}))
     },[setRemoteDBState])
 
     // effect for dbuuidaction not none

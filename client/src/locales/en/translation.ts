@@ -232,7 +232,8 @@ export const en_translations =
         "deleting_uom": "Deleting Unit of Measure...",
         "is_recipe_listgroup_for_user":"Is a recipe list group",
         "alexa_default": "Default list group for Alexa",
-        "listgroup_not_updated": "List group was not updated/saved"
+        "listgroup_not_updated": "List group was not updated/saved",
+        "exit": "Exit App"
      },
      "error" : {
         "invalid_dbuuid" : "Invalid Database Unique Identifier",
@@ -370,7 +371,8 @@ export const en_translations =
         "warning_none_set_active": "Based on settings, although the item was added, it is not currently active on any of the lists. This could be because the category is not active on the lists.",
         "deleting_listgroup": "Error Deleting List Group",
         "deleting_listgroup_detail": "Cannot delete the last remaining list group. Please add another one first if you really wish to delete.",
-        "need_one_alexa_default": "There should be one list group marked as the Alexa default. Currently there are {{count}} list groups marked as the default if you save this list group. If one is not specified, Alexa will use the first available list group. If more than one is specified, it will use the first one alphabetically."
+        "need_one_alexa_default": "There should be one list group marked as the Alexa default. Currently there are {{count}} list groups marked as the default if you save this list group. If one is not specified, Alexa will use the first available list group. If more than one is specified, it will use the first one alphabetically.",
+        "different_server_local_app_versions": "This application version is different than the one on the server. You could encounter errors if you continue and should upgrade the client or server to be in sync before proceeding."
     },
     "itemtext": {
         "item_is_on_these_lists": "Item is on these lists:",

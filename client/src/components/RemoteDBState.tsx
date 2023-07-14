@@ -38,6 +38,7 @@ export type RemoteDBState = {
     apiServerAvailable: boolean,
     dbServerAvailable: boolean,
     apiServerVersion: string,
+    ignoreAppVersionWarning: boolean,
     workingOffline: boolean,
     offlineJWTMatch: boolean,
     loggedIn: boolean,
@@ -184,6 +185,7 @@ export const initialRemoteDBState: RemoteDBState = {
     apiServerAvailable: true,
     apiServerVersion: "",
     dbServerAvailable: true,
+    ignoreAppVersionWarning: false,
     forceShowLoginScreen: false,
     workingOffline: false,
     offlineJWTMatch: false,
@@ -450,7 +452,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         if (appStatus.current === AppStatus.paused || appStatus.current === AppStatus.pausing) {
             log.error("Not checking ID and syncing, app pausing..."); return false;
         }
-        let DBUUIDCheck = await checkDBUUID(db as PouchDB.Database,globalRemoteDB as PouchDB.Database,String(remoteDBCreds.current.dbUsername),remoteDBState.apiServerVersion);
+        let DBUUIDCheck = await checkDBUUID(db as PouchDB.Database,globalRemoteDB as PouchDB.Database,String(remoteDBCreds.current.dbUsername),remoteDBState.apiServerVersion, remoteDBState.ignoreAppVersionWarning);
         // if (appStatus.current === AppStatus.paused || appStatus.current === AppStatus.pausing) {
         //     log.error("Not checking ID and syncing, app pausing..."); return false;
         // }

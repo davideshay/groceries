@@ -328,7 +328,7 @@ async function getListGroupIDs(db: PouchDB.Database,username: string): Promise<s
     return listGroupIDs;
 }
 
-export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Database, username: string, remoteAppVersion: string) {
+export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Database, username: string, remoteAppVersion: string, ignoreAppVersionWarning: boolean) {
     let UUIDCheck: DBUUIDCheck = {
         checkOK: true,
         dbAvailable: true,
@@ -419,7 +419,7 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
     let localListGroupIDs = await getListGroupIDs(db,username);
     UUIDCheck.syncListGroupIDs = Array.from(new Set(remoteListGroupIDs.concat(localListGroupIDs)));
 
-    if (appVersion !== remoteAppVersion) {
+    if ((appVersion !== remoteAppVersion) && !ignoreAppVersionWarning) {
         UUIDCheck.checkOK = false;
         UUIDCheck.dbUUIDAction = DBUUIDAction.warning_app_version_mismatch;
         return UUIDCheck;
