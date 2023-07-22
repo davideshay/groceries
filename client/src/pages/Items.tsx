@@ -23,6 +23,7 @@ import { useTranslation } from 'react-i18next';
 import log from 'loglevel';
 import { navigateToFirstListID } from '../components/RemoteUtilities';
 import { Capacitor } from '@capacitor/core';
+// import ItemsSearch from '../components/ItemsSearch';
 
 const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode: routeMode, id: routeListID  } = useParams<{mode: string, id: string}>();
@@ -529,6 +530,9 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
           </IonSelect>
          <SyncIndicator addPadding={false}/>
          </IonItem>
+         {/* <IonItem>
+          <ItemsSearch rowSelected={chooseSearchItem} addItemWithoutRow={addNewItemToList}/>
+         </IonItem> */}
         <IonItem key="searchbar" className="item-search">
            <IonIcon icon={searchOutline} />
            <IonInput key="itemsearchbox" id="item-search-box-id" aria-label="" className="ion-no-padding input-search" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="text" enterkeyhint="enter"
