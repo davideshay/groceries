@@ -1023,7 +1023,6 @@ async function fixDuplicateCategories() {
     for (const cat of currentCategories) {
         if (cat.listGroupID === null || cat.listGroupID === "system") {continue;}
         let concatIdx=cat.listGroupID+":"+cat.name.toUpperCase();
-        log.debug("checking for listgroupid ",cat.listGroupID," with name ",cat.name," in ",catDupCheck);
         if (catDupCheck.hasOwnProperty(concatIdx)) {
             log.info("Duplicate category name detected... ",cat.listGroupID,cat.name," cleaning...");
             log.error("PLEASE CLEAN DUPLICATE CATEGORY NAMES MANUALLY.... THIS MAY BE FIXED IN ANOTHER UPGRADE...");
@@ -1033,11 +1032,13 @@ async function fixDuplicateCategories() {
             catDupCheck[concatIdx] = cat._id;
         }    
     }
-    log.debug("Finished with duplicate check:",catDupCheck);
+    log.info("Finished with duplicate check...");
     return true;
 }
 
 async function fixDuplicateCategoriesInAList() {
+    // Check if there are duplicate categories in a list by name only (ignoring if it is in the right list group)
+    // TODO -- need to check if the one we are updating to is "correct"
     let [listSuccess,currentLists] = await getLatestListDocs();
     if (!listSuccess) {return false;}
     let [categorySuccess,currentCategories] = await getLatestCategoryDocs();
@@ -1109,13 +1110,19 @@ async function fixItemCategories() {
     }
     log.info("Fixing up categories in items....");
     for (const item of currentItems) {
+        let itemChanged = false;
         for (const itemList of item.lists) {
             if (itemList.categoryID === null || itemList.categoryID.startsWith("system:cat:")) {continue;}
             const foundCat = currentCategories.find(curCat => curCat._id === itemList.categoryID && curCat.listGroupID === item.listGroupID);
             if (isEmpty(foundCat)) {
                 log.error("Could not find category ",itemList.categoryID," in list group ",item.listGroupID);
-                //TODO FIXME
+                itemList.categoryID = null;
+                itemChanged = true;
             }
+        }
+        if (itemChanged) {
+            try {let dbResp = await groceriesDBAsAdmin.insert(item)}
+            catch(err) {log.error("Could not update item to remove bad category."); return false;}
         }
     }
     return true;
@@ -1242,7 +1249,6 @@ async function fixCategories() {
     return true;
 }
 
-
 async function setSchemaVersion(updSchemaVersion: number) {
     log.info("Finished schema updates, updating database to :",updSchemaVersion);
     let foundIDDoc = await getLatestDBUUIDDoc();
@@ -1258,33 +1264,33 @@ async function setSchemaVersion(updSchemaVersion: number) {
 
 async function checkAndUpdateSchema() {
     log.info("Current Schema Version:",schemaVersion," Target Version:",targetSchemaVersion);
-    let fixCatSuccess = await fixCategories();
-    if (!fixCatSuccess) {return false;}
+    let schemaUpgradeSuccess = true;
     if (schemaVersion === targetSchemaVersion) {
         log.info("At current schema version, skipping schema update");
-        return true;
+    } else {
+        if (schemaVersion < 2) {
+            log.info("Updating schema to rev. 2: Changes for 'stocked at' indicator on item/list.");
+            schemaUpgradeSuccess = await addStockedAtIndicatorToSchema();
+            if (schemaUpgradeSuccess) { schemaVersion = 2; await setSchemaVersion(schemaVersion);}
+        }
+        if (schemaVersion < 3) {
+            log.info("Updating schema to rev. 3: Changes for restructuring/listgroups ");
+            schemaUpgradeSuccess = await restructureListGroupSchema();
+            if (schemaUpgradeSuccess) { schemaVersion = 3; await setSchemaVersion(schemaVersion);}
+        }
+        if (schemaVersion < 4) {
+            log.info("Updating schema to rev. 4: Make Categories/UOMs listgroup specific ");
+            schemaUpgradeSuccess = await restructureCategoriesUOMRecipesSchema();
+            if (schemaUpgradeSuccess) { schemaVersion = 4; await setSchemaVersion(schemaVersion);}
+        }
+        if (schemaVersion < 5) {
+            log.info("Updating schema to rev 5: Make Images for items listgroup specific ");
+            schemaUpgradeSuccess = await restructureImagesListgroups();
+            if (schemaUpgradeSuccess) { schemaVersion = 5; await setSchemaVersion(schemaVersion);}
+        }    
     }
-    let schemaUpgradeSuccess = true;
-    if (schemaVersion < 2) {
-        log.info("Updating schema to rev. 2: Changes for 'stocked at' indicator on item/list.");
-        schemaUpgradeSuccess = await addStockedAtIndicatorToSchema();
-        if (schemaUpgradeSuccess) { schemaVersion = 2; await setSchemaVersion(schemaVersion);}
-    }
-    if (schemaVersion < 3) {
-        log.info("Updating schema to rev. 3: Changes for restructuring/listgroups ");
-        schemaUpgradeSuccess = await restructureListGroupSchema();
-        if (schemaUpgradeSuccess) { schemaVersion = 3; await setSchemaVersion(schemaVersion);}
-    }
-    if (schemaVersion < 4) {
-        log.info("Updating schema to rev. 4: Make Categories/UOMs listgroup specific ");
-        schemaUpgradeSuccess = await restructureCategoriesUOMRecipesSchema();
-        if (schemaUpgradeSuccess) { schemaVersion = 4; await setSchemaVersion(schemaVersion);}
-    }
-    if (schemaVersion < 5) {
-        log.info("Updating schema to rev 5: Make Images for items listgroup specific ");
-        schemaUpgradeSuccess = await restructureImagesListgroups();
-        if (schemaUpgradeSuccess) { schemaVersion = 5; await setSchemaVersion(schemaVersion);}
-    }
+    let fixCatSuccess = await fixCategories();
+    if (!fixCatSuccess) {return false;}
     return schemaUpgradeSuccess;
 }
 
