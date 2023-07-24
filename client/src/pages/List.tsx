@@ -149,8 +149,11 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   function handleReorder(event: CustomEvent<ItemReorderEventDetail>) {
     // The `from` and `to` properties contain the index of the item
     // when the drag started and ended, respectively
+    log.debug("called with event:",event.detail);
     let newPageState=cloneDeep(pageState);
+    log.debug("curr categories:",cloneDeep(pageState.listDoc.categories));
     newPageState.listDoc.categories.splice(event.detail.to,0,newPageState.listDoc.categories.splice(event.detail.from,1)[0]);
+    log.debug("updated state categories",cloneDeep(newPageState.listDoc.categories));
     newPageState.changesMade=true;
     setPageState(newPageState);
 

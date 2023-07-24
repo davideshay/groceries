@@ -471,7 +471,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             log.debug("DB Unique ID check passed. Setup Activities complete. Starting Sync.");
             startSync();
         }
-    },[db,startSync,t,remoteDBState.apiServerVersion])
+    },[db,startSync,t,remoteDBState.apiServerVersion, remoteDBState.ignoreAppVersionWarning])
 
     const attemptFullLogin = useCallback( async (): Promise<[boolean,string]> => {
         let devID = await getDeviceID();

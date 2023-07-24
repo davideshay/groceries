@@ -422,6 +422,7 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
     if ((appVersion !== remoteAppVersion) && !ignoreAppVersionWarning) {
         UUIDCheck.checkOK = false;
         UUIDCheck.dbUUIDAction = DBUUIDAction.warning_app_version_mismatch;
+        log.error("App Version Mismatch: local:",appVersion," remote: ",remoteAppVersion);
         return UUIDCheck;
     }
 

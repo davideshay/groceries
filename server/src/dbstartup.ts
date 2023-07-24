@@ -7,7 +7,7 @@ import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { cloneDeep, isEmpty, isEqual, omit } from "lodash";
 import { v4 as uuidv4} from 'uuid';
 import { uomContent, categories, globalItems, totalDocCount } from "./utilities";
-import { DocumentScope, MangoResponse, MangoQuery, DocumentGetResponse, MaybeDocument } from "nano";
+import { DocumentScope, MangoResponse, MangoQuery, DocumentGetResponse, MaybeDocument, DatabaseGetResponse, DocumentInsertResponse } from "nano";
 import { CategoryDoc, CategoryDocs, GlobalItemDoc, ImageDoc, ImageDocInit, InitSettingsDoc, ItemDoc, ItemDocs, ListDoc, ListGroupDoc, ListGroupDocInit, ListGroupDocs, RecipeDoc, SettingsDoc, UUIDDoc, UomDoc, UserDoc, appVersion, maxAppSupportedSchemaVersion, minimumAccessRefreshSeconds } from "./DBSchema";
 import log, { LogLevelDesc } from "loglevel";
 import prefix from "loglevel-plugin-prefix";
@@ -189,6 +189,7 @@ async function addDBIdentifier() {
             "categoriesVersion": 0,
             "globalItemVersion": 0,
             "schemaVersion": 0,
+            "categoriesFixed": true,
             updatedAt: (new Date()).toISOString()
         }
         let dbResp=await updateDBUUIDDoc(newDoc);
@@ -730,6 +731,22 @@ async function getLatestListGroupDocs(): Promise<[boolean,ListGroupDocs]> {
     return [true,foundListGroupDocs.docs];
 }
 
+async function getLatestListDocs(): Promise<[boolean,ListDoc[]]> {
+    const lq: MangoQuery = { selector: { type: "list", name: {$exists: true}}, limit: await totalDocCount(groceriesDBAsAdmin)};
+    let foundListDocs: MangoResponse<ListDoc>;
+    try {foundListDocs = (await groceriesDBAsAdmin.find(lq) as MangoResponse<ListDoc>);}
+    catch(err) {log.error("Could not find List Groups during schema update::",err); return [false,[]];}
+    return [true,foundListDocs.docs];
+}
+
+async function getLatestItemDocs(): Promise<[boolean,ItemDocs]> {
+    const itemq: MangoQuery = { selector: { type: "item", name: {$exists: true}}, limit: await totalDocCount(groceriesDBAsAdmin)};
+    let foundItemDocs: MangoResponse<ItemDoc>;
+    try {foundItemDocs = (await groceriesDBAsAdmin.find(itemq) as MangoResponse<ItemDoc>);}
+    catch(err) {log.error("Could not find Items during schema update::",err); return [false,[]];}
+    return [true,foundItemDocs.docs];
+}
+
 async function getLatestRecipeDocs(): Promise<[boolean,RecipeDoc[]]> {
     const recipeq: MangoQuery = { selector: { type: "recipe", name: {$exists: true}}, limit: await totalDocCount(groceriesDBAsAdmin)};
     let foundRecipeDocs: MangoResponse<RecipeDoc>;
@@ -985,6 +1002,246 @@ async function restructureImagesListgroups() {
     return updateSuccess;
 }
 
+async function fixDuplicateCategories() {
+    let [listSuccess,currentLists] = await getLatestListDocs();
+    if (!listSuccess) {
+        log.error("Could not retrieve lists...");
+        return false;
+    }
+    let [categorySuccess,currentCategories] = await getLatestCategoryDocs();
+    if (!categorySuccess) {
+        log.error("Could not retrieve categories...");
+        return false;
+    }
+    let [itemSuccess,currentItems] = await getLatestItemDocs();
+    if (!itemSuccess) {
+        log.error("Could not retrieve items...");
+        return false;
+    }
+    log.info("Checking for duplicate category names within list group...");
+    let catDupCheck: any = {};
+    for (const cat of currentCategories) {
+        if (cat.listGroupID === null || cat.listGroupID === "system") {continue;}
+        let concatIdx=cat.listGroupID+":"+cat.name.toUpperCase();
+        log.debug("checking for listgroupid ",cat.listGroupID," with name ",cat.name," in ",catDupCheck);
+        if (catDupCheck.hasOwnProperty(concatIdx)) {
+            log.info("Duplicate category name detected... ",cat.listGroupID,cat.name," cleaning...");
+            log.error("PLEASE CLEAN DUPLICATE CATEGORY NAMES MANUALLY.... THIS MAY BE FIXED IN ANOTHER UPGRADE...");
+            // TODO - add duplicate name handling -- q: is this even necessary?
+            return false;
+        } else {
+            catDupCheck[concatIdx] = cat._id;
+        }    
+    }
+    log.debug("Finished with duplicate check:",catDupCheck);
+    return true;
+}
+
+async function fixDuplicateCategoriesInAList() {
+    let [listSuccess,currentLists] = await getLatestListDocs();
+    if (!listSuccess) {return false;}
+    let [categorySuccess,currentCategories] = await getLatestCategoryDocs();
+    if (!categorySuccess) {return false;}
+    let catDupCheck: any = {};
+    for (const list of currentLists) {
+        let listUpdated = false;
+        for (const cat of list.categories) {
+            if (cat.startsWith("system:cat:")) {continue;}
+            let foundCat = currentCategories.find(curCat => curCat._id === cat);
+            if (isEmpty(foundCat)) {
+                log.error("Invalid category ID in list ",cat," . Will be removed later after duplicate checking..");
+                continue;
+            }
+            let concatIdx=list._id+":"+foundCat.name.toUpperCase();
+            if (catDupCheck.hasOwnProperty(concatIdx)) {
+                log.error("Duplicate category name",foundCat.name,"in list",list.name,list._id);
+                // update category on existing items...
+                let itemFixSuccess = changeCategoryOnItems(String(list.listGroupID),cat,catDupCheck[concatIdx]);
+                if (!itemFixSuccess) {return false;}
+                // then remove category from list
+                let newCategories = cloneDeep(list.categories);
+                let idx=newCategories.indexOf(cat);
+                newCategories.splice(idx,1);
+                list.categories=newCategories;
+                listUpdated = true;
+                log.error("Removed category ID ",cat," from list");
+            } else {
+                catDupCheck[concatIdx] = cat;
+            }
+        }
+        if (listUpdated) {
+            let updateSuccess = updateListRecord(list);
+            if (!updateSuccess) {return false;}
+        }
+    }
+    return true;
+}
+
+async function changeCategoryOnItems(chgListGroup: string, oldCat: string, newCat: string) {
+    let [itemSuccess,currentItems] = await getLatestItemDocs();
+    if (!itemSuccess) {return false;}
+    let itemsToFix = currentItems.filter(item => (item.listGroupID === chgListGroup));
+    for (const itemFix of itemsToFix) {
+        let itemChanged = false;
+        for (const itemList of itemFix.lists) {
+            if (itemList.categoryID !== oldCat) {continue;}
+            itemList.categoryID = newCat;
+            itemChanged = true;
+        }
+        if (itemChanged) {
+            try {let dbResp = await groceriesDBAsAdmin.insert(itemFix)}
+            catch(err) {log.error("Could not update item ",itemFix.name, err); return false}
+        }
+    }
+}
+
+
+async function fixItemCategories() {
+    let [itemSuccess,currentItems] = await getLatestItemDocs();
+    if (!itemSuccess) {
+        log.error("Could not retrieve items...");
+        return false;
+    }
+    let [categorySuccess,currentCategories] = await getLatestCategoryDocs();
+    if (!categorySuccess) {
+        log.error("Could not retrieve categories...");
+        return false;
+    }
+    log.info("Fixing up categories in items....");
+    for (const item of currentItems) {
+        for (const itemList of item.lists) {
+            if (itemList.categoryID === null || itemList.categoryID.startsWith("system:cat:")) {continue;}
+            const foundCat = currentCategories.find(curCat => curCat._id === itemList.categoryID && curCat.listGroupID === item.listGroupID);
+            if (isEmpty(foundCat)) {
+                log.error("Could not find category ",itemList.categoryID," in list group ",item.listGroupID);
+                //TODO FIXME
+            }
+        }
+    }
+    return true;
+}
+
+async function updateListRecord(updList: ListDoc) {
+    let dbDoc: DocumentGetResponse|null = null;
+    try {dbDoc = await groceriesDBAsAdmin.get(String(updList._id))}
+    catch(err) {log.error("Error updating list record:",updList.name); return false;}
+    let updDoc: ListDoc = cloneDeep(dbDoc) as ListDoc;
+    updDoc.categories = updList.categories;
+    updDoc.updatedAt = (new Date()).toISOString();
+    try {let dbResp = await groceriesDBAsAdmin.insert(updDoc);}
+    catch(err) {log.error("Could not update List Record...",updList.name); return false;}
+    return true;
+}
+
+async function fixCategories() {
+    const foundIDDoc = await getLatestDBUUIDDoc();
+    if (isEmpty(foundIDDoc)) {
+        log.error("No DBUUID record found")
+        return false;
+    }
+    let catsFixed = false;
+    if (foundIDDoc.hasOwnProperty("categoriesFixed") && foundIDDoc.categoriesFixed !== undefined) {
+        catsFixed = foundIDDoc.categoriesFixed;
+    }
+    if (catsFixed) {return true};
+    const dupCatListSuccess = await fixDuplicateCategoriesInAList();
+    if (!dupCatListSuccess) {
+        log.error("Error fixing duplicate categories in a list");
+        return false;
+    }
+    const dupSuccess= await fixDuplicateCategories();
+    if (!dupSuccess) {
+        log.error("Error fixing duplicate categories...");
+        return false;
+    }
+    log.info("Checking for invalid lists/categories");
+    let [listSuccess,currentLists] = await getLatestListDocs();
+    if (!listSuccess) {
+        log.error("Could not retrieve lists...");
+        return false;
+    }
+    let [categorySuccess,currentCategories] = await getLatestCategoryDocs();
+    if (!categorySuccess) {
+        log.error("Could not retrieve categories...");
+        return false;
+    }
+    log.info("Checking lists to validate categories...");
+    for (const list of currentLists) {
+        log.info("Checking list: ",list.name);
+        for (const cat of list.categories) {
+            if (cat.startsWith("system:cat:")) {
+                continue;
+            }
+            let foundCat = currentCategories.find(curCat => cat === curCat._id);
+            if (foundCat === undefined) {
+                log.error("Category ",cat," does not exist at all... removing from list");
+                let newCategories=cloneDeep(list.categories);
+                let idx=newCategories.indexOf(cat);
+                newCategories.splice(idx,1);
+                list.categories=newCategories;
+                const updSuccess=await updateListRecord(list);
+                if (!updSuccess) {return false;}
+            } else {
+                if (foundCat.listGroupID === list.listGroupID) {
+                    continue;
+                } else {
+                    log.error("Category ",cat,"(",foundCat.name,") on list ",list._id,"is not in matching list group ",list.listGroupID);
+                    log.info("Checking for category with same name in correct list group...")
+                    const goodCat: CategoryDoc[] = currentCategories.filter(curCat => curCat.listGroupID === list.listGroupID && curCat.name.toUpperCase() === foundCat?.name.toUpperCase());
+                    if (goodCat.length === 1) {
+                        log.info("Found matching category by name in list group:",goodCat[0]._id);
+                        let newCategories=cloneDeep(list.categories);
+                        let idx=newCategories.indexOf(cat);
+                        newCategories[idx]=String(goodCat[0]._id);
+                        list.categories=newCategories;
+                        const updSuccess = await updateListRecord(list);
+                        if (!updSuccess) {return false;}
+                        log.info("Updated list record ",list.name," with ",list.categories);
+                        let itemFixSuccess = changeCategoryOnItems(String(list.listGroupID),cat,String(goodCat[0]._id));
+                        if (!itemFixSuccess) {return false;}
+                    } else  if (goodCat.length > 1) {
+                        log.info("Found multiple matching categories with same name...");
+                        log.info("Shouldn't have happened since duplicates should have been fixed already...");
+                    } else if (goodCat.length === 0) {
+                        log.info("Did not find matching category by name, must create new category in list group...");
+                        let newCatDoc: CategoryDoc = {
+                            type: "category",
+                            listGroupID: list.listGroupID,
+                            name: foundCat.name,
+                            color: "#ffffff",
+                            updatedAt: (new Date()).toISOString()
+                        };
+                        let newCatCreate: DocumentInsertResponse;
+                        try {newCatCreate = await groceriesDBAsAdmin.insert(newCatDoc);}
+                        catch(err) {log.error("Error creating category",err); return false;}
+                        log.debug("created new category:",newCatDoc," with id:",newCatCreate.id);
+                        [categorySuccess,currentCategories] = await getLatestCategoryDocs();
+                        if (!categorySuccess) {
+                            log.error("Could not retrieve categories...");
+                            return false;
+                        }                    
+                        let newCategories=cloneDeep(list.categories);
+                        let idx=newCategories.indexOf(cat);
+                        newCategories[idx]=String(newCatCreate.id);
+                        list.categories=newCategories;
+                        const updSuccess = await updateListRecord(list);
+                        if (!updSuccess) {return false;}
+                        log.info("Updated list record",list.name,"with",list.categories);
+                        let itemFixSuccess = changeCategoryOnItems(String(list.listGroupID),cat,newCatCreate.id);
+                        if (!itemFixSuccess) {return false}
+                    }
+                }
+            }
+        }
+    }
+    let itemFixSuccess = await fixItemCategories();
+    if (!itemFixSuccess) {return false;}
+    foundIDDoc.categoriesFixed = true;
+//    try { let dbResp = groceriesDBAsAdmin.insert(foundIDDoc) }
+//    catch(err) {log.error("Error updating DBUUID for fixing of categories:",err); return false;}
+    return true;
+}
+
 
 async function setSchemaVersion(updSchemaVersion: number) {
     log.info("Finished schema updates, updating database to :",updSchemaVersion);
@@ -1001,30 +1258,34 @@ async function setSchemaVersion(updSchemaVersion: number) {
 
 async function checkAndUpdateSchema() {
     log.info("Current Schema Version:",schemaVersion," Target Version:",targetSchemaVersion);
+    let fixCatSuccess = await fixCategories();
+    if (!fixCatSuccess) {return false;}
     if (schemaVersion === targetSchemaVersion) {
         log.info("At current schema version, skipping schema update");
         return true;
     }
+    let schemaUpgradeSuccess = true;
     if (schemaVersion < 2) {
         log.info("Updating schema to rev. 2: Changes for 'stocked at' indicator on item/list.");
-        let schemaUpgradeSuccess = await addStockedAtIndicatorToSchema();
+        schemaUpgradeSuccess = await addStockedAtIndicatorToSchema();
         if (schemaUpgradeSuccess) { schemaVersion = 2; await setSchemaVersion(schemaVersion);}
     }
     if (schemaVersion < 3) {
         log.info("Updating schema to rev. 3: Changes for restructuring/listgroups ");
-        let schemaUpgradeSuccess = await restructureListGroupSchema();
+        schemaUpgradeSuccess = await restructureListGroupSchema();
         if (schemaUpgradeSuccess) { schemaVersion = 3; await setSchemaVersion(schemaVersion);}
     }
     if (schemaVersion < 4) {
         log.info("Updating schema to rev. 4: Make Categories/UOMs listgroup specific ");
-        let schemaUpgradeSuccess = await restructureCategoriesUOMRecipesSchema();
+        schemaUpgradeSuccess = await restructureCategoriesUOMRecipesSchema();
         if (schemaUpgradeSuccess) { schemaVersion = 4; await setSchemaVersion(schemaVersion);}
     }
     if (schemaVersion < 5) {
         log.info("Updating schema to rev 5: Make Images for items listgroup specific ");
-        let schemaUpgradeSuccess = await restructureImagesListgroups();
+        schemaUpgradeSuccess = await restructureImagesListgroups();
         if (schemaUpgradeSuccess) { schemaVersion = 5; await setSchemaVersion(schemaVersion);}
     }
+    return schemaUpgradeSuccess;
 }
 
 async function createConflictsView() {
@@ -1291,7 +1552,8 @@ export async function dbStartup() {
         log.info("JWT Key verified to access database")
     }
     await addDBIdentifier();
-    await checkAndUpdateSchema();
+    let schemaSuccess=await checkAndUpdateSchema();
+    if (!schemaSuccess) {process.exit()}
     await checkAndCreateContent();
     await checkAndCreateViews();
     if (enableScheduling) {

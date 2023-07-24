@@ -13,7 +13,8 @@ export interface UUIDDoc {
   uomContentVersion: number,
   schemaVersion: number,
   categoriesVersion: number,
-  globalItemVersion: number
+  globalItemVersion: number,
+  categoriesFixed?: boolean
 }
 
 export interface CategoryDoc {

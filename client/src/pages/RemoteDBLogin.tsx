@@ -150,7 +150,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
           log.debug("dbServer Available:", dbServerAvailable);
           let validJWTMatch = JWTMatchesUser(remoteDBCreds.refreshJWT,remoteDBCreds.dbUsername);
           if (apiServerAvailable.apiServerAvailable) {
-            setRemoteDBState(prevState =>({...prevState,apiServerAvailable: apiServerAvailable.apiServerAvailable, dbServerAvailable: apiServerAvailable.dbServerAvailable, offlineJWTMatch: validJWTMatch}))
+            setRemoteDBState(prevState =>({...prevState,apiServerAvailable: apiServerAvailable.apiServerAvailable, apiServerVersion: apiServerAvailable.apiServerAppVersion,dbServerAvailable: apiServerAvailable.dbServerAvailable, offlineJWTMatch: validJWTMatch}))
           } else {
             setRemoteDBState(prevState =>({...prevState,apiServerAvailable: apiServerAvailable.apiServerAvailable, dbServerAvailable: dbServerAvailable, offlineJWTMatch: validJWTMatch}))
           }  
