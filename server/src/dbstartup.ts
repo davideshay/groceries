@@ -1036,6 +1036,14 @@ async function fixDuplicateCategories() {
     return true;
 }
 
+type DupCheckCat = {
+    list_id: string,
+    cat_id: string,
+    cat_good: boolean,
+    cat_name: string,
+    is_dup: boolean
+}
+
 async function fixDuplicateCategoriesInAList() {
     // Check if there are duplicate categories in a list by name only (ignoring if it is in the right list group)
     // TODO -- need to check if the one we are updating to is "correct"
@@ -1044,6 +1052,52 @@ async function fixDuplicateCategoriesInAList() {
     let [categorySuccess,currentCategories] = await getLatestCategoryDocs();
     if (!categorySuccess) {return false;}
     let catDupCheck: any = {};
+    let catDupCheckGoodBad : DupCheckCat[] = [];
+    for (const list of currentLists) {
+        for (const cat of list.categories) {
+            if (cat.startsWith("system:cat:")) {continue;}
+            let foundCat = currentCategories.find(curCat => curCat._id === cat);
+            if (isEmpty(foundCat)) { continue;}
+            let newCat = {
+                list_id: String(list._id),
+                cat_id: cat,
+                cat_good: foundCat.listGroupID === list.listGroupID,
+                cat_name: foundCat.name.toUpperCase(),
+                is_dup: false
+            }
+            catDupCheckGoodBad.push(newCat);
+        }
+    }
+    for (const catCheck of catDupCheckGoodBad) {
+        for (const origCat of catDupCheckGoodBad) {
+            if (catCheck.list_id === origCat.list_id &&
+                catCheck.cat_name === origCat.cat_name) {
+                    origCat.is_dup = true;
+                }
+        }
+    }
+    let dupObjs = catDupCheckGoodBad.filter(catObj => catObj.is_dup);
+    for (const dup of dupObjs) {
+        if (dup.cat_good) {continue;}
+        const goodDup = catDupCheckGoodBad.filter(catObj => (
+            catObj.list_id === dup.list_id &&
+            catObj.cat_name === dup.cat_name &&
+            !catObj.cat_good
+        ))
+        if (goodDup.length === 0) {
+            // TODO bad duplicate with no matching good dup -- delete from list
+
+
+        } else if (goodDup.length === 1) {
+            // TODO swap good/bad categories
+
+        } else {
+            // TODO more than one good category dup
+        }
+    }
+
+
+
     for (const list of currentLists) {
         let listUpdated = false;
         for (const cat of list.categories) {
