@@ -1041,7 +1041,8 @@ type DupCheckCat = {
     cat_id: string,
     cat_good: boolean,
     cat_name: string,
-    is_dup: boolean
+    is_dup: boolean,
+    dup_idx: number
 }
 
 async function fixDuplicateCategoriesInAList() {
@@ -1063,7 +1064,8 @@ async function fixDuplicateCategoriesInAList() {
                 cat_id: cat,
                 cat_good: foundCat.listGroupID === list.listGroupID,
                 cat_name: foundCat.name.toUpperCase(),
-                is_dup: false
+                is_dup: false,
+                dup_idx: 0
             }
             catDupCheckGoodBad.push(newCat);
         }
@@ -1071,11 +1073,27 @@ async function fixDuplicateCategoriesInAList() {
     for (const catCheck of catDupCheckGoodBad) {
         for (const origCat of catDupCheckGoodBad) {
             if (catCheck.list_id === origCat.list_id &&
-                catCheck.cat_name === origCat.cat_name) {
+                catCheck.cat_name === origCat.cat_name && 
+                catCheck.cat_id !== origCat.cat_id) {
                     origCat.is_dup = true;
                 }
         }
     }
+    catDupCheckGoodBad.sort( (a,b) => (
+        a.list_id.localeCompare(b.list_id) ||
+        a.cat_name.localeCompare(b.cat_name)
+    ))
+    for (const catCheck of catDupCheckGoodBad) {
+        let dupIdx=0;
+        for (const origCat of catDupCheckGoodBad) {
+            if (catCheck.list_id === origCat.list_id &&
+                catCheck.cat_name === origCat.cat_name && origCat.cat_good && origCat.is_dup) {
+                    dupIdx++;
+                    origCat.dup_idx = dupIdx;
+                }
+        }
+    }
+    log.debug("final dup check array:",catDupCheckGoodBad);
     let dupObjs = catDupCheckGoodBad.filter(catObj => catObj.is_dup);
     for (const dup of dupObjs) {
         if (dup.cat_good) {continue;}
@@ -1086,18 +1104,19 @@ async function fixDuplicateCategoriesInAList() {
         ))
         if (goodDup.length === 0) {
             // TODO bad duplicate with no matching good dup -- delete from list
-
-
+            log.debug("Bad duplicate with no matching good dup:",dup);
         } else if (goodDup.length === 1) {
+            log.debug("Bad duplicate with 1 matching dup:",dup)
             // TODO swap good/bad categories
-
         } else {
+            log.debug("Bad duplicate with more than one matching dup:",dup)
             // TODO more than one good category dup
         }
     }
+    return false;
 
 
-
+/* 
     for (const list of currentLists) {
         let listUpdated = false;
         for (const cat of list.categories) {
@@ -1129,7 +1148,7 @@ async function fixDuplicateCategoriesInAList() {
             if (!updateSuccess) {return false;}
         }
     }
-    return true;
+ */    return true;
 }
 
 async function changeCategoryOnItems(chgListGroup: string, oldCat: string, newCat: string) {
