@@ -1094,8 +1094,8 @@ async function fixDuplicateCategoriesInAList() {
         for (const origCat of catDupCheckGoodBad) {
             if (catCheck.list_id === origCat.list_id &&
                 catCheck.cat_name === origCat.cat_name && origCat.cat_good && origCat.is_dup) {
-                    dupIdx++;
                     origCat.dup_idx = dupIdx;
+                    dupIdx++;
                 }
         }
     }
@@ -1104,17 +1104,17 @@ async function fixDuplicateCategoriesInAList() {
     log.debug("only dups:",dupObjs);
     //TODO -- must also look at all good dups of good dups... maybe "!good or dupidx > 0"
     for (const dup of dupObjs) {
-        if (dup.cat_good) {continue;}
-        const goodDup = catDupCheckGoodBad.filter(catObj => (
+        if (dup.cat_good && dup.dup_idx === 0) {continue;}
+        const goodDup = catDupCheckGoodBad.find(catObj => (
             catObj.list_id === dup.list_id &&
             catObj.cat_name === dup.cat_name &&
-            (!catObj.cat_good || catObj.dup_idx > 1)
+            catObj.cat_good && catObj.dup_idx === 0
         ))
-        if (goodDup.length === 0) {
+        if (isEmpty(goodDup)) {
             // TODO bad duplicate with no matching good dup -- delete from list
-            log.debug("Bad duplicate with no matching good dup:",dup," ... deleting from list");
+            log.debug("Duplicate with no matching good dup:",dup," ... deleting from list");
             // update category on existing items...
-            let itemFixSuccess = changeCategoryOnItems(String(goodDup[0].listgroup_id),dup.cat_id,goodDup[0].cat_id);
+            let itemFixSuccess = changeCategoryOnItems(String(dup.listgroup_id),dup.cat_id,null);
             if (!itemFixSuccess) {return false;}
             // then remove category from list
             let listDoc: ListDoc;
@@ -1125,59 +1125,29 @@ async function fixDuplicateCategoriesInAList() {
             newCategories.splice(idx,1);
             listDoc.categories=newCategories;
             try {await groceriesDBAsAdmin.insert(listDoc)}
-        } else if (goodDup.length === 1) {
-            log.debug("Bad duplicate with 1 matching dup:",dup)
-            // TODO swap good/bad categories
+            catch(err) {log.error("Could not update list doc:",dup.list_id); return false;}
         } else {
-            log.debug("Bad duplicate with more than one matching dup:",dup)
-            const oneDup = goodDup.find(catObj => catObj.dup_idx === 1)
-            if (isEmpty(oneDup)) {
-                log.error("Could not find correct match to duplicate:",dup);
-                return false;
-            }
-            log.debug("Found first matching dup:",oneDup);
-            // TODO more than one good category dup
+            log.debug("Duplicate with 1 matching dup:",dup)
+            // update category on existing items...
+            let itemFixSuccess = changeCategoryOnItems(String(dup.listgroup_id),dup.cat_id,goodDup.cat_id);
+            if (!itemFixSuccess) {return false;}
+            // then change category in list
+            let listDoc: ListDoc;
+            try {listDoc = await groceriesDBAsAdmin.get(dup.list_id) as ListDoc}
+            catch(err) {log.error("Could not retrieve list doc:",dup.list_id); return false;}
+            let newCategories = cloneDeep(listDoc.categories);
+            let idx=newCategories.indexOf(dup.cat_id);
+            newCategories[idx]=goodDup.cat_id;
+            listDoc.categories=newCategories;
+            try {await groceriesDBAsAdmin.insert(listDoc)}
+            catch(err) {log.error("Could not update list doc:",dup.list_id); return false;}
         }
     }
     return false;
-
-
-/* 
-    for (const list of currentLists) {
-        let listUpdated = false;
-        for (const cat of list.categories) {
-            if (cat.startsWith("system:cat:")) {continue;}
-            let foundCat = currentCategories.find(curCat => curCat._id === cat);
-            if (isEmpty(foundCat)) {
-                log.error("Invalid category ID in list ",cat," . Will be removed later after duplicate checking..");
-                continue;
-            }
-            let concatIdx=list._id+":"+foundCat.name.toUpperCase();
-            if (catDupCheck.hasOwnProperty(concatIdx)) {
-                log.error("Duplicate category name",foundCat.name,"in list",list.name,list._id);
-                // update category on existing items...
-                let itemFixSuccess = changeCategoryOnItems(String(list.listGroupID),cat,catDupCheck[concatIdx]);
-                if (!itemFixSuccess) {return false;}
-                // then remove category from list
-                let newCategories = cloneDeep(list.categories);
-                let idx=newCategories.indexOf(cat);
-                newCategories.splice(idx,1);
-                list.categories=newCategories;
-                listUpdated = true;
-                log.error("Removed category ID ",cat," from list");
-            } else {
-                catDupCheck[concatIdx] = cat;
-            }
-        }
-        if (listUpdated) {
-            let updateSuccess = updateListRecord(list);
-            if (!updateSuccess) {return false;}
-        }
-    }
- */    return true;
+    return true;
 }
 
-async function changeCategoryOnItems(chgListGroup: string, oldCat: string, newCat: string) {
+async function changeCategoryOnItems(chgListGroup: string, oldCat: string, newCat: string|null) {
     let [itemSuccess,currentItems] = await getLatestItemDocs();
     if (!itemSuccess) {return false;}
     let itemsToFix = currentItems.filter(item => (item.listGroupID === chgListGroup));
