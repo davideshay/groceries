@@ -1369,11 +1369,6 @@ async function fixItemNames(): Promise<boolean> {
         }
     }
 
-
-
-
-
-
     foundIDDoc.itemNamesFixed = true;
     // try { let dbResp = groceriesDBAsAdmin.insert(foundIDDoc) }
     // catch(err) {log.error("Error updating DBUUID for fixing of item names:",err); return false;}
