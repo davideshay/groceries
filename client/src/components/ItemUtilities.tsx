@@ -35,7 +35,7 @@ export function getAllSearchRows(allItemDocs: ItemDocs, listID: string | null,li
         let list = itemDoc.lists.find((el) => el.listID === listID);
         if (list !== undefined) {
             searchRow.boughtCount = list.boughtCount;
-            if (list.active) {addRowToSearch=false}
+            if (list.active && !list.completed) {addRowToSearch=false}
         }
       } else { // RowType is ListGroup
         if (itemDoc.listGroupID !== listID) {

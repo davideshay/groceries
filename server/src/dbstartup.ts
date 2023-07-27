@@ -12,7 +12,11 @@ import { CategoryDoc, CategoryDocs, GlobalItemDoc, ImageDoc, ImageDocInit, InitS
 import log, { LogLevelDesc } from "loglevel";
 import prefix from "loglevel-plugin-prefix";
 import { timeSpan } from "./timeutils";
-
+import i18next from 'i18next';
+import t from 'i18next';
+import { en_translations } from './locales/en/translation';
+import { de_translations } from './locales/de/translation';
+import { es_translations } from './locales/es/translation';
 
 let uomContentVersion = 0;
 const targetUomContentVersion = 5;
@@ -747,6 +751,14 @@ async function getLatestItemDocs(): Promise<[boolean,ItemDocs]> {
     return [true,foundItemDocs.docs];
 }
 
+async function getLatestGlobalItemDocs(): Promise<[boolean,GlobalItemDoc[]]> {
+    const itemq: MangoQuery = { selector: { type: "globalitem", name: {$exists: true}}, limit: await totalDocCount(groceriesDBAsAdmin)};
+    let foundGlobalItemDocs: MangoResponse<GlobalItemDoc>;
+    try {foundGlobalItemDocs = (await groceriesDBAsAdmin.find(itemq) as MangoResponse<GlobalItemDoc>);}
+    catch(err) {log.error("Could not find Global Items during schema update::",err); return [false,[]];}
+    return [true,foundGlobalItemDocs.docs];
+}
+
 async function getLatestRecipeDocs(): Promise<[boolean,RecipeDoc[]]> {
     const recipeq: MangoQuery = { selector: { type: "recipe", name: {$exists: true}}, limit: await totalDocCount(groceriesDBAsAdmin)};
     let foundRecipeDocs: MangoResponse<RecipeDoc>;
@@ -1311,6 +1323,64 @@ async function fixCategories() {
     return true;
 }
 
+async function fixItemNames(): Promise<boolean> {
+    const foundIDDoc = await getLatestDBUUIDDoc();
+    if (isEmpty(foundIDDoc)) {
+        log.error("No DBUUID record found")
+        return false;
+    }
+    let itemNamesFixed = false;
+    if (foundIDDoc.hasOwnProperty("itemNamesFixed") && foundIDDoc.itemNamesFixed !== undefined) {
+        itemNamesFixed = foundIDDoc.itemNamesFixed;
+    }
+    if (itemNamesFixed) {return true};
+    let [globalItemSuccess,globalItems] = await getLatestGlobalItemDocs();
+    if (!globalItemSuccess) {return false;}
+    let [itemSuccess,items] = await getLatestItemDocs();
+    if (!itemSuccess) {return false;}
+    for (const item of items) {
+        let itemUpdated = false;
+        if (item.globalItemID === null) {
+            if (item.pluralName === undefined) {
+                item.pluralName = item.name;
+                itemUpdated = true;
+            }
+        } else {
+            const globalItem = globalItems.find(gi => gi._id === item.globalItemID);
+            if (globalItem === undefined || globalItem._id === undefined) {
+                log.info("Item ",item.name," had global ID:",item.globalItemID,"which was not found. Unlinking from global item...");
+                item.globalItemID = null;
+                itemUpdated = true;
+            } else {
+                const transKey = "globalitem."+globalItem._id.substring("system:item".length+1)
+                const correctName=i18next.t(transKey,{count:1});
+                const correctPluralName=i18next.t(transKey,{count:2});
+                if (item.name !== correctName || item.pluralName !== correctPluralName) {
+                    log.info("Item name/plural did not match global item...changing...",item.name);
+                    item.name = correctName;
+                    item.pluralName = correctPluralName;
+                    itemUpdated = true;
+                }
+            }
+        }
+        if (itemUpdated) {
+            try {let dbResp = await groceriesDBAsAdmin.insert(item)}
+            catch(err){ log.error("Could not update item",err); return false;}
+        }
+    }
+
+
+
+
+
+
+    foundIDDoc.itemNamesFixed = true;
+    // try { let dbResp = groceriesDBAsAdmin.insert(foundIDDoc) }
+    // catch(err) {log.error("Error updating DBUUID for fixing of item names:",err); return false;}
+    return true;
+}
+
+
 async function setSchemaVersion(updSchemaVersion: number) {
     log.info("Finished schema updates, updating database to :",updSchemaVersion);
     let foundIDDoc = await getLatestDBUUIDDoc();
@@ -1353,6 +1423,8 @@ async function checkAndUpdateSchema() {
     }
     let fixCatSuccess = await fixCategories();
     if (!fixCatSuccess) {return false;}
+    let fixItemNamesSuccess = await fixItemNames();
+    if (!fixItemNamesSuccess) {return false;}
     return schemaUpgradeSuccess;
 }
 
@@ -1575,10 +1647,28 @@ function convertLogLevel(level: string) : LogLevelDesc {
     return "INFO"    
 }
 
+async function initializei18next() {
+    await i18next.init({
+        lng: 'en',
+        fallbackLng: 'en',
+        supportedLngs: ["en","de","es"],
+        interpolation: {
+          escapeValue: false, // not needed for react as it escapes by default
+        },
+        load: "all",
+        resources: {
+          en: { translation: en_translations },
+          de: { translation: de_translations },
+          es: { translation: es_translations }
+          }
+    })
+}
+
 export async function dbStartup() {
     prefix.reg(log);
     prefix.apply(log);
     log.setLevel(convertLogLevel(logLevel));
+    await initializei18next();
     log.info("Starting up auth server for couchdb...");
     log.info("App Version: ",appVersion);
     log.info("Database Schema Version:",maxAppSupportedSchemaVersion);

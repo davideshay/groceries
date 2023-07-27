@@ -246,6 +246,7 @@ export function useItems({selectedListGroupID,isReady, needListGroupID, activeOn
             }
           }
           if (addToList) {       
+            if (itemDoc.pluralName === undefined) {itemDoc.pluralName = itemDoc.name}
             newItemRows.push(itemDoc);
           }
         }

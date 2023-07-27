@@ -23,6 +23,7 @@ import { useTranslation } from 'react-i18next';
 import log from 'loglevel';
 import { navigateToFirstListID } from '../components/RemoteUtilities';
 import { Capacitor } from '@capacitor/core';
+import { translatedItemName } from '../components/translationUtilities';
 
 const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode: routeMode, id: routeListID  } = useParams<{mode: string, id: string}>();
@@ -59,6 +60,12 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   const scrollTopRef = useRef(0);
   const shouldScroll = useRef(false);
   const history = useHistory();
+
+  useEffect( () => {
+    log.debug("Base Search",baseSearchItemDocs);
+    log.debug("Base Item Docs",baseItemDocs);
+    log.debug("Search Rows",searchRows)
+  },[baseSearchItemDocs,searchRows])
 
   const getGroupIDForList = useCallback( (listID: string | null) => {
     if (routeMode === "group") { return pageState.selectedListOrGroupID};
@@ -119,14 +126,59 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     filterAndCheckRows(searchState.searchCriteria,searchState.isFocused);
   },[searchRows,searchState.isFocused,searchState.searchCriteria,filterAndCheckRows])
 
-  const isItemAlreadyInList = useCallback( (itemName: string) => {
-    if (itemName === "") {return false;}
-    let existingItem = (baseItemDocs as ItemDocs).find((el) => (el.name.toUpperCase() === itemName.toUpperCase() || el.pluralName?.toUpperCase() === itemName.toUpperCase()));
-    return(!(existingItem === undefined));
+  const isItemAlreadyInList = useCallback( (itemName: string,completedOnly: boolean): [boolean,ItemDoc|null] => {
+    if (itemName === "") {return [false,null];}
+    for (let el of baseItemDocs) {
+      log.debug(el.name.toLocaleUpperCase(),el.pluralName?.toLocaleUpperCase(),translatedItemName(String(el._id),el.name,el.pluralName,1).toLocaleUpperCase(),translatedItemName(String(el._id),el.name,el.pluralName,2).toLocaleUpperCase())
+    }
+    let existingItem = (baseItemDocs as ItemDocs).find((el) => 
+      (itemName.toLocaleUpperCase() === translatedItemName(String(el._id),el.name,el.pluralName,1).toLocaleUpperCase() ||
+       itemName.toLocaleUpperCase() === translatedItemName(String(el._id),el.name,el.pluralName,2).toLocaleUpperCase()
+        )
+       );
+    if (existingItem === undefined) {return [false,null];}
+    if (!completedOnly) {return [true,existingItem];}
+    // Have an existing item... checking completed flag
+    log.debug("got item: ",existingItem)
+    if (pageState.selectedListType === RowType.list) {
+      log.debug("In List mode...");
+      let itemList = existingItem.lists.find(il => il.listID === pageState.selectedListOrGroupID);
+      log.debug("Found item list:",itemList,existingItem.lists);
+      if (itemList === undefined) {return [false,null];}
+      return [itemList.active && itemList.completed,existingItem];
+    }
+    log.debug("Checking listgroup ...");
+    // Listgroup mode
+    let allCompleted=true;
+    for (let i = 0; i < existingItem.lists.length; i++) {
+        if (!existingItem.lists[i].completed) {allCompleted=false; break;}
+    }
+    return [allCompleted,existingItem];
   },[baseItemDocs])
 
-  const addNewItemToList = useCallback( (itemName: string) => {
-      if (isItemAlreadyInList(itemName)) {
+  const addNewItemToList = useCallback( async (itemName: string) => {
+      let [isItemAlreadyInListAsCompleted,compItem] = isItemAlreadyInList(itemName,true);
+      log.debug({isItemAlreadyInListAsCompleted,compItem});
+      if (isItemAlreadyInListAsCompleted && compItem !== null) {
+        let itemSearch: ItemSearch = {
+          itemID: String(compItem?._id),
+          itemName: translatedItemName(String(compItem._id),compItem.name,compItem.pluralName),
+          itemType: compItem.globalItemID === null ? ItemSearchType.Local : ItemSearchType.Global,
+          globalItemID: compItem.globalItemID,
+          globalItemCategoryID: null,
+          globalItemUOM: null,
+          quantity: 1,
+          boughtCount: 0
+        }
+        const {success,errorHeader,errorMessage}  = await addExistingItemToList(itemSearch);
+        setSearchState(prevState => ({...prevState, searchCriteria: "", filteredSearchRows: [], isOpen: false, isFocused: false}));
+        if (!success) {
+          setPageState(prevState => ({...prevState,showAlert: true, alertHeader: errorHeader, alertMessage: errorMessage}));
+        }      
+        return;
+      }
+      let [isItemAlreadyInListAtAll,] = isItemAlreadyInList(itemName,false); 
+      if (isItemAlreadyInListAtAll) {
         setPageState(prevState => ({...prevState, showAlert: true, alertHeader: t("error.adding_to_list") , alertMessage: t("error.item_exists_current_list")}))
         setSearchState(prevState => ({...prevState, isOpen: false, searchCriteria: "", filteredSearchRows: [], isFocused: false}))
       } else {
@@ -337,9 +389,9 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     const addingNewItem = (testItemDoc === undefined);
 
     if (!addingNewItem) {
-      if (testItemDoc!.lists.filter(il => il.active).length === testItemDoc!.lists.length) {
+      if (testItemDoc!.lists.filter(il => il.active && !il.completed).length === testItemDoc!.lists.length) {
         response.success = false;
-        response.errorHeader = t("general.header_adding_item");
+        response.errorHeader = t("error.header_adding_item");
         response.errorMessage = t("error.item_exists_current_list");
         return response;
       }

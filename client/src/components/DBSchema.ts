@@ -14,7 +14,8 @@ export interface UUIDDoc {
   schemaVersion: number,
   categoriesVersion: number,
   globalItemVersion: number,
-  categoriesFixed?: boolean
+  categoriesFixed?: boolean,
+  itemNamesFixed?: boolean
 }
 
 export interface CategoryDoc {
