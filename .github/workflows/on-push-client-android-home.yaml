@@ -1,4 +1,4 @@
-name: build-publish-client-android
+name: build-publish-client-android-home
 on:
    workflow_dispatch:
    push:
