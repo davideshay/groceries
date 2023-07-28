@@ -6,13 +6,13 @@ COPY client/package.json client/package-lock.json /usr/app/
 
 RUN apt-get update && apt-get install -y --no-install-recommends python3 build-essential
 
-RUN NODE_ENV=production npm ci --include=dev --loglevel=verbose
+RUN NODE_ENV=production npm ci --include=dev
 
 COPY client/. ./
 
 RUN ls -lat
 
-RUN npm run build --loglevel=verbose
+RUN npm run build
 
 FROM nginx:bookworm
 COPY --from=builder /usr/app/build /usr/share/nginx/html
