@@ -16,7 +16,8 @@ env:
   IMAGE_NAME: ${{ github.repository }}-client    
 jobs:
   build-it:
-    runs-on: self-hosted
+#    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
      - name: Clone repository
        uses: actions/checkout@v3
