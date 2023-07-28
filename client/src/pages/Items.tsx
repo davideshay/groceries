@@ -120,6 +120,156 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     filterAndCheckRows(searchState.searchCriteria,searchState.isFocused);
   },[searchRows,searchState.isFocused,searchState.searchCriteria,filterAndCheckRows])
 
+  const shouldBeActive = useCallback( (itemList: ItemList, newRow: boolean, allItemLists: ItemList[]): boolean => {
+    if (!newRow && !itemList.stockedAt) {
+      if (pageState.selectedListType === RowType.list && itemList.listID === pageState.selectedListOrGroupID) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+    if (globalState.settings.addListOption === AddListOptions.dontAddAutomatically) {
+      if (pageState.selectedListType === RowType.listGroup) {
+         return true;
+      } else {
+        if (newRow) {
+          return (itemList.listID === pageState.selectedListOrGroupID)
+        } else {
+          return itemList.active || (itemList.listID === pageState.selectedListOrGroupID)
+        }
+      }
+    }
+    if (globalState.settings.addListOption === AddListOptions.addToAllListsAutomatically) {
+      return true;
+    } 
+    // Add list option = by category
+    if (pageState.selectedListType === RowType.list) {
+      if (itemList.listID === pageState.selectedListOrGroupID) {
+        return true;
+      }
+    }
+    // add by category mode, either in listgroup mode or are in list mode and we are on a different list
+    if (itemList.categoryID === null) {
+      if (newRow) {return false}
+      let allUncategorized=true;
+      for (const il of allItemLists) {
+        if (il.categoryID !== null) {allUncategorized=false}
+      }
+      return allUncategorized;
+    }
+    let matchingListRow = listRows.find((lr) => lr.listDoc._id === itemList.listID)
+    if (matchingListRow === undefined) {return false}
+    if (matchingListRow.listDoc.categories.includes(String(itemList.categoryID))) {
+      return true;
+    }
+    return false;
+  },[globalState.settings.addListOption,listRows,pageState.selectedListOrGroupID,pageState.selectedListType])
+
+  const addExistingItemToList = useCallback(async (itemSearch: ItemSearch) : Promise<{success: boolean, errorHeader: string, errorMessage: string}> => {
+
+    /*  scenarios:
+      
+    Item exist check:
+      if global item, check for same name or same globalitemID in listgroup
+      If local item, check for same name or item id in listgroup
+
+      * Item exists
+          * Item is active on all lists -- error
+          * Item is active on no lists -- in listgroup, update all to active, in list, check setting, same as below
+          * Item is active on some lists -- in listgroup mode, update item to active on all
+                                            in list mode, depending on setting to "add to all", update item to active on all or just one
+      * Item does not exist
+          * Add item, set to active based on listgroup mode/list selected -- data comes from global item if needed
+ */
+
+    let response = { success: true, errorHeader: "", errorMessage: ""};
+
+    let testItemDoc: ItemDoc | undefined = undefined;
+    testItemDoc = cloneDeep(itemDocs.find((item) => ((item._id === itemSearch.itemID && item.listGroupID === pageState.groupIDforSelectedList) || 
+              (item.name === itemSearch.itemName && item.listGroupID === pageState.groupIDforSelectedList))) );
+
+    const addingNewItem = (testItemDoc === undefined);
+
+    if (!addingNewItem) {
+      if (testItemDoc!.lists.filter(il => il.active && !il.completed).length === testItemDoc!.lists.length) {
+        response.success = false;
+        response.errorHeader = t("error.header_adding_item");
+        response.errorMessage = t("error.item_exists_current_list");
+        return response;
+      }
+    }
+    let newItem: ItemDoc = cloneDeep(ItemDocInit);
+    if (addingNewItem) {
+      let activeCount = 0;
+      if (itemSearch.itemType === ItemSearchType.Global) {
+        newItem.globalItemID = itemSearch.globalItemID;
+        newItem.listGroupID = pageState.groupIDforSelectedList;
+        newItem.name = itemSearch.itemName;
+        newItem.pluralName = translatedItemName(itemSearch.globalItemID,newItem.name,newItem.name,2);
+        listRows.forEach((lr) => {
+          if (lr.listGroupID === pageState.groupIDforSelectedList) {
+            let newItemList: ItemList = cloneDeep(ItemListInit); // sets to active true by default
+            newItemList.listID = String(lr.listDoc._id);
+            if (lr.listDoc.categories.includes(String(itemSearch.globalItemCategoryID))) {
+              newItemList.categoryID = itemSearch.globalItemCategoryID
+            }
+            newItemList.uomName = itemSearch.globalItemUOM;
+            newItemList.quantity = 1;
+            newItemList.active = shouldBeActive(newItemList,true,[]);
+            activeCount = newItemList.active ? (activeCount + 1) : activeCount;
+            newItem.lists.push(newItemList);
+          }
+        })
+      }  
+      else { 
+        newItem.globalItemID = null;
+        newItem.listGroupID = pageState.groupIDforSelectedList;
+        newItem.name = itemSearch.itemName;
+        listRows.forEach((lr) => {
+          if (lr.listGroupID === pageState.groupIDforSelectedList) {
+            let newItemList: ItemList = cloneDeep(ItemListInit);
+            newItemList.listID = String(lr.listDoc._id);
+            newItemList.quantity = 1;
+            newItemList.active = shouldBeActive(newItemList,true,[]);
+            activeCount = newItemList.active ? (activeCount + 1) : activeCount;
+            newItem.lists.push(newItemList);
+          }
+        })
+      }  
+      if (activeCount === 0) {
+        await presentAlert({header: t("error.header_warning_adding_item"), message: t("error.warning_none_set_active"), buttons: [t("general.ok")]})
+      }
+      let itemAdded = await addNewItem(newItem);
+      if (!itemAdded.successful) {
+        response.success=false;
+        response.errorHeader = t("error.header_adding_item");
+        response.errorMessage = t("error.adding_item");
+      }
+      return response;
+    }
+// Finished adding new item where it didn't exist. Now update existing item, active on no or some lists
+    let activeCount = 0;
+    let origLists = cloneDeep(testItemDoc!.lists);
+    testItemDoc!.lists.forEach(il => {
+      il.active = shouldBeActive(il,false,origLists);
+      activeCount = il.active ? (activeCount + 1) : activeCount;
+      if (il.active) { il.completed = false;}
+    })
+    if (!isEqual(origLists,testItemDoc!.lists)) {
+      let result = await updateItemInList(testItemDoc);
+      if (activeCount === 0) {
+        await presentAlert({header: t("error.header_warning_adding_item"), message: t("error.warning_none_set_active"), buttons: [t("general.ok")]})
+      }
+      if (!result.successful) {
+        response.success=false;
+        response.errorHeader = t("error.header_adding_item.");
+        response.errorMessage = t("error.updating_item");
+        return response;
+      }
+    }
+    return response;
+    },[addNewItem,itemDocs,listRows,pageState.groupIDforSelectedList,presentAlert,shouldBeActive,t,updateItemInList])
+
   const isItemAlreadyInList = useCallback( (itemName: string,completedOnly: boolean): [boolean,ItemDoc|null] => {
     if (itemName === "") {return [false,null];}
     let existingItem = (baseItemDocs as ItemDocs).find((el) => 
@@ -141,11 +291,10 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         if (!existingItem.lists[i].completed) {allCompleted=false; break;}
     }
     return [allCompleted,existingItem];
-  },[baseItemDocs])
+  },[baseItemDocs,pageState.selectedListOrGroupID,pageState.selectedListType])
 
   const addNewItemToList = useCallback( async (itemName: string) => {
       let [isItemAlreadyInListAsCompleted,compItem] = isItemAlreadyInList(itemName,true);
-      log.debug({isItemAlreadyInListAsCompleted,compItem});
       if (isItemAlreadyInListAsCompleted && compItem !== null) {
         let itemSearch: ItemSearch = {
           itemID: String(compItem?._id),
@@ -179,7 +328,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         history.push("/item/new/");
       }
     }
-  ,[history,isItemAlreadyInList,pageState.selectedListOrGroupID,pageState.selectedListType,setGlobalStateInfo,t,globalData.globalItemDocs])
+  ,[history,isItemAlreadyInList,addExistingItemToList,pageState.selectedListOrGroupID,pageState.selectedListType,setGlobalStateInfo,t,globalData.globalItemDocs])
   
   useEffect( () => {
     function beforeInputData(e:any) {
@@ -303,158 +452,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     if (searchState.filteredSearchRows.length === 0) { toOpen = false}
     setSearchState(prevState => ({...prevState, isFocused: true,isOpen: toOpen}));
   }
-
-  function shouldBeActive(itemList: ItemList, newRow: boolean, allItemLists: ItemList[]): boolean {
-    if (!newRow && !itemList.stockedAt) {
-      if (pageState.selectedListType === RowType.list && itemList.listID === pageState.selectedListOrGroupID) {
-        return true;
-      } else {
-        return false;
-      }
-    }
-    if (globalState.settings.addListOption === AddListOptions.dontAddAutomatically) {
-      if (pageState.selectedListType === RowType.listGroup) {
-         return true;
-      } else {
-        if (newRow) {
-          return (itemList.listID === pageState.selectedListOrGroupID)
-        } else {
-          return itemList.active || (itemList.listID === pageState.selectedListOrGroupID)
-        }
-      }
-    }
-    if (globalState.settings.addListOption === AddListOptions.addToAllListsAutomatically) {
-      return true;
-    } 
-    // Add list option = by category
-    if (pageState.selectedListType === RowType.list) {
-      if (itemList.listID === pageState.selectedListOrGroupID) {
-        return true;
-      }
-    }
-    // add by category mode, either in listgroup mode or are in list mode and we are on a different list
-    if (itemList.categoryID === null) {
-      if (newRow) {return false}
-      let allUncategorized=true;
-      for (const il of allItemLists) {
-        if (il.categoryID !== null) {allUncategorized=false}
-      }
-      return allUncategorized;
-    }
-    let matchingListRow = listRows.find((lr) => lr.listDoc._id === itemList.listID)
-    if (matchingListRow === undefined) {return false}
-    if (matchingListRow.listDoc.categories.includes(String(itemList.categoryID))) {
-      return true;
-    }
-    return false;
-  }
-
-
-  async function addExistingItemToList(itemSearch: ItemSearch): Promise<{success: boolean, errorHeader: string, errorMessage: string }> {
-
-    /*  scenarios:
-      
-    Item exist check:
-      if global item, check for same name or same globalitemID in listgroup
-      If local item, check for same name or item id in listgroup
-
-      * Item exists
-          * Item is active on all lists -- error
-          * Item is active on no lists -- in listgroup, update all to active, in list, check setting, same as below
-          * Item is active on some lists -- in listgroup mode, update item to active on all
-                                            in list mode, depending on setting to "add to all", update item to active on all or just one
-      * Item does not exist
-          * Add item, set to active based on listgroup mode/list selected -- data comes from global item if needed
- */
-
-    let response = { success: true, errorHeader: "", errorMessage: ""};
-
-    let testItemDoc: ItemDoc | undefined = undefined;
-    testItemDoc = cloneDeep(itemDocs.find((item) => ((item._id === itemSearch.itemID && item.listGroupID === pageState.groupIDforSelectedList) || 
-              (item.name === itemSearch.itemName && item.listGroupID === pageState.groupIDforSelectedList))) );
-
-    const addingNewItem = (testItemDoc === undefined);
-
-    if (!addingNewItem) {
-      if (testItemDoc!.lists.filter(il => il.active && !il.completed).length === testItemDoc!.lists.length) {
-        response.success = false;
-        response.errorHeader = t("error.header_adding_item");
-        response.errorMessage = t("error.item_exists_current_list");
-        return response;
-      }
-    }
-    let newItem: ItemDoc = cloneDeep(ItemDocInit);
-    if (addingNewItem) {
-      let activeCount = 0;
-      if (itemSearch.itemType === ItemSearchType.Global) {
-        newItem.globalItemID = itemSearch.globalItemID;
-        newItem.listGroupID = pageState.groupIDforSelectedList;
-        newItem.name = itemSearch.itemName;
-        newItem.pluralName = translatedItemName(itemSearch.globalItemID,newItem.name,newItem.name,2);
-        listRows.forEach((lr) => {
-          if (lr.listGroupID === pageState.groupIDforSelectedList) {
-            let newItemList: ItemList = cloneDeep(ItemListInit); // sets to active true by default
-            newItemList.listID = String(lr.listDoc._id);
-            if (lr.listDoc.categories.includes(String(itemSearch.globalItemCategoryID))) {
-              newItemList.categoryID = itemSearch.globalItemCategoryID
-            }
-            newItemList.uomName = itemSearch.globalItemUOM;
-            newItemList.quantity = 1;
-            newItemList.active = shouldBeActive(newItemList,true,[]);
-            activeCount = newItemList.active ? (activeCount + 1) : activeCount;
-            newItem.lists.push(newItemList);
-          }
-        })
-      }  
-      else { 
-        newItem.globalItemID = null;
-        newItem.listGroupID = pageState.groupIDforSelectedList;
-        newItem.name = itemSearch.itemName;
-        listRows.forEach((lr) => {
-          if (lr.listGroupID === pageState.groupIDforSelectedList) {
-            let newItemList: ItemList = cloneDeep(ItemListInit);
-            newItemList.listID = String(lr.listDoc._id);
-            newItemList.quantity = 1;
-            newItemList.active = shouldBeActive(newItemList,true,[]);
-            activeCount = newItemList.active ? (activeCount + 1) : activeCount;
-            newItem.lists.push(newItemList);
-          }
-        })
-      }  
-      if (activeCount === 0) {
-        await presentAlert({header: t("error.header_warning_adding_item"), message: t("error.warning_none_set_active"), buttons: [t("general.ok")]})
-      }
-      let itemAdded = await addNewItem(newItem);
-      if (!itemAdded.successful) {
-        response.success=false;
-        response.errorHeader = t("error.header_adding_item");
-        response.errorMessage = t("error.adding_item");
-      }
-      return response;
-    }
-// Finished adding new item where it didn't exist. Now update existing item, active on no or some lists
-    let activeCount = 0;
-    let origLists = cloneDeep(testItemDoc!.lists);
-    testItemDoc!.lists.forEach(il => {
-      il.active = shouldBeActive(il,false,origLists);
-      activeCount = il.active ? (activeCount + 1) : activeCount;
-      if (il.active) { il.completed = false;}
-    })
-    if (!isEqual(origLists,testItemDoc!.lists)) {
-      let result = await updateItemInList(testItemDoc);
-      if (activeCount === 0) {
-        await presentAlert({header: t("error.header_warning_adding_item"), message: t("error.warning_none_set_active"), buttons: [t("general.ok")]})
-      }
-      if (!result.successful) {
-        response.success=false;
-        response.errorHeader = t("error.header_adding_item.");
-        response.errorMessage = t("error.updating_item");
-        return response;
-      }
-    }
-    return response;
-  }
-
+    
   async function chooseSearchItem(item: ItemSearch) {
     const {success,errorHeader,errorMessage}  = await addExistingItemToList(item);
     setSearchState(prevState => ({...prevState, searchCriteria: "", filteredSearchRows: [], isOpen: false, isFocused: false}));
