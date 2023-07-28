@@ -1,0 +1,83 @@
+name: build-publish-client-android
+on:
+   workflow_dispatch:
+   push:
+     branches:
+       - master
+     tags:
+       - 'v*'  
+     paths:
+       - 'client/**'
+defaults:
+  run:
+    working-directory: client
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}-client    
+jobs:
+  build-it:
+    runs-on: ubuntu-latest
+    steps:
+     - name: Clone repository
+       uses: actions/checkout@v3
+       with:
+         ref: ${{ steps.vars.outputs.tag }}
+     - name: Set up JDK
+       uses: actions/setup-java@v3
+       with:
+         java-version: 17
+         distribution: 'temurin'
+         cache: gradle
+     - name: Set up Node.js
+       uses: actions/setup-node@v3
+       with:
+         node-version: 20.3.0
+     - name: Install Ionic
+       run: npm install -g @ionic/cli
+     - name: Build app dependencies
+       run: npm install
+     - name: Create env file
+       run: |
+          echo "DEFAULT_API_URL=${{ secrets.DEFAULT_API_URL }}" > .env
+     - name: Build Ionic app
+       run: ionic build
+     - name: Android Copy
+       run: ionic capacitor copy android
+     - name: Setup Capacitor Build
+       run: ionic capacitor build android        
+     - name: Setup Gradle Exec
+       run: chmod +x android/gradlew
+     - name: Bundle release
+       working-directory: client/android/
+       run: ./gradlew bundle
+       id: bundle
+     - name: Extract Android signing key from env
+       working-directory: client/android/
+       run: |
+          echo "${{ secrets.RELEASE_KEYSTORE }}" > clementines.jks.base64
+          base64 -d clementines.jks.base64 > clementines.jks
+     - name: Sign dev build
+       working-directory: client/android
+       run: jarsigner -keystore clementines.jks -storepass "${{ secrets.RELEASE_KEYSTORE_PASSWORD }}" -signedjar ./app/build/outputs/bundle/release/app-release-signed.aab ./app/build/outputs/bundle/release/app-release.aab clementines
+     - name: Convert AAB to APK
+       working-directory: client/android
+       run: |
+          json=$(curl -s https://api.github.com/repos/google/bundletool/releases/latest)
+          downloadUrl=$(echo $json | jq -r ".assets | .[].browser_download_url")
+          curl $downloadUrl -4 -sL -o 'bundletool.jar'
+          java -jar bundletool.jar version
+          java -jar bundletool.jar build-apks --bundle=./app/build/outputs/bundle/release/app-release.aab --output=/tmp/app-release.apks --mode=universal --ks=clementines.jks --ks-pass="pass:${{ secrets.RELEASE_KEYSTORE_PASSWORD }}" --ks-key-alias="${{ secrets.RELEASE_KEY_ALIAS }}" --key-pass="pass:${{ secrets.RELEASE_KEY_PASSWORD }}"
+          mv /tmp/app-release.apks /tmp/app-release.zip
+          unzip /tmp/app-release.zip -d /tmp
+          cp /tmp/universal.apk /tmp/clementines.apk
+     - name: Upload APK
+       uses: actions/upload-artifact@v3
+       with:
+        name: clementines.apk
+        path: /tmp/clementines.apk
+     - name: Upload AAB
+       uses: actions/upload-artifact@v3
+       with:
+        name: clementines.aab
+        path: client/android/app/build/outputs/bundle/release/app-release.aab
+        

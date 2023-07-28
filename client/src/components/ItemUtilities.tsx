@@ -305,8 +305,8 @@ export function getCommonKey(stateItemDoc: ItemDoc, key: string, listDocs: ListD
     });
     let newItemDoc: ItemDoc ={
       type: "item",
-      name: (foundGlobalItem === undefined) ? String(globalState.newItemName) : foundGlobalItem.name,
-      pluralName: String(globalState.newItemName),
+      name: (foundGlobalItem === undefined) ? String(globalState.newItemName) : translatedItemName(String(foundGlobalItem._id),foundGlobalItem.name,foundGlobalItem.name,1),
+      pluralName: (foundGlobalItem === undefined) ? String(globalState.newItemName) : translatedItemName(String(foundGlobalItem._id),foundGlobalItem.name,foundGlobalItem.name,2),
       globalItemID: globalState.newItemGlobalItemID,
       listGroupID: String(listGroupID),
       imageID: null,

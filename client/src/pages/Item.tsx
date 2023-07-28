@@ -161,7 +161,7 @@ const Item: React.FC = (props) => {
       return false;
     }
     if (isEmpty(stateItemDoc.pluralName) && (stateItemDoc.globalItemID !== null)) {
-      newItemDoc.pluralName = stateItemDoc.name;
+      newItemDoc.pluralName = translatedItemName(stateItemDoc.globalItemID,stateItemDoc.name,stateItemDoc.name,2);
     }
     let alreadyExists = false;
     itemRows.forEach((ir) => {

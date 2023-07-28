@@ -61,12 +61,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   const shouldScroll = useRef(false);
   const history = useHistory();
 
-  useEffect( () => {
-    log.debug("Base Search",baseSearchItemDocs);
-    log.debug("Base Item Docs",baseItemDocs);
-    log.debug("Search Rows",searchRows)
-  },[baseSearchItemDocs,searchRows])
-
   const getGroupIDForList = useCallback( (listID: string | null) => {
     if (routeMode === "group") { return pageState.selectedListOrGroupID};
     let retGID = null;
@@ -128,9 +122,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   const isItemAlreadyInList = useCallback( (itemName: string,completedOnly: boolean): [boolean,ItemDoc|null] => {
     if (itemName === "") {return [false,null];}
-    for (let el of baseItemDocs) {
-      log.debug(el.name.toLocaleUpperCase(),el.pluralName?.toLocaleUpperCase(),translatedItemName(String(el._id),el.name,el.pluralName,1).toLocaleUpperCase(),translatedItemName(String(el._id),el.name,el.pluralName,2).toLocaleUpperCase())
-    }
     let existingItem = (baseItemDocs as ItemDocs).find((el) => 
       (itemName.toLocaleUpperCase() === translatedItemName(String(el._id),el.name,el.pluralName,1).toLocaleUpperCase() ||
        itemName.toLocaleUpperCase() === translatedItemName(String(el._id),el.name,el.pluralName,2).toLocaleUpperCase()
@@ -139,15 +130,11 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     if (existingItem === undefined) {return [false,null];}
     if (!completedOnly) {return [true,existingItem];}
     // Have an existing item... checking completed flag
-    log.debug("got item: ",existingItem)
     if (pageState.selectedListType === RowType.list) {
-      log.debug("In List mode...");
       let itemList = existingItem.lists.find(il => il.listID === pageState.selectedListOrGroupID);
-      log.debug("Found item list:",itemList,existingItem.lists);
       if (itemList === undefined) {return [false,null];}
       return [itemList.active && itemList.completed,existingItem];
     }
-    log.debug("Checking listgroup ...");
     // Listgroup mode
     let allCompleted=true;
     for (let i = 0; i < existingItem.lists.length; i++) {
