@@ -4,6 +4,8 @@ WORKDIR /usr/app
 
 COPY client/package.json client/package-lock.json /usr/app/
 
+RUN apt update && apt-install -y python3
+
 RUN NODE_ENV=production npm ci --include=dev --loglevel=verbose
 
 COPY client/. ./
