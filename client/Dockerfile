@@ -4,13 +4,13 @@ WORKDIR /usr/app
 
 COPY client/package.json client/package-lock.json /usr/app/
 
-RUN NODE_ENV=production npm ci --include=dev
+RUN NODE_ENV=production npm ci --include=dev --verbose
 
 COPY client/. ./
 
 RUN ls -lat
 
-RUN npm run build
+RUN npm run build --verbose
 
 FROM nginx:alpine
 COPY --from=builder /usr/app/build /usr/share/nginx/html
