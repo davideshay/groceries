@@ -23,7 +23,7 @@ import { useTranslation } from 'react-i18next';
 import log from 'loglevel';
 import { navigateToFirstListID } from '../components/RemoteUtilities';
 import { Capacitor } from '@capacitor/core';
-// import ItemsSearch from '../components/ItemsSearch';
+import { translatedItemName } from '../components/translationUtilities';
 
 const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode: routeMode, id: routeListID  } = useParams<{mode: string, id: string}>();
@@ -120,14 +120,52 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     filterAndCheckRows(searchState.searchCriteria,searchState.isFocused);
   },[searchRows,searchState.isFocused,searchState.searchCriteria,filterAndCheckRows])
 
-  const isItemAlreadyInList = useCallback( (itemName: string) => {
-    if (itemName === "") {return false;}
-    let existingItem = (baseItemDocs as ItemDocs).find((el) => (el.name.toUpperCase() === itemName.toUpperCase() || el.pluralName?.toUpperCase() === itemName.toUpperCase()));
-    return(!(existingItem === undefined));
+  const isItemAlreadyInList = useCallback( (itemName: string,completedOnly: boolean): [boolean,ItemDoc|null] => {
+    if (itemName === "") {return [false,null];}
+    let existingItem = (baseItemDocs as ItemDocs).find((el) => 
+      (itemName.toLocaleUpperCase() === translatedItemName(String(el._id),el.name,el.pluralName,1).toLocaleUpperCase() ||
+       itemName.toLocaleUpperCase() === translatedItemName(String(el._id),el.name,el.pluralName,2).toLocaleUpperCase()
+        )
+       );
+    if (existingItem === undefined) {return [false,null];}
+    if (!completedOnly) {return [true,existingItem];}
+    // Have an existing item... checking completed flag
+    if (pageState.selectedListType === RowType.list) {
+      let itemList = existingItem.lists.find(il => il.listID === pageState.selectedListOrGroupID);
+      if (itemList === undefined) {return [false,null];}
+      return [itemList.active && itemList.completed,existingItem];
+    }
+    // Listgroup mode
+    let allCompleted=true;
+    for (let i = 0; i < existingItem.lists.length; i++) {
+        if (!existingItem.lists[i].completed) {allCompleted=false; break;}
+    }
+    return [allCompleted,existingItem];
   },[baseItemDocs])
 
-  const addNewItemToList = useCallback( (itemName: string) => {
-      if (isItemAlreadyInList(itemName)) {
+  const addNewItemToList = useCallback( async (itemName: string) => {
+      let [isItemAlreadyInListAsCompleted,compItem] = isItemAlreadyInList(itemName,true);
+      log.debug({isItemAlreadyInListAsCompleted,compItem});
+      if (isItemAlreadyInListAsCompleted && compItem !== null) {
+        let itemSearch: ItemSearch = {
+          itemID: String(compItem?._id),
+          itemName: translatedItemName(String(compItem._id),compItem.name,compItem.pluralName),
+          itemType: compItem.globalItemID === null ? ItemSearchType.Local : ItemSearchType.Global,
+          globalItemID: compItem.globalItemID,
+          globalItemCategoryID: null,
+          globalItemUOM: null,
+          quantity: 1,
+          boughtCount: 0
+        }
+        const {success,errorHeader,errorMessage}  = await addExistingItemToList(itemSearch);
+        setSearchState(prevState => ({...prevState, searchCriteria: "", filteredSearchRows: [], isOpen: false, isFocused: false}));
+        if (!success) {
+          setPageState(prevState => ({...prevState,showAlert: true, alertHeader: errorHeader, alertMessage: errorMessage}));
+        }      
+        return;
+      }
+      let [isItemAlreadyInListAtAll,] = isItemAlreadyInList(itemName,false); 
+      if (isItemAlreadyInListAtAll) {
         setPageState(prevState => ({...prevState, showAlert: true, alertHeader: t("error.adding_to_list") , alertMessage: t("error.item_exists_current_list")}))
         setSearchState(prevState => ({...prevState, isOpen: false, searchCriteria: "", filteredSearchRows: [], isFocused: false}))
       } else {
@@ -338,9 +376,9 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     const addingNewItem = (testItemDoc === undefined);
 
     if (!addingNewItem) {
-      if (testItemDoc!.lists.filter(il => il.active).length === testItemDoc!.lists.length) {
+      if (testItemDoc!.lists.filter(il => il.active && !il.completed).length === testItemDoc!.lists.length) {
         response.success = false;
-        response.errorHeader = t("general.header_adding_item");
+        response.errorHeader = t("error.header_adding_item");
         response.errorMessage = t("error.item_exists_current_list");
         return response;
       }
@@ -352,7 +390,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         newItem.globalItemID = itemSearch.globalItemID;
         newItem.listGroupID = pageState.groupIDforSelectedList;
         newItem.name = itemSearch.itemName;
-        newItem.pluralName = itemSearch.itemName;
+        newItem.pluralName = translatedItemName(itemSearch.globalItemID,newItem.name,newItem.name,2);
         listRows.forEach((lr) => {
           if (lr.listGroupID === pageState.groupIDforSelectedList) {
             let newItemList: ItemList = cloneDeep(ItemListInit); // sets to active true by default
@@ -591,6 +629,16 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     )
   }
 
+  function getCompletedDivider(count: number) {
+    return (
+      <IonItemGroup key="completeddividergroup">
+        <IonItemDivider key="Completed" className={"category-divider item-category-divider "+(count===0 ? "first-category": "")}>
+          <IonLabel key="completed-divider-label">{t("general.completed")}</IonLabel>
+          <IonButton key="completeddividerbutton" slot="end" onClick={() => deleteCompletedItemsPrompt()}>{t("general.delete_completed_items")}</IonButton>
+        </IonItemDivider>
+      </IonItemGroup>)
+  }
+
   let dividerCount = 0;
   let lastCategoryID : string | null = null;
   let lastCategoryName="<INITIAL>";
@@ -598,11 +646,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   let lastCategoryFinished: boolean | null = null;
   let currentRows=[];
   let createdFinished=false;
-  const completedDivider=(
-        <IonItemGroup key="completeddividergroup"><IonItemDivider key="Completed" className="category-divider item-category-divider">
-        <IonLabel key="completed-divider-label">{t("general.completed")}</IonLabel>
-        <IonButton key="completeddividerbutton" slot="end" onClick={() => deleteCompletedItemsPrompt()}>{t("general.delete_completed_items")}</IonButton>
-        </IonItemDivider></IonItemGroup>);
   for (let i = 0; i < pageState.itemRows.length; i++) {
     const item = pageState.itemRows[i];
     if ((lastCategoryName !== item.categoryName )||(lastCategoryFinished !== item.completed)) {
@@ -628,12 +671,13 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
           </IonItem>
       </IonItem>);
     if (lastCategoryFinished && !createdFinished) {
-      listContent.push(completedDivider);
+      listContent.push(getCompletedDivider(dividerCount));
+      dividerCount++;
       createdFinished=true;
     }
   }
   addCurrentRows(listContent,currentRows,lastCategoryID,lastCategoryName,lastCategoryColor,lastCategoryFinished);
-  if (!createdFinished) {listContent.push(completedDivider)};
+  if (!createdFinished) {listContent.push(getCompletedDivider(dividerCount)); dividerCount++;};
   let contentElem=(<IonList key="overallitemlist" className="ion-no-padding ion-items-list" lines="none">{listContent}</IonList>)
 
   function resumeScroll() {

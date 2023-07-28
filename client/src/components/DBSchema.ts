@@ -1,5 +1,5 @@
 export const maxAppSupportedSchemaVersion = 5;
-export const appVersion = "1.0.3";
+export const appVersion = "1.0.4";
 export const minimumAccessRefreshSeconds = 300;
 export const DefaultColor = "#ffffff";
 
@@ -13,7 +13,9 @@ export interface UUIDDoc {
   uomContentVersion: number,
   schemaVersion: number,
   categoriesVersion: number,
-  globalItemVersion: number
+  globalItemVersion: number,
+  categoriesFixed?: boolean,
+  itemNamesFixed?: boolean
 }
 
 export interface CategoryDoc {

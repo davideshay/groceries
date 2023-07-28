@@ -37,6 +37,8 @@ export type RemoteDBState = {
     forceShowLoginScreen: boolean,
     apiServerAvailable: boolean,
     dbServerAvailable: boolean,
+    apiServerVersion: string,
+    ignoreAppVersionWarning: boolean,
     workingOffline: boolean,
     offlineJWTMatch: boolean,
     loggedIn: boolean,
@@ -95,10 +97,11 @@ export enum SyncStatus {
 
 export enum DBUUIDAction {
     none = 0,
-    exit_app_schema_mismatch = 1,
-    exit_local_remote_schema_mismatch = 2,
-    exit_no_uuid_on_server = 3,
-    destroy_needed = 4
+    warning_app_version_mismatch = 1,
+    exit_app_schema_mismatch = 2,
+    exit_local_remote_schema_mismatch = 3,
+    exit_no_uuid_on_server = 4,
+    destroy_needed = 5
 }  
 
 export enum RefreshTokenResults {
@@ -180,7 +183,9 @@ export const initialRemoteDBState: RemoteDBState = {
     credsError: false,
     credsErrorText: "",
     apiServerAvailable: true,
+    apiServerVersion: "",
     dbServerAvailable: true,
+    ignoreAppVersionWarning: false,
     forceShowLoginScreen: false,
     workingOffline: false,
     offlineJWTMatch: false,
@@ -447,7 +452,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         if (appStatus.current === AppStatus.paused || appStatus.current === AppStatus.pausing) {
             log.error("Not checking ID and syncing, app pausing..."); return false;
         }
-        let DBUUIDCheck = await checkDBUUID(db as PouchDB.Database,globalRemoteDB as PouchDB.Database,String(remoteDBCreds.current.dbUsername));
+        let DBUUIDCheck = await checkDBUUID(db as PouchDB.Database,globalRemoteDB as PouchDB.Database,String(remoteDBCreds.current.dbUsername),remoteDBState.apiServerVersion, remoteDBState.ignoreAppVersionWarning);
         // if (appStatus.current === AppStatus.paused || appStatus.current === AppStatus.pausing) {
         //     log.error("Not checking ID and syncing, app pausing..."); return false;
         // }
@@ -466,7 +471,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             log.debug("DB Unique ID check passed. Setup Activities complete. Starting Sync.");
             startSync();
         }
-    },[db,startSync,t])
+    },[db,startSync,t,remoteDBState.apiServerVersion, remoteDBState.ignoreAppVersionWarning])
 
     const attemptFullLogin = useCallback( async (): Promise<[boolean,string]> => {
         let devID = await getDeviceID();
@@ -489,6 +494,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             setRemoteDBState(prevState => ({...prevState,apiServerAvailable: serverAvailable.apiServerAvailable, dbServerAvailable: serverAvailable.dbServerAvailable, offlineJWTMatch: validJWTMatch, credsError: true, credsErrorText: ( serverAvailable.apiServerAvailable ? t("error.database_server_not_available") : t("error.could_not_contact_api_server")), connectionStatus: ConnectionStatus.navToLoginScreen}))
             return [false,String(t("error.could_not_contact_api_server"))];
         }
+        setRemoteDBState(prevState => ({...prevState,apiServerVersion: serverAvailable.apiServerAppVersion}))
         let credsCheck =  errorCheckCreds({credsObj: credsObj, background: true});
 //        log.debug("Attempt Full Login: credsCheck:",credsCheck);
         if (credsCheck.credsError) {

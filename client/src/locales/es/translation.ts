@@ -231,6 +231,9 @@ export const es_translations =
         "deleting_list": "Eliminando lista...",
         "deleting_uom": "Eliminando unidad de medida...",
         "is_default_listgroup_for_user":"¿Es la lista de recetas un grupo para este usuario?",
+        "alexa_default": "Grupo de lista predeterminado para Alexa",
+        "listgroup_not_updated": "El grupo de lista no fue actualizado/guardado",
+        "exit": "Salir de la aplicación"
          },
      "error": {
         "invalid_dbuuid" : "Identificador único de base de datos inválido",
@@ -365,7 +368,10 @@ export const es_translations =
         "cannot_create_uom_no_listgroup_selected": "No se puede crear una unidad de medida sin seleccionar un grupo de listas.",
         "header_adding_item": "Error al agregar un elemento existente",
         "header_warning_adding_item": "Advertencia al agregar un elemento existente",
-        "warning_none_set_active": "Según la configuración, aunque el elemento se ha agregado, no está activo actualmente en ninguna de las listas. Esto puede ser porque la categoría no está activa en las listas."
+        "warning_none_set_active": "Según la configuración, aunque el elemento se ha agregado, no está activo actualmente en ninguna de las listas. Esto puede ser porque la categoría no está activa en las listas.",
+        "deleting_listgroup": "Error al eliminar el grupo de lista",
+        "deleting_listgroup_detail": "No se puede eliminar el último grupo de lista restante. Por favor, agregue otro primero si realmente desea eliminarlo.",
+        "need_one_alexa_default": "Debe haber un grupo de lista marcado como predeterminado para Alexa. Actualmente hay {{count}} grupos de listas marcados como predeterminados si guarda este grupo de lista. Si no se especifica ninguno, Alexa utilizará el primer grupo de lista disponible. Si se especifican más de uno, se utilizará el primero en orden alfabético."
     },
     "itemtext": {
         "item_is_on_these_lists": "El artículo está en estas listas:",

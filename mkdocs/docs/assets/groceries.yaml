@@ -97,7 +97,7 @@ spec:
          - name: COUCHDB_INTERNAL_URL  
            value: "http://couchdb-service.couchdb:5984/"
          - name: COUCHDB_DATABASE
-           value: "todos"
+           value: "groceries"
          - name: COUCHDB_HMAC_KEY
            value: "clear-text-hmac-key"
          - name: COUCHDB_ADMIN_USER

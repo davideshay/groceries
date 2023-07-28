@@ -150,7 +150,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
           log.debug("dbServer Available:", dbServerAvailable);
           let validJWTMatch = JWTMatchesUser(remoteDBCreds.refreshJWT,remoteDBCreds.dbUsername);
           if (apiServerAvailable.apiServerAvailable) {
-            setRemoteDBState(prevState =>({...prevState,apiServerAvailable: apiServerAvailable.apiServerAvailable, dbServerAvailable: apiServerAvailable.dbServerAvailable, offlineJWTMatch: validJWTMatch}))
+            setRemoteDBState(prevState =>({...prevState,apiServerAvailable: apiServerAvailable.apiServerAvailable, apiServerVersion: apiServerAvailable.apiServerAppVersion,dbServerAvailable: apiServerAvailable.dbServerAvailable, offlineJWTMatch: validJWTMatch}))
           } else {
             setRemoteDBState(prevState =>({...prevState,apiServerAvailable: apiServerAvailable.apiServerAvailable, dbServerAvailable: dbServerAvailable, offlineJWTMatch: validJWTMatch}))
           }  
@@ -158,6 +158,10 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       log.debug("checking is API server is available in useeffect...");
       checkAPIServerAvailable(remoteDBCreds.apiServerURL);
     },[remoteDBCreds.apiServerURL,setRemoteDBState,remoteDBCreds.refreshJWT,remoteDBCreds.dbUsername, remoteDBCreds.couchBaseURL, remoteDBState.loggedIn])
+
+    const continueDifferentVersion = useCallback( () => {
+      setRemoteDBState(prevState => ({...prevState,dbUUIDAction: DBUUIDAction.none,ignoreAppVersionWarning: true}))
+    },[setRemoteDBState])
 
     // effect for dbuuidaction not none
     useEffect( () => {
@@ -167,6 +171,18 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       };
       dismiss();
       if (remoteDBState.dbUUIDAction !== DBUUIDAction.none) {
+        if (remoteDBState.dbUUIDAction === DBUUIDAction.warning_app_version_mismatch) {
+          log.error("Mismatched app versions on client and server");
+          presentAlert( {
+            header: t("error.warning"),
+            message: t("error.different_server_local_app_versions"),
+            buttons: [
+              {text: t("general.exit"), handler: () => exitApp()},
+              {text: t("general.continue_ignore"), handler: () => continueDifferentVersion()}
+            ]
+          })
+          return;
+        }
         if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_app_schema_mismatch) {
           log.error("Schema too new, not supported with this app version. Upgrade.");
           presentAndExit({
@@ -208,7 +224,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
           })
         }
       }
-    },[remoteDBState.dbUUIDAction,destroyAndExit,dismiss,exitApp,presentAlert,setRemoteDBState,t])
+    },[remoteDBState.dbUUIDAction,destroyAndExit,dismiss,exitApp,presentAlert,setRemoteDBState,t,continueDifferentVersion])
 
     useEffect( () => {
       if (remoteDBState.initialSyncComplete) {

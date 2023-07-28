@@ -40,9 +40,9 @@ const nanoAdminOpts = {
         headers: { Authorization: "Basic "+ Buffer.from(couchAdminUser+":"+couchAdminPassword).toString('base64') }
     }
 }
-export let todosNanoAsAdmin = nanoAdmin(nanoAdminOpts);
+export let groceriesNanoAsAdmin = nanoAdmin(nanoAdminOpts);
 export let usersNanoAsAdmin = nanoAdmin(nanoAdminOpts);
-import { todosDBAsAdmin, usersDBAsAdmin, couchLogin } from './dbstartup';
+import { groceriesDBAsAdmin, usersDBAsAdmin, couchLogin } from './dbstartup';
 import _ from 'lodash';
 import { cloneDeep, isEmpty, isEqual, isSafeInteger } from 'lodash';
 import { usernamePatternValidation, fullnamePatternValidation, getUserDoc, getUserByEmailDoc,
@@ -326,10 +326,10 @@ export async function createAccountUIGet(req: Request, res: Response) {
     const uuidq = {
         selector: { type: { "$eq": "friend" }, inviteUUID: { "$eq": req.query.uuid}},
         fields: [ "friendID1","friendID2","inviteUUID","inviteEmail","friendStatus"],
-        limit: await totalDocCount(todosDBAsAdmin)
+        limit: await totalDocCount(groceriesDBAsAdmin)
     }
     let foundFriendDocs: MangoResponse<FriendDoc> | null = null;
-    try {foundFriendDocs =  (await todosDBAsAdmin.find(uuidq) as MangoResponse<FriendDoc>);}
+    try {foundFriendDocs =  (await groceriesDBAsAdmin.find(uuidq) as MangoResponse<FriendDoc>);}
     catch(err) {log.error("Could not find friend documents:",err);
                 respObj.formError="Database Error Encountered";
                 return respObj;}
@@ -418,16 +418,16 @@ export async function createAccountUIPost(req: Request,res: Response) {
         foundFriendDoc.friendStatus = "PENDFROM1";
         foundFriendDoc.updatedAt = (new Date()).toISOString();
         let updateSuccessful = true;
-        try { await todosDBAsAdmin.insert(foundFriendDoc); }
+        try { await groceriesDBAsAdmin.insert(foundFriendDoc); }
         catch(e) {updateSuccessful = false;}
     }
 
     const emailq = {
         selector: { type: { "$eq": "friend" }, inviteEmail: { "$eq": req.body.email},
-                    limit: totalDocCount(todosDBAsAdmin)}
+                    limit: totalDocCount(groceriesDBAsAdmin)}
     }
     let foundFriendDocs : MangoResponse<FriendDoc>;
-    try {foundFriendDocs =  (await todosDBAsAdmin.find(emailq) as MangoResponse<FriendDoc>);}
+    try {foundFriendDocs =  (await groceriesDBAsAdmin.find(emailq) as MangoResponse<FriendDoc>);}
     catch(err) {log.error("Could not find friend by email:",err); 
                 respObj.formError="Database error finding friend by email";
                 return respObj;}
@@ -439,7 +439,7 @@ export async function createAccountUIPost(req: Request,res: Response) {
             doc.friendStatus = "PENDFROM1";
             doc.updatedAt = (new Date()).toISOString();
             let update2Success=true;
-            try { await todosDBAsAdmin.insert(doc);} 
+            try { await groceriesDBAsAdmin.insert(doc);} 
             catch(e) {update2Success = false;}
         }
     });
@@ -572,7 +572,7 @@ export async function resetPasswordUIPost(req: Request, res: Response) {
 export async function isAvailable(req: Request, res: Response) {
     let respObj = {
         apiServerAvailable: true,
-        dbServerAvailable : await checkDBAvailable(todosDBAsAdmin),
+        dbServerAvailable : await checkDBAvailable(groceriesDBAsAdmin),
         apiServerAppVersion: appVersion
     };
     log.debug("Server checking availability:",respObj);
@@ -581,7 +581,7 @@ export async function isAvailable(req: Request, res: Response) {
 
 export async function resolveConflicts() {
     let conflicts;
-    try {conflicts = await todosDBAsAdmin.view(conflictsViewID,conflictsViewName);}
+    try {conflicts = await groceriesDBAsAdmin.view(conflictsViewID,conflictsViewName);}
     catch(err) {log.error("Couldn't access conflicts view:",err); return false;}
     log.info("Resolving all conflicts started...");
     let resolveFailure=false;
@@ -589,7 +589,7 @@ export async function resolveConflicts() {
     outerloop: for (let i = 0; i < conflicts.rows.length; i++) {
         const conflict = conflicts.rows[i];
         let curWinner: any;
-        try { curWinner = await todosDBAsAdmin.get(conflict.id, {conflicts: true});}
+        try { curWinner = await groceriesDBAsAdmin.get(conflict.id, {conflicts: true});}
         catch(err) { log.error("Error resolving conflicts:",err); resolveFailure = true;}
         if (curWinner == undefined || curWinner == null) { resolveFailure = true;}
         if (resolveFailure) {continue};
@@ -602,7 +602,7 @@ export async function resolveConflicts() {
         for (let j = 0; j < curWinner._conflicts.length; j++) {
             const losingRev = curWinner._conflicts[j];
             let curLoser: any;
-            try { curLoser = await todosDBAsAdmin.get(conflict.id,{ rev: losingRev})}
+            try { curLoser = await groceriesDBAsAdmin.get(conflict.id,{ rev: losingRev})}
             catch(err) {log.error("Error resolving conflicts:",err); resolveFailure=true;}
             if ( curLoser == null || curLoser == undefined) { resolveFailure = true;}
             if (resolveFailure) {continue outerloop};
@@ -625,11 +625,11 @@ export async function resolveConflicts() {
             logObj.losers.push(curWinner);
         }
         let bulkResult;
-        try { bulkResult = await todosDBAsAdmin.bulk(bulkObj) }
+        try { bulkResult = await groceriesDBAsAdmin.bulk(bulkObj) }
         catch(err) {log.error("Error updating bulk docs on conflict resolve"); resolveFailure=true;}
         log.info("Bulk Update to resolve doc id : ",conflict.id, " succeeded");
         let logResult;
-        try { logResult = await todosDBAsAdmin.insert(logObj as MaybeDocument)}
+        try { logResult = await groceriesDBAsAdmin.insert(logObj as MaybeDocument)}
         catch(err) { log.error("ERROR: creating conflict log document failed: ",err)};
     }
 }
@@ -643,7 +643,7 @@ export async function triggerResolveConflicts(req: Request,res: Response) {
 }
 
 async function compactDB() {
-    todosNanoAsAdmin.db.compact(couchDatabase);
+    groceriesNanoAsAdmin.db.compact(couchDatabase);
 }
 
 export async function triggerDBCompact(req: Request,res: Response) {
