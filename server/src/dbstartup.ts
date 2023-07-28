@@ -1266,7 +1266,7 @@ async function fixCategories() {
                 if (foundCat.listGroupID === list.listGroupID) {
                     continue;
                 } else {
-                    log.error("Category ",cat,"(",foundCat.name,") on list ",list._id,"is not in matching list group ",list.listGroupID);
+                    log.error("Category ",cat,"(",foundCat.name,") on list ",list._id,"is not in matching list group ",list.listGroupID,'...cleaning...');
                     log.info("Checking for category with same name in correct list group...")
                     const goodCat: CategoryDoc[] = currentCategories.filter(curCat => curCat.listGroupID === list.listGroupID && curCat.name.toUpperCase() === foundCat?.name.toUpperCase());
                     if (goodCat.length === 1) {
@@ -1277,12 +1277,12 @@ async function fixCategories() {
                         list.categories=newCategories;
                         const updSuccess = await updateListRecord(list);
                         if (!updSuccess) {return false;}
-                        log.info("Updated list record ",list.name," with ",list.categories);
+                        log.info("Updated list record ",list.name," with revised categories");
                         let itemFixSuccess = changeCategoryOnItems(String(list.listGroupID),cat,String(goodCat[0]._id));
                         if (!itemFixSuccess) {return false;}
                     } else  if (goodCat.length > 1) {
                         log.info("Found multiple matching categories with same name...");
-                        log.info("Shouldn't have happened since duplicates should have been fixed already...");
+                        log.error("Shouldn't have happened since duplicates should have been fixed already...");
                     } else if (goodCat.length === 0) {
                         log.info("Did not find matching category by name, must create new category in list group...");
                         let newCatDoc: CategoryDoc = {
@@ -1307,7 +1307,7 @@ async function fixCategories() {
                         list.categories=newCategories;
                         const updSuccess = await updateListRecord(list);
                         if (!updSuccess) {return false;}
-                        log.info("Updated list record",list.name,"with",list.categories);
+                        log.info("Updated list record",list.name,"with correct categories...");
                         let itemFixSuccess = changeCategoryOnItems(String(list.listGroupID),cat,newCatCreate.id);
                         if (!itemFixSuccess) {return false}
                     }
@@ -1318,8 +1318,8 @@ async function fixCategories() {
     let itemFixSuccess = await fixItemCategories();
     if (!itemFixSuccess) {return false;}
     foundIDDoc.categoriesFixed = true;
-//    try { let dbResp = groceriesDBAsAdmin.insert(foundIDDoc) }
-//    catch(err) {log.error("Error updating DBUUID for fixing of categories:",err); return false;}
+    try { let dbResp = await groceriesDBAsAdmin.insert(foundIDDoc) }
+    catch(err) {log.error("Error updating DBUUID for fixing of categories:",err); return false;}
     return true;
 }
 
@@ -1368,10 +1368,9 @@ async function fixItemNames(): Promise<boolean> {
             catch(err){ log.error("Could not update item",err); return false;}
         }
     }
-
     foundIDDoc.itemNamesFixed = true;
-    // try { let dbResp = groceriesDBAsAdmin.insert(foundIDDoc) }
-    // catch(err) {log.error("Error updating DBUUID for fixing of item names:",err); return false;}
+    try { let dbResp = await groceriesDBAsAdmin.insert(foundIDDoc) }
+    catch(err) {log.error("Error updating DBUUID for fixing of item names:",err); return false;}
     return true;
 }
 
