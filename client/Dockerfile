@@ -15,7 +15,7 @@ RUN npm run build --loglevel=verbose
 FROM nginx:bookworm
 COPY --from=builder /usr/app/build /usr/share/nginx/html
 
-RUN apk add bash
+# RUN apk add bash
 
 WORKDIR /usr/share/nginx/html
 
@@ -27,7 +27,7 @@ RUN chmod +x /usr/share/nginx/html/updateenv.sh
 
 ENV LANDSCAPE=PRODUCTION
 
-CMD ["/bin/ash","-c","/usr/share/nginx/html/updateenv.sh && nginx -g \"daemon off;\""]
+CMD ["/usr/bin/bash","-c","/usr/share/nginx/html/updateenv.sh && nginx -g \"daemon off;\""]
 
 EXPOSE 80
 
