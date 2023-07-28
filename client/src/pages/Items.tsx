@@ -568,6 +568,9 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
           </IonSelect>
          <SyncIndicator addPadding={false}/>
          </IonItem>
+         {/* <IonItem>
+          <ItemsSearch rowSelected={chooseSearchItem} addItemWithoutRow={addNewItemToList}/>
+         </IonItem> */}
         <IonItem key="searchbar" className="item-search">
            <IonIcon icon={searchOutline} />
            <IonInput key="itemsearchbox" id="item-search-box-id" aria-label="" className="ion-no-padding input-search" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="text" enterkeyhint="enter"
