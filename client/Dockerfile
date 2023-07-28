@@ -1,4 +1,4 @@
-FROM node:alpine as builder
+FROM node:bookworm-slim as builder
 
 WORKDIR /usr/app
 
@@ -12,7 +12,7 @@ RUN ls -lat
 
 RUN npm run build --loglevel=verbose
 
-FROM nginx:alpine
+FROM nginx:bookworm
 COPY --from=builder /usr/app/build /usr/share/nginx/html
 
 RUN apk add bash
