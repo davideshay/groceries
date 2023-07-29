@@ -27,10 +27,6 @@ jobs:
        with:
          ref: ${{ steps.vars.outputs.tag }}
 
-     - name: List files
-       run: |
-          ls ../ -larRt    
-
      - name: Set up QEMU
        uses: docker/setup-qemu-action@v2
        with:
