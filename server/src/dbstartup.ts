@@ -8,14 +8,14 @@ import { cloneDeep, isEmpty, isEqual, omit } from "lodash";
 import { v4 as uuidv4} from 'uuid';
 import { uomContent, categories, globalItems, totalDocCount } from "./utilities";
 import { DocumentScope, MangoResponse, MangoQuery, DocumentGetResponse, MaybeDocument, DatabaseGetResponse, DocumentInsertResponse } from "nano";
-import { CategoryDoc, CategoryDocs, GlobalItemDoc, ImageDoc, ImageDocInit, InitSettingsDoc, ItemDoc, ItemDocs, ListDoc, ListGroupDoc, ListGroupDocInit, ListGroupDocs, RecipeDoc, SettingsDoc, UUIDDoc, UomDoc, UserDoc, appVersion, maxAppSupportedSchemaVersion, minimumAccessRefreshSeconds } from "../../client/src/components/DBSchema";
+import { CategoryDoc, CategoryDocs, GlobalItemDoc, ImageDoc, ImageDocInit, InitSettingsDoc, ItemDoc, ItemDocs, ListDoc, ListGroupDoc, ListGroupDocInit, ListGroupDocs, RecipeDoc, SettingsDoc, UUIDDoc, UomDoc, UserDoc, appVersion, maxAppSupportedSchemaVersion, minimumAccessRefreshSeconds } from "./schema/DBSchema";
 import log, { LogLevelDesc } from "loglevel";
 import prefix from "loglevel-plugin-prefix";
 import { timeSpan } from "./timeutils";
 import i18next from 'i18next';
-import { en_translations } from '../../client/src/locales/en/translation';
-import { de_translations } from '../../client/src/locales/de/translation';
-import { es_translations } from '../../client/src/locales/es/translation';
+import { en_translations } from './locales/en/translation';
+import { de_translations } from './locales/de/translation';
+import { es_translations } from './locales/es/translation';
 
 let uomContentVersion = 0;
 const targetUomContentVersion = 5;

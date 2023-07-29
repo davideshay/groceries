@@ -1,7 +1,7 @@
 import { couchUserPrefix, couchStandardRole, accessTokenExpires, refreshTokenExpires } from "./apicalls";
 import { usersDBAsAdmin, groceriesDBAsAdmin } from './dbstartup';
 import { generateJWT } from "./jwt";
-import { UserDoc, FriendDoc, FriendDocs} from '../../client/src/components/DBSchema'
+import { UserDoc, FriendDoc, FriendDocs} from './schema/DBSchema'
 import { DatabaseGetResponse, DocumentScope, MangoQuery, MangoResponse, MaybeDocument } from "nano";
 import { cloneDeep } from "lodash";
 import { NewUserReqBody, UserObj, CustomRequest } from "./datatypes";
