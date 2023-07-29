@@ -31,7 +31,6 @@ const smtpOptions: SMTPTransport.Options= {
     auth: { user: smtpUser, pass: smtpPassword}
 };
 
-import { timeSpan } from './timeutils';
 import nodemailer from 'nodemailer';
 import nanoAdmin, { DocumentListResponse,  MangoResponse, MaybeDocument } from 'nano';
 const nanoAdminOpts = {
@@ -50,7 +49,7 @@ import { usernamePatternValidation, fullnamePatternValidation, getUserDoc, getUs
 import { generateJWT, isValidToken, invalidateToken, JWTMatchesUserDB, TokenReturnType } from './jwt'     
 import { NextFunction, Request, Response } from 'express';
 import { CheckUseEmailReqBody, CheckUserExistsReqBody, CustomRequest, NewUserReqBody, RefreshTokenResponse, checkUserByEmailExistsResponse } from './datatypes';
-import { ConflictDoc, FriendDoc, UserDoc, appVersion } from '../../client/src/components/DBSchema';
+import { ConflictDoc, FriendDoc, UserDoc, appVersion } from './schema/DBSchema';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
 import log, { LogLevelDesc } from 'loglevel';
 
