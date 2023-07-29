@@ -4,7 +4,7 @@ import { usersDBAsAdmin } from './dbstartup';
 import { couchKey, couchStandardRole } from './apicalls';
 import { getUserDoc } from './utilities';
 import { isEqual, isEmpty } from 'lodash';
-import {UserDoc} from './DBSchema'
+import {UserDoc} from '../../client/src/components/DBSchema'
 import { DocumentListResponse } from 'nano';
 import log from 'loglevel';
 

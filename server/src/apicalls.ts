@@ -50,7 +50,7 @@ import { usernamePatternValidation, fullnamePatternValidation, getUserDoc, getUs
 import { generateJWT, isValidToken, invalidateToken, JWTMatchesUserDB, TokenReturnType } from './jwt'     
 import { NextFunction, Request, Response } from 'express';
 import { CheckUseEmailReqBody, CheckUserExistsReqBody, CustomRequest, NewUserReqBody, RefreshTokenResponse, checkUserByEmailExistsResponse } from './datatypes';
-import { ConflictDoc, FriendDoc, UserDoc, appVersion } from './DBSchema';
+import { ConflictDoc, FriendDoc, UserDoc, appVersion } from '../../client/src/components/DBSchema';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
 import log, { LogLevelDesc } from 'loglevel';
 
