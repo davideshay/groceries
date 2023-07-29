@@ -1,1 +1,0 @@
-../../client/src/components/DBSchema.ts
