@@ -30,13 +30,11 @@ services:
       - "8100:80"
     volumes:
     - type: bind
-      source: ./groceries-web-conf
+      source: ./groceries-web.conf
       target: /etc/nginx/conf.d/default.conf
   backend-groceries-server:
     depends_on:
-      couchdb:
-        condition: service_healthy
-        restart: true
+      - couchdb
     container_name: backend-groceries-server
     environment:
       COUCHDB_URL: http://localhost:5984
