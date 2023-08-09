@@ -101,7 +101,7 @@ export async function invalidateToken(username: string, deviceUUID: string, inva
     return true;
 }
 
-export async function expireJWTs() {
+export async function expireJWTs(): Promise<boolean> {
     log.info("Checking for expired JWTs");
     let res: DocumentListResponse<unknown> | null = null;
     try {res = (await usersDBAsAdmin.list({include_docs: true})) ;}
@@ -123,11 +123,12 @@ export async function expireJWTs() {
             if (!isEqual(updateJWTs,userDoc.refreshJWTs)) {
                 userDoc.refreshJWTs=updateJWTs;
                 try { let response=usersDBAsAdmin.insert(userDoc); }
-                catch(err) {log.error("Updating JWTs for user ", userDoc._id, err)}
+                catch(err) {log.error("Updating JWTs for user ", userDoc._id, err); return false;}
                 log.info("Expired JWTs for user ",userDoc._id);
             } 
         }
     }
     log.info("Finished checking for expired JWTs");
+    return true;
 }
 

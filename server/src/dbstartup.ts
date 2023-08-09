@@ -96,8 +96,11 @@ async function createDB() {
 async function createDBIfNotExists() {
     let dbCreated=false
     if (!(await doesDBExist())) {
+        log.info("Database does not exist... Creating....");
         dbCreated=await createDB()
-    }
+        if (!dbCreated) {log.error("Could not create new database");}
+    } else {dbCreated = true;}
+    log.info("Database existence checked/created.");
     return (dbCreated)
 }
 
@@ -106,6 +109,7 @@ function getNested(obj: any, ...args: any) {
   }
 
 async function setDBSecurity() {
+    log.info("Checking Database security settings");
     let errorSettingSecurity = false;
     let config: AxiosRequestConfig = {
         method: 'get',
@@ -116,7 +120,10 @@ async function setDBSecurity() {
     let res: AxiosResponse | null = null;
     try { res = await axios(config)}
     catch(err) { log.error("Setting security:",err); errorSettingSecurity= true }
-    if (errorSettingSecurity || res == null) return (false);
+    if (errorSettingSecurity || res == null) {
+        log.error("Retrieving database security current settings");
+        return false;
+    }
     let newSecurity = cloneDeep(res.data);
     let securityNeedsUpdated = false;
     if ((getNested(res.data.members.roles.length) == 0) || (getNested(res.data.members.roles.length) == undefined)) {
@@ -139,8 +146,9 @@ async function setDBSecurity() {
     }
     if (!securityNeedsUpdated) {
         log.info("Security roles set correctly");
-        return (true);
+        return true;
     }
+    log.info("Security database settings need to be created/updated...");
     let configSec: any = {
         method: 'put',
         url: couchdbInternalUrl+"/"+couchDatabase+"/_security",
@@ -181,7 +189,7 @@ async function updateDBUUIDDoc(dbuuidDoc: UUIDDoc) {
     return dbResp;
 }
 
-async function addDBIdentifier() {
+async function addDBIdentifier(): Promise<boolean> {
     let foundIDDoc = await getLatestDBUUIDDoc();
     if (foundIDDoc == undefined) {
         const newDoc: UUIDDoc = {
@@ -205,7 +213,7 @@ async function addDBIdentifier() {
         if (!foundIDDoc.hasOwnProperty("uomContentVersion")) {
             foundIDDoc.uomContentVersion = 0;
             let dbResp = await updateDBUUIDDoc(foundIDDoc);
-            if (dbResp == null) { log.error("Updating UUID record with uomContentVersion");  } 
+            if (dbResp == null) { log.error("Updating UUID record with uomContentVersion"); return false; } 
             else { log.info("Updated UOM Content Version, was missing.") }
         } else {
             uomContentVersion = foundIDDoc.uomContentVersion;
@@ -215,7 +223,7 @@ async function addDBIdentifier() {
         if (!foundIDDoc.hasOwnProperty("categoriesVersion")) {
             foundIDDoc.categoriesVersion = 0;
             let dbResp = await updateDBUUIDDoc(foundIDDoc);
-            if (dbResp == null) { log.error("Updating UUID record with categoriesVersion: ",dbResp);  } 
+            if (dbResp == null) { log.error("Updating UUID record with categoriesVersion: ",dbResp); return false;  } 
             else { log.info("Updated Categories Content Version, was missing.") }
         } else {
             categoriesVersion = foundIDDoc.categoriesVersion;
@@ -225,7 +233,7 @@ async function addDBIdentifier() {
         if (!foundIDDoc.hasOwnProperty("globalItemVersion")) {
             foundIDDoc.globalItemVersion = 0;
             let dbResp = await updateDBUUIDDoc(foundIDDoc);
-            if (dbResp == null) { log.error("Updating UUID record with globalItemVersion");  } 
+            if (dbResp == null) { log.error("Updating UUID record with globalItemVersion"); return false; } 
             else { log.info("Updated global Item Content Version, was missing."); }
         } else {
             globalItemVersion = foundIDDoc.globalItemVersion;
@@ -235,15 +243,17 @@ async function addDBIdentifier() {
         if (!foundIDDoc.hasOwnProperty("schemaVersion")) {
             foundIDDoc.schemaVersion = 0;
             let dbResp = await updateDBUUIDDoc(foundIDDoc);
-            if (dbResp == null) { log.error("Updating UUID record with schemaVersion") } 
+            if (dbResp == null) { log.error("Updating UUID record with schemaVersion"); return false; } 
             else { log.info("Updated Categories Content Version, was missing.");  }
         } else {
             schemaVersion = foundIDDoc.schemaVersion;
         }
     }
+    return true;
 }
 
-async function createUOMContent() {
+async function createUOMContent(): Promise<boolean> {
+    let contentSuccess = true;
     const dbuomq = {
         selector: { type: { "$eq": "uom" }, listGroupID: "system"},
         limit: await totalDocCount(groceriesDBAsAdmin)
@@ -272,12 +282,12 @@ async function createUOMContent() {
                     log.info("UOM ",uom.name," exists but needs updating...");
                     let dbResp = null;
                     try { dbResp = await groceriesDBAsAdmin.insert(thisDoc)}
-                    catch(err) {log.error("updating existing UOM", "err")}
+                    catch(err) {log.error("updating existing UOM", err); return false;}
                 }
             } else {
                 let dbResp = null;
                 try { dbResp = await groceriesDBAsAdmin.destroy(thisDoc._id!,thisDoc._rev!)}
-                catch(err) {log.error("Deleting / replacing existing UOM: ", err);}
+                catch(err) {log.error("Deleting / replacing existing UOM: ", err); return false;}
             }
         }
         if (needsAdded) {
@@ -286,7 +296,7 @@ async function createUOMContent() {
             uom.updatedAt = (new Date().toISOString());
             let dbResp = null;
             try { dbResp = await groceriesDBAsAdmin.insert(uom);}
-            catch(err) { log.error("Adding uom ",uom.name, " error: ",err);}
+            catch(err) { log.error("Adding uom ",uom.name, " error: ",err); return false;}
         } else if (needsUpdated) {
             log.info("UOM ",uom.name," already exists...updated with new content");
         }
@@ -298,12 +308,14 @@ async function createUOMContent() {
     } else {
         foundIDDoc.uomContentVersion = targetUomContentVersion;
         let dbResp = await updateDBUUIDDoc(foundIDDoc);
-        if (dbResp == null) { log.error("Couldn't update UOM target version.")}
+        if (dbResp == null) { log.error("Couldn't update UOM target version."); return false;}
         else { log.info("Updated UOM Target Version successfully."); }
     }
+    return contentSuccess;
 }
 
-async function createCategoriesContent() {
+async function createCategoriesContent(): Promise<boolean> {
+    let contentSuccess=true;
     const dbcatq = {
         selector: { type: { "$eq": "category" }, listGroupID: "system"},
         limit: await totalDocCount(groceriesDBAsAdmin)
@@ -323,7 +335,7 @@ async function createCategoriesContent() {
             } else {
                 let dbResp = null;
                 try { dbResp = await groceriesDBAsAdmin.destroy(thisDoc._id,thisDoc._rev)}
-                catch(err) { log.error("Deleting category for replacement:", err);}
+                catch(err) { log.error("Deleting category for replacement:", err); return false;}
             }
         }
         if (needsAdded) {
@@ -332,7 +344,7 @@ async function createCategoriesContent() {
             category.updatedAt = (new Date().toISOString());
             let dbResp = null;
             try { dbResp = await groceriesDBAsAdmin.insert(category);}
-            catch(err) { log.error("Adding category ",category.name, " error: ",err);}
+            catch(err) { log.error("Adding category ",category.name, " error: ",err); return false;}
         } 
     };
     log.info("Finished adding categories, updating to category Version:",targetCategoriesVersion);
@@ -344,17 +356,21 @@ async function createCategoriesContent() {
         foundIDDoc.updatedAt = (new Date().toISOString());
         let dbResp = null;
         try { dbResp = await groceriesDBAsAdmin.insert(foundIDDoc)}
-        catch(err) { log.error("Couldn't update Categories target version.")};
+        catch(err) { log.error("Couldn't update Categories target version."); return false;};
         log.info("Updated Categories Target Version successfully.");
     }
+    return contentSuccess;
 }
 
-async function createGlobalItemContent() {
+async function createGlobalItemContent(): Promise<boolean> {
+    let contentSuccess = true;
     const dbglobalq = {
         selector: { type: { "$eq": "globalitem" }},
         limit: await totalDocCount(groceriesDBAsAdmin)
     }
-    let foundGlobalItemDocs: MangoResponse<GlobalItemDoc> =  (await groceriesDBAsAdmin.find(dbglobalq) as MangoResponse<GlobalItemDoc>);
+    let foundGlobalItemDocs: MangoResponse<GlobalItemDoc>;
+    try { foundGlobalItemDocs = (await groceriesDBAsAdmin.find(dbglobalq) as MangoResponse<GlobalItemDoc>) }
+    catch(err) {log.error("Finding current global item docs"); return false;}
     for (let i = 0; i < globalItems.length; i++) {
         let globalItem: GlobalItemDoc = globalItems[i];
         globalItem.type = "globalitem";
@@ -364,7 +380,7 @@ async function createGlobalItemContent() {
             globalItem.updatedAt = (new Date().toISOString());
             let dbResp = null;
             try { dbResp = await groceriesDBAsAdmin.insert(globalItem);}
-            catch(err) { log.error("Adding global item ",globalItem.name, " error: ",err);}
+            catch(err) { log.error("Adding global item ",globalItem.name, " error: ",err); return false;}
         } else {
             log.info("Global Item ",globalItem.name," already exists...comparing values...");
             let needsChanged=false;
@@ -386,7 +402,7 @@ async function createGlobalItemContent() {
                 globalItem.updatedAt = (new Date().toISOString());
                 let dbResp = null;
                 try {dbResp = await groceriesDBAsAdmin.insert(compareDoc)}
-                catch(err) {log.error("Error reverting values on doc "+globalItem.name,"error:",err)}
+                catch(err) {log.error("Error reverting values on doc "+globalItem.name,"error:",err); return false;}
             }
         }
     };
@@ -400,30 +416,35 @@ async function createGlobalItemContent() {
         if (dbResp == null) { log.error("Couldn't update Global Item target version.") }
         else {log.info("Updated Global Item Target Version successfully.");}
     }
+    return contentSuccess;
 }
 
-async function checkAndCreateContent() {
+async function checkAndCreateContent(): Promise<boolean> {
+    let contentSuccess=true;
     log.info("Current UOM Content Version:",uomContentVersion," Target Version:",targetUomContentVersion);
     if (uomContentVersion === targetUomContentVersion) {
         log.info("At current version, skipping UOM Content creation");
     } else {
         log.info("Creating UOM Content...");
-        await createUOMContent();
+        contentSuccess = await createUOMContent();
     }
+    if (!contentSuccess) {return false;}
     log.info("Current Category Content Version:",categoriesVersion," Target Version:", targetCategoriesVersion);
     if (categoriesVersion === targetCategoriesVersion) {
         log.info("At current category version, skipping category creation");
     } else {
         log.info("Creating category Content...");
-        await createCategoriesContent();
+        contentSuccess = await createCategoriesContent();
     }
+    if (!contentSuccess) {return false;}
     log.info("Current Global Item Content Version:",globalItemVersion," Target Version:", targetGlobalItemVersion);
     if (globalItemVersion === targetGlobalItemVersion) {
         log.info("At current Global item version, skipping global item creation");
     } else {
         log.info("Creating Global Item Content...");
-        await createGlobalItemContent();
+        contentSuccess = await createGlobalItemContent();
     }
+    return contentSuccess;
 }
 
 async function addStockedAtIndicatorToSchema() {
@@ -1421,14 +1442,14 @@ async function checkAndUpdateSchema() {
     return schemaUpgradeSuccess;
 }
 
-async function createConflictsView() {
+async function createConflictsView(): Promise<boolean> {
+    let createdOK=true;
     let viewFound=true;
     let existingView: any;
     log.info("Checking/Creating conflicts view...");
     try {existingView = await groceriesDBAsAdmin.get("_design/"+conflictsViewID)}
     catch(err) {viewFound = false;}
     if (!viewFound) {
-        let viewCreated=true;
         let viewDoc = {
             "type": "view",
             "views": { "conflicts_view" : {
@@ -1437,7 +1458,7 @@ async function createConflictsView() {
         try {
             await groceriesDBAsAdmin.insert(viewDoc as any,"_design/"+conflictsViewID)
         }
-        catch(err) {log.error("View not created:",{err}); viewCreated=false;}
+        catch(err) {log.error("View not created:",{err}); createdOK=false;}
         log.info("View created/ updated");
     } else {
         if (existingView && existingView.hasOwnProperty('type')) {
@@ -1445,9 +1466,10 @@ async function createConflictsView() {
         } else {
             existingView.type = "view";
             try {await groceriesDBAsAdmin.insert(existingView)}
-            catch(err) {log.error("Could not update view with type",err)}
+            catch(err) {log.error("Could not update view with type",err); createdOK=false;}
         }
     }
+    return createdOK;
 }
 
 type CouchIndex = {
@@ -1586,10 +1608,14 @@ async function createReplicationFilter(): Promise<boolean> {
 }
 
 
-async function checkAndCreateViews() {
-    await createConflictsView();
-    await createStandardIndexes();
-    await createReplicationFilter();
+async function checkAndCreateViews(): Promise<boolean> {
+    let success=false;
+    success = await createConflictsView();
+    if (!success) {return false};
+    success = await createStandardIndexes();
+    if (!success) {return false};
+    success = await createReplicationFilter();
+    return success;
 }
 
 async function checkJWTKeys() {
@@ -1688,8 +1714,10 @@ export async function dbStartup() {
     log.info("Refresh token expires in ",refreshTokenExpires + "("+refreshTimeSeconds+" seconds)");
     log.info("STATUS: Access token expires in ",accessTokenExpires + "("+accessTimeSeconds+" seconds)");
     log.info("STATUS: User Account Creation is: ",disableAccountCreation ? "DISABLED" : "ENABLED");
-    await createDBIfNotExists();
-    await setDBSecurity();
+    let createSuccess= await createDBIfNotExists();
+    if (!createSuccess) {return false;}
+    let securitySuccess = await setDBSecurity();
+    if (!securitySuccess) {return false}
     try {groceriesDBAsAdmin = groceriesNanoAsAdmin.use(couchDatabase);}
     catch(err) {log.error("Could not open grocery database:",err); return false;}
     try {usersDBAsAdmin = usersNanoAsAdmin.use("_users");}
@@ -1702,26 +1730,35 @@ export async function dbStartup() {
     } else {
         log.info("JWT Key verified to access database")
     }
-    await addDBIdentifier();
+    let addDBIDsuccess = await addDBIdentifier();
+    if (!addDBIDsuccess) {return false;}
     let schemaSuccess=await checkAndUpdateSchema();
-    if (!schemaSuccess) {process.exit()}
-    await checkAndCreateContent();
-    await checkAndCreateViews();
+    if (!schemaSuccess) {return false;}
+    let contentSuccess = await checkAndCreateContent();
+    if (!contentSuccess) {return false;}
+    let viewSuccess = await checkAndCreateViews();
+    if (!viewSuccess) {return false;}
     if (enableScheduling) {
         if(isInteger(String(resolveConflictsFrequencyMinutes))) {
             setInterval(() => {resolveConflicts()},60000*Number(resolveConflictsFrequencyMinutes));
             log.info("Conflict resolution scheduled every ",resolveConflictsFrequencyMinutes, " minutes.")
-            resolveConflicts();
+            let resolveSuccess=resolveConflicts();
+            if (!resolveSuccess) {return false;}
         } else {
             log.error("Invalid environment variable for scheduling conflict resolution -- not started.");
+            return false;
         }
         if (isInteger(String(expireJWTFrequencyMinutes))) {
             setInterval(() => {expireJWTs()},60000*Number(expireJWTFrequencyMinutes));
             log.info("JWT expiry scheduled every ",expireJWTFrequencyMinutes," minutes.");
-            expireJWTs();
+            let jwtSuccess=expireJWTs();
+            if (!jwtSuccess) {return false;}
         } else {
-            log.error("Invalid environment variable for scheduling JWT expiry -- not started")
+            log.error("Invalid environment variable for scheduling JWT expiry -- not started");
+            return false;
         }
     }
+    log.info("Startup process completed")
+    return true;    
 }
 
