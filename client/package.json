@@ -1,6 +1,6 @@
 {
   "name": "specifically-clementines",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "private": true,
   "dependencies": {
     "@awesome-cordova-plugins/chooser-simple-file": "^6.4.0",

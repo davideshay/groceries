@@ -578,18 +578,18 @@ export async function isAvailable(req: Request, res: Response) {
     return(respObj);
 }
 
-export async function resolveConflicts() {
+export async function resolveConflicts(): Promise<boolean> {
     let conflicts;
     try {conflicts = await groceriesDBAsAdmin.view(conflictsViewID,conflictsViewName);}
     catch(err) {log.error("Couldn't access conflicts view:",err); return false;}
     log.info("Resolving all conflicts started...");
     let resolveFailure=false;
-    if (conflicts.rows?.length <= 0) {log.info("No conflicts found"); return};
+    if (conflicts.rows?.length <= 0) {log.info("No conflicts found"); return true;};
     outerloop: for (let i = 0; i < conflicts.rows.length; i++) {
         const conflict = conflicts.rows[i];
         let curWinner: any;
         try { curWinner = await groceriesDBAsAdmin.get(conflict.id, {conflicts: true});}
-        catch(err) { log.error("Error resolving conflicts:",err); resolveFailure = true;}
+        catch(err) { log.error("Error resolving conflicts:",err); resolveFailure = true; return false;}
         if (curWinner == undefined || curWinner == null) { resolveFailure = true;}
         if (resolveFailure) {continue};
         let latestDocTime = curWinner.updatedAt; 
@@ -602,7 +602,7 @@ export async function resolveConflicts() {
             const losingRev = curWinner._conflicts[j];
             let curLoser: any;
             try { curLoser = await groceriesDBAsAdmin.get(conflict.id,{ rev: losingRev})}
-            catch(err) {log.error("Error resolving conflicts:",err); resolveFailure=true;}
+            catch(err) {log.error("Error resolving conflicts:",err); resolveFailure=true; return false;}
             if ( curLoser == null || curLoser == undefined) { resolveFailure = true;}
             if (resolveFailure) {continue outerloop};
             if (curLoser.updatedAt >= latestDocTime) {
@@ -625,12 +625,13 @@ export async function resolveConflicts() {
         }
         let bulkResult;
         try { bulkResult = await groceriesDBAsAdmin.bulk(bulkObj) }
-        catch(err) {log.error("Error updating bulk docs on conflict resolve"); resolveFailure=true;}
+        catch(err) {log.error("Error updating bulk docs on conflict resolve"); resolveFailure=true; return false;}
         log.info("Bulk Update to resolve doc id : ",conflict.id, " succeeded");
         let logResult;
         try { logResult = await groceriesDBAsAdmin.insert(logObj as MaybeDocument)}
-        catch(err) { log.error("ERROR: creating conflict log document failed: ",err)};
+        catch(err) { log.error("ERROR: creating conflict log document failed: ",err); return false;};        
     }
+    return true;
 }
 
 export async function triggerResolveConflicts(req: Request,res: Response) {
