@@ -28,9 +28,11 @@ ion-item.item-search::part(native) {
 ion-item.itemrow-outer {
     max-height: 8em;
     height: min-content;
-    padding: 0.8em;
+    padding-block: 0.8em;
+    padding-inline: 0.8em;
     border-bottom: 1px solid #cacaca;
-    transition:max-height 250ms ease-in-out;
+    transition:max-height 200ms ease-in-out;
+    transition:padding-block 200ms ease-in-out;
 }
 @media (prefers-color-scheme: dark) {
     ion-item.itemrow-outer {
@@ -40,6 +42,7 @@ ion-item.itemrow-outer {
 
 ion-item.itemrow-outer.itemrow-hidden {
     max-height: 0;
+    padding-block: 0;
     pointer-events: none;
     cursor: default;
 }
