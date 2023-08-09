@@ -43,7 +43,10 @@ async function startup() {
         app.post('/triggerdbcompact', authenticateJWT, async (req: Request,res: Response) => res.send(await triggerDBCompact(req, res)));
         app.get('/isavailable', async (req: Request, res: Response) => res.send(await isAvailable(req,res)));
         let startupSuccess = await dbStartup();
-        if (!startupSuccess) {process.exit(1)}
+        if (!startupSuccess) {
+                console.log("---ERROR IN STARTUP--- EXITING BACKEND");
+                process.exit(1)
+        }
         app.listen(groceryAPIPort);
 }
 
