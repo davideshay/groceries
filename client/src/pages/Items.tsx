@@ -3,7 +3,7 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
   IonSelectOption, IonInput, IonPopover, IonAlert,IonMenuButton, useIonToast, 
   useIonAlert, 
   CheckboxChangeEventDetail} from '@ionic/react';
-import { add,chevronUp,documentTextOutline,searchOutline } from 'ionicons/icons';
+import { add,chevronUp,documentTextOutline,ellipseOutline,searchOutline } from 'ionicons/icons';
 import React, { useState, useEffect, useContext, useRef, KeyboardEvent, useCallback } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { cloneDeep } from 'lodash';
@@ -11,9 +11,9 @@ import './Items.css';
 import { useUpdateGenericDocument, useCreateGenericDocument, useItems } from '../components/Usehooks';
 import { GlobalStateContext } from '../components/GlobalState';
 import { AddListOptions, DefaultColor } from '../components/DBSchema';
-import { ItemSearch, SearchState, PageState, ListCombinedRow, HistoryProps, RowType, ItemSearchType, CategoryRows, SearchStateInit} from '../components/DataTypes'
+import { ItemSearch, SearchState, PageState, ListCombinedRow, HistoryProps, RowType, ItemSearchType, CategoryRows, SearchStateInit, ListSelectRow} from '../components/DataTypes'
 import { ItemDoc, ItemDocs, ItemListInit, ItemList, ItemDocInit, CategoryDoc, UomDoc, GlobalItemDocs } from '../components/DBSchema';
-import { getAllSearchRows, getItemRows, filterSearchRows, checkNameInGlobalItems } from '../components/ItemUtilities';
+import { getAllSearchRows, getItemRows, filterSearchRows, checkNameInGlobalItems, useListSelectRows } from '../components/ItemUtilities';
 import SyncIndicator from '../components/SyncIndicator';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
@@ -60,6 +60,11 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   const scrollTopRef = useRef(0);
   const shouldScroll = useRef(false);
   const history = useHistory();
+  const listSelectRows = useListSelectRows();
+
+  useEffect( () => {
+    console.log(listSelectRows);
+  },[listSelectRows]);
 
   const getGroupIDForList = useCallback( (listID: string | null) => {
     if (routeMode === "group") { return pageState.selectedListOrGroupID};
@@ -558,9 +563,12 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         <IonItem id="item-list-selector-id" className="item-list-selector" key="listselectoritem">
         <IonSelect key="listselectorselect" id="select-list-selector-id" className="select-list-selector" label={t("general.items_on") as string} aria-label={t("general.items_on") as string} interface="popover"
               onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListOrGroupID} >
-            {listCombinedRows !== undefined ? listCombinedRows.filter(lcr => (!lcr.hidden && !lcr.listGroupRecipe)).map((listCombinedRow: ListCombinedRow) => (
-                <IonSelectOption disabled={listCombinedRow.rowKey==="G-null"} className={"ion-no-padding "+ (listCombinedRow.rowType === RowType.list ? "indented" : "listgroup")} key={listCombinedRow.listOrGroupID} value={listCombinedRow.listOrGroupID}>
-                  {listCombinedRow.rowName}
+            {listSelectRows !== undefined ? listSelectRows.filter(lcr => (!lcr.hidden && !lcr.listGroupRecipe)).map((listSelectRow: ListSelectRow) => (
+                <IonSelectOption disabled={listSelectRow.rowKey==="G-null"}
+                    className={"ion-no-padding "+ (listSelectRow.rowType === RowType.list ? "indented " : "listgroup ") + (listSelectRow.hasUncheckedItems ? "has-unchecked" : "no-unchecked" )}
+                    key={listSelectRow.listOrGroupID} value={listSelectRow.listOrGroupID}>
+                  <IonIcon color="primary" icon={ellipseOutline}></IonIcon>
+                  {listSelectRow.rowName}
                 </IonSelectOption>
             )) : <></>}
           </IonSelect>

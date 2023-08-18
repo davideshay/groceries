@@ -136,6 +136,12 @@ export enum ItemSearchType {
 
   export type ListCombinedRows = ListCombinedRow[];
 
+  export interface ListSelectRow extends ListCombinedRow {
+    hasUncheckedItems: boolean
+  }
+
+  export type ListSelectRows = ListSelectRow[];
+
   export type PouchResponse = {
     pouchData: {ok?: boolean, id?: string, rev?: string},
     successful: boolean,
