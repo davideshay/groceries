@@ -23,6 +23,7 @@ services:
       - ./dbetclocal:/opt/couchdb/etc/local.d
   frontend-groceries-client:
     container_name: frontend-groceries-client
+    restart: unless-stopped
     environment:
       DEFAULT_API_URL: http://localhost:3333
     image: ghcr.io/davideshay/groceries-client:latest
@@ -33,14 +34,15 @@ services:
       source: ./groceries-web.conf
       target: /etc/nginx/conf.d/default.conf
   backend-groceries-server:
-    depends_on:
-      - couchdb
+#    depends_on:
+#      - couchdb
     container_name: backend-groceries-server
+    restart: unless-stopped
     environment:
       COUCHDB_URL: http://localhost:5984
       COUCHDB_INTERNAL_URL:  http://couchdb:5984
       COUCHDB_DATABASE: "groceries"
-      COUCHDB_HMAC_KEY: "overeager-freedo-wispy-predefine-slug"
+      COUCHDB_HMAC_KEY: "overeager-freedom-wispy-predefine-slug"
       COUCHDB_ADMIN_USER: "admin"
       COUCHDB_ADMIN_PASSWORD: "password"
       GROCERY_URL: "http://localhost:8100"
