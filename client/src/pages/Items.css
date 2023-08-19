@@ -70,6 +70,24 @@ ion-item.item-completed::part(native) {
     color: #808080;
 }
 
+ion-item.has-unchecked {
+    position:relative;
+}
+
+ion-item.has-unchecked::after {
+    display: block;
+    content: "";
+    background: var(--ion-color-primary);
+    height: .75em;
+    width: .75em;
+    border-radius: 50%;
+    position:absolute;
+    top: 50%;
+    right: 0;
+    transform: translate(-100%,-50%);
+    z-index: 2
+}
+
 ion-item-divider.item-category-divider {
     margin-top: .75rem;
     font-size: smaller;

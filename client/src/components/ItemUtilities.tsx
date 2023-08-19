@@ -1,5 +1,6 @@
+import { useContext, useEffect, useState } from 'react';
 import {initItemRow, ItemRow, ItemSearch, ListCombinedRow, ListCombinedRows,
-     ListRow, RowType, ItemSearchType, CategoryRows, CategoryRow, ItemRows, initCategoryRow} from '../components/DataTypes';
+     ListRow, RowType, ItemSearchType, CategoryRows, CategoryRow, ItemRows, initCategoryRow, ListSelectRow, ListSelectRows} from '../components/DataTypes';
 import { GlobalState } from "./GlobalState";
 import { AddListOptions, CategoryColors, DefaultColor, GlobalSettings } from './DBSchema';
 import { UomDoc, ItemDoc, ItemDocs, ItemList, ListDocs, ListDoc, CategoryDoc, GlobalItemDocs } from './DBSchema';
@@ -8,6 +9,8 @@ import { t } from 'i18next';
 import { translatedCategoryName, translatedItemName, translatedUOMShortName } from './translationUtilities';
 import { isEmpty } from 'lodash';
 import { getListGroupIDFromListOrGroupID } from './Utilities';
+import { GlobalDataContext } from './GlobalDataProvider';
+import log from 'loglevel';
 
 export function getGroupIDForList(listID: string, listDocs: ListDocs): string | null {
     let retGID = null;
@@ -370,4 +373,52 @@ export function checkNameInGlobalItems(globalItemDocs: GlobalItemDocs, name: str
         return !nameExists;
   });
   return [nameExists,globalID];
+}
+
+function getListHasUnchecked(listID: string | null,itemDocs: ItemDocs): boolean {
+  return itemDocs.some( (itemDoc)=> {
+    return (itemDoc.lists.some( (itemList) => {
+      if (itemList.listID !== listID) {return false};
+      return (itemList.active && !itemList.completed);
+    }))
+  })
+}
+
+function getListGroupHasUnchecked(listGroupID: string | null, currentListSelectRows: ListSelectRows) {
+  return currentListSelectRows.some( (listSelectRow) => {
+    return (listSelectRow.rowType === RowType.list && 
+            listSelectRow.listGroupID === listGroupID &&
+            listSelectRow.hasUncheckedItems )
+  })
+}
+
+function getListSelectRows(listCombinedRows: ListCombinedRows, itemDocs: ItemDocs): ListSelectRows {
+  let listSelectRows: ListSelectRows = [];
+  for (const listCombinedRow of listCombinedRows) {
+    const newListSelectRow: ListSelectRow = Object.assign({hasUncheckedItems: false},listCombinedRow);
+    if (listCombinedRow.rowType === RowType.list && !listCombinedRow.hidden) {
+      newListSelectRow.hasUncheckedItems = getListHasUnchecked(listCombinedRow.listOrGroupID,itemDocs)
+    }
+    listSelectRows.push(newListSelectRow);
+  }
+  for (const listSelectRow of listSelectRows) {
+    if (listSelectRow.rowType === RowType.listGroup) {
+      listSelectRow.hasUncheckedItems = getListGroupHasUnchecked(listSelectRow.listGroupID,listSelectRows);
+    }  
+  }
+  return listSelectRows;
+}
+
+export function useListSelectRows() {
+  const { listCombinedRows, listRowsLoaded ,itemDocs, itemsLoading } = useContext(GlobalDataContext);
+  const [ listSelectRows, setListSelectRows ] = useState<ListSelectRows>([]);
+
+  useEffect( () => {
+    log.debug({listCombinedRows,listRowsLoaded,itemsLoading});
+    if (listRowsLoaded && !itemsLoading) {
+      setListSelectRows(getListSelectRows(listCombinedRows,itemDocs));
+    }
+  },[listRowsLoaded,itemsLoading,listCombinedRows,itemDocs])
+
+  return listSelectRows;
 }
