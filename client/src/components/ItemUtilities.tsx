@@ -409,7 +409,6 @@ function getListSelectRows(listCombinedRows: ListCombinedRows, itemDocs: ItemDoc
   return listSelectRows;
 }
 
-
 export function useListSelectRows() {
   const { listCombinedRows, listRowsLoaded ,itemDocs, itemsLoading } = useContext(GlobalDataContext);
   const [ listSelectRows, setListSelectRows ] = useState<ListSelectRows>([]);

@@ -567,7 +567,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
                 <IonSelectOption disabled={listSelectRow.rowKey==="G-null"}
                     className={"ion-no-padding "+ (listSelectRow.rowType === RowType.list ? "indented " : "listgroup ") + (listSelectRow.hasUncheckedItems ? "has-unchecked" : "no-unchecked" )}
                     key={listSelectRow.listOrGroupID} value={listSelectRow.listOrGroupID}>
-                  <IonIcon color="primary" icon={ellipseOutline}></IonIcon>
                   {listSelectRow.rowName}
                 </IonSelectOption>
             )) : <></>}
