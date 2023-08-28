@@ -83,7 +83,7 @@ jobs:
      - name: Upload Signed AAB
        uses: actions/upload-artifact@v3
        with:
-        name: clementines.aab
+        name: clementines-signed.aab
         path: client/android/app/build/outputs/bundle/release/app-release-signed.aab
 
         
