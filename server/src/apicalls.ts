@@ -43,7 +43,7 @@ export let groceriesNanoAsAdmin = nanoAdmin(nanoAdminOpts);
 export let usersNanoAsAdmin = nanoAdmin(nanoAdminOpts);
 import { groceriesDBAsAdmin, usersDBAsAdmin, couchLogin } from './dbstartup';
 import _ from 'lodash';
-import { cloneDeep, isEmpty, isEqual, isSafeInteger } from 'lodash';
+import { cloneDeep, isEmpty } from 'lodash';
 import { usernamePatternValidation, fullnamePatternValidation, getUserDoc, getUserByEmailDoc,
     totalDocCount, isNothing, createNewUser, updateUnregisteredFriends, getFriendDocByUUID, UserResponse, CreateResponseType, checkDBAvailable } from './utilities';
 import { generateJWT, isValidToken, invalidateToken, JWTMatchesUserDB, TokenReturnType } from './jwt'     
@@ -51,7 +51,7 @@ import { NextFunction, Request, Response } from 'express';
 import { CheckUseEmailReqBody, CheckUserExistsReqBody, CustomRequest, NewUserReqBody, RefreshTokenResponse, checkUserByEmailExistsResponse } from './datatypes';
 import { ConflictDoc, FriendDoc, UserDoc, appVersion } from './schema/DBSchema';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
-import log, { LogLevelDesc } from 'loglevel';
+import log from 'loglevel';
 
 export function getBooleanFromText(val: string | boolean) {
     if (val === true) {return true}; if (val === false) {return false};

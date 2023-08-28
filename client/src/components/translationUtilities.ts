@@ -12,6 +12,17 @@ export function translatedItemName(id: string | null, name: string,pluralName: s
     }
   }
 
+  export function translatedItemNameWithUOM(id: string | null, name: string,pluralName: string| undefined, count: number=1, uom: string|null = null) {
+    const sysItemKey="system:item";
+    if (uom !== null) {count = 2}
+    if (id === null || id === undefined) { return (count > 1  && pluralName !== undefined && pluralName !== "" ? pluralName : name) };
+    if (id.startsWith(sysItemKey)) {
+      return t("globalitem."+id.substring(sysItemKey.length+1),{count: count});
+    } else {
+      return name
+    }
+  }
+
 export function translatedCategoryName(id: string | undefined | null, name: string) {
     const sysCatKey = "system:cat";
     if (id === undefined || id === null) { return name}

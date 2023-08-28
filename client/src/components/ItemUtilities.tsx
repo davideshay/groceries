@@ -6,7 +6,7 @@ import { AddListOptions, CategoryColors, DefaultColor, GlobalSettings } from './
 import { UomDoc, ItemDoc, ItemDocs, ItemList, ListDocs, ListDoc, CategoryDoc, GlobalItemDocs } from './DBSchema';
 import { cloneDeep } from 'lodash';
 import { t } from 'i18next';
-import { translatedCategoryName, translatedItemName, translatedUOMShortName } from './translationUtilities';
+import { translatedCategoryName, translatedItemName, translatedItemNameWithUOM, translatedUOMShortName } from './translationUtilities';
 import { isEmpty } from 'lodash';
 import { getListGroupIDFromListOrGroupID } from './Utilities';
 import { GlobalDataContext } from './GlobalDataProvider';
@@ -25,13 +25,13 @@ export function getAllSearchRows(allItemDocs: ItemDocs, listID: string | null,li
     allItemDocs.forEach((itemDoc) => {
       let searchRow: ItemSearch = {
         itemID: String(itemDoc._id),
-        itemName: translatedItemName(itemDoc.globalItemID,itemDoc.name,itemDoc.pluralName),
+        itemName: translatedItemName(itemDoc.globalItemID,itemDoc.name,itemDoc.pluralName,2),
         itemType: ItemSearchType.Local,
         globalItemID: itemDoc.globalItemID,
         globalItemCategoryID: null,
         globalItemUOM: null,
         quantity: getMaxKey(itemDoc,"quantity",listDocs),
-        boughtCount: getMaxKey(itemDoc,"quantity",listDocs)
+        boughtCount: getMaxKey(itemDoc,"boughtcount",listDocs)
       }
       let addRowToSearch=true;
       if (listType === RowType.list) {
@@ -150,7 +150,7 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
         itemRow.globalItemID = itemDoc.globalItemID;
         let list = findRightList(itemDoc,listType,listOrGroupID,(listRow as ListCombinedRow), listCombinedRows);
         if (list === undefined) {return itemRows};
-        itemRow.itemName =  translatedItemName(itemDoc.globalItemID,itemDoc.name,itemDoc.pluralName,list.hasOwnProperty("quantity") ? list.quantity : 0);
+        itemRow.itemName =  translatedItemNameWithUOM(itemDoc.globalItemID,itemDoc.name,itemDoc.pluralName,list.hasOwnProperty("quantity") ? list.quantity : 0,list.uomName);
         itemRow.categoryID = list.categoryID;
         if (itemRow.categoryID === null) {
             itemRow.categoryName = t("general.uncategorized");
