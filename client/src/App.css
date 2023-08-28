@@ -1,14 +1,15 @@
-ion-item, ion-list-header, ion-header, ion-toolbar, ion-list, #item-search-box-id  {
+ion-item, ion-list-header, ion-header, ion-toolbar, ion-list, #item-search-box-id, #items-page-header, #items-page-header > ion-item  {
     --background: #fafafa;
     background: #fafafa;
 }
-ion-item:hover, ion-list-header:hover, ion-header:hover, ion-toolbar:hover, #item-search-box-id:hover  {
-        --background: #f0f0f0;
-        background: #f0f0f0;
-        --background-activated: none;
-        --background-focused: none;
-        --background-hover: none;
-    }
+/* ion-item:hover, ion-list-header:hover, ion-header:hover, ion-toolbar:hover, #item-search-box-id:hover  { */
+ion-item:hover, ion-list-header:hover, ion-header:hover, ion-toolbar:hover  {
+    --background: #f0f0f0;
+    background: #f0f0f0;
+    --background-activated: none;
+    --background-focused: none;
+    --background-hover: none;
+}
 ion-item-divider.category-divider {
     --color: var(--ion-text-color);
     text-transform: uppercase;
@@ -20,11 +21,12 @@ ion-list.ion-items-list {
     background: #ffffff;
 }
 @media (prefers-color-scheme: dark) {
-    ion-item, ion-list-header, ion-header, ion-toolbar, ion-list, #item-search-box-id  {
+    ion-item, ion-list-header, ion-header, ion-toolbar, ion-list, #item-search-box-id, #items-page-header, #items-page-header > ion-item  {
         --background: #202020;
         background: #202020;
     }
-    ion-item:hover, ion-list-header:hover, ion-header:hover, ion-toolbar:hover, #item-search-box-id:hover  {
+/*     ion-item:hover, ion-list-header:hover, ion-header:hover, ion-toolbar:hover, #item-search-box-id:hover  { */
+    ion-item:hover, ion-list-header:hover, ion-header:hover, ion-toolbar:hover {
         --background: #2d2d2d;
         background: #2d2d2d;
         --background-activated: none;

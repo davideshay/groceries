@@ -558,7 +558,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   )
 
   let headerElem=(
-    <IonHeader key="pageheader"><IonToolbar key="pagetoolbar"><IonButtons key="headerbuttons" slot="start"><IonMenuButton key="headermenubutton" className={"ion-no-padding small-menu-button"} /></IonButtons>
+    <IonHeader key="pageheader"><IonToolbar key="pagetoolbar" id="items-page-header"><IonButtons key="headerbuttons" slot="start"><IonMenuButton key="headermenubutton" className={"ion-no-padding small-menu-button"} /></IonButtons>
     <IonTitle key="pagetitle" className="ion-no-padding item-outer"></IonTitle>
         <IonItem id="item-list-selector-id" className="item-list-selector" key="listselectoritem">
         <IonSelect key="listselectorselect" id="select-list-selector-id" className="select-list-selector" label={t("general.items_on") as string} aria-label={t("general.items_on") as string} interface="popover"
