@@ -39,6 +39,7 @@ jobs:
      - name: Create env file
        run: |
           echo "DEFAULT_API_URL=${{ secrets.DEFAULT_API_URL }}" > .env
+          echo "LOG_LEVEL=debug" >> .env
      - name: Build Ionic app
        run: ionic build
      - name: Android Copy
