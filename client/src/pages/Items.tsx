@@ -62,10 +62,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   const history = useHistory();
   const listSelectRows = useListSelectRows();
 
-  useEffect( () => {
-    console.log(listSelectRows);
-  },[listSelectRows]);
-
   const getGroupIDForList = useCallback( (listID: string | null) => {
     if (routeMode === "group") { return pageState.selectedListOrGroupID};
     let retGID = null;

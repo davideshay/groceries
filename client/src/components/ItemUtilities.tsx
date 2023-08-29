@@ -10,7 +10,6 @@ import { translatedCategoryName, translatedItemName, translatedItemNameWithUOM, 
 import { isEmpty } from 'lodash';
 import { getListGroupIDFromListOrGroupID } from './Utilities';
 import { GlobalDataContext } from './GlobalDataProvider';
-import log from 'loglevel';
 
 export function getGroupIDForList(listID: string, listDocs: ListDocs): string | null {
     let retGID = null;
@@ -414,7 +413,6 @@ export function useListSelectRows() {
   const [ listSelectRows, setListSelectRows ] = useState<ListSelectRows>([]);
 
   useEffect( () => {
-    log.debug({listCombinedRows,listRowsLoaded,itemsLoading});
     if (listRowsLoaded && !itemsLoading) {
       setListSelectRows(getListSelectRows(listCombinedRows,itemDocs));
     }

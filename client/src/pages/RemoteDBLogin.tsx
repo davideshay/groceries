@@ -1,6 +1,6 @@
 import { IonContent, IonPage, IonButton, IonList, IonInput, IonItem,
   IonText, useIonAlert, IonIcon, useIonLoading, AlertOptions } from '@ionic/react';
-import { useState, useEffect, useContext, useCallback } from 'react';
+import { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { eye, eyeOff } from 'ionicons/icons';
 import { Capacitor, CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
 import { usePouch} from 'use-pouchdb';
@@ -101,8 +101,9 @@ states to support:
 const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     const db=usePouch();
     const [remoteState,setRemoteState]=useState<RemoteState>(initRemoteState);
-    const [formState,setFormState]=useState<FormState>(initFormState);;
-    const [presentAlert] = useIonAlert();
+    const [formState,setFormState]=useState<FormState>(initFormState);
+    const showingVersionAlert = useRef(false);
+    const [presentAlert, dismissAlert] = useIonAlert();
     const { remoteDBState, remoteDBCreds, setRemoteDBState, setRemoteDBCreds,stopSyncAndCloseRemote,
       assignDB, setDBCredsValue, setLoginType, attemptFullLogin} = useContext(RemoteDBStateContext);
     const { dataReloadStatus, waitForReload, listRows, listRowsLoaded, listsLoading, listCombinedRows } = useContext(GlobalDataContext);
@@ -159,72 +160,84 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       checkAPIServerAvailable(remoteDBCreds.apiServerURL);
     },[remoteDBCreds.apiServerURL,setRemoteDBState,remoteDBCreds.refreshJWT,remoteDBCreds.dbUsername, remoteDBCreds.couchBaseURL, remoteDBState.loggedIn])
 
-    const continueDifferentVersion = useCallback( () => {
-      setRemoteDBState(prevState => ({...prevState,dbUUIDAction: DBUUIDAction.none,ignoreAppVersionWarning: true}))
-    },[setRemoteDBState])
-
+    const continueDifferentVersion = useCallback( async () => {
+      log.debug("Dismissing alert....");
+      await dismissAlert();
+      setRemoteDBState(prevState => ({...prevState,dbUUIDAction: DBUUIDAction.none,ignoreAppVersionWarning: true}));
+      await assignDB(remoteDBState.accessJWT);
+    },[setRemoteDBState,dismissAlert,assignDB,remoteDBState.accessJWT])
+  
     // effect for dbuuidaction not none
     useEffect( () => {
       async function presentAndExit(alertObject: AlertOptions) {
         await presentAlert(alertObject);
         setRemoteDBState(prevState =>({...prevState,dbUUIDAction: DBUUIDAction.none}))
       };
+      async function processDBUUIDAction() {
+        if (remoteDBState.dbUUIDAction !== DBUUIDAction.none) {
+          if (remoteDBState.dbUUIDAction === DBUUIDAction.warning_app_version_mismatch) {
+            if (!showingVersionAlert.current) {
+              showingVersionAlert.current = true;
+              log.error("Mismatched app versions on client and server");
+              presentAlert({
+                header: t("error.warning"),
+                subHeader: t("error.different_server_local_app_versions"),
+                buttons: [ { text: t("general.cancel"), role: "Cancel" ,
+                            handler: () => {exitApp()}},
+                            { text: t("general.continue_ignore"), role: "confirm",
+                            handler: async () => {await dismissAlert(); continueDifferentVersion();}}]
+              });
+      
+              log.debug("after Ask continue...");
+              return;
+            }
+          }
+          if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_app_schema_mismatch) {
+            log.error("Schema too new, not supported with this app version. Upgrade.");
+            presentAndExit({
+              header: t("error.error") as string,
+              message: t("error.app_not_support_newer_schema") as string,
+              buttons: [{text:t("general.ok"),handler: () => exitApp()}]
+            });
+            return;
+          }
+          if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_local_remote_schema_mismatch) {
+            log.error("Local/Remote schema mismatch. Must destroy local Databse.");
+            presentAlert( {
+              header: t("error.warning"),
+              message: t("error.different_database_schema"),
+              buttons: [
+                {text: t("general.delete_exit"),handler: () => destroyAndExit()},
+                {text: t("general.cancel_exit"),handler: () => exitApp()}
+                ]
+            })
+            return;
+          }
+          if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_no_uuid_on_server) {
+            log.error("No database UUID defined in server database. Cannot continue");
+            presentAndExit({
+              header: t("error.error") as string,
+              message: t("error.server_no_unique_id") as string,
+              buttons: [
+                {text: t("general.ok"),handler: () => exitApp()}]
+            });
+            return;
+          } else if (remoteDBState.dbUUIDAction === DBUUIDAction.destroy_needed) {
+            presentAlert( {
+              header: t("error.warning"),
+              message: t("error.different_database_unique_id"),
+              buttons: [
+                {text: t("general.delete_exit"),handler: () => destroyAndExit()},
+                {text: t("general.cancel_exit"),handler: () => exitApp()}
+                ]
+            })
+          }  
+        }
+      };
       dismiss();
-      if (remoteDBState.dbUUIDAction !== DBUUIDAction.none) {
-        if (remoteDBState.dbUUIDAction === DBUUIDAction.warning_app_version_mismatch) {
-          log.error("Mismatched app versions on client and server");
-          presentAlert( {
-            header: t("error.warning"),
-            message: t("error.different_server_local_app_versions"),
-            buttons: [
-              {text: t("general.exit"), handler: () => exitApp()},
-              {text: t("general.continue_ignore"), handler: () => continueDifferentVersion()}
-            ]
-          })
-          return;
-        }
-        if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_app_schema_mismatch) {
-          log.error("Schema too new, not supported with this app version. Upgrade.");
-          presentAndExit({
-            header: t("error.error") as string,
-            message: t("error.app_not_support_newer_schema") as string,
-            buttons: [{text:t("general.ok"),handler: () => exitApp()}]
-          });
-          return;
-        }
-        if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_local_remote_schema_mismatch) {
-          log.error("Local/Remote schema mismatch. Must destroy local Databse.");
-          presentAlert( {
-            header: t("error.warning"),
-            message: t("error.different_database_schema"),
-            buttons: [
-              {text: t("general.delete_exit"),handler: () => destroyAndExit()},
-              {text: t("general.cancel_exit"),handler: () => exitApp()}
-              ]
-          })
-          return;
-        }
-        if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_no_uuid_on_server) {
-          log.error("No database UUID defined in server database. Cannot continue");
-          presentAndExit({
-            header: t("error.error") as string,
-            message: t("error.server_no_unique_id") as string,
-            buttons: [
-              {text: t("general.ok"),handler: () => exitApp()}]
-          });
-          return;
-        } else if (remoteDBState.dbUUIDAction === DBUUIDAction.destroy_needed) {
-          presentAlert( {
-            header: t("error.warning"),
-            message: t("error.different_database_unique_id"),
-            buttons: [
-              {text: t("general.delete_exit"),handler: () => destroyAndExit()},
-              {text: t("general.cancel_exit"),handler: () => exitApp()}
-              ]
-          })
-        }
+      processDBUUIDAction();
       }
-    },[remoteDBState.dbUUIDAction,destroyAndExit,dismiss,exitApp,presentAlert,setRemoteDBState,t,continueDifferentVersion])
+    ,[remoteDBState.dbUUIDAction,destroyAndExit,dismiss,dismissAlert,exitApp,presentAlert,setRemoteDBState,t,continueDifferentVersion])
 
     useEffect( () => {
       if (remoteDBState.initialSyncComplete) {
@@ -234,7 +247,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
 
     useEffect( () => {
       async function doNav() {
-        await dismiss()
+        await dismiss();
         navigateToFirstListID(history,listRows,listCombinedRows , globalState.settings.savedListID);
         setRemoteDBState(prevState =>({...prevState,initialNavComplete: true}));
       }
