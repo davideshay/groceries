@@ -1,6 +1,6 @@
 import { IonContent, IonPage, IonButton, IonList, IonInput, IonItem,
   IonText, useIonAlert, IonIcon, useIonLoading, AlertOptions } from '@ionic/react';
-import { useState, useEffect, useContext, useCallback } from 'react';
+import { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { eye, eyeOff } from 'ionicons/icons';
 import { Capacitor, CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
 import { usePouch} from 'use-pouchdb';
@@ -101,7 +101,8 @@ states to support:
 const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     const db=usePouch();
     const [remoteState,setRemoteState]=useState<RemoteState>(initRemoteState);
-    const [formState,setFormState]=useState<FormState>(initFormState);;
+    const [formState,setFormState]=useState<FormState>(initFormState);
+    const showingVersionAlert = useRef(false);
     const [presentAlert, dismissAlert] = useIonAlert();
     const { remoteDBState, remoteDBCreds, setRemoteDBState, setRemoteDBCreds,stopSyncAndCloseRemote,
       assignDB, setDBCredsValue, setLoginType, attemptFullLogin} = useContext(RemoteDBStateContext);
@@ -165,22 +166,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       setRemoteDBState(prevState => ({...prevState,dbUUIDAction: DBUUIDAction.none,ignoreAppVersionWarning: true}));
       await assignDB(remoteDBState.accessJWT);
     },[setRemoteDBState,dismissAlert,assignDB,remoteDBState.accessJWT])
-
-    const askContinueDifferentVersion = useCallback( (): Promise<boolean> => {
-      return new Promise((resolve,reject) => {
-        presentAlert({
-          header: t("error.warning"),
-          subHeader: t("error.different_server_local_app_versions"),
-          buttons: [ { text: t("general.cancel"), role: "Cancel" ,
-                      handler: () => {exitApp(); resolve(false)}},
-                      { text: t("general.continue_ignore"), role: "confirm",
-                      handler: () => {dismissAlert(); continueDifferentVersion(); resolve(true);}}]
-        });
-        })
-    },[dismissAlert,presentAlert,t,continueDifferentVersion])    
   
-
-
     // effect for dbuuidaction not none
     useEffect( () => {
       async function presentAndExit(alertObject: AlertOptions) {
@@ -190,10 +176,21 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       async function processDBUUIDAction() {
         if (remoteDBState.dbUUIDAction !== DBUUIDAction.none) {
           if (remoteDBState.dbUUIDAction === DBUUIDAction.warning_app_version_mismatch) {
-            log.error("Mismatched app versions on client and server");
-            await askContinueDifferentVersion();
-            log.debug("after Ask continue...");
-            return;
+            if (!showingVersionAlert.current) {
+              showingVersionAlert.current = true;
+              log.error("Mismatched app versions on client and server");
+              presentAlert({
+                header: t("error.warning"),
+                subHeader: t("error.different_server_local_app_versions"),
+                buttons: [ { text: t("general.cancel"), role: "Cancel" ,
+                            handler: () => {exitApp()}},
+                            { text: t("general.continue_ignore"), role: "confirm",
+                            handler: async () => {await dismissAlert(); continueDifferentVersion();}}]
+              });
+      
+              log.debug("after Ask continue...");
+              return;
+            }
           }
           if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_app_schema_mismatch) {
             log.error("Schema too new, not supported with this app version. Upgrade.");
