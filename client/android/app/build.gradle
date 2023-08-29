@@ -7,7 +7,9 @@ android {
         applicationId "net.shaytech.groceries"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 107
+        // version code -- if version is xx.yy.zz, code is xxyyzz00 -> xxyyzz99
+        //     so "1.0.7" is 01.00.07.00 -> 1000700
+        versionCode 1000700
         versionName "1.0.7"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
