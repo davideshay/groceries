@@ -82,7 +82,7 @@ export const LaunchRequestHandler : RequestHandler = {
           couchUserInfo = await getCouchUserInfo(userInfo.email);
         }
         let dynamicDirective: any = null;
-        if (!userInfo.success || !couchUserInfo.success) {
+        if (!(userInfo.success && couchUserInfo.success)) {
           speechText = "Welcome to Specifically Clementines. An error was encountered finding the user account."
         } else {
           speechText = 'Welcome to Specifically Clementines! '+userInfo.name+',ask me about shopping lists!';
@@ -102,10 +102,16 @@ export const LaunchRequestHandler : RequestHandler = {
           sessionAttributes.settings = userSettings.settings;
           attributesManager.setSessionAttributes(sessionAttributes);
         }
-        return handlerInput.responseBuilder
+        if (dynamicDirective === null) {
+          return handlerInput.responseBuilder
+          .speak(speechText)
+          .getResponse();
+        } else {
+          return handlerInput.responseBuilder
           .speak(speechText)
           .addDirective(dynamicDirective)
           .getResponse();
+        }
       }    
     },
   };  
