@@ -1556,6 +1556,7 @@ async function createReplicationFilter(): Promise<boolean> {
                 "return (doc.friendID1 === req.query.username || doc.friendID2 === req.query.username);" +    
             "case 'globalitem':" +
             "case 'dbuuid':" +
+            "case 'conflictlog':" +
             "case 'trigger':" +
                 "return (true);" +
                 "break;" +
