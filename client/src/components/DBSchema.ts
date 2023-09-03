@@ -15,7 +15,8 @@ export interface UUIDDoc {
   categoriesVersion: number,
   globalItemVersion: number,
   categoriesFixed?: boolean,
-  itemNamesFixed?: boolean
+  itemNamesFixed?: boolean,
+  alexaDefaultFixed?: boolean
 }
 
 export interface CategoryDoc {
@@ -195,7 +196,7 @@ export interface ListGroupDoc {
   name: string,
   recipe: boolean,
   default?: boolean,
-  alexaDefault: boolean,
+  alexaDefault?: boolean,
   listGroupOwner: string,
   sharedWith: string[];
   updatedAt: string
@@ -315,7 +316,8 @@ export type GlobalSettings = {
   completeFromAllLists: boolean,
   includeGlobalInSearch: boolean,
   daysOfConflictLog: Number,
-  savedListID?: string | undefined | null
+  savedListID?: string | undefined | null,
+  alexaDefaultListGroup?: string | undefined | null
 }
 
 export const InitSettings: GlobalSettings = {
@@ -324,7 +326,8 @@ export const InitSettings: GlobalSettings = {
   completeFromAllLists: true,
   includeGlobalInSearch: true,
   daysOfConflictLog: 2,
-  savedListID: null
+  savedListID: null,
+  alexaDefaultListGroup: null
 }
 
 export type CategoryColors = {

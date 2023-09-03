@@ -20,10 +20,12 @@ import { useTranslation } from 'react-i18next';
 import log from 'loglevel';
 import { updateTriggerDoc } from '../components/RemoteUtilities';
 import { usePouch } from 'use-pouchdb';
+import { GlobalStateContext } from '../components/GlobalState';
 
 interface PageState {
   needInitListGroupDoc: boolean,
   listGroupDoc: ListGroupDoc,
+  alexaDefault: boolean,
   selectedListGroupID: string | null,
   changesMade: Boolean,
   usersLoaded: boolean,
@@ -44,6 +46,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   const [pageState,setPageState] = useState<PageState>({
     needInitListGroupDoc: (mode === "new") ? true : false,
     listGroupDoc: ListGroupDocInit,
+    alexaDefault: false,
     selectedListGroupID: (routeID === "<new>" ? null : routeID),
     changesMade: false,
     usersLoaded: false,
@@ -60,6 +63,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   const [ presentToast ] = useIonToast();
   const {useFriendState, friendRows} = useFriends(String(remoteDBCreds.dbUsername));
   const { listCombinedRows, listRows, listRowsLoaded, listError } = useContext(GlobalDataContext);
+  const { globalState, updateSettingKey } = useContext(GlobalStateContext);
   const { loading: listGroupLoading, doc: listGroupDoc, dbError: listGroupError } = useGetOneDoc(pageState.selectedListGroupID);
   const [presentAlert,dismissAlert] = useIonAlert();
   const screenLoading = useRef(true);
@@ -69,7 +73,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   useEffect( () => {
     setPageState(prevState => ({...prevState,
-      selectedListGroupID: (routeID === "<new>" ? null : routeID)}))
+      selectedListGroupID: (routeID === "<new>" ? null : routeID)}));
   },[routeID])
 
   function changeListUpdateState(listGroupID: string) {
@@ -104,8 +108,9 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
       else if (mode !== "new") {
         sharedWith = (listGroupDoc as ListGroupDoc).sharedWith;
         let newDoc: ListGroupDoc = cloneDeep(listGroupDoc);
+        let alexaDefault= (newDoc._id === globalState.settings.alexaDefaultListGroup)
         if(!newDoc.hasOwnProperty("alexaDefault")) {newDoc.alexaDefault = false;}
-        setPageState(prevState => ({...prevState,listGroupDoc: newDoc, changesMade: false}))
+        setPageState(prevState => ({...prevState,listGroupDoc: newDoc, alexaDefault: alexaDefault, changesMade: false}))
       }
       let userIDList: UserIDList = cloneDeep(initUserIDList);
       sharedWith.forEach((user: string) => {
@@ -113,7 +118,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
       });
       getUI(userIDList);
     }
-  },[listGroupLoading, listGroupDoc, listRowsLoaded, mode, useFriendState,friendRows,pageState.selectedListGroupID, remoteDBState.accessJWT, pageState.needInitListGroupDoc,remoteDBCreds.apiServerURL,remoteDBCreds.dbUsername,remoteDBState.dbServerAvailable,setRemoteDBState]);
+  },[listGroupLoading, listGroupDoc, listRowsLoaded, mode, useFriendState,friendRows,pageState.selectedListGroupID, globalState.settings.alexaDefaultListGroup,remoteDBState.accessJWT, pageState.needInitListGroupDoc,remoteDBCreds.apiServerURL,remoteDBCreds.dbUsername,remoteDBState.dbServerAvailable,setRemoteDBState]);
 
   if (listError || listGroupError  || useFriendState === UseFriendState.error) {
     <ErrorPage errorText={t('error.loading_list_group') as string}></ErrorPage>
@@ -125,14 +130,6 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   };
   
   screenLoading.current=false;
-
-  function showAlexaAlert(alexaDefaultCount: number): Promise<boolean> {
-    return new Promise((resolve,reject) => {
-      presentAlert(t("error.need_one_alexa_default",{count: alexaDefaultCount}),
-      [{text:t("general.continue_ignore"),role:"confirm",handler:() => resolve(true)},
-      {text:t("general.cancel"),role:"cancel", handler:() => {setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("general.listgroup_not_updated"), hasError: true}})); resolve(false)}}])
-    })
-  }
 
   async function updateThisItem() {
     setFormErrors(prevState=>(FormErrorInit))
@@ -148,12 +145,6 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.listgroup_already_exists"), hasError: true}}));
       return false;
     }
-    let otherAlexaDefaultCount = listCombinedRows.filter(lcr => lcr.rowType === RowType.listGroup && lcr.listGroupID!==pageState.listGroupDoc._id && lcr.listGroupAlexaDefault && !lcr.listGroupRecipe).length;
-    let alexaDefaultCount = otherAlexaDefaultCount + (pageState.listGroupDoc.alexaDefault ? 1 : 0)
-    if (alexaDefaultCount !== 1) {
-      if (!await showAlexaAlert(alexaDefaultCount)) {return false;}
-    }
-
     let response: PouchResponse;
     if (mode === "new") {
       response = await createListGroup(pageState.listGroupDoc);
@@ -162,6 +153,13 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
       response = await updateListGroupWhole(pageState.listGroupDoc);
     }
     if (response.successful) {
+      if (pageState.alexaDefault) {
+        updateSettingKey("alexaDefaultListGroup",String(response.pouchData.id));
+      } else {
+        if (globalState.settings.alexaDefaultListGroup === response.pouchData.id) {
+          updateSettingKey("alexaDefaultListGroup",null);
+        }
+      }
       log.debug("List Group updated, about to restart sync...");
       await updateTriggerDoc(db as PouchDB.Database,{triggerUpdate: "listgroup"})
       restartSync()
@@ -201,9 +199,9 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function updateAlexaDefault(updDefault: boolean) {
-    if (pageState.listGroupDoc.alexaDefault !== updDefault) {
+    if (pageState.alexaDefault !== updDefault) {
       setPageState(prevState => (
-        {...prevState, changesMade: true, listGroupDoc: {...prevState.listGroupDoc, alexaDefault: updDefault}}));
+        {...prevState, changesMade: true, alexaDefault: updDefault}));
     }
   }
 
@@ -282,6 +280,9 @@ async function deleteListGroupFromDB() {
   if (response.successful) {
     let delResponse = await deleteListGroup(pageState.listGroupDoc);
     if (delResponse.successful) {
+      if (globalState.settings.alexaDefaultListGroup === pageState.listGroupDoc._id) {
+        updateSettingKey("alexaDefaultListGroup",null);
+      }
       restartSync()
       setPageState(prevState => ({...prevState,deletingDoc: false}));
       dismissAlert();
@@ -409,7 +410,7 @@ function deletePrompt() {
             </IonItem>
             {pageState.listGroupDoc.recipe ? <></> :
               <IonItem key="alexa">
-                <IonCheckbox slot="start" labelPlacement="end" checked={pageState.listGroupDoc.alexaDefault}
+                <IonCheckbox slot="start" labelPlacement="end" checked={pageState.alexaDefault}
                   onIonChange={(e) => updateAlexaDefault(e.detail.checked)}>
                 <IonLabel>{t("general.alexa_default")}</IonLabel>
                 </IonCheckbox>
