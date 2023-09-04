@@ -325,7 +325,6 @@ export function getDefaultListGroup(listGroups: SimpleListGroups) {
 }
 
 export function getSelectedSlotInfo(slot: Slot) : [ SlotType,  SlotInfo ]{
-    log.debug("got slot:",slot);
     let slotInfo: SlotInfo = {id: null, name: ""};
     if (slot === null) {return [SlotType.None,slotInfo]};
     if (isEmpty(slot.resolutions?.resolutionsPerAuthority)) {
@@ -536,11 +535,9 @@ export async function addItemToList({ requestAttributes, itemSlot, itemSlotValue
         return addItemResponse;
     }
     let quantity = 1;
-    log.debug("slot type:",quantitySlotType,"hasvalueprop",selectedQuantity.hasOwnProperty("value"),"isinteger",Number.isInteger(Number(selectedQuantity.value)));
     if (quantitySlotType === SlotType.Simple && selectedQuantity.hasOwnProperty("value") && Number.isInteger(Number(selectedQuantity.value))) {
         quantity = Number(selectedQuantity.value)
     }
-    log.debug("Quantity to add:",quantity);
     if (itemSlotType === SlotType.Static) {
        addItemResponse = await addGlobalItemToList(String(selectedItem.id),quantity,listGroupID,listID,listMode,lists,listGroups,listSpecified,listGroupSpecified,settings);
     } else if (itemSlotType === SlotType.Dynamic) {
