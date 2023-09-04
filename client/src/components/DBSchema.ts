@@ -1,5 +1,5 @@
-export const maxAppSupportedSchemaVersion = 5;
-export const appVersion = "1.0.8";
+export const maxAppSupportedSchemaVersion = 6;
+export const appVersion = "1.1.0";
 export const minimumAccessRefreshSeconds = 300;
 export const DefaultColor = "#ffffff";
 
@@ -40,6 +40,7 @@ export interface ConflictDoc {
   _rev?: string,
   type: string,
   docType: string,
+  impactedUsers: string[],
   winner: any,
   losers: any[],
   updatedAt: string
