@@ -10,10 +10,6 @@ RUN NODE_ENV=production npm ci --include=dev
 
 COPY client/. ./
 
-RUN ls -lat
-RUN echo "DB Schema"
-RUN cat /usr/app/src/components/DBSchema.ts
-
 RUN npm run build
 
 FROM nginx:bookworm
