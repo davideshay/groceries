@@ -238,9 +238,18 @@ export async function getListGroups(username: string) {
     try {foundListGroupDocs =  (await todosDBAsAdmin.find(lgq) as MangoResponse<ListGroupDoc>);}
     catch(err) {log.error("Could not find listgroup documents:",err);
                 return []};
+    const settingsq = {
+        selector: { type: "settings", "username": username },
+        limit: await totalDocCount(todosDBAsAdmin)
+    }
+    let foundSettingsDocs: MangoResponse<SettingsDoc> | null = null;
+    try {foundSettingsDocs = (await todosDBAsAdmin.find(settingsq) as MangoResponse<SettingsDoc>);}
+    catch(err) {log.error("Could not find settings documents:",err); return [];}
+    if (foundSettingsDocs.docs.length !== 1) {log.error("Too many settings documents found"); return []}
+
     let simpleListGroups: SimpleListGroups = [];
     foundListGroupDocs.docs.forEach(lg => {
-        let simpleListGroup: SimpleListGroup = { _id: lg._id, name: lg.name, default: lg.alexaDefault}
+        let simpleListGroup: SimpleListGroup = { _id: lg._id, name: lg.name, default: lg._id === foundSettingsDocs?.docs[0].settings.alexaDefaultListGroup}
         simpleListGroups.push(simpleListGroup);
     })
     return simpleListGroups;
