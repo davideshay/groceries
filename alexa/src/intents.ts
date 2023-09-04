@@ -235,8 +235,9 @@ export const AddItemToListIntentHandler: RequestHandler = {
     }
     let listSlot = getSlot(requestEnvelope,"list");
     let listGroupSlot = getSlot(requestEnvelope,"listgroup");
+    let quantitySlot = getSlot(requestEnvelope,"quantity");
     let accessToken = getApiAccessToken(requestEnvelope);
-    let itemAddResults = await addItemToList({ requestAttributes, itemSlot,itemSlotValue, listSlot,listGroupSlot,defaultListGroupID: sessionAttributes.currentListGroupID,
+    let itemAddResults = await addItemToList({ requestAttributes, itemSlot,itemSlotValue, listSlot,listGroupSlot,quantitySlot,defaultListGroupID: sessionAttributes.currentListGroupID,
         defaultListID: sessionAttributes.currentListID, listMode: sessionAttributes.listMode,
         lists:sessionAttributes.lists, listGroups: sessionAttributes.listGroups,
         settings: sessionAttributes.settings,accessToken});
