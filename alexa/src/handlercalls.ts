@@ -229,7 +229,7 @@ function addCommasAndAnd(list: string[]) {
     return `${list.slice(0, - 1).join(', ')}, and ${list[list.length - 1]}`;
   };
 
-export async function getListGroups(username: string) {
+export async function getListGroups(username: string): Promise<SimpleListGroups> {
     const lgq = {
         selector: { type: "listgroup", 
             "$or": [{"listGroupOwner": username}, {"sharedWith": {$elemMatch: {"$eq": username}} }]},
@@ -250,8 +250,10 @@ export async function getListGroups(username: string) {
 
     let simpleListGroups: SimpleListGroups = [];
     foundListGroupDocs.docs.forEach(lg => {
-        let simpleListGroup: SimpleListGroup = { _id: lg._id, name: lg.name, default: lg._id === foundSettingsDocs?.docs[0].settings.alexaDefaultListGroup}
-        simpleListGroups.push(simpleListGroup);
+        if (!lg.recipe) {
+            let simpleListGroup: SimpleListGroup = { _id: lg._id, name: lg.name, default: lg._id === foundSettingsDocs?.docs[0].settings.alexaDefaultListGroup}
+            simpleListGroups.push(simpleListGroup);
+        }
     })
     return simpleListGroups;
 }
