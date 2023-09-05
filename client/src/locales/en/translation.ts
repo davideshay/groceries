@@ -311,9 +311,12 @@ export const en_translations =
         "delete_listgroup_detail": "You cannot delete the last remaining list group where you are owner.",
         "loading_listgroups": "Error Loading List Groups Information... Restart.",
         "app_not_support_newer_schema":"This application does not support a detected newer version of the schema. Please upgrade the app and try again.",
+        "app_not_support_newer_schema_short":"App does not support database schema",
         "warning": "Warning",
         "different_database_schema":"The Database schema on the server is not the same as the local copy. This is normal when there is a significant application update happening. You should delete your local copy in order to continue. App will exit.",
+        "different_database_schema_short": "Different database schemes on local/remote",
         "server_no_unique_id":"The server is incorrectly configured with no unique ID, or is not accessible from the client. Please ensure server process is running.",
+        "server_no_unique_id_short":"The server has no unique database ID",
         "different_database_unique_id":"The Database identifier on the server is not the same as the local copy. You should delete your local copy in order to continue. App will exit.",
         "invalid_authentication": "Invalid Authentication",
         "creating_user":"Error creating user",
@@ -372,7 +375,8 @@ export const en_translations =
         "deleting_listgroup": "Error Deleting List Group",
         "deleting_listgroup_detail": "Cannot delete the last remaining list group. Please add another one first if you really wish to delete.",
         "need_one_alexa_default": "There should be one list group marked as the Alexa default. Currently there are {{count}} list groups marked as the default if you save this list group. If one is not specified, Alexa will use the first available list group. If more than one is specified, it will use the first one alphabetically.",
-        "different_server_local_app_versions": "This application version is different than the one on the server. You could encounter errors if you continue and should upgrade the client or server to be in sync before proceeding."
+        "different_server_local_app_versions": "This application version is different than the one on the server. You could encounter errors if you continue and should upgrade the client or server to be in sync before proceeding.",
+        "different_server_local_app_versions_short": "Application version different on remote server"
     },
     "itemtext": {
         "item_is_on_these_lists": "Item is on these lists:",
