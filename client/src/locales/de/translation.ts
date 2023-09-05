@@ -233,7 +233,8 @@ export const de_translations =
         "is_recipe_listgroup_for_user":"Ist die Rezeptliste für diesen Benutzer gruppiert?",
         "alexa_default": "Standard-Listengruppe für Alexa",
         "listgroup_not_updated": "Die Listengruppe wurde nicht aktualisiert/gespeichert",
-        "exit": "App beenden"        },
+        "exit": "App beenden"
+    },
     "error": {
         "invalid_dbuuid" : "Ungültiger Datenbank-Identifier",
         "could_not_contact_api_server": "API-Server konnte nicht erreicht werden",
@@ -310,9 +311,12 @@ export const de_translations =
         "delete_listgroup_detail": "Sie können die letzte verbleibende Listen-Gruppe, bei der Sie der Eigentümer sind, nicht löschen.",
         "loading_listgroups": "Fehler beim Laden von Informationen zu Listen-Gruppen... Neustart.",
         "app_not_support_newer_schema":"Diese Anwendung unterstützt eine erkannte neuere Version des Schemas nicht. Bitte aktualisieren Sie die App und versuchen Sie es erneut.",
+        "app_not_support_newer_schema_short":"App unterstützt das Datenbankschema nicht",
         "warning": "Warnung",
         "different_database_schema":"Das Datenbankschema auf dem Server ist nicht dasselbe wie die lokale Kopie. Dies ist normal, wenn es ein signifikantes Anwendungs-Update gibt. Sie sollten Ihre lokale Kopie löschen, um fortzufahren. App wird beendet.",
+        "different_database_schema_short": "Verschiedene Datenbankschemata lokal/remote",
         "server_no_unique_id":"Der Server ist falsch konfiguriert und hat keine eindeutige ID. Stellen Sie bitte sicher, dass der Server-Prozess läuft.",
+        "server_no_unique_id_short":"Der Server hat keine eindeutige Datenbank-ID.",
         "different_database_unique_id":"Die Datenbank-Identifikation auf dem Server ist nicht dieselbe wie die lokale Kopie. Sie sollten Ihre lokale Kopie löschen, um fortzufahren. App wird beendet.",
         "invalid_authentication": "Ungültige Authentifizierung",
         "creating_user":"Fehler beim Erstellen des Benutzers",
@@ -370,7 +374,9 @@ export const de_translations =
         "warning_none_set_active": "Basierend auf den Einstellungen ist das Element zwar hinzugefügt worden, ist jedoch derzeit auf keiner der Listen aktiv. Dies könnte daran liegen, dass die Kategorie in den Listen nicht aktiv ist.",
         "deleting_listgroup": "Fehler beim Löschen der Listen-Gruppe",
         "deleting_listgroup_detail": "Die letzte verbleibende Listen-Gruppe kann nicht gelöscht werden. Fügen Sie bitte zuerst eine weitere Gruppe hinzu, wenn Sie wirklich löschen möchten.",
-        "need_one_alexa_default": "Es sollte eine Listen-Gruppe als Standard für Alexa markiert sein. Derzeit sind {{count}} Listen-Gruppen als Standard markiert, wenn Sie diese Liste speichern. Wenn keine spezifiziert ist, verwendet Alexa die erste verfügbare Listen-Gruppe. Wenn mehr als eine spezifiziert ist, wird die alphabetisch erste verwendet."
+        "need_one_alexa_default": "Es sollte eine Listen-Gruppe als Standard für Alexa markiert sein. Derzeit sind {{count}} Listen-Gruppen als Standard markiert, wenn Sie diese Liste speichern. Wenn keine spezifiziert ist, verwendet Alexa die erste verfügbare Listen-Gruppe. Wenn mehr als eine spezifiziert ist, wird die alphabetisch erste verwendet.",
+        "different_server_local_app_versions": "Diese Anwendungsversion unterscheidet sich von der auf dem Server. Sie könnten Fehler auftreten, wenn Sie fortfahren, und sollten entweder den Client oder den Server aktualisieren, um sicherzustellen, dass sie synchron sind, bevor Sie fortfahren.",
+        "different_server_local_app_versions_short": "Anwendungsversion auf entferntem Server unterschiedlich"        
     },
     "itemtext": {
         "item_is_on_these_lists": "Artikel ist auf diesen Listen:",

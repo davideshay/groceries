@@ -1682,7 +1682,6 @@ async function createReplicationFilter(): Promise<boolean> {
                 "break;" +    
             "case 'globalitem':" +
             "case 'dbuuid':" +
-            "case 'conflictlog':" +
             "case 'trigger':" +
                 "return (true);" +
                 "break;" +

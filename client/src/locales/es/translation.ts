@@ -311,9 +311,12 @@ export const es_translations =
         "delete_listgroup_detail": "No puedes eliminar el último grupo de lista restante donde eres el propietario.",
         "loading_listgroups": "Error al cargar la información de los grupos de lista... Reiniciando.",
         "app_not_support_newer_schema": "Esta aplicación no es compatible con una versión más reciente detectada del esquema. Por favor, actualice la aplicación e inténtelo de nuevo.",
+        "app_not_support_newer_schema_short":"La aplicación no admite el esquema de la base de datos",
         "warning": "Advertencia",
         "different_database_schema": "El esquema de la base de datos en el servidor no es el mismo que en la copia local. Esto es normal cuando hay una actualización significativa de la aplicación en curso. Deberías eliminar tu copia local para continuar. La aplicación se cerrará.",
+        "different_database_schema_short": "Diferentes esquemas de base de datos en local/remoto",
         "server_no_unique_id": "El servidor está configurado incorrectamente sin una ID única. Por favor, asegúrese de que el proceso del servidor esté en ejecución.",
+        "server_no_unique_id_short":"El servidor no tiene una ID de base de datos única.",
         "different_database_unique_id": "El identificador de la base de datos en el servidor no es el mismo que en la copia local. Deberías eliminar tu copia local para continuar. La aplicación se cerrará.",
         "invalid_authentication": "Autenticación inválida",
         "creating_user": "Error al crear usuario",
@@ -371,7 +374,9 @@ export const es_translations =
         "warning_none_set_active": "Según la configuración, aunque el elemento se ha agregado, no está activo actualmente en ninguna de las listas. Esto puede ser porque la categoría no está activa en las listas.",
         "deleting_listgroup": "Error al eliminar el grupo de lista",
         "deleting_listgroup_detail": "No se puede eliminar el último grupo de lista restante. Por favor, agregue otro primero si realmente desea eliminarlo.",
-        "need_one_alexa_default": "Debe haber un grupo de lista marcado como predeterminado para Alexa. Actualmente hay {{count}} grupos de listas marcados como predeterminados si guarda este grupo de lista. Si no se especifica ninguno, Alexa utilizará el primer grupo de lista disponible. Si se especifican más de uno, se utilizará el primero en orden alfabético."
+        "need_one_alexa_default": "Debe haber un grupo de lista marcado como predeterminado para Alexa. Actualmente hay {{count}} grupos de listas marcados como predeterminados si guarda este grupo de lista. Si no se especifica ninguno, Alexa utilizará el primer grupo de lista disponible. Si se especifican más de uno, se utilizará el primero en orden alfabético.",
+        "different_server_local_app_versions": "Esta versión de la aplicación es diferente a la del servidor. Podrías encontrar errores si continúas y debes actualizar el cliente o el servidor para que estén sincronizados antes de continuar.",
+        "different_server_local_app_versions_short": "La versión de la aplicación es diferente en el servidor remoto"
     },
     "itemtext": {
         "item_is_on_these_lists": "El artículo está en estas listas:",
