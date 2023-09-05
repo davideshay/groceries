@@ -39,3 +39,8 @@ export type RefreshTokenResponse = {
     refreshJWT: string,
     accessJWT: string
 }
+
+export enum RowType {
+    listGroup = "G",
+    list = "L"
+  }

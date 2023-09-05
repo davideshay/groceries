@@ -115,7 +115,8 @@ export type DBUUIDCheck = {
     dbAvailable: boolean,
     schemaVersion: Number,
     syncListGroupIDs: string[],
-    dbUUIDAction: DBUUIDAction
+    dbUUIDAction: DBUUIDAction,
+    errorText: string
 }
 
 export type CredsCheck = {
@@ -460,7 +461,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             log.debug("Did not pass DB unique ID check.");
             if (DBUUIDCheck.dbAvailable) {
                 log.debug("DBUUID Action is : ",DBUUIDCheck.dbUUIDAction, " naving to login screen...");
-                setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.invalid_dbuuid") , dbUUIDAction: DBUUIDCheck.dbUUIDAction, connectionStatus: ConnectionStatus.navToLoginScreen}))
+                setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: DBUUIDCheck.errorText, dbUUIDAction: DBUUIDCheck.dbUUIDAction, connectionStatus: ConnectionStatus.navToLoginScreen}))
             } else {
                 setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.db_server_not_available"), dbUUIDAction: DBUUIDAction.exit_no_uuid_on_server, connectionStatus: ConnectionStatus.navToLoginScreen}))
             }    

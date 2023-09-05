@@ -10,8 +10,6 @@ RUN NODE_ENV=production npm ci --include=dev
 
 COPY client/. ./
 
-RUN ls -lat
-
 RUN npm run build
 
 FROM nginx:bookworm

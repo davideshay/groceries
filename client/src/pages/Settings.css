@@ -13,3 +13,7 @@ ion-icon.offline-indicator {
 ion-icon.online-indicator {
     color: green;
 }
+
+ion-popover.server-info-popover {
+    --width: 90%;
+}

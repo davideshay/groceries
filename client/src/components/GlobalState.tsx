@@ -27,7 +27,7 @@ export interface GlobalStateContextType {
     settingsLoading: boolean,
     setGlobalState: React.Dispatch<React.SetStateAction<GlobalState>>,
     setStateInfo: (key: string, value: string | null | RowType) => void,
-    updateSettingKey: (key: string, value: AddListOptions | boolean | number | string) => Promise<boolean>,
+    updateSettingKey: (key: string, value: AddListOptions | boolean | number | string | null) => Promise<boolean>,
     updateCategoryColor: (catID: string, color: string) => Promise<boolean>,
     deleteCategoryColor: (catID: string) => Promise<boolean>
 }
@@ -50,7 +50,7 @@ const initialContext: GlobalStateContextType = {
     settingsLoading: false,
     setGlobalState: (prevState => (prevState) ),
     setStateInfo: (key: string, value: string | null | RowType) => {},
-    updateSettingKey: async (key: string, value: AddListOptions | boolean | number| string) => {return false},
+    updateSettingKey: async (key: string, value: AddListOptions | boolean | number| string | null) => {return false},
     updateCategoryColor: async (catID: string, color: string) => {return false},
     deleteCategoryColor: async (catID: string) => {return false}
 }
@@ -75,7 +75,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         setGlobalState(prevState => ({ ...prevState, [key]: value}))
     }
 
-    async function updateSettingKey(key: string, value: AddListOptions | boolean | number | string): Promise<boolean> {
+    async function updateSettingKey(key: string, value: AddListOptions | boolean | number | string | null): Promise<boolean> {
         setGlobalState(prevState => ({...prevState,settings: {...prevState.settings, [key]: value}}))
         let dbSettingsDoc: SettingsDoc = settingsDocs[0] as SettingsDoc;
         let newSettingsDoc: SettingsDoc = {...dbSettingsDoc,settings: {...dbSettingsDoc.settings,[key]: value}};
@@ -138,6 +138,10 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
             newSettings.savedListID = InitSettings.savedListID;
             updated = true;
         }
+        if (!newSettings.hasOwnProperty('alexaDefaultListGroup')) {
+            newSettings.alexaDefaultListGroup = InitSettings.alexaDefaultListGroup;
+            updated = true;
+        }
         return [newSettings, updated]
     }
 
@@ -150,7 +154,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         let storageSettingsExist = false;
         if (storageSettingsStr != null && isJsonString(String(storageSettingsStr))) {
             storageSettings=JSON.parse(String(storageSettingsStr));
-            let settingsObjFiltered=pick(storageSettings,"addListOption","removeFromAllLists","completeFromAllLists","includeGlobalInSearch","daysOfConflictLog","savedListID");
+            let settingsObjFiltered=pick(storageSettings,"addListOption","removeFromAllLists","completeFromAllLists","includeGlobalInSearch","daysOfConflictLog","savedListID","alexaDefaultListGroup");
             storageSettings = settingsObjFiltered;
             storageSettingsExist = true;
         }

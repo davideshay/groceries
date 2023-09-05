@@ -2,11 +2,12 @@ import { GlobalSettings, InitSettings } from "./DBSchema"
 
 export type SlotInfo = {
     id: string | null,
-    name: string
+    name: string,
+    value?: string
 }
 
 export enum SlotType {
-    Alexa=3, Dynamic=2, Static=1, None=4
+    Alexa=3, Dynamic=2, Static=1, Simple=4, None=5
 }
 
 export type CouchUserInfo = {

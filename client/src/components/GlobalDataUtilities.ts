@@ -11,7 +11,6 @@ const systemListCombinedRow : ListCombinedRow = {
     listGroupID: "system",
     listGroupName: "Global",
     listGroupRecipe: false,
-    listGroupAlexaDefault: false,
     listGroupOwner: "system",
     hidden: true,
     listDoc: {
@@ -39,7 +38,6 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
                 listGroupName=lgd.name
                 listGroupRecipe=lgd.recipe;
                 listGroupOwner=lgd.listGroupOwner;
-                listGroupAlexaDefault=lgd.alexaDefault;
             }
         }
         if (listGroupID === null) { return };
@@ -78,7 +76,6 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
         listGroupName : listGroup.name,
         listGroupOwner: listGroup.listGroupOwner,
         listGroupRecipe: listGroup.recipe,
-        listGroupAlexaDefault: listGroup.alexaDefault,
         hidden: false,
         listDoc: ListDocInit
         }
@@ -95,7 +92,6 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
             listGroupName: listRow.listGroupName,
             listGroupOwner: listRow.listGroupOwner,
             listGroupRecipe: listRow.listGroupRecipe,
-            listGroupAlexaDefault: listRow.listGroupAlexaDefault,
             hidden: false,
             listDoc: listRow.listDoc
         }
@@ -110,7 +106,7 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
         rowType : RowType.listGroup, rowName : testRow.listGroupName,
         rowKey: "G-null", listOrGroupID: null, listGroupID : null,
         listGroupName : testRow.listGroupName, listGroupRecipe: false, 
-        listGroupAlexaDefault: false, listGroupOwner: null,
+        listGroupOwner: null,
         hidden: false,
         listDoc: ListDocInit
     }
@@ -121,7 +117,7 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
             rowType: RowType.list, rowName: newListRow.listDoc.name,
             rowKey: "L-"+newListRow.listDoc._id, listOrGroupID: String(newListRow.listDoc._id),listGroupID: null,
             listGroupName: newListRow.listGroupName, listGroupOwner: null,
-            listGroupRecipe: false, listGroupAlexaDefault: newListRow.listGroupAlexaDefault,
+            listGroupRecipe: false, 
             hidden: false,
             listDoc: newListRow.listDoc
         }

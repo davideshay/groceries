@@ -234,7 +234,10 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
           }  
         }
       };
-      dismiss();
+      log.debug("something changed in dbuuidaction check, dismissing",cloneDeep({dbuuidAction: remoteDBState.dbUUIDAction}));
+      if (remoteDBState.dbUUIDAction !== DBUUIDAction.none) {
+        dismiss();
+      }
       processDBUUIDAction();
       }
     ,[remoteDBState.dbUUIDAction,destroyAndExit,dismiss,dismissAlert,exitApp,presentAlert,setRemoteDBState,t,continueDifferentVersion])
@@ -316,7 +319,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
         } else {
             setRemoteState(prevState => ({...prevState, formError: t("error.database_server_not_available")}))
             setRemoteDBState(prevState=>({...prevState, dbServerAvailable: false}));
-        }    
+        }
         await dismiss();
         return
     }

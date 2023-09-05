@@ -149,9 +149,15 @@
                                 "no",
                                 "yes"
                             ]
+                        },
+                        {
+                            "name": "quantity",
+                            "type": "AMAZON.NUMBER"
                         }
                     ],
                     "samples": [
+                        "Add {quantity} {item}",
+                        "Add {item}",
                         "Add {item} to my list group",
                         "Add {item} to my {listgroup} list group",
                         "Add {item} to {listgroup}",
@@ -163,7 +169,45 @@
                         "Add {item} to the list",
                         "Add {item} to {list}",
                         "Add {item} to my {list} list",
-                        "Add {item} to my list"
+                        "Add {item} to my list",
+                        "Add {quantity} {item} to my list group",
+                        "Add {quantity} {item} to my {listgroup} list group",
+                        "Add {quantity} {item} to {listgroup}",
+                        "Add {quantity} {item} to the {listgroup} list group",
+                        "Add {quantity} {item} to {listgroup} list group",
+                        "Add {quantity} {item} to {list} list",
+                        "Add {quantity} {item} to the {list} list",
+                        "Add {quantity} {item} to the list group",
+                        "Add {quantity} {item} to the list",
+                        "Add {quantity} {item} to {list}",
+                        "Add {quantity} {item} to my {list} list",
+                        "Add {quantity} {item} to my list",
+                        "Put {quantity} {item}",
+                        "Put {item}",
+                        "Put {item} on my list group",
+                        "Put {item} on my {listgroup} list group",
+                        "Put {item} on {listgroup}",
+                        "Put {item} on the {listgroup} list group",
+                        "Put {item} on {listgroup} list group",
+                        "Put {item} on {list} list",
+                        "Put {item} on the {list} list",
+                        "Put {item} on the list group",
+                        "Put {item} on the list",
+                        "Put {item} on {list}",
+                        "Put {item} on my {list} list",
+                        "Put {item} on my list",
+                        "Put {quantity} {item} on my list group",
+                        "Put {quantity} {item} on my {listgroup} list group",
+                        "Put {quantity} {item} on {listgroup}",
+                        "Put {quantity} {item} on the {listgroup} list group",
+                        "Put {quantity} {item} on {listgroup} list group",
+                        "Put {quantity} {item} on {list} list",
+                        "Put {quantity} {item} on the {list} list",
+                        "Put {quantity} {item} on the list group",
+                        "Put {quantity} {item} on the list",
+                        "Put {quantity} {item} on {list}",
+                        "Put {quantity} {item} on my {list} list",
+                        "Put {quantity} {item} on my list"
                     ]
                 },
                 {
@@ -2189,6 +2233,13 @@
                             "prompts": {
                                 "elicitation": "Elicit.Slot.1425353049936.430837866682"
                             }
+                        },
+                        {
+                            "name": "quantity",
+                            "type": "AMAZON.NUMBER",
+                            "confirmationRequired": false,
+                            "elicitationRequired": false,
+                            "prompts": {}
                         }
                     ]
                 }

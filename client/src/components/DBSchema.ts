@@ -1,5 +1,5 @@
-export const maxAppSupportedSchemaVersion = 5;
-export const appVersion = "1.0.7";
+export const maxAppSupportedSchemaVersion = 6;
+export const appVersion = "1.1.0";
 export const minimumAccessRefreshSeconds = 300;
 export const DefaultColor = "#ffffff";
 
@@ -15,7 +15,8 @@ export interface UUIDDoc {
   categoriesVersion: number,
   globalItemVersion: number,
   categoriesFixed?: boolean,
-  itemNamesFixed?: boolean
+  itemNamesFixed?: boolean,
+  alexaDefaultFixed?: boolean
 }
 
 export interface CategoryDoc {
@@ -39,6 +40,7 @@ export interface ConflictDoc {
   _rev?: string,
   type: string,
   docType: string,
+  impactedUsers: string[],
   winner: any,
   losers: any[],
   updatedAt: string
@@ -195,7 +197,7 @@ export interface ListGroupDoc {
   name: string,
   recipe: boolean,
   default?: boolean,
-  alexaDefault: boolean,
+  alexaDefault?: boolean,
   listGroupOwner: string,
   sharedWith: string[];
   updatedAt: string
@@ -315,7 +317,8 @@ export type GlobalSettings = {
   completeFromAllLists: boolean,
   includeGlobalInSearch: boolean,
   daysOfConflictLog: Number,
-  savedListID?: string | undefined | null
+  savedListID?: string | undefined | null,
+  alexaDefaultListGroup?: string | undefined | null
 }
 
 export const InitSettings: GlobalSettings = {
@@ -324,7 +327,8 @@ export const InitSettings: GlobalSettings = {
   completeFromAllLists: true,
   includeGlobalInSearch: true,
   daysOfConflictLog: 2,
-  savedListID: null
+  savedListID: null,
+  alexaDefaultListGroup: null
 }
 
 export type CategoryColors = {

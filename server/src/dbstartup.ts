@@ -1,14 +1,14 @@
 import { groceriesNanoAsAdmin, usersNanoAsAdmin, couchDatabase, couchAdminPassword, couchAdminUser, couchdbUrl, couchdbInternalUrl, couchStandardRole,
-couchAdminRole, conflictsViewID, conflictsViewName, utilitiesViewID, refreshTokenExpires, accessTokenExpires,
+couchAdminRole, conflictsViewID, conflictsViewName, refreshTokenExpires, accessTokenExpires,
 enableScheduling, resolveConflictsFrequencyMinutes,expireJWTFrequencyMinutes, disableAccountCreation, logLevel, couchKey } from "./apicalls";
 import { resolveConflicts } from "./apicalls";
 import { expireJWTs, generateJWT } from './jwt'
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { cloneDeep, isEmpty, isEqual, omit } from "lodash";
 import { v4 as uuidv4} from 'uuid';
-import { uomContent, categories, globalItems, totalDocCount } from "./utilities";
-import { DocumentScope, MangoResponse, MangoQuery, DocumentGetResponse, MaybeDocument, DatabaseGetResponse, DocumentInsertResponse } from "nano";
-import { CategoryDoc, CategoryDocs, GlobalItemDoc, ImageDoc, ImageDocInit, InitSettingsDoc, ItemDoc, ItemDocs, ListDoc, ListGroupDoc, ListGroupDocInit, ListGroupDocs, RecipeDoc, SettingsDoc, UUIDDoc, UomDoc, UserDoc, appVersion, maxAppSupportedSchemaVersion, minimumAccessRefreshSeconds } from "./schema/DBSchema";
+import { uomContent, categories, globalItems, totalDocCount, getImpactedUsers } from "./utilities";
+import { DocumentScope, MangoResponse, MangoQuery, DocumentGetResponse, MaybeDocument, DocumentInsertResponse } from "nano";
+import { CategoryDoc, CategoryDocs, ConflictDoc, GlobalItemDoc, ImageDoc, ImageDocInit, InitSettingsDoc, ItemDoc, ItemDocs, ListDoc, ListDocs, ListGroupDoc, ListGroupDocInit, ListGroupDocs, RecipeDoc, SettingsDoc, UUIDDoc, UomDoc, UserDoc, appVersion, maxAppSupportedSchemaVersion, minimumAccessRefreshSeconds } from "./schema/DBSchema";
 import log, { LogLevelDesc } from "loglevel";
 import prefix from "loglevel-plugin-prefix";
 import { timeSpan } from "./timeutils";
@@ -16,6 +16,7 @@ import i18next from 'i18next';
 import { en_translations } from './locales/en/translation';
 import { de_translations } from './locales/de/translation';
 import { es_translations } from './locales/es/translation';
+import { RowType } from "./datatypes";
 
 let uomContentVersion = 0;
 const targetUomContentVersion = 5;
@@ -24,7 +25,7 @@ const targetCategoriesVersion = 2;
 let globalItemVersion = 0;
 const targetGlobalItemVersion = 2;
 let schemaVersion = 0;
-const targetSchemaVersion = 5;
+const targetSchemaVersion = 6;
 
 
 export let groceriesDBAsAdmin: DocumentScope<unknown>;
@@ -787,6 +788,14 @@ async function getLatestRecipeDocs(): Promise<[boolean,RecipeDoc[]]> {
     return [true,foundRecipeDocs.docs];
 }
 
+async function getLatestSettingsDocs(): Promise<[boolean,SettingsDoc[]]> {
+    const settingsq: MangoQuery = { selector: { type: "settings", username: {$exists: true}}, limit: await totalDocCount(groceriesDBAsAdmin)};
+    let foundSettingsDocs: MangoResponse<SettingsDoc>;
+    try {foundSettingsDocs = (await groceriesDBAsAdmin.find(settingsq) as MangoResponse<SettingsDoc>);}
+    catch(err) {log.error("Could not find Settings during schema update::",err); return [false,[]];}
+    return [true,foundSettingsDocs.docs];
+}
+
 async function checkAndCreateNewUOMForRecipeItem(uomName: string): Promise<boolean> {
     let success = true;
     let [getSuccess,curUOMDocs] = await getLatestUOMDocs();
@@ -1031,6 +1040,28 @@ async function restructureImagesListgroups() {
             break;
         }
     }
+    return updateSuccess;
+}
+
+async function restructureConflictLog() {
+    let updateSuccess = true;
+    log.info("Restructuring conflict log records to add impacted users for replication log.");
+    const conflictq: MangoQuery = { selector: { type: "conflictlog" }, limit: await totalDocCount(groceriesDBAsAdmin)};
+    let foundConflictDocs: MangoResponse<ConflictDoc>;
+    try {foundConflictDocs = (await groceriesDBAsAdmin.find(conflictq) as MangoResponse<ConflictDoc>);}
+    catch(err) {log.error("Could not find conflict log items during schema update:",err); return false;}
+    log.info("Found conflict logs to process: ", foundConflictDocs.docs.length);
+    for (const conflictLog of foundConflictDocs.docs) {
+        let impactedUsersSet = await getImpactedUsers(conflictLog.winner);
+        for (const loser of conflictLog.losers) {
+            let loserUsers = await getImpactedUsers(loser);
+            impactedUsersSet = new Set([...impactedUsersSet,...loserUsers])
+        }
+        conflictLog.impactedUsers = Array.from(impactedUsersSet);
+        try {let dbResp = await groceriesDBAsAdmin.insert(conflictLog)}
+        catch(err) {log.error("Could not update conflict log record.",err)}
+    }
+    log.info("Conflict Log records updated with impacted users.");
     return updateSuccess;
 }
 
@@ -1394,6 +1425,90 @@ async function fixItemNames(): Promise<boolean> {
     return true;
 }
 
+function getListIDType(id: string, lists: ListDocs, listGroups: ListGroupDocs) : RowType | null {
+    let rowType = null;
+    let foundList = lists.find((list) => (list._id === id))
+    if (foundList !== undefined) {return RowType.list}
+    let foundListGroup = listGroups.find((lg) => (lg._id === id))
+    if (foundListGroup !== undefined) {return RowType.listGroup}
+    return rowType;
+}
+
+function getListGroupForList(id: string, lists: ListDocs) : string | null {
+    let listGroup = null;
+    let foundList = lists.find( (list) => (list._id === id));
+    if (foundList === undefined) {return listGroup};
+    return foundList.listGroupID;
+}
+
+async function fixAlexaDefault(): Promise<boolean> {
+    const foundIDDoc = await getLatestDBUUIDDoc();
+    if (isEmpty(foundIDDoc)) {
+        log.error("No DBUUID record found")
+        return false;
+    }
+    let alexaDefaultFixed = false;
+    if (foundIDDoc.hasOwnProperty("alexaDefaultFixed") && foundIDDoc.alexaDefaultFixed !== undefined) {
+        alexaDefaultFixed = foundIDDoc.alexaDefaultFixed;
+    }
+    if (alexaDefaultFixed) {return true};
+    log.info("Fixing Alexa Default list groups / settings");
+    // First remove "alexaDefault" from every list group -- we will store it on 
+    // the user settings instead
+    let [listGroupSuccess,listGroups] = await getLatestListGroupDocs();
+    if (!listGroupSuccess) return false;
+    for (const listGroup of listGroups) {
+        if (listGroup.hasOwnProperty("alexaDefault")) {
+            delete listGroup.alexaDefault;
+            try {let dbResp = await groceriesDBAsAdmin.insert(listGroup)}
+            catch(err){ log.error("Could not update listgroup",err); return false;}
+        }
+    }
+    // Loop through the settings and add an Alexa default list group to each
+    // Assign the same as the list group of the saved list id
+    let [listSuccess, lists] = await getLatestListDocs();
+    if (!listSuccess) {return false;}
+    let [settingsSuccess,settings]  = await getLatestSettingsDocs();
+    if (!settingsSuccess) {return false;}
+    for (const setting of settings) {
+        if (setting.settings.hasOwnProperty("alexaDefaultListGroup")) {continue;}
+        let alexaDefaultListGroupID: null | string = null;
+        let foundListGroupID = false;
+        // if savedListID exists, use that to set the Alexa default list group
+        if (setting.settings.hasOwnProperty("savedListID")) {
+            if (!isEmpty(setting.settings.savedListID)) {
+                let listIDType = getListIDType(String(setting.settings.savedListID),lists,listGroups);
+                if (listIDType === RowType.listGroup) {
+                    alexaDefaultListGroupID = String(setting.settings.savedListID);
+                    foundListGroupID = true;
+                } else if (listIDType === RowType.list) {
+                    alexaDefaultListGroupID = getListGroupForList(String(setting.settings.savedListID),lists);
+                    foundListGroupID = true;
+                }
+            }
+        }
+        // if not found, just use the first list group ID
+        if (!foundListGroupID) {
+            let firstListGroupID = listGroups.find( (lg) => (lg.listGroupOwner === setting.username));
+            if (firstListGroupID !== undefined) {
+                alexaDefaultListGroupID = String(firstListGroupID._id);
+                foundListGroupID = true;
+            }
+        }
+        if (foundListGroupID) {
+            setting.settings.alexaDefaultListGroup = alexaDefaultListGroupID;
+            try {let dbResp = await groceriesDBAsAdmin.insert(setting)}
+            catch(err){ log.error("Could not update setting",err); return false;}
+        }
+    }
+
+    foundIDDoc.alexaDefaultFixed = true;
+    try { let dbResp = await groceriesDBAsAdmin.insert(foundIDDoc) }
+    catch(err) {log.error("Error updating DBUUID for fixing of Alexa defaults:",err); return false;}
+    log.info("Alexa default records fixed");
+    return true;
+}
+
 
 async function setSchemaVersion(updSchemaVersion: number) {
     log.info("Finished schema updates, updating database to :",updSchemaVersion);
@@ -1433,12 +1548,19 @@ async function checkAndUpdateSchema() {
             log.info("Updating schema to rev 5: Make Images for items listgroup specific ");
             schemaUpgradeSuccess = await restructureImagesListgroups();
             if (schemaUpgradeSuccess) { schemaVersion = 5; await setSchemaVersion(schemaVersion);}
-        }    
+        }
+        if (schemaVersion < 6) {
+            log.info("Updating schema to rev 6: Added impacted users to conflictlog records ");
+            schemaUpgradeSuccess = await restructureConflictLog();
+            if (schemaUpgradeSuccess) { schemaVersion = 6; await setSchemaVersion(schemaVersion);}
+        }
     }
     let fixCatSuccess = await fixCategories();
     if (!fixCatSuccess) {return false;}
     let fixItemNamesSuccess = await fixItemNames();
     if (!fixItemNamesSuccess) {return false;}
+    let fixAlexaSuccess = await fixAlexaDefault();
+    if (!fixAlexaSuccess) {return false;}
     return schemaUpgradeSuccess;
 }
 
@@ -1452,7 +1574,7 @@ async function createConflictsView(): Promise<boolean> {
     if (!viewFound) {
         let viewDoc = {
             "type": "view",
-            "views": { "conflicts_view" : {
+            "views": { conflictsViewName : {
                 "map": "function(doc) { if (doc._conflicts) { emit (doc._conflicts, null)}}"
         }}}
         try {
@@ -1553,7 +1675,11 @@ async function createReplicationFilter(): Promise<boolean> {
                 "return (doc.username === req.query.username);" +
                 "break;" +
             "case 'friend':" +
-                "return (doc.friendID1 === req.query.username || doc.friendID2 === req.query.username);" +    
+                "return (doc.friendID1 === req.query.username || doc.friendID2 === req.query.username);" +
+                "break;" +
+            "case 'conflictlog':" +
+                "return (doc.impactedUsers.includes(req.query.username));" +
+                "break;" +    
             "case 'globalitem':" +
             "case 'dbuuid':" +
             "case 'trigger':" +

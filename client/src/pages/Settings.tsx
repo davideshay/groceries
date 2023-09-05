@@ -1,8 +1,8 @@
 import { IonContent, IonPage, IonList, IonItem,
         IonButton, useIonAlert, IonInput,
-        IonRadioGroup, IonRadio, IonCheckbox, IonItemDivider, IonSelect, IonSelectOption, IonButtons, IonToolbar, IonText, IonIcon, IonGrid, IonRow, IonCol } from '@ionic/react';
+        IonRadioGroup, IonRadio, IonCheckbox, IonItemDivider, IonSelect, IonSelectOption, IonButtons, IonToolbar, IonText, IonIcon, IonGrid, IonRow, IonCol, IonPopover, IonTitle } from '@ionic/react';
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';        
-import { closeCircle, checkmarkCircle } from 'ionicons/icons';
+import { closeCircle, checkmarkCircle, helpCircleOutline } from 'ionicons/icons';
 import { usePouch } from 'use-pouchdb';
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
@@ -162,10 +162,33 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
     <IonPage>
       <PageHeader title={t("general.settings")} />
       <IonContent fullscreen>
+        <IonPopover className="server-info-popover" trigger="server-info-trigger" triggerAction="hover">
+          <IonTitle>App and DB Server Info</IonTitle>
+          <IonItem className="shorter-item-some-padding">
+            <IonGrid class="ion-no-padding"><IonRow>
+              <IonCol>API Server</IonCol>
+              <IonCol>{remoteDBCreds.apiServerURL}</IonCol>
+            </IonRow></IonGrid>
+          </IonItem>
+          <IonItem className="shorter-item-some-padding">
+            <IonGrid class="ion-no-padding"><IonRow>
+              <IonCol>DB Server</IonCol>
+              <IonCol>{remoteDBCreds.couchBaseURL}</IonCol>
+            </IonRow></IonGrid>
+          </IonItem>
+          <IonItem className="shorter-item-some-padding">
+            <IonGrid class="ion-no-padding"><IonRow>
+              <IonCol>Database</IonCol>
+              <IonCol>{remoteDBCreds.database}</IonCol>
+            </IonRow></IonGrid>
+          </IonItem>
+        </IonPopover>
         <IonList lines="none" className="ion-no-padding">
           <IonItemDivider className="category-divider">{t("general.app_info")}</IonItemDivider>
           <IonItem className="shorter-item-some-padding">{t("general.app_version")} : {appVersion}</IonItem>
           <IonItem className="shorter-item-some-padding">{t("general.database_schema_version")}: {maxAppSupportedSchemaVersion}</IonItem>
+          <IonItem className="shorter-item-some-padding">
+          </IonItem>
           <IonItem className="shorter-item-some-padding">
             <IonGrid class="ion-no-padding">
               <IonRow><IonCol size="4">{t("general.api_server_status")}</IonCol>
@@ -173,7 +196,8 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
                                 <IonIcon icon={closeCircle} className="offline-indicator"></IonIcon> }</IonCol>
               <IonCol size="4">{t("general.db_server_status")}</IonCol>
               <IonCol size="1">{remoteDBState.dbServerAvailable ? <IonIcon icon={checkmarkCircle} className="online-indicator"></IonIcon> :
-                                <IonIcon icon={closeCircle} className="offline-indicator"></IonIcon> }</IonCol></IonRow>
+                                <IonIcon icon={closeCircle} className="offline-indicator"></IonIcon> }</IonCol>
+              <IonCol size="1"><IonIcon id="server-info-trigger" icon={helpCircleOutline}></IonIcon></IonCol></IonRow>
               <IonRow><IonCol size="4">{t("general.refresh_token_valid")}</IonCol>
               <IonCol size="1">{refreshSecondsToExpire > 0 ? <IonIcon icon={checkmarkCircle} className="online-indicator"></IonIcon> :
                                 <IonIcon icon={closeCircle} className="offline-indicator"></IonIcon> }</IonCol>
