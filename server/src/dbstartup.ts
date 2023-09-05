@@ -6,9 +6,9 @@ import { expireJWTs, generateJWT } from './jwt'
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { cloneDeep, isEmpty, isEqual, omit } from "lodash";
 import { v4 as uuidv4} from 'uuid';
-import { uomContent, categories, globalItems, totalDocCount } from "./utilities";
+import { uomContent, categories, globalItems, totalDocCount, getImpactedUsers } from "./utilities";
 import { DocumentScope, MangoResponse, MangoQuery, DocumentGetResponse, MaybeDocument, DocumentInsertResponse } from "nano";
-import { CategoryDoc, CategoryDocs, GlobalItemDoc, ImageDoc, ImageDocInit, InitSettingsDoc, ItemDoc, ItemDocs, ListDoc, ListDocs, ListGroupDoc, ListGroupDocInit, ListGroupDocs, RecipeDoc, SettingsDoc, UUIDDoc, UomDoc, UserDoc, appVersion, maxAppSupportedSchemaVersion, minimumAccessRefreshSeconds } from "./schema/DBSchema";
+import { CategoryDoc, CategoryDocs, ConflictDoc, GlobalItemDoc, ImageDoc, ImageDocInit, InitSettingsDoc, ItemDoc, ItemDocs, ListDoc, ListDocs, ListGroupDoc, ListGroupDocInit, ListGroupDocs, RecipeDoc, SettingsDoc, UUIDDoc, UomDoc, UserDoc, appVersion, maxAppSupportedSchemaVersion, minimumAccessRefreshSeconds } from "./schema/DBSchema";
 import log, { LogLevelDesc } from "loglevel";
 import prefix from "loglevel-plugin-prefix";
 import { timeSpan } from "./timeutils";
@@ -25,7 +25,7 @@ const targetCategoriesVersion = 2;
 let globalItemVersion = 0;
 const targetGlobalItemVersion = 2;
 let schemaVersion = 0;
-const targetSchemaVersion = 5;
+const targetSchemaVersion = 6;
 
 
 export let groceriesDBAsAdmin: DocumentScope<unknown>;
@@ -1043,6 +1043,28 @@ async function restructureImagesListgroups() {
     return updateSuccess;
 }
 
+async function restructureConflictLog() {
+    let updateSuccess = true;
+    log.info("Restructuring conflict log records to add impacted users for replication log.");
+    const conflictq: MangoQuery = { selector: { type: "conflictlog" }, limit: await totalDocCount(groceriesDBAsAdmin)};
+    let foundConflictDocs: MangoResponse<ConflictDoc>;
+    try {foundConflictDocs = (await groceriesDBAsAdmin.find(conflictq) as MangoResponse<ConflictDoc>);}
+    catch(err) {log.error("Could not find conflict log items during schema update:",err); return false;}
+    log.info("Found conflict logs to process: ", foundConflictDocs.docs.length);
+    for (const conflictLog of foundConflictDocs.docs) {
+        let impactedUsersSet = await getImpactedUsers(conflictLog.winner);
+        for (const loser of conflictLog.losers) {
+            let loserUsers = await getImpactedUsers(loser);
+            impactedUsersSet = new Set([...impactedUsersSet,...loserUsers])
+        }
+        conflictLog.impactedUsers = Array.from(impactedUsersSet);
+        try {let dbResp = await groceriesDBAsAdmin.insert(conflictLog)}
+        catch(err) {log.error("Could not update conflict log record.",err)}
+    }
+    log.info("Conflict Log records updated with impacted users.");
+    return updateSuccess;
+}
+
 async function fixDuplicateCategories() {
     let [listSuccess,currentLists] = await getLatestListDocs();
     if (!listSuccess) {
@@ -1526,7 +1548,12 @@ async function checkAndUpdateSchema() {
             log.info("Updating schema to rev 5: Make Images for items listgroup specific ");
             schemaUpgradeSuccess = await restructureImagesListgroups();
             if (schemaUpgradeSuccess) { schemaVersion = 5; await setSchemaVersion(schemaVersion);}
-        }    
+        }
+        if (schemaVersion < 6) {
+            log.info("Updating schema to rev 6: Added impacted users to conflictlog records ");
+            schemaUpgradeSuccess = await restructureConflictLog();
+            if (schemaUpgradeSuccess) { schemaVersion = 6; await setSchemaVersion(schemaVersion);}
+        }
     }
     let fixCatSuccess = await fixCategories();
     if (!fixCatSuccess) {return false;}
@@ -1648,7 +1675,11 @@ async function createReplicationFilter(): Promise<boolean> {
                 "return (doc.username === req.query.username);" +
                 "break;" +
             "case 'friend':" +
-                "return (doc.friendID1 === req.query.username || doc.friendID2 === req.query.username);" +    
+                "return (doc.friendID1 === req.query.username || doc.friendID2 === req.query.username);" +
+                "break;" +
+            "case 'conflictlog':" +
+                "return (doc.impactedUsers.includes(req.query.username));" +
+                "break;" +    
             "case 'globalitem':" +
             "case 'dbuuid':" +
             "case 'conflictlog':" +

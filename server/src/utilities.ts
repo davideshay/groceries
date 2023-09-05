@@ -1,7 +1,7 @@
 import { couchUserPrefix, couchStandardRole, accessTokenExpires, refreshTokenExpires } from "./apicalls";
 import { usersDBAsAdmin, groceriesDBAsAdmin } from './dbstartup';
 import { generateJWT } from "./jwt";
-import { UserDoc, FriendDoc, FriendDocs} from './schema/DBSchema'
+import { UserDoc, FriendDoc, FriendDocs, ListGroupDocs, ListGroupDoc} from './schema/DBSchema'
 import { DatabaseGetResponse, DocumentScope, MangoQuery, MangoResponse, MaybeDocument } from "nano";
 import { cloneDeep } from "lodash";
 import { NewUserReqBody, UserObj, CustomRequest } from "./datatypes";
@@ -172,4 +172,44 @@ export async function getFriendDocByUUID(uuid: string): Promise<FriendDoc|null> 
 export function isNothing(obj: any) {
     if (obj == "" || obj == null || obj == undefined) {return (true)}
     else {return (false)};
+}
+
+export async function getUsersFromListGroup(listGroupID:string): Promise<Set<string>> {
+    let users: Set<string> =  new Set();
+    let foundListGroupDoc: ListGroupDoc;
+    try {foundListGroupDoc = (await groceriesDBAsAdmin.get(listGroupID) as ListGroupDoc)}
+    catch(err) {log.error("Could not get list group ",listGroupID); return users};
+    users.add(foundListGroupDoc.listGroupOwner);
+    foundListGroupDoc.sharedWith.forEach( sharedUser => users.add(sharedUser))
+    return users;
+}
+
+
+export async function getImpactedUsers(doc: any): Promise<Set<string>> {
+    let impactedUsers = new Set<string>()
+    // item,image,list,recipe,listgroup,settings,friend,globalitem,dbuuid,trigger,category,uom
+    if (["globalitem","dbuuid","trigger"].includes(doc.type)) {
+        return new Set('system');
+    }
+    if (doc.type === "settings") {
+        impactedUsers.add(doc.username);
+        return impactedUsers;
+    }
+    if (doc.type === "friend") {
+        impactedUsers.add(doc.friendID1);
+        impactedUsers.add(doc.friendID2);
+        return impactedUsers;
+    }
+    if (["item","image","list","recipe"].includes(doc.type)) {
+        impactedUsers = new Set(await getUsersFromListGroup(doc.listGroupID));
+        return impactedUsers;
+    }
+    if (doc.type === "listgroup") {
+        return new Set(await getUsersFromListGroup(doc._id));
+    }
+    if (["category","uom"].includes(doc.type)) {
+        if (doc.listGroupID === "system") {return new Set('system');}
+        return new Set(await getUsersFromListGroup(doc.listGroupID));
+    }
+    return impactedUsers;
 }

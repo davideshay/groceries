@@ -45,7 +45,8 @@ import { groceriesDBAsAdmin, usersDBAsAdmin, couchLogin } from './dbstartup';
 import _ from 'lodash';
 import { cloneDeep, isEmpty } from 'lodash';
 import { usernamePatternValidation, fullnamePatternValidation, getUserDoc, getUserByEmailDoc,
-    totalDocCount, isNothing, createNewUser, updateUnregisteredFriends, getFriendDocByUUID, UserResponse, CreateResponseType, checkDBAvailable } from './utilities';
+    totalDocCount, isNothing, createNewUser, updateUnregisteredFriends, getFriendDocByUUID,
+    UserResponse, CreateResponseType, checkDBAvailable, getImpactedUsers } from './utilities';
 import { generateJWT, isValidToken, invalidateToken, JWTMatchesUserDB, TokenReturnType } from './jwt'     
 import { NextFunction, Request, Response } from 'express';
 import { CheckUseEmailReqBody, CheckUserExistsReqBody, CustomRequest, NewUserReqBody, RefreshTokenResponse, checkUserByEmailExistsResponse } from './datatypes';
@@ -597,7 +598,7 @@ export async function resolveConflicts(): Promise<boolean> {
         let latestDoc = curWinner;
         let bulkObj: { docs: [{_id: string, _rev: string, _deleted: boolean}?]} = { docs:[] };
         let logObj: ConflictDoc = { type: "conflictlog",
-                docType: curWinner.type, winner: {}, losers: [], updatedAt: ""};
+                docType: curWinner.type, impactedUsers: [], winner: {}, losers: [], updatedAt: ""};
         for (let j = 0; j < curWinner._conflicts.length; j++) {
             const losingRev = curWinner._conflicts[j];
             let curLoser: any;
@@ -627,6 +628,12 @@ export async function resolveConflicts(): Promise<boolean> {
         try { bulkResult = await groceriesDBAsAdmin.bulk(bulkObj) }
         catch(err) {log.error("Error updating bulk docs on conflict resolve"); resolveFailure=true; return false;}
         log.info("Bulk Update to resolve doc id : ",conflict.id, " succeeded");
+        let impactedUsersSet = await getImpactedUsers(logObj.winner);
+        for (const loser of logObj.losers) {
+            let loserUsers = await getImpactedUsers(loser);
+            impactedUsersSet = new Set([...impactedUsersSet,...loserUsers])
+        }
+        logObj.impactedUsers = Array.from(impactedUsersSet);
         let logResult;
         try { logResult = await groceriesDBAsAdmin.insert(logObj as MaybeDocument)}
         catch(err) { log.error("ERROR: creating conflict log document failed: ",err); return false;};        
