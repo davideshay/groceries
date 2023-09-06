@@ -14,6 +14,7 @@ import PQueue from "p-queue";
 import { Capacitor } from "@capacitor/core";
 
 import { minimumAccessRefreshSeconds } from "./DBSchema";
+import { cloneDeep } from "lodash";
 
 const secondsBetweenRefreshRetries = 30;
 
@@ -76,6 +77,7 @@ export interface RemoteDBStateContextType {
     remoteDB: PouchDB.Database | undefined, 
     setRemoteDBState: React.Dispatch<React.SetStateAction<RemoteDBState>>,
     setRemoteDBCreds: (newCreds: DBCreds) => void,
+    removeUserInfoDBCreds: (onlyToken: boolean) => Promise<void>,
     stopSyncAndCloseRemote: () => Promise<boolean>,
     restartSync: () => Promise<boolean>,
     assignDB: (accessJWT: string) => Promise<boolean>,
@@ -203,6 +205,7 @@ const initialContext: RemoteDBStateContextType = {
     remoteDB: undefined,
     setRemoteDBState: (prevState => (prevState)),
     setRemoteDBCreds: (dbCreds: DBCreds) => {},
+    removeUserInfoDBCreds: async (onlyToken: boolean) => {},
     stopSyncAndCloseRemote: async () => {return false},
     restartSync: async () => {return false},
     assignDB: async (accessJWT: string): Promise<boolean> => {return false},
@@ -230,6 +233,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     const history = useHistory();
     const refreshTokenLocked = useRef(false);
     const tokenTimer = useRef<NodeJS.Timeout>();
+    const retryingNetwork = useRef<boolean>(false);
     const appStatus = useRef<AppStatus>(AppStatus.resumed);
     const broadcastChannel = useRef<BroadcastChannel>(new BroadcastChannel("dupcheck"))
 
@@ -251,6 +255,20 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         remoteDBCreds.current = newCreds;
         await setPrefsDBCreds();
         forceUpdate();
+    }
+
+    async function removeUserInfoDBCreds(onlyToken: boolean) {
+        let newCreds: DBCreds = remoteDBCreds.current;
+        if (onlyToken) {
+            newCreds.refreshJWT = ""
+        } else {
+            newCreds.dbUsername = "";
+            newCreds.email = "";
+            newCreds.fullName = "";
+            newCreds.lastConflictsViewed = new Date().toISOString();
+            newCreds.refreshJWT = "";    
+        }
+        await setRemoteDBCreds(newCreds);
     }
 
     function setDBServerAvailable(value: boolean) {
@@ -277,6 +295,8 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         let netOnline = (await Network.getStatus()).connected;
         log.debug("Network online status:",netOnline);
         if (netOnline) return true;
+        if (retryingNetwork.current) return netOnline;
+        retryingNetwork.current = true;
         let retryCount = 0;
         let maxRetries = 10;
         let timeBetweenRetries = 2*1000;
@@ -285,13 +305,15 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             netOnline = (await Network.getStatus()).connected;
             if (netOnline) {
                 log.debug("Network back online, continuing");
+                retryingNetwork.current = false;
                 return true
             } else {
                 log.debug("Network still not online, retry count:",retryCount);
                 retryCount++;
             }
         }
-        return true
+        log.error("Network did not come back online after retrying");
+        return false;
     },[])
 
     const checkTriggers = useCallback( (docs: any) => {
@@ -499,6 +521,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         let credsCheck =  errorCheckCreds({credsObj: credsObj, background: true});
 //        log.debug("Attempt Full Login: credsCheck:",credsCheck);
         if (credsCheck.credsError) {
+            log.error("Got a creds error -- ",cloneDeep(remoteDBCreds.current));
             setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: credsCheck.errorText, connectionStatus: ConnectionStatus.navToLoginScreen}))
             return [false,credsCheck.errorText];
         } 
@@ -791,7 +814,8 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     },[remoteDBState.retryCount,refreshTokenAndUpdate])
 
 
-    let value: RemoteDBStateContextType = {remoteDBState, remoteDBCreds: remoteDBCreds.current, remoteDB: globalRemoteDB as PouchDB.Database<{}> , setRemoteDBState, setRemoteDBCreds,
+    let value: RemoteDBStateContextType = {remoteDBState, remoteDBCreds: remoteDBCreds.current, remoteDB: globalRemoteDB as PouchDB.Database<{}> ,
+            setRemoteDBState, setRemoteDBCreds, removeUserInfoDBCreds,
             stopSyncAndCloseRemote, restartSync, assignDB, setDBCredsValue,setLoginType, attemptFullLogin};
     return (
         <RemoteDBStateContext.Provider value={value}>{props.children}</RemoteDBStateContext.Provider>

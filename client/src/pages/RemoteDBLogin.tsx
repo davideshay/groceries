@@ -5,9 +5,8 @@ import { eye, eyeOff } from 'ionicons/icons';
 import { Capacitor, CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
 import { usePouch} from 'use-pouchdb';
 import { ConnectionStatus, DBCreds, DBUUIDAction, LoginType } from '../components/RemoteDBState';
-import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
-import { createNewUser, getTokenInfo, navigateToFirstListID, errorCheckCreds, isServerAvailable, JWTMatchesUser, CreateResponse, createResponseInit, isDBServerAvailable, getDeviceID  } from '../components/RemoteUtilities';
+import { createNewUser, getTokenInfo, navigateToFirstListID, errorCheckCreds, isServerAvailable, JWTMatchesUser, CreateResponse, createResponseInit, isDBServerAvailable, getDeviceID, getPrefsDBCreds  } from '../components/RemoteUtilities';
 import { cloneDeep } from 'lodash';
 import { RemoteDBStateContext, SyncStatus, initialRemoteDBState } from '../components/RemoteDBState';
 import { HistoryProps} from '../components/DataTypes';
@@ -104,7 +103,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     const [formState,setFormState]=useState<FormState>(initFormState);
     const showingVersionAlert = useRef(false);
     const [presentAlert, dismissAlert] = useIonAlert();
-    const { remoteDBState, remoteDBCreds, setRemoteDBState, setRemoteDBCreds,stopSyncAndCloseRemote,
+    const { remoteDBState, remoteDBCreds, setRemoteDBState, setRemoteDBCreds, removeUserInfoDBCreds, stopSyncAndCloseRemote,
       assignDB, setDBCredsValue, setLoginType, attemptFullLogin} = useContext(RemoteDBStateContext);
     const { dataReloadStatus, waitForReload, listRows, listRowsLoaded, listsLoading, listCombinedRows } = useContext(GlobalDataContext);
     const { globalState, setGlobalState} = useContext(GlobalStateContext);
@@ -123,17 +122,19 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
 
     const destroyAndExit = useCallback(async () => {
       await db.destroy();
-      await Preferences.remove({key: 'dbcreds'});
+      await removeUserInfoDBCreds(true);
       exitApp();
       
     },[db,exitApp])  
 
     // useEffect for initial page launch
     useEffect( () => {
+      log.debug("Initial page data setup...");
+      log.debug("remoteDBCreds:",cloneDeep(remoteDBCreds))
       if (remoteDBState.credsError) {
         setRemoteState(prevState => ({...prevState,formError: remoteDBState.credsErrorText}))
       }
-      setFormState(prevState=> ({...prevState,apiServerURL: remoteDBCreds.apiServerURL, dbUserName: remoteDBCreds.dbUsername}))
+      setFormState(prevState=> ({...prevState,apiServerURL: remoteDBCreds.apiServerURL, dbUsername: remoteDBCreds.dbUsername}))
       setLoginType(LoginType.loginFromLoginPage);
 // eslint-disable-next-line react-hooks/exhaustive-deps 
     },[])
@@ -187,8 +188,6 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
                             { text: t("general.continue_ignore"), role: "confirm",
                             handler: async () => {await dismissAlert(); continueDifferentVersion();}}]
               });
-      
-              log.debug("after Ask continue...");
               return;
             }
           }
@@ -439,8 +438,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   async function logout() {
     await stopSyncAndCloseRemote();
-    let credsStr=JSON.stringify({});
-    await Preferences.set({key: 'dbcreds', value: credsStr})
+    await removeUserInfoDBCreds(false);
 //    if (!(isPlatform("desktop") || isPlatform("electron"))) {App.exitApp()}
     if (Capacitor.isNativePlatform()) {App.exitApp()}
     setRemoteDBState(initialRemoteDBState);
