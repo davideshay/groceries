@@ -6,7 +6,7 @@ import { Capacitor, CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/
 import { usePouch} from 'use-pouchdb';
 import { ConnectionStatus, DBCreds, DBUUIDAction, LoginType } from '../components/RemoteDBState';
 import { App } from '@capacitor/app';
-import { createNewUser, getTokenInfo, navigateToFirstListID, errorCheckCreds, isServerAvailable, JWTMatchesUser, CreateResponse, createResponseInit, isDBServerAvailable, getDeviceID, getPrefsDBCreds  } from '../components/RemoteUtilities';
+import { createNewUser, getTokenInfo, navigateToFirstListID, errorCheckCreds, isServerAvailable, JWTMatchesUser, CreateResponse, createResponseInit, isDBServerAvailable, getDeviceID } from '../components/RemoteUtilities';
 import { cloneDeep } from 'lodash';
 import { RemoteDBStateContext, SyncStatus, initialRemoteDBState } from '../components/RemoteDBState';
 import { HistoryProps} from '../components/DataTypes';
@@ -125,7 +125,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       await removeUserInfoDBCreds(true);
       exitApp();
       
-    },[db,exitApp])  
+    },[db,exitApp,removeUserInfoDBCreds])  
 
     // useEffect for initial page launch
     useEffect( () => {
