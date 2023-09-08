@@ -221,7 +221,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
                 {text: t("general.ok"),handler: () => exitApp()}]
             });
             return;
-          } else if (remoteDBState.dbUUIDAction === DBUUIDAction.destroy_needed) {
+          } else if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_different_uuids) {
             presentAlert( {
               header: t("error.warning"),
               message: t("error.different_database_unique_id"),

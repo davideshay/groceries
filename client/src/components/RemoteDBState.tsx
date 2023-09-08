@@ -103,7 +103,7 @@ export enum DBUUIDAction {
     exit_app_schema_mismatch = 2,
     exit_local_remote_schema_mismatch = 3,
     exit_no_uuid_on_server = 4,
-    destroy_needed = 5
+    exit_different_uuids = 5
 }  
 
 export enum RefreshTokenResults {
