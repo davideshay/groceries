@@ -159,8 +159,8 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     },[remoteDBCreds.apiServerURL,setRemoteDBState,remoteDBCreds.refreshJWT,remoteDBCreds.dbUsername, remoteDBCreds.couchBaseURL, remoteDBState.loggedIn])
 
     const continueDifferentVersion = useCallback( async () => {
-      log.debug("Dismissing alert....");
       await dismissAlert();
+      await showLoading();
       setRemoteDBState(prevState => ({...prevState,dbUUIDAction: DBUUIDAction.none,ignoreAppVersionWarning: true}));
       await assignDB(remoteDBState.accessJWT);
     },[setRemoteDBState,dismissAlert,assignDB,remoteDBState.accessJWT])
@@ -230,7 +230,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
           }  
         }
       };
-      if (remoteDBState.dbUUIDAction !== DBUUIDAction.none) {
+      if (remoteDBState.dbUUIDAction !== DBUUIDAction.none && remoteDBState.dbUUIDAction !== DBUUIDAction.warning_app_version_mismatch) {
         dismiss();
       }
       processDBUUIDAction();
@@ -438,6 +438,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
 //    if (!(isPlatform("desktop") || isPlatform("electron"))) {App.exitApp()}
     if (Capacitor.isNativePlatform()) {App.exitApp()}
     setRemoteDBState(initialRemoteDBState);
+    setFormState(prevState => ({...prevState,dbUsername: "",email: "", fullName: ""}));
     //window.location.replace('/');
     return false;
   }

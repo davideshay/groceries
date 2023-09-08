@@ -743,7 +743,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         {
             history.push("/login");
         }
-    },[remoteDBState.connectionStatus,history])
+    },[remoteDBState.connectionStatus,remoteDBState.initialSyncComplete,history])
 
     useEffect(() => {
         if (( remoteDBState.initialSyncComplete) && (!remoteDBState.initialNavComplete)) {
