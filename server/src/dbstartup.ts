@@ -178,7 +178,7 @@ async function getLatestDBUUIDDoc(): Promise<UUIDDoc | null> {
     let foundIDDoc: UUIDDoc | null = null;
     if (foundIDDocs && foundIDDocs.hasOwnProperty('docs')) {
         if (foundIDDocs.docs.length > 0) {foundIDDoc = (foundIDDocs.docs[0] as UUIDDoc)}
-    }   
+    }
     return foundIDDoc;
 }
 
@@ -1266,7 +1266,7 @@ async function updateListRecord(updList: ListDoc) {
 }
 
 async function fixCategories() {
-    const foundIDDoc = await getLatestDBUUIDDoc();
+    let foundIDDoc = await getLatestDBUUIDDoc();
     if (isEmpty(foundIDDoc)) {
         log.error("No DBUUID record found")
         return false;
@@ -1368,14 +1368,17 @@ async function fixCategories() {
     }
     let itemFixSuccess = await fixItemCategories();
     if (!itemFixSuccess) {return false;}
-    foundIDDoc.categoriesFixed = true;
-    try { let dbResp = await groceriesDBAsAdmin.insert(foundIDDoc) }
-    catch(err) {log.error("Error updating DBUUID for fixing of categories:",err); return false;}
-    return true;
+    foundIDDoc = await getLatestDBUUIDDoc();
+    if (!isEmpty(foundIDDoc)) {
+        foundIDDoc.categoriesFixed = true;
+        try { let dbResp = await groceriesDBAsAdmin.insert(foundIDDoc) }
+        catch(err) {log.error("Error updating DBUUID for fixing of categories:",err); return false;}
+        return true;    
+    }
 }
 
 async function fixItemNames(): Promise<boolean> {
-    const foundIDDoc = await getLatestDBUUIDDoc();
+    let foundIDDoc = await getLatestDBUUIDDoc();
     if (isEmpty(foundIDDoc)) {
         log.error("No DBUUID record found")
         return false;
@@ -1419,10 +1422,14 @@ async function fixItemNames(): Promise<boolean> {
             catch(err){ log.error("Could not update item",err); return false;}
         }
     }
-    foundIDDoc.itemNamesFixed = true;
-    try { let dbResp = await groceriesDBAsAdmin.insert(foundIDDoc) }
-    catch(err) {log.error("Error updating DBUUID for fixing of item names:",err); return false;}
-    return true;
+    foundIDDoc = await getLatestDBUUIDDoc();
+    if (!isEmpty(foundIDDoc)) {
+        foundIDDoc.itemNamesFixed = true;
+        try { let dbResp = await groceriesDBAsAdmin.insert(foundIDDoc) }
+        catch(err) {log.error("Error updating DBUUID for fixing of item names:",err); return false;}
+        return true;    
+    }
+    return false;
 }
 
 function getListIDType(id: string, lists: ListDocs, listGroups: ListGroupDocs) : RowType | null {
@@ -1442,7 +1449,7 @@ function getListGroupForList(id: string, lists: ListDocs) : string | null {
 }
 
 async function fixAlexaDefault(): Promise<boolean> {
-    const foundIDDoc = await getLatestDBUUIDDoc();
+    let foundIDDoc = await getLatestDBUUIDDoc();
     if (isEmpty(foundIDDoc)) {
         log.error("No DBUUID record found")
         return false;
@@ -1501,14 +1508,16 @@ async function fixAlexaDefault(): Promise<boolean> {
             catch(err){ log.error("Could not update setting",err); return false;}
         }
     }
-
-    foundIDDoc.alexaDefaultFixed = true;
-    try { let dbResp = await groceriesDBAsAdmin.insert(foundIDDoc) }
-    catch(err) {log.error("Error updating DBUUID for fixing of Alexa defaults:",err); return false;}
-    log.info("Alexa default records fixed");
-    return true;
+    foundIDDoc = await getLatestDBUUIDDoc();
+    if (!isEmpty(foundIDDoc)) {
+        foundIDDoc.alexaDefaultFixed = true;
+        try { let dbResp = await groceriesDBAsAdmin.insert(foundIDDoc) }
+        catch(err) {log.error("Error updating DBUUID for fixing of Alexa defaults:",err); return false;}
+        log.info("Alexa default records fixed");
+        return true;    
+    }
+    return false;
 }
-
 
 async function setSchemaVersion(updSchemaVersion: number) {
     log.info("Finished schema updates, updating database to :",updSchemaVersion);
