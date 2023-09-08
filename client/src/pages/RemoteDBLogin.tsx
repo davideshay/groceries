@@ -124,13 +124,10 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       await db.destroy();
       await removeUserInfoDBCreds(true);
       exitApp();
-      
     },[db,exitApp,removeUserInfoDBCreds])  
 
     // useEffect for initial page launch
     useEffect( () => {
-      log.debug("Initial page data setup...");
-      log.debug("remoteDBCreds:",cloneDeep(remoteDBCreds))
       if (remoteDBState.credsError) {
         setRemoteState(prevState => ({...prevState,formError: remoteDBState.credsErrorText}))
       }
@@ -233,7 +230,6 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
           }  
         }
       };
-      log.debug("something changed in dbuuidaction check, dismissing",cloneDeep({dbuuidAction: remoteDBState.dbUUIDAction}));
       if (remoteDBState.dbUUIDAction !== DBUUIDAction.none) {
         dismiss();
       }

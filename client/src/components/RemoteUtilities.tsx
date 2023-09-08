@@ -360,7 +360,6 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
     if (UUIDResults.docs.length > 0) {
       UUIDResult = (UUIDResults.docs[0] as UUIDDoc).uuid;
     }
-    log.debug("Server DBUUID:",UUIDResult);
     if (UUIDResult == null) {
       UUIDCheck.checkOK = false; UUIDCheck.dbUUIDAction = DBUUIDAction.exit_no_uuid_on_server;
       UUIDCheck.errorText = t("error.server_no_unique_id_short");
@@ -386,7 +385,6 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
         };
       }
     }
-    log.debug("Local has records:",localHasRecords);
     let foundDBUUIDOK = true;
     if (localHasRecords) {
         let localDBFindDocs = null;
@@ -397,7 +395,6 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
             localSchemaVersion = Number((localDBFindDocs.docs[0] as UUIDDoc).schemaVersion);
         }
     }
-    log.debug("local DBUUID:",localDBUUID);
     if (!foundDBUUIDOK && localHasRecords) {
         UUIDCheck.checkOK = false;
         log.error("No local DBUUID record, but other records exist");
@@ -409,7 +406,6 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
     log.info("maxAppSupportedSchemaVersion",maxAppSupportedSchemaVersion)
 
     // compare to current DBCreds one.
-    log.debug("Schema: remote:",remoteSchemaVersion," local:",localSchemaVersion);
     if (remoteSchemaVersion > localSchemaVersion && localSchemaVersion !== 0) {
         log.error("Remote Schema greater than local");
         UUIDCheck.checkOK = false;
@@ -417,6 +413,14 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
         UUIDCheck.errorText = t("error.different_database_schema_short");
         return UUIDCheck;
     }   
+
+    if (localDBUUID !== null && localDBUUID !== UUIDResult) {
+        log.error("DBUUID uuid different on server/local.");
+        UUIDCheck.checkOK = false;
+        UUIDCheck.dbUUIDAction = DBUUIDAction.exit_different_uuids;
+        UUIDCheck.errorText = t("error.different_database_unique_id");
+        return UUIDCheck;
+    }
 
     if (Number(UUIDCheck.schemaVersion) > maxAppSupportedSchemaVersion) {
         UUIDCheck.checkOK = false;
@@ -430,14 +434,6 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
         UUIDCheck.dbUUIDAction = DBUUIDAction.warning_app_version_mismatch;
         UUIDCheck.errorText = t("error.different_server_local_app_versions_short");
         log.error("App Version Mismatch: local:",appVersion," remote: ",remoteAppVersion);
-        return UUIDCheck;
-    }
-
-    if (localDBUUID !== null && localDBUUID !== UUIDResult) {
-        log.error("DBUUID uuid different on server/local.");
-        UUIDCheck.checkOK = false;
-        UUIDCheck.dbUUIDAction = DBUUIDAction.exit_different_uuids;
-        UUIDCheck.errorText = t("error.different_database_unique_id");
         return UUIDCheck;
     }
 

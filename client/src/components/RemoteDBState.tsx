@@ -738,7 +738,11 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         if (remoteDBState.connectionStatus === ConnectionStatus.navToLoginScreen &&
             loginType.current === LoginType.autoLoginSpecificURL) {
                 history.push("/login");
-            }
+        } else if (remoteDBState.connectionStatus === ConnectionStatus.navToLoginScreen && 
+                   remoteDBState.initialSyncComplete && remoteDBState.dbUUIDAction !== DBUUIDAction.none) 
+        {
+            history.push("/login");
+        }
     },[remoteDBState.connectionStatus,history])
 
     useEffect(() => {
