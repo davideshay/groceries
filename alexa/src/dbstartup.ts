@@ -6,8 +6,7 @@ export const couchAdminUser = process.env.COUCHDB_ADMIN_USER;
 export const couchAdminPassword = process.env.COUCHDB_ADMIN_PASSWORD;
 export const couchUserPrefix = "org.couchdb.user";
 export const logLevel = (process.env.LOG_LEVEL == undefined) ? "INFO" : process.env.LOG_LEVEL.toUpperCase();
-import nanoAdmin, { DocumentListResponse,  MangoResponse, DocumentScope,
-    MangoQuery, MaybeDocument } from 'nano';
+import nanoAdmin, { DocumentScope } from 'nano';
 const nanoAdminOpts = {
     url: couchdbInternalUrl,
     requestDefaults: {
