@@ -22,7 +22,7 @@ async function startup() {
         let viewPath = path.join(__dirname,"../views");
         let eta = new Eta({ views: viewPath, cache: true });
 
-        app.engine("eta", eta.render);
+//        app.engine("eta", eta.render);
         app.set("view engine","eta");
         
         app.post('/issuetoken', async (req: Request, res: Response) => res.send(await issueToken(req,res)));

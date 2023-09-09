@@ -158,12 +158,18 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       checkAPIServerAvailable(remoteDBCreds.apiServerURL);
     },[remoteDBCreds.apiServerURL,setRemoteDBState,remoteDBCreds.refreshJWT,remoteDBCreds.dbUsername, remoteDBCreds.couchBaseURL, remoteDBState.loggedIn])
 
+    const showLoading = useCallback( async() => {
+      await present( {
+        message: t("general.loading")
+      })
+    },[present,t])
+  
     const continueDifferentVersion = useCallback( async () => {
       await dismissAlert();
       await showLoading();
       setRemoteDBState(prevState => ({...prevState,dbUUIDAction: DBUUIDAction.none,ignoreAppVersionWarning: true}));
       await assignDB(remoteDBState.accessJWT);
-    },[setRemoteDBState,dismissAlert,assignDB,remoteDBState.accessJWT])
+    },[setRemoteDBState,dismissAlert,showLoading,assignDB,remoteDBState.accessJWT])
   
     // effect for dbuuidaction not none
     useEffect( () => {
@@ -271,12 +277,6 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       return newDBCreds;
     }
     
-  async function showLoading() {
-    await present( {
-      message: t("general.loading")
-    })
-  }
-
   async function submitForm() {
     await showLoading();
     setRemoteState(prevState => ({...prevState,formError: ""}));
