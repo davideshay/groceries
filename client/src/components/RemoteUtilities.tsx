@@ -402,19 +402,25 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
         UUIDCheck.errorText = t("error.different_database_schema_short");
         return UUIDCheck;
     }
+
     log.info("maxAppSupportedSchemaVersion",maxAppSupportedSchemaVersion)
 
     // compare to current DBCreds one.
-    if (localDBUUID === UUIDResult) {
-        log.debug("Schema: remote:",remoteSchemaVersion," local:",localSchemaVersion);
-        if (remoteSchemaVersion > localSchemaVersion) {
-            log.error("Remote Schema greater than local");
-            UUIDCheck.checkOK = false;
-            UUIDCheck.dbUUIDAction = DBUUIDAction.exit_local_remote_schema_mismatch;
-            UUIDCheck.errorText = t("error.different_database_schema_short");
-            return UUIDCheck;
-        }   
-    } 
+    if (remoteSchemaVersion > localSchemaVersion && localSchemaVersion !== 0) {
+        log.error("Remote Schema greater than local");
+        UUIDCheck.checkOK = false;
+        UUIDCheck.dbUUIDAction = DBUUIDAction.exit_local_remote_schema_mismatch;
+        UUIDCheck.errorText = t("error.different_database_schema_short");
+        return UUIDCheck;
+    }   
+
+    if (localDBUUID !== null && localDBUUID !== UUIDResult) {
+        log.error("DBUUID uuid different on server/local.");
+        UUIDCheck.checkOK = false;
+        UUIDCheck.dbUUIDAction = DBUUIDAction.exit_different_uuids;
+        UUIDCheck.errorText = t("error.different_database_unique_id");
+        return UUIDCheck;
+    }
 
     if (Number(UUIDCheck.schemaVersion) > maxAppSupportedSchemaVersion) {
         UUIDCheck.checkOK = false;
@@ -422,10 +428,6 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
         UUIDCheck.errorText = t("error.app_not_support_newer_schema_short");
         return UUIDCheck;
     }
-
-    let remoteListGroupIDs = await getListGroupIDs(remoteDB,username);
-    let localListGroupIDs = await getListGroupIDs(db,username);
-    UUIDCheck.syncListGroupIDs = Array.from(new Set(remoteListGroupIDs.concat(localListGroupIDs)));
 
     if ((appVersion !== remoteAppVersion) && !ignoreAppVersionWarning) {
         UUIDCheck.checkOK = false;
@@ -435,11 +437,14 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
         return UUIDCheck;
     }
 
+    let remoteListGroupIDs = await getListGroupIDs(remoteDB,username);
+    let localListGroupIDs = await getListGroupIDs(db,username);
+    UUIDCheck.syncListGroupIDs = Array.from(new Set(remoteListGroupIDs.concat(localListGroupIDs)));
+
       // if current DBCreds doesn't have one, set it to the remote one.
     if ((localDBUUID === null || localDBUUID === "" ) && !localHasRecords) {
       return UUIDCheck;
     }
-//     UUIDCheck.checkOK = false; UUIDCheck.dbUUIDAction = DBUUIDAction.destroy_needed;
     return UUIDCheck;
   }
 

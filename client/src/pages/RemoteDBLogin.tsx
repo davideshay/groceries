@@ -5,9 +5,8 @@ import { eye, eyeOff } from 'ionicons/icons';
 import { Capacitor, CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
 import { usePouch} from 'use-pouchdb';
 import { ConnectionStatus, DBCreds, DBUUIDAction, LoginType } from '../components/RemoteDBState';
-import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
-import { createNewUser, getTokenInfo, navigateToFirstListID, errorCheckCreds, isServerAvailable, JWTMatchesUser, CreateResponse, createResponseInit, isDBServerAvailable, getDeviceID  } from '../components/RemoteUtilities';
+import { createNewUser, getTokenInfo, navigateToFirstListID, errorCheckCreds, isServerAvailable, JWTMatchesUser, CreateResponse, createResponseInit, isDBServerAvailable, getDeviceID } from '../components/RemoteUtilities';
 import { cloneDeep } from 'lodash';
 import { RemoteDBStateContext, SyncStatus, initialRemoteDBState } from '../components/RemoteDBState';
 import { HistoryProps} from '../components/DataTypes';
@@ -104,7 +103,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     const [formState,setFormState]=useState<FormState>(initFormState);
     const showingVersionAlert = useRef(false);
     const [presentAlert, dismissAlert] = useIonAlert();
-    const { remoteDBState, remoteDBCreds, setRemoteDBState, setRemoteDBCreds,stopSyncAndCloseRemote,
+    const { remoteDBState, remoteDBCreds, setRemoteDBState, setRemoteDBCreds, removeUserInfoDBCreds, stopSyncAndCloseRemote,
       assignDB, setDBCredsValue, setLoginType, attemptFullLogin} = useContext(RemoteDBStateContext);
     const { dataReloadStatus, waitForReload, listRows, listRowsLoaded, listsLoading, listCombinedRows } = useContext(GlobalDataContext);
     const { globalState, setGlobalState} = useContext(GlobalStateContext);
@@ -123,17 +122,16 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
 
     const destroyAndExit = useCallback(async () => {
       await db.destroy();
-      await Preferences.remove({key: 'dbcreds'});
+      await removeUserInfoDBCreds(true);
       exitApp();
-      
-    },[db,exitApp])  
+    },[db,exitApp,removeUserInfoDBCreds])  
 
     // useEffect for initial page launch
     useEffect( () => {
       if (remoteDBState.credsError) {
         setRemoteState(prevState => ({...prevState,formError: remoteDBState.credsErrorText}))
       }
-      setFormState(prevState=> ({...prevState,apiServerURL: remoteDBCreds.apiServerURL, dbUserName: remoteDBCreds.dbUsername}))
+      setFormState(prevState=> ({...prevState,apiServerURL: remoteDBCreds.apiServerURL, dbUsername: remoteDBCreds.dbUsername}))
       setLoginType(LoginType.loginFromLoginPage);
 // eslint-disable-next-line react-hooks/exhaustive-deps 
     },[])
@@ -160,12 +158,18 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       checkAPIServerAvailable(remoteDBCreds.apiServerURL);
     },[remoteDBCreds.apiServerURL,setRemoteDBState,remoteDBCreds.refreshJWT,remoteDBCreds.dbUsername, remoteDBCreds.couchBaseURL, remoteDBState.loggedIn])
 
+    const showLoading = useCallback( async() => {
+      await present( {
+        message: t("general.loading")
+      })
+    },[present,t])
+  
     const continueDifferentVersion = useCallback( async () => {
-      log.debug("Dismissing alert....");
       await dismissAlert();
+      await showLoading();
       setRemoteDBState(prevState => ({...prevState,dbUUIDAction: DBUUIDAction.none,ignoreAppVersionWarning: true}));
       await assignDB(remoteDBState.accessJWT);
-    },[setRemoteDBState,dismissAlert,assignDB,remoteDBState.accessJWT])
+    },[setRemoteDBState,dismissAlert,showLoading,assignDB,remoteDBState.accessJWT])
   
     // effect for dbuuidaction not none
     useEffect( () => {
@@ -187,8 +191,6 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
                             { text: t("general.continue_ignore"), role: "confirm",
                             handler: async () => {await dismissAlert(); continueDifferentVersion();}}]
               });
-      
-              log.debug("after Ask continue...");
               return;
             }
           }
@@ -222,7 +224,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
                 {text: t("general.ok"),handler: () => exitApp()}]
             });
             return;
-          } else if (remoteDBState.dbUUIDAction === DBUUIDAction.destroy_needed) {
+          } else if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_different_uuids) {
             presentAlert( {
               header: t("error.warning"),
               message: t("error.different_database_unique_id"),
@@ -234,8 +236,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
           }  
         }
       };
-      log.debug("something changed in dbuuidaction check, dismissing",cloneDeep({dbuuidAction: remoteDBState.dbUUIDAction}));
-      if (remoteDBState.dbUUIDAction !== DBUUIDAction.none) {
+      if (remoteDBState.dbUUIDAction !== DBUUIDAction.none && remoteDBState.dbUUIDAction !== DBUUIDAction.warning_app_version_mismatch) {
         dismiss();
       }
       processDBUUIDAction();
@@ -276,12 +277,6 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       return newDBCreds;
     }
     
-  async function showLoading() {
-    await present( {
-      message: t("general.loading")
-    })
-  }
-
   async function submitForm() {
     await showLoading();
     setRemoteState(prevState => ({...prevState,formError: ""}));
@@ -439,11 +434,11 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   async function logout() {
     await stopSyncAndCloseRemote();
-    let credsStr=JSON.stringify({});
-    await Preferences.set({key: 'dbcreds', value: credsStr})
+    await removeUserInfoDBCreds(false);
 //    if (!(isPlatform("desktop") || isPlatform("electron"))) {App.exitApp()}
     if (Capacitor.isNativePlatform()) {App.exitApp()}
     setRemoteDBState(initialRemoteDBState);
+    setFormState(prevState => ({...prevState,dbUsername: "",email: "", fullName: ""}));
     //window.location.replace('/');
     return false;
   }
