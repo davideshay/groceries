@@ -86,12 +86,12 @@ export async function doesDBExist() {
 }
 
 async function createDB() {
-    let createError = false;
+    let createSuccess = true;
     try { await groceriesNanoAsAdmin.db.create(couchDatabase)}
-    catch(err) {  createError = true }
-    if (createError) return (false);
+    catch(err) {  createSuccess = false; log.error("DB Creation failed: ",err) }
+    if (!createSuccess) return (createSuccess);
     log.info("Initiatialization, Database "+couchDatabase+" created.");
-    return (createError);
+    return (createSuccess);
 }
 
 async function createDBIfNotExists() {
@@ -1581,11 +1581,12 @@ async function createConflictsView(): Promise<boolean> {
     try {existingView = await groceriesDBAsAdmin.get("_design/"+conflictsViewID)}
     catch(err) {viewFound = false;}
     if (!viewFound) {
-        let viewDoc = {
+        const viewDoc: any = {
             "type": "view",
-            "views": { conflictsViewName : {
-                "map": "function(doc) { if (doc._conflicts) { emit (doc._conflicts, null)}}"
-        }}}
+            "views": {}
+        };
+        viewDoc.views[conflictsViewName] = 
+              {  "map": "function(doc) { if (doc._conflicts) { emit (doc._conflicts, null)}}" }
         try {
             await groceriesDBAsAdmin.insert(viewDoc as any,"_design/"+conflictsViewID)
         }
