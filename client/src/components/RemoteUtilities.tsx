@@ -1,7 +1,7 @@
 import { DBCreds, DBCredsInit, RemoteDBState } from "./RemoteDBState";
 import { CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
 import { Preferences } from '@capacitor/preferences';
-import jwt_decode from 'jwt-decode';
+import { jwtDecode }  from 'jwt-decode';
 import { ListCombinedRows, ListRow, RowType } from "./DataTypes";
 import { ListGroupDocs, TriggerDoc, UUIDDoc, appVersion, maxAppSupportedSchemaVersion } from "./DBSchema";
 import { DBUUIDAction, DBUUIDCheck } from "./RemoteDBState";
@@ -181,7 +181,7 @@ export function getTokenInfo(JWT: string, logIt: boolean) {
     if (JWT === "" || JWT === undefined || JWT === null) { return tokenResponse}
     let JWTDecode;
     let JWTDecodeValid = true;
-    try { JWTDecode = jwt_decode(JWT);}
+    try { JWTDecode = jwtDecode(JWT);}
     catch(err) {log.error("INVALID access token:",err); JWTDecodeValid= false}
     if (JWTDecodeValid) {
         tokenResponse.valid = true;
