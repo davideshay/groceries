@@ -6,7 +6,7 @@ import { IonButton, IonCheckbox, IonCol, IonGrid, IonIcon, IonItem, IonRow } fro
 import { useTranslation } from "react-i18next";
 import { cloneDeep } from "lodash";
 import { pencilOutline, trashOutline } from "ionicons/icons";
-let fracty = require('fracty');
+import Fraction from 'fraction.js';
 
 type RecipeItemRowProps = {
     recipeDoc: RecipeDoc,
@@ -51,7 +51,8 @@ const RecipeItemRows: React.FC<RecipeItemRowProps> = (props: RecipeItemRowProps)
       }
       let quantityUOMDesc = "";
       if ((item.recipeQuantity !== 0) && ((item.recipeQuantity > 1) || uomDesc !== "")) {
-          quantityUOMDesc = fracty(item.recipeQuantity).toString() + ((uomDesc === "" ? "" : " " + uomDesc));
+          let rq = new Fraction(item.recipeQuantity);
+          quantityUOMDesc = rq.toFraction(true).toString() + ((uomDesc === "" ? "" : " " + uomDesc));
       }
       let fullItemName = itemName;
       if (quantityUOMDesc !== "") { fullItemName = fullItemName + " (" + quantityUOMDesc +")"}
