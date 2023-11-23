@@ -334,7 +334,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   useEffect( () => {
     function beforeInputData(e:any) {
       if (e && e.data && e.data.includes("\n")) {
-          enterKeyValueRef.current= e.data.length > 1 ? e.data.slice(0,-1) : "";
+          enterKeyValueRef.current= e.data.trim().length > 1 ? e.data.trim() : "";
           addNewItemToList(searchState.searchCriteria);
       }
     }
@@ -436,8 +436,8 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   function searchKeyPress(event: KeyboardEvent<HTMLElement>) {
     if (event.key === "Enter") {
-      addNewItemToList(searchState.searchCriteria);
-      enterKeyValueRef.current= searchState.searchCriteria.length > 1 ? searchState.searchCriteria.slice(0,-1) : "";
+      addNewItemToList(searchState.searchCriteria.trim());
+      enterKeyValueRef.current= searchState.searchCriteria.trim().length > 1 ? searchState.searchCriteria.trim() : "";
     }
   }
 
