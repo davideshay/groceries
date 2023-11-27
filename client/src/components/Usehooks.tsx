@@ -13,7 +13,7 @@ import { isPlatform } from '@ionic/core';
 import { fromBlob } from 'image-resize-compress';
 import { useTranslation } from 'react-i18next';
 import { translatedItemName } from './translationUtilities';
-import log from 'loglevel';
+import { log } from "./Utilities";
 
 const imageQuality = 80;
 export const imageWidth = 200;

@@ -8,7 +8,7 @@ import { RowType } from "./DataTypes";
 import { getCommonKey } from "./ItemUtilities";
 import { isEmpty } from "lodash";
 import { t } from 'i18next';
-import log from 'loglevel';
+import { log } from './Utilities';
 
 export async function isRecipeItemOnList({ recipeItem, listOrGroupID,globalData, db} : 
     {recipeItem: RecipeItem, listOrGroupID: string | null,

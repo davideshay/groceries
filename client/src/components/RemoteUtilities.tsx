@@ -11,7 +11,7 @@ import { urlPatternValidation, usernamePatternValidation, emailPatternValidation
 import { cloneDeep, pick, keys, isEqual } from 'lodash';
 import { Device } from '@capacitor/device';
 import { t } from "i18next";
-import log from "loglevel";
+import { log } from "./Utilities";
 
 export async function getDeviceID() : Promise<string> {
     const devIDInfo = await Device.getId();

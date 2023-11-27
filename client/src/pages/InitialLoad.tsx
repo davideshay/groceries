@@ -8,7 +8,7 @@ import ErrorPage from './ErrorPage';
 import { History } from 'history';
 import { DataReloadStatus, GlobalDataContext } from '../components/GlobalDataProvider';
 import { useTranslation } from 'react-i18next';
-import log from 'loglevel';
+import { log } from "../components/Utilities";
 import { GlobalStateContext } from '../components/GlobalState';
 import { useHistory } from 'react-router';
 import { App } from '@capacitor/app';

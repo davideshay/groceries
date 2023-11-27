@@ -10,7 +10,7 @@ import { AlertInput, useIonAlert, useIonLoading } from "@ionic/react";
 import { useTranslation } from "react-i18next";
 import { t } from 'i18next';
 import { isEmpty } from "lodash";
-import log from 'loglevel';
+import { log } from "./Utilities";
 
 export function useProcessInputFile() {
     const db = usePouch();
