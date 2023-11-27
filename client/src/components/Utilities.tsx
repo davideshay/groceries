@@ -5,7 +5,6 @@ import { cloneDeep } from 'lodash';
 import { DBCreds} from './RemoteDBState';
 import { PouchResponse, PouchResponseInit } from './DataTypes';
 import loglevelnext from 'loglevelnext';
-import DefaultLogger  from 'loglevelnext';
 import { t } from "i18next"
 
 export const apiConnectTimeout = 500;
