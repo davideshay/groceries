@@ -4,7 +4,8 @@ import { ListGroupDoc, ListGroupDocInit } from './DBSchema';
 import { cloneDeep } from 'lodash';
 import { DBCreds} from './RemoteDBState';
 import { PouchResponse, PouchResponseInit } from './DataTypes';
-import loglevelnext from 'loglevelnext';
+import loglevelnext, { LogLevel } from 'loglevelnext';
+import { MethodFactory } from 'loglevelnext';
 import { t } from "i18next"
 
 export const apiConnectTimeout = 500;
@@ -209,6 +210,20 @@ function getLoggingLevel(level: string) : number {
     } else {retLevel = 2}
     console.log("Setting log level to ",retLevel);
     return retLevel;
+}
+
+export class LogFileFactory extends MethodFactory {
+
+    constructor (logger?: LogLevel) {
+        super(logger);
+        console.log("setup file write here...");
+    }
+
+    make(methodName: string) {
+        const og = super.make(methodName);
+        return (...args: any[]) => {}
+    }
+
 }
 
 export function secondsToDHMS(seconds: number) : string {
