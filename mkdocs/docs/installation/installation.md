@@ -4,7 +4,8 @@
     * Install via Docker
     * Run the code on an existing web server. You will have to build the output using "ionic build" and then deploy to your web server.
 * Installation instructions for web/mobile app (docker)
-    * Use the Dockerfile in client/Dockerfile to build an image to deploy.
+    * Use the Dockerfile in client/Dockerfile to build an image to deploy.  Alternatively, use the latest version on ghcr - for instance:
+    ```docker pull ghcr.io/davideshay/groceries-server:1.1.2```
     * You should have a ".env" file locally with an assignment pointing to your backend/API component. For development, this might be something like:
     ```DEFAULT_API_URL=http://localhost:3333```
     For production, this might be:
@@ -15,7 +16,8 @@
     * Sync the sources with `npx capacitor sync` or `ionic capacitor sync`
     * Build the application, with, for example for Android: `ionic capacitor build android`
     * You can test in a simulator, or move the bundle/APK to your Android device with Google Drive or any other sideloading mechanism of your choice.
-    * For Android, the easiest installation is to use the .APK file attached to each release on Github. The only difference from "building your own" is that the default API URL will not be your custom site/domain and will need to be changed.
+    * For Android, the easiest installation is to use the .APK file attached to each release on Github. The only difference from "building your own" is that the default API URL will not be your custom site/domain and will need to be changed. There is now also a release available on the Google Play store: 
+    ```https://play.google.com/store/apps/details?id=net.shaytech.groceries```
 * Installation instructions for backend - Docker / Kubernetes
     * For a complete docker-compose example see the docker compose file here: [docker-compose.yaml](https://raw.githubusercontent.com/davideshay/groceries/master/mkdocs/docs/assets/docker-compose.yaml) and the instructions here: [Docker Setup](https://davideshay.github.io/groceries/installation/docker-setup/) . A more comprehensive example using reverse-proxy, suitable for use on a VPS can be found here: [docker-full.tar.gz](https://raw.githubusercontent.com/davideshay/groceries/master/mkdocs/docs/assets/docker-full.tar.gz)  
     * Deploy couchDB to a production server, and note the admin user/password (these will be needed for the node backend). For couchDB you will also have to enable JWT authentication and set an HMAC key.  See example YAML for Kubernetes deployment [couchdb.yaml](https://raw.githubusercontent.com/davideshay/groceries/master/mkdocs/docs/assets/couchdb.yaml)  .  Be sure to change any admin users, passwords, and secrets in that file as appropriate.
@@ -24,7 +26,7 @@
         * The yaml file sets up 3 separate instances of couchdb so they can run as a cluster.  I wanted this for high-availablity of couchDB, but this is not necessary.
         * The yaml file shown above also has some setup scripts that run -- these are mostly for convenience so that at first run it will automatically create the _users database and _replicator database, both of which are required for standard couchDB replication and authentication functionality to work. You could create those manually and ignore the scripts. If you are using any of these scripts be sure to change the username and password specified in them to the admin username / password specified above.
     * Build the image from the Dockerfile in server/Dockerfile
-    * Deploy to your container server.  Here is a sample yaml deployment file for Kubernetes that can be leveraged to create a docker compose file if required : [groceries.yaml](https://raw.githubusercontent.com/davideshay/groceries/master/docs/groceries.yaml). Make sure to change your couchDB admin user names and passwords to what you have established in the CouchDB deployment above. Also, set the HMAC key to the unencoded/raw HMAC secret linked to the one in the CouchDB setup.
+    * Deploy to your container server.  Here is a sample yaml deployment file for Kubernetes : [groceries.yaml](https://raw.githubusercontent.com/davideshay/groceries/master/mkdocs/docs/assets/groceries.yaml). Make sure to change your couchDB admin user names and passwords to what you have established in the CouchDB deployment above. Also, set the HMAC key to the unencoded/raw HMAC secret linked to the one in the CouchDB setup.
     * Run from your container server (docker, kubernetes, etc.) and ensure the backend is configured with the following environment variables:
     
 ```

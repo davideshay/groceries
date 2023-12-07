@@ -219,11 +219,6 @@ export class LogFileFactory extends MethodFactory {
         console.log("setup file write here...");
     }
 
-    make(methodName: string) {
-        const og = super.make(methodName);
-        return (...args: any[]) => {}
-    }
-
 }
 
 export function secondsToDHMS(seconds: number) : string {
