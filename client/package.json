@@ -74,6 +74,7 @@
     "ionic:serve:before": "bin/updateenv.sh && cp env-config.js ./public/env-config.js",
     "start": "vite --host",
     "ionic:build:before": "bin/updateenv.sh && cp env-config.js ./public/env-config.js",
+    "prebuild": "bin/updateenv.sh && cp env-config.js ./public/env-config.js",
     "build": "tsc && vite build",
     "sync": "npm run build && ionic cap sync --no-build",
     "test": "react-scripts test --transformIgnorePatterns 'node_modules/(?!(@ionic/react|@ionic/react-router|@ionic/core|@stencil/core|ionicons)/)'",
