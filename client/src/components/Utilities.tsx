@@ -4,8 +4,7 @@ import { ListGroupDoc, ListGroupDocInit } from './DBSchema';
 import { cloneDeep } from 'lodash';
 import { DBCreds} from './RemoteDBState';
 import { PouchResponse, PouchResponseInit } from './DataTypes';
-import loglevelnext, { LogLevel, LogLevelOptions } from 'loglevelnext';
-import { MethodFactory } from 'loglevelnext';
+import loglevelnext from 'loglevelnext';
 import { t } from "i18next"
 
 export const apiConnectTimeout = 500;
@@ -210,73 +209,6 @@ function getLoggingLevel(level: string) : number {
     } else {retLevel = 2}
     console.log("Setting log level to ",retLevel);
     return retLevel;
-}
-
-export class LogFileFactory extends MethodFactory {
-
-    constructor (logger?: LogLevel) {
-        super(logger);
-        console.log("setup file write here...");
-    }
-
-    make(methodName: string) {
-        const og = super.make(methodName);
-        return(...args: any[]) => {
-            og(...args);
-        }
-    }
-
-}
-
-const factories = Symbol('log-factories');
-
-class LogFileLogger extends LogLevel {
-    private cache: Record<string, LogLevel>;
-
-    constructor() {
-      super({ name: 'default' });
-  
-      this.cache = { default: this as LogLevel };
-      // TS can't handle symbols as index types
-      this[factories as any] = { MethodFactory, LogFileFactory };
-    }
-  
-    get factories() {
-      return this[factories as any];
-    }
-  
-    get loggers() {
-      return this.cache;
-    }
-  
-    create(opts: LogLevelOptions | string) {
-      let options: LogLevelOptions;
-  
-      if (typeof opts === 'string') {
-        options = { name: opts };
-      } else {
-        options = Object.assign({}, opts);
-      }
-  
-      if (!options.id) {
-        options.id = options.name!.toString();
-      }
-  
-      const { name, id } = options;
-      const defaults = { level: this.level };
-  
-      if (typeof name !== 'string' || !name || !name.length) {
-        throw new TypeError('You must supply a name when creating a logger.');
-      }
-  
-      let logger = this.cache[id];
-      if (!logger) {
-        logger = new LogLevel(Object.assign({}, defaults, options));
-        this.cache[id] = logger;
-      }
-      return logger;
-    }
-  
 }
 
 export function secondsToDHMS(seconds: number) : string {
