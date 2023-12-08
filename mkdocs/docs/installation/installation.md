@@ -39,6 +39,7 @@ COUCHDB_ADMIN_PASSWORD: Admin password for CouchDB instance
 GROCERY_URL : for testing could be http://localhost:8100, for prod could be https://groceries.mydomain.com
 GROCERY_API_URL: for testing could be http://localhost:3333, for prod could be https://groceries.mydomain.com/api  (need to ensure you can route the api prefix to the backend and without the prefix to the web server)
 GROCERY_API_PORT: Port for the server to listen on, i.e. 3333 for dev, 80 or 8000 for production, depending on your setup/reverse proxy.
+LOG_LEVEL: Defaults to "INFO". Can be set to "D", or "DEBUG", or "1" to get additional debugging output. Standard values are used here, so you can also set "S" or "SILENT" or "5" to have no logging output at all.
 SMTP_HOST: Name for SMTP host which can send emails (for password resets and friend requests to unregistered users)
 SMTP_PORT: Port SMTP server runs on
 SMTP_FROM: Email address that mail will appear to originate from
@@ -50,5 +51,11 @@ EXPIRE_JWT_FREQUENCY_MINUTES: Sweep the database and expire old JWT tokens. Thes
 REFRESH_TOKEN_EXPIRES: A string such as "30d" for 30 days, or "24h" for 24 hours. Can be reasonably long since re-use detection is applied.
 ACCESS_TOKEN_EXPIRES: Same type of string, typically shorter as it will be renewed prior to expiration automatically by the refresh token. Could be "1d" or "12h" for example.
 DISABLE_ACCOUNT_CREATION: Set to "true" to disable new user account creation in the backend
+```
 
+    * For the frontend/client, these environment variables can also be set for web access (in Android/iOS these are set at compile/build time)
+
+```
+DEFAULT_API_URL: Should be set to the same as GROCERY_API_URL above on the backend, and accessible from outside of your docker environment/kubernetes cluster ideally.
+LOG_LEVEL: Determines the level of logging in the browser's Javascript console. Normally set to "INFO" - see above for other details.
 ```
