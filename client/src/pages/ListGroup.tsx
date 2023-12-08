@@ -17,7 +17,7 @@ import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
 import { useTranslation } from 'react-i18next';
-import log from 'loglevel';
+import { log } from "../components/Utilities";
 import { updateTriggerDoc } from '../components/RemoteUtilities';
 import { usePouch } from 'use-pouchdb';
 import { GlobalStateContext } from '../components/GlobalState';

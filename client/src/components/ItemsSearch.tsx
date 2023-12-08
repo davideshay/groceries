@@ -1,9 +1,9 @@
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useFind } from "use-pouchdb";
 import { GlobalDataContext } from "./GlobalDataProvider";
 import { translatedItemName } from "./translationUtilities";
 import { ItemDoc, ItemDocs } from "./DBSchema";
-import GenericSearchBar, { SearchRefType } from "./GenericSearchBar";
+// import { SearchRefType } from "./GenericSearchBar";
 import { ItemSearch } from "./DataTypes";
 
 type PageState = {
@@ -42,7 +42,7 @@ const ItemsSearch: React.FC<ItemsSearchProps> = (props: ItemsSearchProps) => {
         selector: { type: "item", "listGroupID": { "$in": Array.from(pageState.allListGroups)} } 
     });
     const globalData = useContext(GlobalDataContext); 
-    const searchRef = useRef<SearchRefType>(null);
+//    const searchRef = useRef<SearchRefType>(null);
 
     useEffect( () => {
         if (globalData.listRowsLoaded) {
@@ -73,19 +73,19 @@ const ItemsSearch: React.FC<ItemsSearchProps> = (props: ItemsSearchProps) => {
         }
     },[pageState.listGroupsNeedInit,itemsLoading,globalData.globalItemsLoading,globalData.globalItemDocs, itemDocs,pageState.itemsNeedLoaded])
 
-    function selectRow(id: string, data: ItemSearchData) {
-        props.rowSelected(id,data);
-        if (searchRef.current) {
-            searchRef.current.resetSearch()
-        }    
-    }
+    // function selectRow(id: string, data: ItemSearchData) {
+    //     props.rowSelected(id,data);
+    //     if (searchRef.current) {
+    //         searchRef.current.resetSearch()
+    //     }    
+    // }
 
-    function addNewRecipeItem(name: string) {
-        props.addItemWithoutRow(name);
-        if (searchRef.current) {
-            searchRef.current.resetSearch()
-        }    
-    }
+    // function addNewRecipeItem(name: string) {
+    //     props.addItemWithoutRow(name);
+    //     if (searchRef.current) {
+    //         searchRef.current.resetSearch()
+    //     }    
+    // }
 
     return (
         <></>

@@ -20,7 +20,7 @@ import { checkUserByEmailExists, emailPatternValidation, fullnamePatternValidati
 import { cloneDeep } from 'lodash';
 import Loading from '../components/Loading';
 import { getTokenInfo, isDBServerAvailable, isServerAvailable } from '../components/RemoteUtilities';
-import log from 'loglevel';
+import { log } from "../components/Utilities";
 import { Capacitor } from '@capacitor/core';
 
 type ErrorInfo = {

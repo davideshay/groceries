@@ -4,7 +4,7 @@ import { ListGroupDoc, ListGroupDocInit } from './DBSchema';
 import { cloneDeep } from 'lodash';
 import { DBCreds} from './RemoteDBState';
 import { PouchResponse, PouchResponseInit } from './DataTypes';
-import log, { LogLevelDesc } from 'loglevel';
+import loglevelnext from 'loglevelnext';
 import { t } from "i18next"
 
 export const apiConnectTimeout = 500;
@@ -191,23 +191,24 @@ export function getRowTypeFromListOrGroupID(listOrGroupID: string, listCombinedR
     else { return newListRow.rowType}
 }
 
-function startLogging(level: string) {
+function getLoggingLevel(level: string) : number {
     let uLevel=level.toUpperCase();
-    let targetLevel: LogLevelDesc
+    let retLevel: number = 3;
     if (["0","TRACE","T"].includes(uLevel)) {
-        targetLevel="TRACE" 
+        retLevel = 0 
     } else if (["1","DEBUG","D"].includes(uLevel)) {
-        targetLevel="DEBUG"
+        retLevel = 1
     } else if (["2","INFO","INFORMATION","I"].includes(uLevel)) {
-        targetLevel="INFO"
+        retLevel = 2
     } else if (["3","WARN","WARNING","W"].includes(uLevel)) {
-        targetLevel="WARN"
+        retLevel = 3
     } else if (["4","ERROR","E"].includes(uLevel)) {
-        targetLevel="ERROR"
+        retLevel = 4
     } else if (["5","SILENT","S","NONE","N"].includes(uLevel)) {
-        targetLevel="SILENT"
-    } else {targetLevel="INFO"}
-    log.setLevel(targetLevel);    
+        retLevel = 5
+    } else {retLevel = 2}
+    console.log("Setting log level to ",retLevel);
+    return retLevel;
 }
 
 export function secondsToDHMS(seconds: number) : string {
@@ -223,4 +224,5 @@ export function secondsToDHMS(seconds: number) : string {
 }
 
 export const DEFAULT_API_URL=(window as any)._env_.DEFAULT_API_URL === undefined ? "https://groceries.mydomain.com/api" : (window as any)._env_.DEFAULT_API_URL
-export const LOG_LEVEL= (window as any)._env_.LOG_LEVEL === undefined ? startLogging("INFO") : startLogging((window as any)._env_.LOG_LEVEL)
+export const LOG_LEVEL= (window as any)._env_.LOG_LEVEL === undefined ? "INFO" : (window as any)._env_.LOG_LEVEL
+export const log = loglevelnext.create({name: "applogger", level: getLoggingLevel(LOG_LEVEL)})

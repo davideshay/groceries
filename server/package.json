@@ -20,7 +20,7 @@
     "eta": "^3.1.1",
     "express": "^4.18.2",
     "i18next": "^23.5.1",
-    "jose": "^4.14.6",
+    "jose": "^5.1.1",
     "lodash": "^4.17.21",
     "loglevel": "^1.8.1",
     "loglevel-plugin-prefix": "^0.8.4",

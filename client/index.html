@@ -6,7 +6,8 @@
 
     <base href="/" />
 
-    <script src="%PUBLIC_URL%/env-config.js"></script>
+    <script type="module" src="env-config.js"></script>
+    <script>window.global = window</script>
     
     <meta name="color-scheme" content="light dark" />
     <meta
@@ -20,9 +21,9 @@
       worker-src blob:; 
       child-src blob: gap:;
       img-src 'self' blob: data:;
-      default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: gap: content:">    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+      default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: gap: content:">    <link rel="manifest" href="manifest.json" />
 
-    <link rel="shortcut icon" type="image/svg" href="%PUBLIC_URL%/assets/icon/favicon.svg" />
+    <link rel="shortcut icon" type="image/svg" href="/assets/icon/favicon.svg" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -36,6 +37,8 @@
 
   <body>
     <div id="root"></div>
+    <!-- Add entry point 👇 -->
+    <script type="module" src="/src/index.tsx"></script>
   </body>
 
 </html>

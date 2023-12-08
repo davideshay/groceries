@@ -10,7 +10,7 @@ import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { ConflictDocs } from '../components/DBSchema';
 import { useTranslation } from 'react-i18next';
-import log from 'loglevel'
+import { log } from "../components/Utilities";
 
 const ConflictLog: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { setDBCredsValue } = useContext(RemoteDBStateContext);

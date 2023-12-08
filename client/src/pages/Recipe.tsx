@@ -22,7 +22,7 @@ import { createNewItemFromRecipeItem, isRecipeItemOnList, updateItemFromRecipeIt
 import { usePouch } from 'use-pouchdb';
 import { RecipeItemInit } from '../components/DBSchema';
 import RecipeModal from '../components/RecipeModal';
-import log from 'loglevel';
+import { log } from "../components/Utilities";
 import RecipeItemRows from '../components/RecipeItemRows';
 import { checkNameInGlobalItems } from '../components/ItemUtilities';
 

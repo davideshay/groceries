@@ -8,7 +8,7 @@ import { useCreateGenericDocument, useUpdateGenericDocument } from "./Usehooks";
 import { RemoteDBStateContext } from "./RemoteDBState";
 import { useFind } from "use-pouchdb";
 import { isEmpty } from "lodash";
-import log from "loglevel";
+import { log } from "./Utilities";
 
 export type GlobalState = {
     itemMode?: string,

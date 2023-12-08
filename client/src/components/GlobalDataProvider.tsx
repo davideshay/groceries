@@ -5,7 +5,8 @@ import { ListCombinedRows, ListRow } from "./DataTypes";
 import { getListRows } from "./GlobalDataUtilities";
 import { RemoteDBStateContext } from "./RemoteDBState";
 import { translatedCategoryName, translatedItemName, translatedUOMName } from "./translationUtilities";
-import log from "loglevel";
+import loglevelnext from 'loglevelnext';
+const log = loglevelnext.create({name: "applogger", level: 0})
 import { cloneDeep } from "lodash";
 
 export type GlobalDataState = {

@@ -1,6 +1,6 @@
 import { t } from "i18next"
 import { UomDoc } from "./DBSchema";
-import log from 'loglevel';
+import { log } from "./Utilities";
 
 export function translatedItemName(id: string | null, name: string,pluralName: string| undefined, count: number=1) {
     const sysItemKey="system:item";

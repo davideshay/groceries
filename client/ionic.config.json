@@ -3,5 +3,5 @@
   "integrations": {
     "capacitor": {}
   },
-  "type": "react"
+  "type": "react-vite"
 }

@@ -20,7 +20,7 @@ import { GlobalDataContext } from '../components/GlobalDataProvider';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
 import { translatedCategoryName, translatedItemName, translatedUOMName } from '../components/translationUtilities';
-import log from 'loglevel';
+import { log } from "../components/Utilities";
 
 enum ErrorLocation  {
    Name, PluralName, General
