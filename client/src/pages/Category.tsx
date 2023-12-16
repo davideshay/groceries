@@ -3,7 +3,7 @@ import { IonContent, IonPage, IonButton, IonList, IonInput,
 import { useParams } from 'react-router-dom';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteCategoryFromItems, useDeleteGenericDocument,
-   useDeleteCategoryFromLists, useGetOneDoc, useItems } from '../components/Usehooks';
+   useDeleteCategoryFromLists, useAddCategoryToLists, useGetOneDoc, useItems } from '../components/Usehooks';
 import './Category.css';
 import { PouchResponse, HistoryProps, ListRow, RowType, ListCombinedRows} from '../components/DataTypes';
 import { ItemDoc, CategoryDoc, InitCategoryDoc, DefaultColor } from '../components/DBSchema';
@@ -39,6 +39,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   const deleteCategory = useDeleteGenericDocument();
   const deleteCategoryFromItems = useDeleteCategoryFromItems();
   const deleteCategoryFromLists = useDeleteCategoryFromLists();
+  const addCategoryToLists = useAddCategoryToLists();
   const { doc: categoryDoc, loading: categoryLoading} = useGetOneDoc(routeID);
   const { dbError: itemError, itemRowsLoaded, itemRows } = useItems({selectedListGroupID: null, isReady: true, needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const {goBack} = useContext(NavContext);
@@ -113,7 +114,14 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
     let catID: string = "";
     if ( mode === "new") {
       result = await createCategory(stateCategoryDoc);
-      if (result.successful) {catID = String(result.pouchData.id)}
+      if (result.successful) {
+        catID = String(result.pouchData.id);
+        let catListAddResponse = await addCategoryToLists(catID,stateCategoryDoc.listGroupID,globalData.listCombinedRows);
+        if (!catListAddResponse.successful) {
+          setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.error_adding_category"), hasError: true}}));
+          return;
+        }
+      }
     } else {
       result = await updateCategory(stateCategoryDoc);
       catID = String(stateCategoryDoc._id)

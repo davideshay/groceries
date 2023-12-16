@@ -1,5 +1,5 @@
 export const maxAppSupportedSchemaVersion = 6;
-export const appVersion = "1.1.3";
+export const appVersion = "1.1.4";
 export const minimumAccessRefreshSeconds = 300;
 export const DefaultColor = "#ffffff";
 
