@@ -235,9 +235,8 @@ export function useAddCategoryToLists() {
         if (!readSuccess || listDoc === null) {response.successful = false; break;}
           if (listDoc?.categories !== null && (! (catID in listDoc!.categories) )) {
             listDoc?.categories.push(catID);
-            let writeSuccess: boolean = true;
             try {db.put(listDoc)}
-            catch(err) {log.error("Error updating list record with category.",listID, "error:",err); writeSuccess = false; response.successful = false; break;}
+            catch(err) {log.error("Error updating list record with category.",listID, "error:",err); response.successful = false; break;}
           }
       }
       return response;
