@@ -18,6 +18,10 @@ Other apps, such as grocy, are great if you are interested in keeping inventory,
 * Supports a sorted view of every store by category (aisle), so you don't have to double back in the store
 * Recipe support, so that a group of items can be added to a shopping list at once. Includes support for importing existing recipes from [Tandoor](https://tandoor.dev)
 
+## Demo
+
+If you'd like to take a look at the app without going through a local install, check out the demo site and login instructions at: [Specifically Clementines](https://www.specificallyclementines.com)
+
 ## What's with the name?
 
 One of my children has a very sincere and distinct preference for clementines over tangerines or any other more generic "mandarin".  She is always very specific when she puts clementines on the list.

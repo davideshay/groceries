@@ -2,7 +2,7 @@
 
 ## Initial setup
 
-Use the docker-compose.yaml file from the docs directory to start with. This is setup for single-node processing, with services running on localhost. You can extrapolate from here to add reverse proxies, https/letsencrypt, etc..  A full example docker-compose file with directories that would be relatively easy to modify to work on a VPS or otherwise, including Caddy as a reverse-proxy can be found here: [docker-full.tar.gz](https://raw.githubusercontent.com/davideshay/groceries/master/mkdocs/docs/assets/docker-full.tar.gz) 
+Use the docker-compose.yaml file from the docs directory to start with. This is setup for single-node processing, with services running on localhost. You can extrapolate from here to add reverse proxies, https/letsencrypt, etc..  A full example docker-compose file with directories that would be relatively easy to modify to work on a VPS or otherwise, including Caddy as a reverse-proxy can be found here: [docker-full.tar.gz](https://raw.githubusercontent.com/davideshay/groceries/master/mkdocs/docs/assets/docker-full.tar.gz) .  A simpler ready-to-go version without caddy can be found here: [docker-simple.tar.gz](https://raw.githubusercontent.com/davideshay/groceries/master/mkdocs/docs/assets/docker-simple.tar.gz) . If you start with either of these, please change contents such as couchDB admin passwords and the HMAC key values following the instructions below so you can secure your environment. 
 
 * The docker-compose has 3 volumes setup as 2 subdirectories and 1 file:
     * File [groceries-web.conf](https://raw.githubusercontent.com/davideshay/groceries/master/mkdocs/docs/assets/groceries-web.conf) -- see file in docs directory for contents. Just sets up some defaults for nginx.
