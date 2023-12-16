@@ -13,7 +13,8 @@ import { isPlatform } from '@ionic/core';
 import { fromBlob } from 'image-resize-compress';
 import { useTranslation } from 'react-i18next';
 import { translatedItemName } from './translationUtilities';
-import { log } from "./Utilities";
+import loglevelnext from 'loglevelnext';
+const log = loglevelnext.create({name: "applogger", level: 0})
 
 const imageQuality = 80;
 export const imageWidth = 200;
@@ -209,6 +210,35 @@ export function useDeleteCategoryFromLists() {
           try {await db.put(listDoc)}
           catch(err) {response.successful = false; response.fullError = err; }
         }  
+      }
+      return response;
+    },[db,t]) 
+}
+
+export function useAddCategoryToLists() {
+  const db=usePouch()
+  const {t}=useTranslation();
+  return useCallback(
+    async (catID: string, listGroupID: string, listCombinedRows: ListCombinedRow[]) => {
+      let response: PouchResponse = cloneDeep(PouchResponseInit);
+      let listIDs: string[] = [];
+      for (const lcr of listCombinedRows) {
+        if (lcr.rowType === RowType.list && lcr.listGroupID === listGroupID) {
+          listIDs.push(String(lcr.listOrGroupID));
+        }
+      }
+      for (const listID of listIDs) {
+        let listDoc: ListDoc | null = null;
+        let readSuccess: boolean = true;
+        try {listDoc = await db.get(listID);}
+        catch(err) {log.error("Error reading list record:",listID, "error:",err); readSuccess = false};
+        if (!readSuccess || listDoc === null) {response.successful = false; break;}
+          if (listDoc?.categories !== null && (! (catID in listDoc!.categories) )) {
+            listDoc?.categories.push(catID);
+            let writeSuccess: boolean = true;
+            try {db.put(listDoc)}
+            catch(err) {log.error("Error updating list record with category.",listID, "error:",err); writeSuccess = false; response.successful = false; break;}
+          }
       }
       return response;
     },[db,t]) 

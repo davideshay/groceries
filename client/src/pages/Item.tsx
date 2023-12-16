@@ -6,7 +6,8 @@ import { addCircleOutline, closeCircleOutline, trashOutline, saveOutline } from 
 import { usePhotoGallery } from '../components/Usehooks';
 import { useParams } from 'react-router-dom';
 import { useState, useEffect, useContext, useRef, useCallback } from 'react';
-import { useCreateGenericDocument, useUpdateGenericDocument, useDeleteGenericDocument, useGetOneDoc, useItems, pictureSrcPrefix } from '../components/Usehooks';
+import { useCreateGenericDocument, useUpdateGenericDocument, useAddCategoryToLists, 
+    useDeleteGenericDocument, useGetOneDoc, useItems, pictureSrcPrefix } from '../components/Usehooks';
 import { GlobalStateContext } from '../components/GlobalState';
 import { cloneDeep, isEmpty, remove } from 'lodash';
 import './Item.css';
@@ -43,6 +44,7 @@ const Item: React.FC = (props) => {
   const updateImage = useUpdateGenericDocument();
   const addItem = useCreateGenericDocument();
   const addImage = useCreateGenericDocument();
+  const addCategoryToLists = useAddCategoryToLists();
   const addCategoryDoc = useCreateGenericDocument();
   const addUOMDoc = useCreateGenericDocument();
   const delItem = useDeleteGenericDocument();
@@ -243,6 +245,18 @@ const Item: React.FC = (props) => {
       let result = await addCategoryDoc(newCategoryDoc);
       if (result.successful) {
           updateAllKey("categoryID",result.pouchData.id as string);
+          let addResponse = await addCategoryToLists(result.pouchData.id as string,listGroupID,globalData.listCombinedRows)
+          if (addResponse.successful) {
+            let newStateItemDoc: ItemDoc = cloneDeep(stateItemDoc);
+            for (const stateList of newStateItemDoc.lists) {
+              stateList.categoryID = result.pouchData.id as string;
+            }
+            setStateItemDoc(newStateItemDoc);
+          } else {
+            presentToast({message: t("error.adding_category"),
+            duration: 1500, position: "middle"})
+          }
+
       } else {
         presentToast({message: t("error.adding_category"),
               duration: 1500, position: "middle"})
