@@ -82,7 +82,7 @@ const App: React.FC = () => {
     <GlobalDataProvider>
       <IonSplitPane contentId="main">
       <AppMenu />
-        <IonRouterOutlet id="main">
+        <IonRouterOutlet id="main" placeholder={""}>
           <Switch>
           <Route exact path="/lists" component={Lists} />
           <Route path="/items/:mode/:id" component={Items} />
