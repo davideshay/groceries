@@ -42,7 +42,7 @@
     "jszip": "^3.10.1",
     "jwt-decode": "^4.0.0",
     "lodash": "^4.17.21",
-    "loglevelnext": "6.0.0",
+    "loglevelnext": "^6.0.0",
     "p-queue": "^8.0.1",
     "pouchdb": "^8.0.1",
     "pouchdb-core": "^8.0.1",
