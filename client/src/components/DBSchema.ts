@@ -1,5 +1,5 @@
 export const maxAppSupportedSchemaVersion = 6;
-export const appVersion = "1.1.4";
+export const appVersion = "1.1.5";
 export const minimumAccessRefreshSeconds = 300;
 export const DefaultColor = "#ffffff";
 
@@ -318,7 +318,8 @@ export type GlobalSettings = {
   includeGlobalInSearch: boolean,
   daysOfConflictLog: Number,
   savedListID?: string | undefined | null,
-  alexaDefaultListGroup?: string | undefined | null
+  alexaDefaultListGroup?: string | undefined | null,
+  fileLogging: boolean
 }
 
 export const InitSettings: GlobalSettings = {
@@ -328,7 +329,8 @@ export const InitSettings: GlobalSettings = {
   includeGlobalInSearch: true,
   daysOfConflictLog: 2,
   savedListID: null,
-  alexaDefaultListGroup: null
+  alexaDefaultListGroup: null,
+  fileLogging: false
 }
 
 export type CategoryColors = {

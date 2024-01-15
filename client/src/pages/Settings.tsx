@@ -1,6 +1,7 @@
 import { IonContent, IonPage, IonList, IonItem,
         IonButton, useIonAlert, IonInput,
-        IonRadioGroup, IonRadio, IonCheckbox, IonItemDivider, IonSelect, IonSelectOption, IonButtons, IonToolbar, IonText, IonIcon, IonGrid, IonRow, IonCol, IonPopover, IonTitle } from '@ionic/react';
+        IonRadioGroup, IonRadio, IonCheckbox, IonItemDivider, IonSelect, IonSelectOption, IonButtons, IonToolbar,
+        IonText, IonIcon, IonGrid, IonRow, IonCol, IonPopover, IonTitle, IonToggle } from '@ionic/react';
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';        
 import { closeCircle, checkmarkCircle, helpCircleOutline } from 'ionicons/icons';
 import { usePouch } from 'use-pouchdb';
@@ -10,13 +11,14 @@ import './Settings.css';
 import { InitSettings } from '../components/DBSchema';
 import { GlobalStateContext } from '../components/GlobalState';
 import { initialRemoteDBState, RemoteDBStateContext,  } from '../components/RemoteDBState';
-import { HistoryProps, UserInfo, initUserInfo } from '../components/DataTypes';
+import { UserInfo, initUserInfo } from '../components/DataTypes';
 import { maxAppSupportedSchemaVersion, appVersion , GlobalSettings, AddListOptions} from '../components/DBSchema';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
 import { languageDescriptions } from '../i18n';
 import { isEmpty, isEqual } from 'lodash';
 import { checkUserByEmailExists, emailPatternValidation, fullnamePatternValidation, secondsToDHMS, updateUserInfo } from '../components/Utilities';
+import { useGetSnapshotBeforeUpdate } from '../components/Usehooks';
 import { cloneDeep } from 'lodash';
 import Loading from '../components/Loading';
 import { getTokenInfo, isDBServerAvailable, isServerAvailable } from '../components/RemoteUtilities';
@@ -37,7 +39,7 @@ const ErrorInfoInit: ErrorInfo = {
   formError: ""
 }
 
-const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
+const Settings: React.FC = (props: any) => {
   const db = usePouch();
   const [presentAlert] = useIonAlert();
   const {globalState, settingsLoading, updateSettingKey} = useContext(GlobalStateContext);
@@ -50,6 +52,19 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
   const screenLoading = useRef(false);
   const [, forceUpdateState] = useState<{}>();
   const forceUpdate = useCallback(() => forceUpdateState({}), []);
+
+  // const useComponentDidUpdate = useGetSnapshotBeforeUpdate(
+  //   (_: any, prevState: any) => {
+  //     if (globalState.settings != prevState.settings) {
+  //       return (
+  //         chatThreadRef.current.scrollHeight - chatThreadRef.current.scrollTop
+  //       )
+  //     }
+  //     return null
+  //   },
+  //   props,
+  //   globalState
+  // )
 
 
 
@@ -76,6 +91,7 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
   },[forceUpdate])
 
   useEffect( () => {
+    log.debug("localsettingsinitiatialized:",localSettingsInitialized,"settingsloaded",globalState.settingsLoaded,"settings:",globalState.settings)
     if (!localSettingsInitialized && globalState.settingsLoaded) {
       setLocalSettings(prevState=>(globalState.settings));
       setUserInfo({name: String(remoteDBCreds.dbUsername), email: String(remoteDBCreds.email), fullname: String(remoteDBCreds.fullName)})
@@ -274,6 +290,11 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
           </IonItem>
           <IonItem className="shorter-item-no-padding" key="dayslog">
             <IonInput className="shorter-input shorter-input2" label={t("general.days_conflict_log_to_view") as string} labelPlacement="start" type="number" min="0" max="25" onIonInput={(e) => changeSetting("daysOfConflictLog", Number(e.detail.value))} value={Number(localSettings?.daysOfConflictLog)}></IonInput>
+          </IonItem>
+          <IonItemDivider className="category-divider">{t("general.log_settings")}</IonItemDivider>
+          <IonItem className="shorter-item-some-padding" key="enablefilelogging">{t("general.enable_log_to_file")}
+            <IonToggle slot="end" checked={localSettings.fileLogging} onIonChange={(e) => changeSetting("fileLogging",e.detail.checked)}></IonToggle>
+            {/* <IonToggle slot="end" checked={localSettings.fileLogging}></IonToggle> */}
           </IonItem>
         </IonList>
       </IonContent>

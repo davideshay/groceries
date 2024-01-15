@@ -4,7 +4,7 @@ import { ListGroupDoc, ListGroupDocInit } from './DBSchema';
 import { cloneDeep } from 'lodash';
 import { DBCreds} from './RemoteDBState';
 import { PouchResponse, PouchResponseInit } from './DataTypes';
-import loglevelnext from 'loglevelnext';
+import loglevelnext, {LogLevel, MethodFactory} from 'loglevelnext';
 import { t } from "i18next"
 
 export const apiConnectTimeout = 500;
@@ -223,6 +223,24 @@ export function secondsToDHMS(seconds: number) : string {
     return outStr;
 }
 
+export class LogFileFactory extends MethodFactory {
+
+    constructor (logger?: LogLevel) {
+        super(logger);
+        console.log("setup file write here...");
+    }
+
+    make(methodName: string) {
+        const og = super.make(methodName);
+        console.log("og:",og)
+        return(...args: any[]) => {
+            console.log("running with args: ",args);
+            og(...args);
+        }
+    }
+
+}
+
 export const DEFAULT_API_URL=(window as any)._env_.DEFAULT_API_URL === undefined ? "https://groceries.mydomain.com/api" : (window as any)._env_.DEFAULT_API_URL
 export const LOG_LEVEL= (window as any)._env_.LOG_LEVEL === undefined ? "INFO" : (window as any)._env_.LOG_LEVEL
-export const log = loglevelnext.create({name: "applogger", level: getLoggingLevel(LOG_LEVEL)})
+export const log = loglevelnext.create({name: "applogger", level: getLoggingLevel(LOG_LEVEL), factory: new LogFileFactory})
