@@ -9,8 +9,8 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         // version code -- if version is xx.yy.zz, code is xxyyzz00 -> xxyyzz99
         //     so "1.0.7" is 01.00.07.00 -> 1000700
-        versionCode 1010400
-        versionName "1.1.4"
+        versionCode 1010600
+        versionName "1.1.6"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

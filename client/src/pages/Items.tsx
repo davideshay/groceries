@@ -573,7 +573,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
           <ItemsSearch rowSelected={chooseSearchItem} addItemWithoutRow={addNewItemToList}/>
          </IonItem> */}
         <IonItem key="searchbar" className="item-search">
-           <IonIcon icon={searchOutline} />
+           <IonIcon icon={searchOutline}  slot="start"/>
            <IonInput key="itemsearchbox" id="item-search-box-id" aria-label="" className="ion-no-padding input-search" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="text" enterkeyhint="enter"
               disabled={globalData.listRows !== undefined ? globalData.listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length <=0 : true}
               clearInput={true}  placeholder={t("general.search") as string} fill="solid"
@@ -664,7 +664,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       <IonItem className={"itemrow-outer "+(rowVisible ? "itemrow-display" : "itemrow-hidden")} key={"itemouter"+pageState.itemRows[i].itemID} >
         <IonCheckbox key={"itemcheckbox"+pageState.itemRows[i].itemID} aria-label=""
             onIonChange={(e: CustomEvent<CheckboxChangeEventDetail>) => {if (!doingUpdate.current) { (e.target as any).disabled = true; doingUpdate.current=true; completeItemRowStub(item.itemID,i,e)}}}
-            color={"medium"} disabled={doingUpdate.current}
+            color={"medium"} disabled={doingUpdate.current} slot="start"
             checked={Boolean(item.completed)} className={"item-on-list "+ (item.completed ? "item-completed" : "")}></IonCheckbox>
           <IonItem className={"itemrow-inner"+(item.completed ? " item-completed": "")} routerLink={"/item/edit/"+item.itemID}
             key={"iteminner"+pageState.itemRows[i].itemID}>{item.itemName + (item.quantityUOMDesc === "" ? "" : " ("+ item.quantityUOMDesc+")")}

@@ -25,6 +25,11 @@ ion-item.item-search::part(native) {
     min-height: auto;
 }
 
+
+ion-item.item-search ion-icon {
+    margin-inline-end: 5px;
+  }
+
 ion-item.itemrow-outer {
     max-height: 8em;
     height: min-content;
@@ -100,10 +105,6 @@ ion-item-divider.item-category-divider.first-category {
 
 ion-item-divider.uncategorized-color {
     border-bottom: 4px solid black;
-}
-
-ion-checkbox.item-on-list {
-    width: 3em;
 }
 
 @media (prefers-color-scheme: dark) {
