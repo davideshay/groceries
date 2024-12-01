@@ -7,7 +7,7 @@ import { usePouch } from 'use-pouchdb';
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
 import './Settings.css';
-import { InitSettings } from '../components/DBSchema';
+import { InitSettings, ThemeType } from '../components/DBSchema';
 import { GlobalStateContext } from '../components/GlobalState';
 import { initialRemoteDBState, RemoteDBStateContext,  } from '../components/RemoteDBState';
 import { HistoryProps, UserInfo, initUserInfo } from '../components/DataTypes';
@@ -254,6 +254,13 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
           </IonItem>
           </IonRadioGroup>
           <IonItemDivider className="category-divider">{t("general.other_settings")}</IonItemDivider>
+          <IonItem className="shorter-item-no-padding" key="theme">
+            <IonSelect className="shorter-select shorter-select2" label={t("general.theme") as string} interface="popover" onIonChange={(e) => changeSetting("theme",e.detail.value)} value={localSettings.theme}>
+                <IonSelectOption key={"theme-"+ThemeType.auto} value={ThemeType.auto}>{t("general.theme-auto")}</IonSelectOption>
+                <IonSelectOption key={"theme-"+ThemeType.dark} value={ThemeType.dark}>{t("general.theme-dark")}</IonSelectOption>
+                <IonSelectOption key={"theme-"+ThemeType.light} value={ThemeType.light}>{t("general.theme-light")}</IonSelectOption>
+            </IonSelect>
+          </IonItem>
           <IonItem className="shorter-item-no-padding" key="language">
             <IonSelect className="shorter-select shorter-select2" label={t("general.language") as string} interface="popover" onIonChange={(e) => i18n.changeLanguage(e.detail.value)} value={curLanguage}>
                 {languageDescriptions.map((lng: any) => (

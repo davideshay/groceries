@@ -233,7 +233,11 @@ export const en_translations =
         "is_recipe_listgroup_for_user":"Is a recipe list group",
         "alexa_default": "Default list group for Alexa",
         "listgroup_not_updated": "List group was not updated/saved",
-        "exit": "Exit App"
+        "exit": "Exit App",
+        "theme": "Theme",
+        "theme-auto": "System",
+        "theme-dark": "Dark",
+        "theme-light": "Light",
      },
      "error" : {
         "invalid_dbuuid" : "Invalid Database Unique Identifier",

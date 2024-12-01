@@ -1,0 +1,96 @@
+/* CONSTANT */
+
+ion-item.item-completed::part(native) {
+    color: #808080;
+}
+ion-icon.sync-icon {
+    color: #a0a0a0;
+}
+ion-button.button-solid, ion-button.my-primary-button.ion-color::part(native) {
+    color: #ffffff;
+    --color: #ffffff;
+}
+
+/* LIGHT MODE */
+
+ion-item, ion-list-header, ion-header, ion-toolbar, ion-list, ion-title.modal-title, #item-search-box-id, #items-page-header, #items-page-header > ion-item  {
+    --background: #fafafa;
+    background: #fafafa;
+}
+ion-item:hover, ion-list-header:hover, ion-header:hover, ion-toolbar:hover  {
+    --background: #f0f0f0;
+    background: #f0f0f0;
+    --background-activated: none;
+    --background-focused: none;
+    --background-hover: none;
+}
+ion-item-divider.category-divider {
+    --color: var(--ion-text-color);
+    --background: #ededed;
+    background: #ededed;
+}
+ion-list.ion-items-list {
+    background: #ffffff;
+}
+ion-item.itemrow-outer {
+    border-color: #cacaca;
+}
+ion-item-divider.uncategorized-color {
+    border-color: #000000;
+}
+
+/* DARK MODE */
+
+.ion-palette-dark {
+    ion-item, ion-list-header, ion-header, ion-toolbar, ion-list, ion-title.modal-title, #item-search-box-id, #items-page-header, #items-page-header > ion-item  {
+        --background: #202020;
+        background: #202020;
+    }
+    ion-item:hover, ion-list-header:hover, ion-header:hover, ion-toolbar:hover {
+        --background: #2d2d2d;
+        background: #2d2d2d;
+        --background-activated: none;
+        --background-focused: none;
+        --background-hover: none;
+    }
+    ion-item-divider.category-divider {
+        --background: #393939;
+        background: #393939;
+    }
+    ion-list.ion-items-list {
+        background: #000000;
+    }
+    ion-item.itemrow-outer {
+        border-color: #646464;
+    }
+    ion-item-divider.uncategorized-color {
+        border-color: #ffffff;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    ion-item, ion-list-header, ion-header, ion-toolbar, ion-list, #item-search-box-id, #items-page-header, #items-page-header > ion-item  {
+        --background: #202020;
+        background: #202020;
+    }
+    ion-item:hover, ion-list-header:hover, ion-header:hover, ion-toolbar:hover {
+        --background: #2d2d2d;
+        background: #2d2d2d;
+        --background-activated: none;
+        --background-focused: none;
+        --background-hover: none;
+    }
+    ion-item-divider.category-divider {
+        --background: #393939;
+        background: #393939;
+    }
+    ion-list.ion-items-list {
+        background: #000000;
+    }
+    ion-item.itemrow-outer {
+        border-color: #646464;
+    }
+    ion-item-divider.uncategorized-color {
+        border-color: #ffffff;
+    }
+}

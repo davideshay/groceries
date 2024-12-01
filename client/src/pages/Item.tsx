@@ -502,7 +502,7 @@ const Item: React.FC = (props) => {
           <IonButton fill="outline" color="secondary" onClick={() => goBack()}><IonIcon slot="start" icon={closeCircleOutline}></IonIcon>{t("general.cancel")}</IonButton>
           </IonButtons>
           <IonButtons slot="end">
-          <IonButton fill="solid" color="primary" onClick={() => updateThisItem()}>{mode === "new" ? t("general.add") : t("general.save")}<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>
+          <IonButton fill="solid" color="primary" className="my-primary-button" onClick={() => updateThisItem()}>{mode === "new" ? t("general.add") : t("general.save")}<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>
           </IonButtons>
           </IonToolbar>
       </IonFooter>

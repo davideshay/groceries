@@ -1,33 +1,10 @@
-import { Redirect, Route, Switch} from 'react-router-dom';
-import { IonApp, IonSplitPane,setupIonicReact, IonRouterOutlet} from '@ionic/react';
+import { IonApp,setupIonicReact} from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { useState, useEffect } from 'react';
-import List from "./pages/List";
-import Lists from './pages/Lists';
-import Items from './pages/Items';
-import Item from './pages/Item';
-import GlobalItems from './pages/GlobalItems';
-import GlobalItem from './pages/GlobalItem';
-import Categories from './pages/Categories';
-import Category from './pages/Category';
-import ListGroups from './pages/ListGroups';
-import ListGroup from './pages/ListGroup';
-import Settings from './pages/Settings';
-import Friends from './pages/Friends';
-import RemoteDBLogin from './pages/RemoteDBLogin';
-import InitialLoad from './pages/InitialLoad';
-import AppMenu from './components/AppMenu';
-import ConflictLog from './pages/ConflictLog';
-import ConflictItem from './pages/ConflictItem';
-import AllItems from './pages/AllItems';
-import Recipes from './pages/Recipes';
-import RecipeImport from './pages/RecipeImport';
-import Recipe from './pages/Recipe';
-import Uoms from './pages/Uoms';
-import Uom from './pages/Uom';
 import ErrorBoundary from './components/ErrorBoundary';
 import { GlobalStateProvider } from './components/GlobalState';
 import { RemoteDBStateProvider } from './components/RemoteDBState';
+import AppContent from "./pages/AppContent";
 import "./App.css"
 
 /* Core CSS required for Ionic components to work properly */
@@ -46,8 +23,11 @@ import '@ionic/react/css/text-transformation.css';
 import '@ionic/react/css/flex-utils.css';
 import '@ionic/react/css/display.css';
 
+import '@ionic/react/css/palettes/dark.class.css';
+import "./Colors.css"
+
 /* Theme variables */
-import './theme/variables.css';
+// import './theme/variables.css';
 
 import { Provider } from 'use-pouchdb';
 import PouchDB from 'pouchdb';
@@ -80,40 +60,7 @@ const App: React.FC = () => {
     <RemoteDBStateProvider>
     <GlobalStateProvider>
     <GlobalDataProvider>
-      <IonSplitPane contentId="main">
-      <AppMenu />
-        <IonRouterOutlet id="main">
-          <Switch>
-          <Route exact path="/lists" component={Lists} />
-          <Route path="/items/:mode/:id" component={Items} />
-          <Route path="/item/:mode/:itemid?" component={Item} />
-          <Route exact path="/allitems" component={AllItems} />
-          <Route exact path="/globalitems" component={GlobalItems} />
-          <Route path="/globalitem/:mode/:id" component={GlobalItem} />
-          <Route exact path="/categories" component={Categories} />
-          <Route path="/category/:mode/:id?" component={Category} />
-          <Route exact path="/listgroups" component={ListGroups} />
-          <Route path="/listgroup/:mode/:id?" component={ListGroup} />
-          <Route exact path="/settings" component={Settings} />
-          <Route exact path="/friends" component={Friends} />
-          <Route exact path="/">
-            <Redirect to="/initialload" />
-          </Route>
-          <Route path="/list/:mode/:id?" component={List} />
-          <Route exact path="/login" component={RemoteDBLogin} />
-          <Route exact path="/initialload" component={InitialLoad}></Route>
-          <Route exact path="/conflictlog" component={ConflictLog}></Route>
-          <Route path="/conflictitem/:id" component={ConflictItem}></Route>
-          <Route exact path="/recipes" component={Recipes}></Route>
-          <Route path="/recipe/:mode/:id" component={Recipe}></Route>
-          <Route exact path="/recipeimport" component={RecipeImport}></Route>
-          <Route exact path="/uoms" component={Uoms}></Route>
-          <Route path="/uom/:mode/:id" component={Uom}></Route>
-          <Route component={InitialLoad}></Route>
-          </Switch>
-          {/* <Route component={InitialLoad}></Route>  */}
-        </IonRouterOutlet>
-      </IonSplitPane>
+    <AppContent />
     </GlobalDataProvider>
     </GlobalStateProvider>
     </RemoteDBStateProvider>

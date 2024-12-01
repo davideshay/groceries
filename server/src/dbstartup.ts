@@ -8,7 +8,7 @@ import { cloneDeep, isEmpty, isEqual, omit } from "lodash";
 import { v4 as uuidv4} from 'uuid';
 import { uomContent, categories, globalItems, totalDocCount, getImpactedUsers } from "./utilities";
 import { DocumentScope, MangoResponse, MangoQuery, DocumentGetResponse, MaybeDocument, DocumentInsertResponse } from "nano";
-import { CategoryDoc, CategoryDocs, ConflictDoc, GlobalItemDoc, ImageDoc, ImageDocInit, InitSettingsDoc, ItemDoc, ItemDocs, ListDoc, ListDocs, ListGroupDoc, ListGroupDocInit, ListGroupDocs, RecipeDoc, SettingsDoc, UUIDDoc, UomDoc, UserDoc, appVersion, maxAppSupportedSchemaVersion, minimumAccessRefreshSeconds } from "./schema/DBSchema";
+import { CategoryDoc, CategoryDocs, ConflictDoc, GlobalItemDoc, ImageDoc, ImageDocInit, InitSettingsDoc, ItemDoc, ItemDocs, ListDoc, ListDocs, ListGroupDoc, ListGroupDocInit, ListGroupDocs, RecipeDoc, SettingsDoc, ThemeType, UUIDDoc, UomDoc, UserDoc, appVersion, maxAppSupportedSchemaVersion, minimumAccessRefreshSeconds } from "./schema/DBSchema";
 import log, { LogLevelDesc } from "loglevel";
 import prefix from "loglevel-plugin-prefix";
 import { timeSpan } from "./timeutils";
@@ -25,7 +25,7 @@ const targetCategoriesVersion = 2;
 let globalItemVersion = 0;
 const targetGlobalItemVersion = 2;
 let schemaVersion = 0;
-const targetSchemaVersion = 6;
+const targetSchemaVersion = 7;
 
 
 export let groceriesDBAsAdmin: DocumentScope<unknown>;
@@ -1065,6 +1065,22 @@ async function restructureConflictLog() {
     return updateSuccess;
 }
 
+async function addThemeToSettings() {
+    let updateSuccess = true;
+    log.info("Adding theme setting to database and defaulting to auto for every user");
+    const settingsq: MangoQuery = { selector: { type: "settings"}, limit: await totalDocCount(groceriesDBAsAdmin)};
+    let foundSettingDocs: MangoResponse<SettingsDoc>;
+    try {foundSettingDocs = (await groceriesDBAsAdmin.find(settingsq) as MangoResponse<SettingsDoc>);}
+    catch(err) {log.error("Could not find settings items during schema update:",err); return false;}
+    for (const settingsDoc of foundSettingDocs.docs) {
+        settingsDoc.settings.theme = ThemeType.auto;
+        try {let dbResp = await groceriesDBAsAdmin.insert(settingsDoc)}
+        catch(err) {log.error("Could not update settings record.",err); updateSuccess=false;}
+    }
+    log.info("Settings docs updated with theme setting.");
+    return updateSuccess;
+}
+
 async function fixDuplicateCategories() {
     let [listSuccess,currentLists] = await getLatestListDocs();
     if (!listSuccess) {
@@ -1562,6 +1578,11 @@ async function checkAndUpdateSchema() {
             log.info("Updating schema to rev 6: Added impacted users to conflictlog records ");
             schemaUpgradeSuccess = await restructureConflictLog();
             if (schemaUpgradeSuccess) { schemaVersion = 6; await setSchemaVersion(schemaVersion);}
+        }
+        if (schemaVersion < 7) {
+            log.info("Updating schema to rev 7: Adding theme flag to settings ");
+            schemaUpgradeSuccess = await addThemeToSettings();
+            if (schemaUpgradeSuccess) { schemaVersion = 7; await setSchemaVersion(schemaVersion);}
         }
     }
     let fixCatSuccess = await fixCategories();

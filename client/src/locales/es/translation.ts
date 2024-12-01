@@ -233,7 +233,11 @@ export const es_translations =
         "is_default_listgroup_for_user":"¿Es la lista de recetas un grupo para este usuario?",
         "alexa_default": "Grupo de lista predeterminado para Alexa",
         "listgroup_not_updated": "El grupo de lista no fue actualizado/guardado",
-        "exit": "Salir de la aplicación"
+        "exit": "Salir de la aplicación",
+        "theme": "Tema",
+        "theme-auto": "Sistema",
+        "theme-dark": "Oscuro",
+        "theme-light": "Luz"
          },
      "error": {
         "invalid_dbuuid" : "Identificador único de base de datos inválido",

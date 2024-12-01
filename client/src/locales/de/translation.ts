@@ -233,7 +233,11 @@ export const de_translations =
         "is_recipe_listgroup_for_user":"Ist die Rezeptliste für diesen Benutzer gruppiert?",
         "alexa_default": "Standard-Listengruppe für Alexa",
         "listgroup_not_updated": "Die Listengruppe wurde nicht aktualisiert/gespeichert",
-        "exit": "App beenden"
+        "exit": "App beenden",
+        "theme": "Thema",
+        "theme-auto": "System",
+        "theme-dark": "Dunkel",
+        "theme-light": "Licht",
     },
     "error": {
         "invalid_dbuuid" : "Ungültiger Datenbank-Identifier",

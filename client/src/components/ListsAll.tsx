@@ -54,6 +54,8 @@ const ListsAll: React.FC<ListsAllProps> = (props: ListsAllProps) => {
     if (combinedRow.hidden) {return;}
     if (combinedRow.rowType === RowType.listGroup ) {
       if (combinedRow.listGroupRecipe) {
+        return;
+        // Don't need recipe groups in main list tree
         listsElem.push(
           addRow({separatePage: props.separatePage,
               editLinkID: "/listgroup/edit/"+combinedRow.listGroupID,
