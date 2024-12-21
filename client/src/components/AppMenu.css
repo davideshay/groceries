@@ -6,6 +6,28 @@ ion-item.app-menu-item, ion-item.menu-item-label {
     --min-height: 44px;
 }
 
+ion-item.menu-item ion-button {
+    height: 100%;
+}
+
+ion-item.menu-item ion-button::part(native) {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-bottom: 0;
+    padding-top: 0;
+}
+
+ion-item.menu-item ion-icon {
+    margin-inline-start: 0;
+    margin-inline-end: 0;
+    margin-top: 0;
+    margin-left: 0;
+}
+
+ion-item.menu-item::part(native)  {
+    --ion-safe-area-right: 0
+}
+
 ion-list-header.app-name {
     font-style: italic;
     font-family: "Lobster Two", sans-serif;
@@ -17,7 +39,7 @@ ion-list-header.app-name {
 }
 
 ion-item.indented {
-    margin-left: 1.5rem;
+    padding-left: 1.5rem;
     margin-bottom: 0px;
 }
 
@@ -43,4 +65,5 @@ ion-button.standard-text-button {
     margin-right: 0px;
     text-overflow: ellipsis;
     min-height: 3px;
+    font-size: 0.875rem;
 }

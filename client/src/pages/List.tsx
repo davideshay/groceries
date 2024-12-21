@@ -260,7 +260,7 @@ function deletePrompt() {
       log.error("Cat doc not defined: id:",id);
       return(
       <IonItem key={pageState.selectedListID+"-"+actname+"-"+id}>
-          <IonButton fill="clear" className="textButton">{t("general.undefined")}</IonButton>
+          <IonButton fill="clear">{t("general.undefined")}</IonButton>
           <IonReorder slot="end"></IonReorder>
       </IonItem>)
     }

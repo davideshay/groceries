@@ -13,11 +13,6 @@ ion-item.list-button::part(native) {
     padding-bottom: 10px;
 }
 
-.textButton {
-    text-transform: none;
-}
-
-
 ion-item.shorter-item-no-padding::part(native) {
     min-height: unset;
     padding-top: 0px;

@@ -1,7 +1,7 @@
 import { Redirect, Route, Switch} from 'react-router-dom';
 import { IonSplitPane, IonRouterOutlet} from '@ionic/react';
 
-import List from "./Lists";
+import List from "./List";
 import Lists from './Lists';
 import Items from './Items';
 import Item from './Item';
