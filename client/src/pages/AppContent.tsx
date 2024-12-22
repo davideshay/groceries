@@ -24,6 +24,8 @@ import RecipeImport from './RecipeImport';
 import Recipe from './Recipe';
 import Uoms from './Uoms';
 import Uom from './Uom';
+import Status from "./Status";
+import UserData from './UserData';
 
 import { GlobalStateContext } from '../components/GlobalState';
 import React, { useContext } from 'react';
@@ -58,6 +60,8 @@ const AppContent: React.FC = () => {
                         <Route exact path="/listgroups" component={ListGroups} />
                         <Route path="/listgroup/:mode/:id?" component={ListGroup} />
                         <Route exact path="/settings" component={Settings} />
+                        <Route exact path="/status" component={Status} />
+                        <Route exact path="/userdata" component={UserData} />
                         <Route exact path="/friends" component={Friends} />
                         <Route exact path="/">
                             <Redirect to="/initialload" />

@@ -586,7 +586,9 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
         </IonInput>
         </IonItem>
         <IonItem>
-        <IonInput label={t("general.password") as string} labelPlacement="stacked" autocomplete="current-password" type={remoteState.showMainPassword ? "text" : "password"} value={remoteState.password} onIonInput={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
+        <IonInput label={t("general.password") as string} labelPlacement="stacked" autocomplete="current-password"
+                  type={remoteState.showMainPassword ? "text" : "password"} value={remoteState.password}
+                  onIonInput={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
         </IonInput><IonIcon slot="end"  icon={remoteState.showMainPassword ? eyeOff : eye} onClick={() => {setRemoteState((prevState) => ({...prevState,showMainPassword: !prevState.showMainPassword}))}}></IonIcon>
         </IonItem>
         </>  
@@ -638,6 +640,17 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       break;
   }
 
+  function submitFunc() {
+    switch (loginOption) {
+      case LoginOptions.Login:
+        if (remoteState.inCreateMode) {
+          return submitCreateForm()
+        } else {
+          return submitForm()
+        }
+    }
+  }
+
   let buttonsElem
   switch (loginOption) {
     case LoginOptions.AskOffline:
@@ -654,11 +667,11 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       if (remoteState.inCreateMode) {
         buttonsElem=<>
         <IonButton size="small" fill="outline" onClick={() => setRemoteState(prevState => ({...prevState,inCreateMode: false}))}>{t("general.cancel")}</IonButton>
-        <IonButton size="small" onClick={() => submitCreateForm()}>{t("general.create")}</IonButton>
+        <IonButton size="small" type="submit" onClick={() => submitFunc()}>{t("general.create")}</IonButton>
         </>
       } else {
         buttonsElem=<>
-        <IonButton size="small" slot="start" onClick={() => submitForm()}>{t("general.login")}</IonButton>
+        <IonButton size="small" slot="start" type="submit" onClick={() => submitFunc()}>{t("general.login")}</IonButton>
         <IonButton size="small" onClick={() => resetPassword()}>{t("general.reset_password")}</IonButton>
         <IonButton size="small" slot="end" onClick={() => switchToCreateMode()}>{t("general.create_account")}</IonButton>
         </>

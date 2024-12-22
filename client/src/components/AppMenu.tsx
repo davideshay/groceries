@@ -66,6 +66,8 @@ const AppMenu: React.FC = () => {
         {friendItem()}
         {conflictItem()}
         {listItem(t('general.settings'),"/settings")}
+        {listItem(t('general.status'),"/status")}
+        {listItem(t('general.user_info'),"/userdata")}
         {listItem(t('general.login'),"/login")}
       </>
   } else {

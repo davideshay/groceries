@@ -214,8 +214,8 @@ export const en_translations =
         "attempt_login_again": "Attempt Login Again",
         "must_stay_offline": "Working offline and API/database are still offline. Continue to work offline and changes will be queued.",
         "as_user": "as user",
-        "api_server_status": "API Server:",
-        "db_server_status": "DB Server:",
+        "api_server_status": "API Server",
+        "db_server_status": "DB Server",
         "refresh_token_valid": "Refresh Token:",
         "access_token_valid": "Access Token:",
         "expires_in": "Expires In:",
@@ -238,6 +238,9 @@ export const en_translations =
         "theme-auto": "System",
         "theme-dark": "Dark",
         "theme-light": "Light",
+        "status":"Status",
+        "app_db_server_info":"App and DB Server Info",
+        "database":"Database"
      },
      "error" : {
         "invalid_dbuuid" : "Invalid Database Unique Identifier",

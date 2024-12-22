@@ -2,10 +2,6 @@ label.radio-wrapper {
     text-indent: 20px;
 }
 
-/* .indent-setting {
-    margin-left: 2em;
-} */
-
 ion-icon.offline-indicator {
     color: red;
 }
@@ -16,4 +12,12 @@ ion-icon.online-indicator {
 
 ion-popover.server-info-popover {
     --width: 90%;
+}
+
+.settings-item {
+    min-height: 60px;
+}
+.settings-item ion-checkbox, .settings-item ion-select, .settings-item ion-radio, .settings-item ion-input {
+    min-height: 60px;
+    --min-height: 60px;
 }

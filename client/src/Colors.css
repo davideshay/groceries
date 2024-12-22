@@ -53,6 +53,10 @@ ion-item-divider.uncategorized-color {
         --background-focused: none;
         --background-hover: none;
     }
+    .native-input {
+        --background: #2d2d2d;
+        background: #2d2d2d;
+    }
     ion-item-divider.category-divider {
         --background: #393939;
         background: #393939;

@@ -238,6 +238,9 @@ export const de_translations =
         "theme-auto": "System",
         "theme-dark": "Dunkel",
         "theme-light": "Licht",
+        "status":"Stand",
+        "app_db_server_info":"App- und DB-Serverinformationen",
+        "database":"Datenbank"
     },
     "error": {
         "invalid_dbuuid" : "Ungültiger Datenbank-Identifier",

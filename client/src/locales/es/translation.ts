@@ -237,7 +237,10 @@ export const es_translations =
         "theme": "Tema",
         "theme-auto": "Sistema",
         "theme-dark": "Oscuro",
-        "theme-light": "Luz"
+        "theme-light": "Luz",
+        "status": "Condición",
+        "app_db_server_info":"Información del servidor de aplicaciones y bases de datos",
+        "database":"Base de datos"
          },
      "error": {
         "invalid_dbuuid" : "Identificador único de base de datos inválido",
