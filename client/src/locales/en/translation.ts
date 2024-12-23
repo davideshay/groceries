@@ -240,7 +240,9 @@ export const en_translations =
         "theme-light": "Light",
         "status":"Status",
         "app_db_server_info":"App and DB Server Info",
-        "database":"Database"
+        "database":"Database",
+        "view_help_docs":"View Help Documentation",
+        "manage_data":"Manage Data"
      },
      "error" : {
         "invalid_dbuuid" : "Invalid Database Unique Identifier",

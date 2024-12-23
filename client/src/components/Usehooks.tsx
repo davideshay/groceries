@@ -268,7 +268,10 @@ export function useItems({selectedListGroupID,isReady, needListGroupID, activeOn
                 if (il.listID === selectedListID && il.active) { addToList=true}
               })
             } else {
-              let activeCommon = getCommonKey(itemDoc,"active",listDocs);
+              let activeCommon = false;
+              itemDoc.lists.forEach((il) => {
+                if (il.active) {activeCommon = true}
+              })
               if (!Boolean(activeCommon)) {
                 addToList = false;
               }

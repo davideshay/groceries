@@ -179,6 +179,9 @@ const Status: React.FC<HistoryProps> = (props: HistoryProps) => {
             <IonButtons slot="start">
               <IonButton fill="solid" size="small" color="danger" onClick={() => destroyDBPopup()} key="deletedb">{t("general.delete_local_data")}</IonButton>
             </IonButtons>
+            <IonButtons slot="end">
+              <IonButton routerLink='/conflictlog' fill="solid" size="small" color="tertiary" key="conflictlog">{t("general.conflict_log")}</IonButton>
+            </IonButtons>
           </IonToolbar>
         </IonList>
       </IonContent>

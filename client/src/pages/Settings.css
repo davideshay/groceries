@@ -15,9 +15,14 @@ ion-popover.server-info-popover {
 }
 
 .settings-item {
-    min-height: 60px;
+    min-height: 48px;
 }
 .settings-item ion-checkbox, .settings-item ion-select, .settings-item ion-radio, .settings-item ion-input {
-    min-height: 60px;
-    --min-height: 60px;
+    min-height: 48px;
+    --min-height: 48px;
+}
+.settings-item ion-checkbox::part(label), .settings-item .label-text-wrapper, .settings-item ion-radio::part(label)  {
+    text-overflow: unset;
+    white-space: wrap;
+    overflow: visible;
 }

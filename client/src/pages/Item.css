@@ -1,6 +1,4 @@
 ion-modal#item-list {
-  --width: fit-content;
-  --min-width: 250px;
   --height: fit-content;
   --border-radius: 6px;
   --box-shadow: 0 0 48px rgba(0, 0, 0, 0.4);

@@ -561,7 +561,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
               onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListOrGroupID} >
             {listSelectRows !== undefined ? listSelectRows.filter(lcr => (!lcr.hidden && !lcr.listGroupRecipe)).map((listSelectRow: ListSelectRow) => (
                 <IonSelectOption disabled={listSelectRow.rowKey==="G-null"}
-                    className={"ion-no-padding "+ (listSelectRow.rowType === RowType.list ? "indented " : "listgroup ") + (listSelectRow.hasUncheckedItems ? "has-unchecked" : "no-unchecked" )}
+                    className={" "+ (listSelectRow.rowType === RowType.list ? "indented " : "listgroup ") + (listSelectRow.hasUncheckedItems ? "has-unchecked" : "no-unchecked" )}
                     key={listSelectRow.listOrGroupID} value={listSelectRow.listOrGroupID}>
                   {listSelectRow.rowName}
                 </IonSelectOption>
@@ -668,8 +668,9 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
           checked={Boolean(item.completed)} className={"item-on-list "+ (item.completed ? "item-completed" : "")}>
         </IonCheckbox>
         <IonItem className={"itemrow-inner"+(item.completed ? " item-completed": "")} routerLink={"/item/edit/"+item.itemID}
-          key={"iteminner"+pageState.itemRows[i].itemID}>{item.itemName + (item.quantityUOMDesc === "" ? "" : " ("+ item.quantityUOMDesc+")")}
-          {item.hasNote ? <IonIcon key={"itemnoteicon"+pageState.itemRows[i].itemID} className="note-icon" icon={documentTextOutline}></IonIcon> : <></>}
+          key={"iteminner"+pageState.itemRows[i].itemID}>
+            {item.itemName + (item.quantityUOMDesc === "" ? "" : " ("+ item.quantityUOMDesc+")")}
+            {item.hasNote ? <IonIcon key={"itemnoteicon"+pageState.itemRows[i].itemID} className="note-icon" icon={documentTextOutline}></IonIcon> : <></>}
         </IonItem>
       </IonItem>);
     if (lastCategoryFinished && !createdFinished) {

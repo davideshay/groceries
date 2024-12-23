@@ -252,8 +252,9 @@ function deletePrompt() {
     if (catDoc !== undefined) {
       let name = translatedCategoryName((catDoc as CategoryDoc)._id,(catDoc as CategoryDoc).name);
       return (
-        <IonItem key={pageState.selectedListID+"-"+actname+"-"+id}>
-            <IonCheckbox labelPlacement="end" justify="start" key={pageState.selectedListID+"-"+actname+"-"+id} onIonChange={(e) => updateCat(id,Boolean(e.detail.checked))} checked={active}>{name}</IonCheckbox>
+        <IonItem key={pageState.selectedListID+"-"+actname+"-"+id} slot="start">
+            <IonCheckbox justify="start" key={pageState.selectedListID+"-"+actname+"-"+id} onIonChange={(e) => updateCat(id,Boolean(e.detail.checked))} checked={active}></IonCheckbox>
+            {name}
             <IonReorder slot="end"></IonReorder>
         </IonItem>)    
     } else {

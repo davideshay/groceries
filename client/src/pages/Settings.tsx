@@ -1,6 +1,7 @@
 import { IonContent, IonPage, IonItem,
          IonInput,
-        IonRadioGroup, IonRadio, IonCheckbox, IonItemDivider, IonSelect, IonSelectOption } from '@ionic/react';
+        IonRadioGroup, IonRadio, IonCheckbox, IonItemDivider, IonSelect, IonSelectOption, 
+        IonButton} from '@ionic/react';
 import {  useContext, useEffect, useRef, useState } from 'react';        
 import './Settings.css';
 import { InitSettings, ThemeType } from '../components/DBSchema';
@@ -86,6 +87,9 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
           </IonItem>
           <IonItem className="shorter-item-no-padding settings-item" key="dayslog">
             <IonInput className="shorter-input shorter-input2" label={t("general.days_conflict_log_to_view") as string} labelPlacement="start" type="number" min="0" max="25" onIonInput={(e) => changeSetting("daysOfConflictLog", Number(e.detail.value))} value={Number(localSettings?.daysOfConflictLog)}></IonInput>
+          </IonItem>
+          <IonItem className="shorter-item-no-padding" key="helpdocs">
+            <IonButton href='https://davideshay.github.io/groceries/userguide/settings/' target='_blank'>{t("general.view_help_docs")}</IonButton>
           </IonItem>
       </IonContent>
     </IonPage>

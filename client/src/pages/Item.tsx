@@ -462,22 +462,34 @@ const Item: React.FC = (props) => {
                     ))}
                     </IonSelect>
                   </IonCol>
-                  <IonCol className="ion-no-padding" size="1"><IonButton fill="default" onClick={(e) => {addUOMPopup()}}><IonIcon icon={addCircleOutline}></IonIcon></IonButton></IonCol>
+                  <IonCol className="ion-no-padding" size="1">
+                    <IonButton fill="default" onClick={(e) => {addUOMPopup()}}>
+                      <IonIcon icon={addCircleOutline}></IonIcon>
+                    </IonButton>
+                  </IonCol>
                 </IonRow>
                 </IonGrid>
               </IonItem>
               <IonItem key="category">
-                <IonSelect label={t("general.category") as string} labelPlacement="stacked" interface="popover" onIonChange={(ev) => updateAllKey("categoryID",ev.detail.value)} value={getCommonKey(stateItemDoc,"categoryID",globalData.listDocs)}>
-                  <IonSelectOption key="cat-undefined" value={null}>{t("general.uncategorized")}</IonSelectOption>
-                  {getCombinedCategories().map((cat) => (
-                      <IonSelectOption key={cat._id} value={cat._id}>
-                        {translatedCategoryName(cat._id,cat.name)}
-                      </IonSelectOption>
-                  ))}
-                </IonSelect>
-                <IonButton slot="end" fill="default" onClick={() => {addCategoryPopup()}}>
-                  <IonIcon slot="end" icon={addCircleOutline} ></IonIcon>
-                </IonButton>  
+                <IonGrid className="ion-no-padding">
+                  <IonRow>
+                    <IonCol className="ion-no-padding" size="11">
+                      <IonSelect label={t("general.category") as string} labelPlacement="stacked" interface="popover" onIonChange={(ev) => updateAllKey("categoryID",ev.detail.value)} value={getCommonKey(stateItemDoc,"categoryID",globalData.listDocs)}>
+                        <IonSelectOption key="cat-undefined" value={null}>{t("general.uncategorized")}</IonSelectOption>
+                          {getCombinedCategories().map((cat) => (
+                            <IonSelectOption key={cat._id} value={cat._id}>
+                            {translatedCategoryName(cat._id,cat.name)}
+                            </IonSelectOption>
+                          ))}
+                      </IonSelect>
+                    </IonCol>
+                    <IonCol className="ion-no-padding" size="1">
+                      <IonButton fill="default" onClick={() => {addCategoryPopup()}}>
+                        <IonIcon icon={addCircleOutline} ></IonIcon>
+                      </IonButton>
+                    </IonCol>
+                  </IonRow>
+                </IonGrid>
               </IonItem>
               <IonItem key="note">
                 <IonTextarea label={t("general.note") as string} labelPlacement="stacked" placeholder={t("general.item_note") as string} inputMode='text' debounce={100} rows={4} onIonInput={(ev) => updateAllKey("note",String(ev.detail.value))} value={getCommonKey(stateItemDoc,"note",globalData.listDocs)}>   

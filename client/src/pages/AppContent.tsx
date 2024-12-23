@@ -30,6 +30,7 @@ import UserData from './UserData';
 import { GlobalStateContext } from '../components/GlobalState';
 import React, { useContext } from 'react';
 import { ThemeType } from '../components/DBSchema';
+import ManageData from './ManageData';
 
 
 const AppContent: React.FC = () => {
@@ -63,6 +64,7 @@ const AppContent: React.FC = () => {
                         <Route exact path="/status" component={Status} />
                         <Route exact path="/userdata" component={UserData} />
                         <Route exact path="/friends" component={Friends} />
+                        <Route exact path="/managedata" component={ManageData} />
                         <Route exact path="/">
                             <Redirect to="/initialload" />
                         </Route>

@@ -1,11 +1,3 @@
-ion-item.select-interface-option.listgroup::part(native) {
-    padding-left: 1rem;
-}
-
-ion-item.select-interface-option::part(native) {
-    padding-left: 2.25rem;
-}
-
 ion-item.item-list-selector {
     --padding-top: 8px;
     --padding-bottom: 8px;

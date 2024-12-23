@@ -25,14 +25,19 @@ ion-item.shorter-item-some-padding::part(native) {
     padding-bottom: 6px;
 }
 
-ion-input.shorter-input.shorter-input2{
+/* ion-input.shorter-input.shorter-input2{
     min-height: 42px;
 }
 
 ion-select.shorter-select.shorter-select2 {
     min-height: 42px;
-}
+} */
 
+ion-reorder-group ion-checkbox {
+    flex: none;
+    width: min-content;
+    margin-right: 1.25rem;
+}
 
 .floating-error-footer {
     border: none;
