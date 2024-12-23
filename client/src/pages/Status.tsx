@@ -1,6 +1,6 @@
 import { IonContent, IonPage, IonList, IonItem,
         IonButton, useIonAlert, 
-        IonItemDivider, IonLabel, IonButtons, IonToolbar, IonText, IonIcon, IonGrid, IonRow, IonCol, IonPopover, IonTitle } from '@ionic/react';
+        IonItemDivider, IonButtons, IonToolbar, IonText, IonIcon, IonGrid, IonRow, IonCol, IonPopover, IonTitle } from '@ionic/react';
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';        
 import { closeCircle, checkmarkCircle, helpCircleOutline } from 'ionicons/icons';
 import { usePouch } from 'use-pouchdb';
