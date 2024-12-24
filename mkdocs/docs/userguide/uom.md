@@ -1,6 +1,6 @@
 # Units of Measure
 
-![](../assets/uom.png){align=right width=300}
+![](../assets/uomeditor.png){align=right width=300}
 
 The Units of Measure editor allows you to add/edit your custom units of measure. This includes the following fields:
 
