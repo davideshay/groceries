@@ -1,6 +1,6 @@
 # About
 
-![](https://raw.githubusercontent.com/davideshay/groceries/master/mkdocs/docs/assets/icon.png){align=right width=100}
+![](../assets/icon.png){align=right width=100}
 
 ## Why another grocery list app?
 

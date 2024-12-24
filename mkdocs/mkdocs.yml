@@ -9,8 +9,12 @@ nav:
     - Lists / List groups: userguide/lists.md
     - Friends: userguide/friends.md
     - Categories: userguide/categories.md
+    - Units Of Measure: userguide/uom.md
     - Recipes: userguide/recipes.md
+    - Manage Data: userguide/managedata.md
     - Settings: userguide/settings.md
+    - Status: userguide/status.md
+    - User Info: userguide/userinfo.md
     - Login / Logout: userguide/login.md
     - Upgrading: userguide/upgrading.md
  - Installation Guide:

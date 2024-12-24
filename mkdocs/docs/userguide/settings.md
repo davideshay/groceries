@@ -1,14 +1,8 @@
 # Settings
 
-![](https://raw.githubusercontent.com/davideshay/groceries/master/mkdocs/docs/assets/settings.png){align=right width=300}
+![](../assets/settings.png){align=right width=300}
 
 The settings control how portions of the application work.
-
-The top portion shows information about the app and the currently logged in user. The application version is shown as well as the database "schema" version. This must match up with the schema version that the database server is running. 
-
-Information is also provided on the status of the connection to the application (API) server as well as the database server. In addition, information is shown about the "refresh" token and the "access" token. Every time you login to the app with your user name and password you get a refresh token as well as an access token. The access token is used to get security access to the remote database and API server. This will typically expire in a "short" amount of time, which defaults to one day. As it gets close to the access token expiration time, the app will request a new access and refresh token as well. The refresh token expires in a longer time period, defaulting to 30 days. In normal usage, as long as you sign in once every 30 days, then, you will not need to re-provide the user name and password, but will login automatically using the tokens.  This portion of the setting screen shows when these tokens will be refreshed and their current status.
-
-If things need to be "reset", you can click the "Delete Local Data" which will remove the locally synced database, and require you to sign in again to start. You can also update your email address or user name here, and then click "Update User Info" to save the changes.
 
 There are 3 different options that are centered around how items are added to lists with relation to other lists in the same list group (Add To Other List Options):
 
@@ -18,6 +12,7 @@ There are 3 different options that are centered around how items are added to li
 
 Other Settings:
 
+* Theme - The application can either use the default system theme, or be forced to dark or light mode here.
 * Language -- The application has translations provided for the application screens and provided global items, categories, and units of measure. English, Spanish, and German are currently available. The language should automatically be detected based on browser and other system settings, but can be over-ridden here as well.
 * Remove items from list group when marked as purchased -- If you are shopping on the Wegman's list, and you check off the apples from the list, with this setting turned on it will also automatically check the apples off the Wegman's list as well. This makes it easy if you are going to maybe 2 grocery stores and want to shop for things at either store. This is convenient if you have for instance a store like Sam's Club or Costco and might be able to buy several things from your grocery list, but still need to go to the Wegman's to pick up your remaining items.
 * Delete from all lists in group when deleting completed items -- When you press the "delete completed items" button, this will remove the items from all other stores in the list group as well. This is convenient in the above scenario as well as you don't need to delete the completed items off of multiple stores in the list group.

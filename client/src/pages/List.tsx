@@ -76,8 +76,14 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
         let initListDoc : ListDoc = cloneDeep(ListDocInit);
         let newListGroupOwner: string|null = null;
         if (listCombinedRows.length > 0) {
-          initListDoc.listGroupID=String(listCombinedRows[0].listGroupID)
-          newListGroupOwner=listCombinedRows[0].listGroupOwner;
+          for (let i = 0; i <  listCombinedRows.length; i++) {
+            const lcr = listCombinedRows[i];
+            if (!lcr.hidden && !lcr.listGroupRecipe && lcr.rowType==="G") {
+              initListDoc.listGroupID=String(lcr.listGroupID);
+              newListGroupOwner=lcr.listGroupOwner;
+              break;
+            }
+          }
         } else {
           initListDoc.listGroupID=null
         }

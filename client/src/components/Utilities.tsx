@@ -138,7 +138,7 @@ export async function initialSetupActivities(db: PouchDB.Database, username: str
         log.info("No default group found for ",username, "... creating now ...");
         const defaultListGroupDoc : ListGroupDoc = cloneDeep(ListGroupDocInit);
         defaultListGroupDoc.recipe = false;
-        defaultListGroupDoc.name = username+" (default)";
+        defaultListGroupDoc.name = username+" "+t("general.list_group");
         defaultListGroupDoc.listGroupOwner = username;
         let curDateStr=(new Date()).toISOString()
         defaultListGroupDoc.updatedAt = curDateStr;

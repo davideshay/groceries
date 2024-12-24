@@ -4,7 +4,7 @@ Most release upgrades simply involve the system administrator upgrading the back
 
 Sometimes, however, there is a more significant change requiring some changes to database or other structures. When these occur (such as upgrading from any prior release to the 1.0.x and beyond series), the user may see a warning like this:
 
-![](https://raw.githubusercontent.com/davideshay/groceries/master/mkdocs/docs/assets/warningschema.png){align=right width=300}
+![](../assets/warningschema.png){align=right width=300}
 
 
 When this happens, the easiest thing to do is to choose "Delete/Exit" and then restart or re-login to the app. This will prompt you for your user ID and password again, and will then re-synchronize the data from the server. This is just a one-time action needed to fully update the data on your local device and prevent conflicts from occurring with new structures.

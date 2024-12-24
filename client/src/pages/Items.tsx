@@ -597,7 +597,15 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       </IonFab>)
 
   if (globalData.listRows && globalData.listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length <=0) {return(
-    <IonPage>{headerElem}<IonContent><IonItem key="nonefound"><IonLabel key="nothinghere">{t("error.please_create_list_before_adding_items")}</IonLabel></IonItem></IonContent></IonPage>
+    <IonPage>
+      {headerElem}
+      <IonContent>
+        <IonItem key="nonefound">
+          <IonLabel key="nothinghere">{t("error.please_create_list_before_adding_items")}</IonLabel>
+          <IonButton routerLink='/list/new/new'>{t("general.create_new_list")}</IonButton>
+        </IonItem>
+      </IonContent>
+    </IonPage>
   )};
 
   if (pageState.itemRows.length <=0 )  {return(
