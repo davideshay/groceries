@@ -76,8 +76,14 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
         let initListDoc : ListDoc = cloneDeep(ListDocInit);
         let newListGroupOwner: string|null = null;
         if (listCombinedRows.length > 0) {
-          initListDoc.listGroupID=String(listCombinedRows[0].listGroupID)
-          newListGroupOwner=listCombinedRows[0].listGroupOwner;
+          for (let i = 0; i <  listCombinedRows.length; i++) {
+            const lcr = listCombinedRows[i];
+            if (!lcr.hidden && !lcr.listGroupRecipe && lcr.rowType==="G") {
+              initListDoc.listGroupID=String(lcr.listGroupID);
+              newListGroupOwner=lcr.listGroupOwner;
+              break;
+            }
+          }
         } else {
           initListDoc.listGroupID=null
         }
@@ -252,15 +258,16 @@ function deletePrompt() {
     if (catDoc !== undefined) {
       let name = translatedCategoryName((catDoc as CategoryDoc)._id,(catDoc as CategoryDoc).name);
       return (
-        <IonItem key={pageState.selectedListID+"-"+actname+"-"+id}>
-            <IonCheckbox labelPlacement="end" justify="start" key={pageState.selectedListID+"-"+actname+"-"+id} onIonChange={(e) => updateCat(id,Boolean(e.detail.checked))} checked={active}>{name}</IonCheckbox>
+        <IonItem key={pageState.selectedListID+"-"+actname+"-"+id} slot="start">
+            <IonCheckbox justify="start" key={pageState.selectedListID+"-"+actname+"-"+id} onIonChange={(e) => updateCat(id,Boolean(e.detail.checked))} checked={active}></IonCheckbox>
+            {name}
             <IonReorder slot="end"></IonReorder>
         </IonItem>)    
     } else {
       log.error("Cat doc not defined: id:",id);
       return(
       <IonItem key={pageState.selectedListID+"-"+actname+"-"+id}>
-          <IonButton fill="clear" className="textButton">{t("general.undefined")}</IonButton>
+          <IonButton fill="clear">{t("general.undefined")}</IonButton>
           <IonReorder slot="end"></IonReorder>
       </IonItem>)
     }

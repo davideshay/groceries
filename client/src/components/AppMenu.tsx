@@ -1,7 +1,7 @@
 import { IonMenu, IonContent, IonMenuToggle, IonList, 
      IonItem, IonItemDivider, IonListHeader, IonBadge } from '@ionic/react';
 import { useContext } from 'react';    
-import { useConflicts, useFriends, UseFriendState } from './Usehooks';    
+import { useFriends, UseFriendState } from './Usehooks';    
 import ListsAll from './ListsAll';
 import { RemoteDBStateContext } from './RemoteDBState';
 import { ResolvedFriendStatus } from './DataTypes';
@@ -11,7 +11,6 @@ import './AppMenu.css';
 const AppMenu: React.FC = () => {
   const { remoteDBCreds, remoteDBState } = useContext(RemoteDBStateContext);
   const {useFriendState,friendRows} = useFriends(String(remoteDBCreds.dbUsername));
-  const { conflictDocs, conflictsLoading } = useConflicts();
   const { t } = useTranslation();
  
   const listHeader = (headerName: string) => {
@@ -37,15 +36,6 @@ const AppMenu: React.FC = () => {
               {t('general.friends')}
               </IonItem></IonMenuToggle>) 
   }
-   const conflictItem = () => {
-    let pendingCount=0;
-    if (!conflictsLoading) { pendingCount=conflictDocs.length }
-    return (<IonMenuToggle key="ConflictLog" autoHide={false}>
-              <IonItem className="app-menu-item" key={"item-ConflictLog"} routerLink="/conflictlog">
-              {(pendingCount > 0) ? <IonBadge slot="start">{pendingCount}</IonBadge> : <></>}
-              {t('general.conflict_log')}
-              </IonItem></IonMenuToggle>) 
-  }
  
   let contentElem;
   if (remoteDBState.loggedIn) {
@@ -56,16 +46,12 @@ const AppMenu: React.FC = () => {
           <ListsAll separatePage={false}/>
         </IonList>
         {listHeader(t('general.other_actions'))}
-        {listItem(t('general.create_new_list'),"/list/new/new")}
-        {listItem(t('general.manage_all_listgroups'),"/listgroups")}
         {listItem(t('general.recipes'),"/recipes")}
-        {listItem(t('general.manage_categories'),"/categories")}
-        {listItem(t('general.manage_all_items'),"/allitems")}
-        {listItem(t('general.view_global_items'),"/globalitems")}
-        {listItem(t('general.uoms'),"/uoms")}
         {friendItem()}
-        {conflictItem()}
+        {listItem(t('general.manage_data'),"/managedata")}
         {listItem(t('general.settings'),"/settings")}
+        {listItem(t('general.status'),"/status")}
+        {listItem(t('general.user_info'),"/userdata")}
         {listItem(t('general.login'),"/login")}
       </>
   } else {

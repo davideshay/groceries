@@ -561,7 +561,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
               onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListOrGroupID} >
             {listSelectRows !== undefined ? listSelectRows.filter(lcr => (!lcr.hidden && !lcr.listGroupRecipe)).map((listSelectRow: ListSelectRow) => (
                 <IonSelectOption disabled={listSelectRow.rowKey==="G-null"}
-                    className={"ion-no-padding "+ (listSelectRow.rowType === RowType.list ? "indented " : "listgroup ") + (listSelectRow.hasUncheckedItems ? "has-unchecked" : "no-unchecked" )}
+                    className={" "+ (listSelectRow.rowType === RowType.list ? "indented " : "listgroup ") + (listSelectRow.hasUncheckedItems ? "has-unchecked" : "no-unchecked" )}
                     key={listSelectRow.listOrGroupID} value={listSelectRow.listOrGroupID}>
                   {listSelectRow.rowName}
                 </IonSelectOption>
@@ -573,7 +573,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
           <ItemsSearch rowSelected={chooseSearchItem} addItemWithoutRow={addNewItemToList}/>
          </IonItem> */}
         <IonItem key="searchbar" className="item-search">
-           <IonIcon icon={searchOutline} />
+           <IonIcon icon={searchOutline}  slot="start"/>
            <IonInput key="itemsearchbox" id="item-search-box-id" aria-label="" className="ion-no-padding input-search" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="text" enterkeyhint="enter"
               disabled={globalData.listRows !== undefined ? globalData.listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length <=0 : true}
               clearInput={true}  placeholder={t("general.search") as string} fill="solid"
@@ -597,7 +597,15 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       </IonFab>)
 
   if (globalData.listRows && globalData.listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length <=0) {return(
-    <IonPage>{headerElem}<IonContent><IonItem key="nonefound"><IonLabel key="nothinghere">{t("error.please_create_list_before_adding_items")}</IonLabel></IonItem></IonContent></IonPage>
+    <IonPage>
+      {headerElem}
+      <IonContent>
+        <IonItem key="nonefound">
+          <IonLabel key="nothinghere">{t("error.please_create_list_before_adding_items")}</IonLabel>
+          <IonButton routerLink='/list/new/new'>{t("general.create_new_list")}</IonButton>
+        </IonItem>
+      </IonContent>
+    </IonPage>
   )};
 
   if (pageState.itemRows.length <=0 )  {return(
@@ -663,13 +671,15 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     currentRows.push(
       <IonItem className={"itemrow-outer "+(rowVisible ? "itemrow-display" : "itemrow-hidden")} key={"itemouter"+pageState.itemRows[i].itemID} >
         <IonCheckbox key={"itemcheckbox"+pageState.itemRows[i].itemID} aria-label=""
-            onIonChange={(e: CustomEvent<CheckboxChangeEventDetail>) => {if (!doingUpdate.current) { (e.target as any).disabled = true; doingUpdate.current=true; completeItemRowStub(item.itemID,i,e)}}}
-            color={"medium"} disabled={doingUpdate.current}
-            checked={Boolean(item.completed)} className={"item-on-list "+ (item.completed ? "item-completed" : "")}></IonCheckbox>
-          <IonItem className={"itemrow-inner"+(item.completed ? " item-completed": "")} routerLink={"/item/edit/"+item.itemID}
-            key={"iteminner"+pageState.itemRows[i].itemID}>{item.itemName + (item.quantityUOMDesc === "" ? "" : " ("+ item.quantityUOMDesc+")")}
-          {item.hasNote ? <IonIcon key={"itemnoteicon"+pageState.itemRows[i].itemID} className="note-icon" icon={documentTextOutline}></IonIcon> : <></>}
-          </IonItem>
+          onIonChange={(e: CustomEvent<CheckboxChangeEventDetail>) => {if (!doingUpdate.current) { (e.target as any).disabled = true; doingUpdate.current=true; completeItemRowStub(item.itemID,i,e)}}}
+          color={"medium"} disabled={doingUpdate.current}
+          checked={Boolean(item.completed)} className={"item-on-list "+ (item.completed ? "item-completed" : "")}>
+        </IonCheckbox>
+        <IonItem className={"itemrow-inner"+(item.completed ? " item-completed": "")} routerLink={"/item/edit/"+item.itemID}
+          key={"iteminner"+pageState.itemRows[i].itemID}>
+            {item.itemName + (item.quantityUOMDesc === "" ? "" : " ("+ item.quantityUOMDesc+")")}
+            {item.hasNote ? <IonIcon key={"itemnoteicon"+pageState.itemRows[i].itemID} className="note-icon" icon={documentTextOutline}></IonIcon> : <></>}
+        </IonItem>
       </IonItem>);
     if (lastCategoryFinished && !createdFinished) {
       listContent.push(getCompletedDivider(dividerCount));

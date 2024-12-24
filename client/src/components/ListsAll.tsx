@@ -2,7 +2,6 @@ import {  IonItem, IonButton, IonMenuToggle, IonIcon } from '@ionic/react';
 import { useContext } from 'react';
 import { pencilOutline } from 'ionicons/icons';
 import './ListsAll.css';
-import './common.css';
 import { RowType } from './DataTypes';
 import { GlobalDataContext } from './GlobalDataProvider';
 
@@ -24,7 +23,7 @@ const ListsAll: React.FC<ListsAllProps> = (props: ListsAllProps) => {
     } else {
       if (showLinkID === undefined) {
         baseRow = (
-          <IonItem className="menu-item ion-no-padding" key={rowKey} >
+          <IonItem className="menu-item ion-no-padding app-menu-item" key={rowKey} >
             <IonButton slot="start" size="default" className={"ion-no-margin standard-text-button "+extraClass} fill="clear">{rowName}</IonButton>
             <IonButton fill="clear" className="ion-no-margin standard-text-button" routerLink={editLinkID} slot="end">
             <IonIcon slot="end" icon={pencilOutline}></IonIcon>
@@ -32,17 +31,18 @@ const ListsAll: React.FC<ListsAllProps> = (props: ListsAllProps) => {
           </IonItem>)  
       } else {
         baseRow = (
-        <IonItem className="menu-item ion-no-padding" key={rowKey} >
-          <IonButton slot="start" size="default" className={"ion-no-margin standard-text-button "+extraClass} fill="clear" routerLink={(showLinkID)}>{rowName}</IonButton>
-          <IonButton fill="clear" className="ion-no-margin standard-text-button" routerLink={editLinkID} slot="end">
-          <IonIcon slot="end" icon={pencilOutline}></IonIcon>
+        <IonItem className="menu-item ion-no-padding app-menu-item" key={rowKey} >
+          <IonItem className={"ion-no-margin menu-item-label "+extraClass} routerLink={(showLinkID)}>{rowName}</IonItem>
+{/*           <IonButton slot="start" size="default" className={"ion-no-margin standard-text-button "+extraClass} fill="clear" routerLink={(showLinkID)}>{rowName}</IonButton>
+ */}          <IonButton fill="clear" className="ion-no-margin standard-text-button" routerLink={editLinkID} slot="end">
+            <IonIcon slot="end" icon={pencilOutline}></IonIcon>
           </IonButton>
         </IonItem>)
       }
     }
     if (separatePage) {return baseRow}
     else {
-      return (<IonMenuToggle key={rowKey} auto-hide={false}>
+      return (<IonMenuToggle className="menu-list-item-toggle" key={rowKey} auto-hide={false}>
         {baseRow}
       </IonMenuToggle>)
     }
@@ -54,6 +54,8 @@ const ListsAll: React.FC<ListsAllProps> = (props: ListsAllProps) => {
     if (combinedRow.hidden) {return;}
     if (combinedRow.rowType === RowType.listGroup ) {
       if (combinedRow.listGroupRecipe) {
+        return;
+        // Don't need recipe groups in main list tree
         listsElem.push(
           addRow({separatePage: props.separatePage,
               editLinkID: "/listgroup/edit/"+combinedRow.listGroupID,

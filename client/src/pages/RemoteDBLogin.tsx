@@ -552,41 +552,67 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       if (remoteState.inCreateMode) {
         formElem = <>
         <IonItem>
-        <IonInput label={t("general.api_server_url") as string} labelPlacement="stacked" type="url" inputmode="url" value={formState.apiServerURL} onIonInput={(e) => {setFormState(prevState=>({...prevState,apiServerURL:String(e.detail.value)}))}}>
+        <IonInput label={t("general.api_server_url") as string} labelPlacement="stacked" type="url" inputmode="url"
+                  value={formState.apiServerURL}
+                  onKeyUp={(e) => {if (e.key === "Enter") {submitFunc() }} }
+                  onIonInput={(e) => {setFormState(prevState=>({...prevState,apiServerURL:String(e.detail.value)}))}}>
         </IonInput>
         </IonItem>
         <IonItem>
-        <IonInput label={t("general.username") as string} labelPlacement="stacked" type="text" autocomplete="username" value={formState.dbUsername} onIonInput={(e) => {setFormState(prevState=>({...prevState,dbUsername:String(e.detail.value)}))}}>
+        <IonInput label={t("general.username") as string} labelPlacement="stacked" type="text" autocomplete="username"
+                  value={formState.dbUsername}
+                  onKeyUp={(e) => {if (e.key === "Enter") {submitFunc() }} }
+                  onIonInput={(e) => {setFormState(prevState=>({...prevState,dbUsername:String(e.detail.value)}))}}>
         </IonInput>
         </IonItem>
         <IonItem>
-        <IonInput label={t("general.email_address") as string} labelPlacement="stacked" type="email" autocomplete="email" value={formState.email} onIonInput={(e) => {setFormState(prevState=>({...prevState,email:String(e.detail.value)}))}}>
+        <IonInput label={t("general.email_address") as string} labelPlacement="stacked" type="email" autocomplete="email"
+                  value={formState.email}
+                  onKeyUp={(e) => {if (e.key === "Enter") {submitFunc() }} }
+                  onIonInput={(e) => {setFormState(prevState=>({...prevState,email:String(e.detail.value)}))}}>
         </IonInput>
         </IonItem>
         <IonItem>
-        <IonInput label={t("general.fullname") as string} labelPlacement="stacked"  type="text" value={formState.fullName} onIonInput={(e) => {setFormState(prevState=>({...prevState,fullName:String(e.detail.value)}))}}>
+        <IonInput label={t("general.fullname") as string} labelPlacement="stacked"  type="text" value={formState.fullName}
+                  onKeyUp={(e) => {if (e.key === "Enter") {submitFunc() }} }
+                  onIonInput={(e) => {setFormState(prevState=>({...prevState,fullName:String(e.detail.value)}))}}>
         </IonInput>
         </IonItem>
         <IonItem>
-        <IonInput label={t("general.password") as string} labelPlacement="stacked" autocomplete="current-password" type={remoteState.showMainPassword ? "text" : "password"} value={remoteState.password} onIonInput={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
+        <IonInput label={t("general.password") as string} labelPlacement="stacked" autocomplete="current-password"
+                  type={remoteState.showMainPassword ? "text" : "password"} value={remoteState.password}
+                  onKeyUp={(e) => {if (e.key === "Enter") {submitFunc() }} }
+                  onIonInput={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
         </IonInput><IonIcon slot="end"  icon={remoteState.showMainPassword ? eyeOff : eye} onClick={() => {setRemoteState((prevState) => ({...prevState,showMainPassword: !prevState.showMainPassword}))}}></IonIcon>
         </IonItem>
         <IonItem>
-        <IonInput label={t("general.confirm_password") as string} labelPlacement="stacked" autocomplete="current-password" type={remoteState.showVerifyPassword ? "text" : "password"} value={remoteState.verifyPassword} onIonInput={(e) => {setRemoteState(prevstate => ({...prevstate, verifyPassword: String(e.detail.value)}))}}>
+        <IonInput label={t("general.confirm_password") as string} labelPlacement="stacked" autocomplete="current-password"
+                  type={remoteState.showVerifyPassword ? "text" : "password"} value={remoteState.verifyPassword}
+                  onKeyUp={(e) => {if (e.key === "Enter") {submitFunc() }} }
+                  onIonInput={(e) => {setRemoteState(prevstate => ({...prevstate, verifyPassword: String(e.detail.value)}))}}>
         </IonInput><IonIcon slot="end"  icon={remoteState.showVerifyPassword ? eyeOff : eye} onClick={() => {setRemoteState((prevState) => ({...prevState,showVerifyPassword: !prevState.showVerifyPassword}))}}></IonIcon>
         </IonItem>
         </>
       } else {
         formElem = <><IonItem>
-        <IonInput label={t("general.api_server_url") as string} labelPlacement="stacked" type="url" inputmode="url" value={formState.apiServerURL} onIonInput={(e) => {setFormState(prevState=>({...prevState,apiServerURL:String(e.detail.value)}))}}>
+        <IonInput label={t("general.api_server_url") as string} labelPlacement="stacked" type="url" inputmode="url"
+                  value={formState.apiServerURL}
+                  onKeyUp={(e) => {if (e.key === "Enter") {submitFunc() }}  }
+                  onIonInput={(e) => {setFormState(prevState=>({...prevState,apiServerURL:String(e.detail.value)}))}}>
         </IonInput>
         </IonItem>
         <IonItem>
-        <IonInput label={t("general.username") as string} labelPlacement="stacked"  type="text" autocomplete="username" value={formState.dbUsername} onIonInput={(e) => {setFormState(prevState=>({...prevState,dbUsername:String(e.detail.value)}))}}>
+        <IonInput label={t("general.username") as string} labelPlacement="stacked"  type="text" autocomplete="username"
+                  value={formState.dbUsername}
+                  onKeyUp={(e) => {if (e.key === "Enter") {submitFunc() }}  }
+                  onIonInput={(e) => {setFormState(prevState=>({...prevState,dbUsername:String(e.detail.value)}))}}>
         </IonInput>
         </IonItem>
         <IonItem>
-        <IonInput label={t("general.password") as string} labelPlacement="stacked" autocomplete="current-password" type={remoteState.showMainPassword ? "text" : "password"} value={remoteState.password} onIonInput={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
+        <IonInput label={t("general.password") as string} labelPlacement="stacked" autocomplete="current-password"
+                  type={remoteState.showMainPassword ? "text" : "password"} value={remoteState.password}
+                  onKeyUp={(e) => {if (e.key === "Enter") {submitFunc() }}  }
+                  onIonInput={(e) => {setRemoteState(prevstate => ({...prevstate, password: String(e.detail.value)}))}}>
         </IonInput><IonIcon slot="end"  icon={remoteState.showMainPassword ? eyeOff : eye} onClick={() => {setRemoteState((prevState) => ({...prevState,showMainPassword: !prevState.showMainPassword}))}}></IonIcon>
         </IonItem>
         </>  
@@ -638,6 +664,17 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       break;
   }
 
+  function submitFunc() {
+    switch (loginOption) {
+      case LoginOptions.Login:
+        if (remoteState.inCreateMode) {
+          return submitCreateForm()
+        } else {
+          return submitForm()
+        }
+    }
+  }
+
   let buttonsElem
   switch (loginOption) {
     case LoginOptions.AskOffline:
@@ -654,11 +691,11 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       if (remoteState.inCreateMode) {
         buttonsElem=<>
         <IonButton size="small" fill="outline" onClick={() => setRemoteState(prevState => ({...prevState,inCreateMode: false}))}>{t("general.cancel")}</IonButton>
-        <IonButton size="small" onClick={() => submitCreateForm()}>{t("general.create")}</IonButton>
+        <IonButton size="small" type="submit" onClick={() => submitFunc()}>{t("general.create")}</IonButton>
         </>
       } else {
         buttonsElem=<>
-        <IonButton size="small" slot="start" onClick={() => submitForm()}>{t("general.login")}</IonButton>
+        <IonButton size="small" slot="start" type="submit" onClick={() => submitFunc()}>{t("general.login")}</IonButton>
         <IonButton size="small" onClick={() => resetPassword()}>{t("general.reset_password")}</IonButton>
         <IonButton size="small" slot="end" onClick={() => switchToCreateMode()}>{t("general.create_account")}</IonButton>
         </>

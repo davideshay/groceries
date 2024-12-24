@@ -19,7 +19,7 @@ export type GlobalState = {
     settings: GlobalSettings,
     categoryColors: CategoryColors,
     settingsLoaded: boolean,
-    initialLoadCompleted: boolean
+    initialLoadCompleted: boolean,
 }
 
 export interface GlobalStateContextType {
@@ -140,6 +140,10 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         }
         if (!newSettings.hasOwnProperty('alexaDefaultListGroup')) {
             newSettings.alexaDefaultListGroup = InitSettings.alexaDefaultListGroup;
+            updated = true;
+        }
+        if (!newSettings.hasOwnProperty('theme')) {
+            newSettings.theme = InitSettings.theme;
             updated = true;
         }
         return [newSettings, updated]

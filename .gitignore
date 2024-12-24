@@ -36,3 +36,5 @@ client/android/clementines.jks
 client/android/clementines.jks.base64
 client/android/app/release/*
 client/android/app/debug/*
+
+mkdocs/site/*

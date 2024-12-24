@@ -50,7 +50,7 @@ const RecipeImport: React.FC<HistoryProps> = (props: HistoryProps) => {
     let pickSuccessful = true;
     try {pickResults = await FilePicker.pickFiles({
 //      types: [ fileType.type ],
-      multiple: false,
+      limit: 1,
       readData: true
       }) }
     catch(err) {pickSuccessful = false;}

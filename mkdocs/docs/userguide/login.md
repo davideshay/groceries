@@ -1,6 +1,6 @@
 # Login / Logout
 
-![](https://raw.githubusercontent.com/davideshay/groceries/master/mkdocs/docs/assets/login.png){align=right width=300}
+![](../assets/login.png){align=right width=300}
 
 This screen will be presented at application startup, and if you haven't yet logged in to the app, you will see a login screen presented asking for the API server URL, user name and password.
 
@@ -10,7 +10,7 @@ If your system administrator / installer has configured the web application, it 
 
 ## Creating a new user
 
-![](https://raw.githubusercontent.com/davideshay/groceries/master/mkdocs/docs/assets/createaccount.png){align=right width=300}
+![](../assets/createaccount.png){align=right width=300}
 
 To create an account you must provide:
 
@@ -29,7 +29,7 @@ Will log you out of the app and remove credentials, so you will need to provide 
 
 ## Work Offline
 
-![](https://raw.githubusercontent.com/davideshay/groceries/master/mkdocs/docs/assets/workoffline.png){align=right width=300}
+![](../assets/workoffline.png){align=right width=300}
 
 Under certain circumstances, such as when connectivity is lost with the application or database server, then you may be asked if you want to work offline. Once selected, the sync icon in the upper right hand corner will change to offline mode. Once you regain connectivity, you can click the login button again and you will be reconnected automatically.
 

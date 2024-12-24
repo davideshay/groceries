@@ -1,5 +1,5 @@
-export const maxAppSupportedSchemaVersion = 6;
-export const appVersion = "1.1.4";
+export const maxAppSupportedSchemaVersion = 7;
+export const appVersion = "1.1.6";
 export const minimumAccessRefreshSeconds = 300;
 export const DefaultColor = "#ffffff";
 
@@ -311,6 +311,12 @@ export enum AddListOptions {
   addToListsWithCategoryAutomatically = "CAT"
 }
 
+export enum ThemeType {
+    light = "L",
+    dark = "D",
+    auto = "A"
+  }
+
 export type GlobalSettings = {
   addListOption: AddListOptions,
   removeFromAllLists: boolean,
@@ -318,7 +324,8 @@ export type GlobalSettings = {
   includeGlobalInSearch: boolean,
   daysOfConflictLog: Number,
   savedListID?: string | undefined | null,
-  alexaDefaultListGroup?: string | undefined | null
+  alexaDefaultListGroup?: string | undefined | null,
+  theme?: ThemeType
 }
 
 export const InitSettings: GlobalSettings = {
@@ -328,7 +335,8 @@ export const InitSettings: GlobalSettings = {
   includeGlobalInSearch: true,
   daysOfConflictLog: 2,
   savedListID: null,
-  alexaDefaultListGroup: null
+  alexaDefaultListGroup: null,
+  theme: ThemeType.auto
 }
 
 export type CategoryColors = {

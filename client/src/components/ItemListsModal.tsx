@@ -1,4 +1,4 @@
-import { IonTitle,  IonButton, IonList, IonInput, IonItem, IonSelect, IonCheckbox, IonIcon,
+import { IonTitle,  IonButton, IonList, IonInput, IonSelect, IonCheckbox, IonIcon,
     IonSelectOption, IonTextarea, IonGrid, IonRow, IonCol, IonText, IonModal, IonToolbar, IonButtons } from '@ionic/react';
 import { addCircleOutline, closeCircleOutline, saveOutline } from 'ionicons/icons';    
 import { SetStateAction, useContext } from 'react';    
@@ -64,34 +64,55 @@ const ItemListsModal: React.FC<ModalProps> = (props: ModalProps) => {
             <IonCol size="4"><IonCheckbox aria-label="" labelPlacement="end" checked={props.modalState.itemList.completed} onIonChange={(e) => props.setModalState(prevState =>({...prevState,itemList: {...prevState.itemList,completed: e.detail.checked}}) )}></IonCheckbox></IonCol>
             <IonCol size="4"><IonCheckbox aria-label="" labelPlacement="end" checked={props.modalState.itemList.stockedAt} onIonChange={(e) => props.setModalState(prevState =>({...prevState,itemList: {...prevState.itemList,stockedAt: e.detail.checked}}) )}></IonCheckbox></IonCol>
           </IonRow>
-        </IonGrid>
-        <IonItem>
-          <IonSelect label={t('general.category') as string} labelPlacement="stacked" interface="popover" onIonChange={(ev) => props.setModalState(prevState => ({...prevState, itemList: {...prevState.itemList, categoryID: ev.detail.value}}))} value={props.modalState.itemList.categoryID}>
+          <IonRow>
+            <IonCol size="10">
+              <IonSelect label={t('general.category') as string} labelPlacement="stacked" interface="popover" onIonChange={(ev) => props.setModalState(prevState => ({...prevState, itemList: {...prevState.itemList, categoryID: ev.detail.value}}))} value={props.modalState.itemList.categoryID}>
                   <IonSelectOption key="cat-undefined" value={null}>{t('general.uncategorized')}</IonSelectOption>
                   {getActiveCategories().map((cat) => { return (
                       <IonSelectOption key={cat._id} value={cat._id}>
                         {translatedCategoryName(cat._id as string,cat.name)}
                       </IonSelectOption>
                   )})}
-          </IonSelect>
-          <IonButton slot="end" fill="default" onClick={() => {props.addCategoryPopup()}}>
-            <IonIcon slot="end" icon={addCircleOutline} ></IonIcon>
-          </IonButton>  
-        </IonItem>
-        <IonItem>
-          <IonInput key="modal-qty" label={t("general.quantity") as string} labelPlacement="stacked" type="number" min="0" max="9999" value={props.modalState.itemList.quantity} onIonInput={(e) => props.setModalState(prevState => ({...prevState,itemList: {...prevState.itemList,quantity: Number(e.detail.value)}}))}></IonInput>
-          <IonSelect label={t('general.uom_abbrev') as string} labelPlacement="stacked" interface="popover" onIonChange={(ev) => props.setModalState(prevState => ({...prevState, itemList: {...prevState.itemList, uomName: ev.detail.value}}))} value={props.modalState.itemList.uomName}>
-                    <IonSelectOption key="uom-undefined" value={null}>{t('general.no_uom')}</IonSelectOption>
-                    {globalData.uomDocs.filter(uom => (["system",props.stateItemDoc.listGroupID].includes(uom.listGroupID))).map((uom) => (
-                      <IonSelectOption key={uom.name} value={uom.name}>
-                        {translatedUOMName(uom._id as string,uom.description,uom.pluralDescription)}
-                      </IonSelectOption>
-                    ))}
-          </IonSelect>
-          <IonButton fill="default" onClick={(e) => {props.addUOMPopup()}}><IonIcon icon={addCircleOutline}></IonIcon></IonButton>
-        </IonItem>
-        <IonItem><IonText>{t('itemtext.item_was_purchased_from_here')} {props.modalState.itemList.boughtCount} {t('general.times')}</IonText><IonButton slot="end" onClick={() => props.setModalState(prevState => ({...prevState, itemList: {...prevState.itemList, boughtCount: 0}}))}>{t('general.reset')}</IonButton></IonItem>
-        <IonItem><IonTextarea label={t('general.note') as string} labelPlacement='stacked' value={props.modalState.itemList.note} onIonChange={(e) => props.setModalState(prevState => ({...prevState,itemList: {...prevState.itemList,note: String(e.detail.value)}}))}></IonTextarea></IonItem>
+              </IonSelect>
+            </IonCol>
+            <IonCol size="2">
+              <IonButton fill="default" onClick={() => {props.addCategoryPopup()}}>
+                <IonIcon icon={addCircleOutline} ></IonIcon>
+              </IonButton>  
+            </IonCol>       
+          </IonRow>
+          <IonRow>
+            <IonCol size="3">
+              <IonInput key="modal-qty" label={t("general.quantity") as string} labelPlacement="stacked" type="number" min="0" value={props.modalState.itemList.quantity} onIonInput={(e) => props.setModalState(prevState => ({...prevState,itemList: {...prevState.itemList,quantity: Number(e.detail.value)}}))}></IonInput>
+            </IonCol>
+            <IonCol size="7">
+              <IonSelect label={t('general.uom_abbrev') as string} labelPlacement="stacked" interface="popover" onIonChange={(ev) => props.setModalState(prevState => ({...prevState, itemList: {...prevState.itemList, uomName: ev.detail.value}}))} value={props.modalState.itemList.uomName}>
+                  <IonSelectOption key="uom-undefined" value={null}>{t('general.no_uom')}</IonSelectOption>
+                  {globalData.uomDocs.filter(uom => (["system",props.stateItemDoc.listGroupID].includes(uom.listGroupID))).map((uom) => (
+                    <IonSelectOption key={uom.name} value={uom.name}>
+                      {translatedUOMName(uom._id as string,uom.description,uom.pluralDescription)}
+                    </IonSelectOption>
+                  ))}
+              </IonSelect>
+            </IonCol>
+            <IonCol size="2">
+              <IonButton fill="default" onClick={(e) => {props.addUOMPopup()}}><IonIcon icon={addCircleOutline}></IonIcon></IonButton>
+            </IonCol>
+          </IonRow>
+          <IonRow>
+            <IonCol size="9">
+              <IonText>{t('itemtext.item_was_purchased_from_here')} {props.modalState.itemList.boughtCount} {t('general.times')}</IonText>
+            </IonCol>
+            <IonCol size="3">
+            <IonButton onClick={() => props.setModalState(prevState => ({...prevState, itemList: {...prevState.itemList, boughtCount: 0}}))}>{t('general.reset')}</IonButton>
+            </IonCol>
+          </IonRow>
+          <IonRow>
+            <IonCol size="12">
+            <IonTextarea label={t('general.note') as string} labelPlacement='stacked' value={props.modalState.itemList.note} onIonChange={(e) => props.setModalState(prevState => ({...prevState,itemList: {...prevState.itemList,note: String(e.detail.value)}}))}></IonTextarea>
+            </IonCol> 
+          </IonRow>
+        </IonGrid>  
       </IonList>
       <IonToolbar>       
         <IonButtons slot="secondary"> 
