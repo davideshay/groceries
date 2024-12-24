@@ -1,22 +1,18 @@
 import { IonContent, IonPage, IonList, IonItem,
-    IonButton, useIonAlert, IonInput,
-    IonItemDivider, IonButtons, IonToolbar, IonText, IonIcon, IonGrid, IonRow, IonCol } from '@ionic/react';
+    IonButton, IonInput, IonButtons, IonToolbar, IonText } from '@ionic/react';
 import { useContext, useEffect, useRef, useState } from 'react';        
-import { closeCircle, checkmarkCircle, helpCircleOutline } from 'ionicons/icons';
-import { usePouch } from 'use-pouchdb';
 import './Settings.css';
 import { InitSettings } from '../components/DBSchema';
 import { GlobalStateContext } from '../components/GlobalState';
 import { RemoteDBStateContext,  } from '../components/RemoteDBState';
 import { HistoryProps, UserInfo, initUserInfo } from '../components/DataTypes';
-import { maxAppSupportedSchemaVersion, appVersion , GlobalSettings, AddListOptions} from '../components/DBSchema';
+import { GlobalSettings } from '../components/DBSchema';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
 import { isEmpty, isEqual } from 'lodash';
-import { checkUserByEmailExists, emailPatternValidation, fullnamePatternValidation, secondsToDHMS, updateUserInfo } from '../components/Utilities';
+import { checkUserByEmailExists, emailPatternValidation, fullnamePatternValidation, updateUserInfo } from '../components/Utilities';
 import { cloneDeep } from 'lodash';
 import Loading from '../components/Loading';
-import { getTokenInfo } from '../components/RemoteUtilities';
 
 type ErrorInfo = {
 isError: boolean,
@@ -84,10 +80,6 @@ setDBCredsValue("email",userInfo.email);
 setDBCredsValue("fullName",userInfo.fullname);    
 setErrorInfo(prevState=>({...prevState,formError: "User Info Saved"}));
 }
-
-const accessSecondsToExpire = remoteDBState.accessJWTExpirationTime === 0 ? 0 : Number(remoteDBState.accessJWTExpirationTime) - (Math.round(Date.now() / 1000));
-const refreshJWTInfo = getTokenInfo(String(remoteDBCreds.refreshJWT),false);
-const refreshSecondsToExpire = Number(refreshJWTInfo.expireDate) - Math.round(Date.now() / 1000);
 
 return (
 <IonPage>
