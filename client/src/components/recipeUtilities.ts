@@ -1,4 +1,4 @@
-import { cloneDeep } from "lodash";
+import { cloneDeep, isEmpty } from "lodash-es";
 import { ItemDoc, ItemDocInit, ItemList, ItemListInit, RecipeItem } from "./DBSchema";
 import { GlobalDataState } from "./GlobalDataProvider";
 import { AddListOptions, GlobalSettings } from "./DBSchema";
@@ -6,7 +6,6 @@ import { getListGroupIDFromListOrGroupID, getRowTypeFromListOrGroupID} from "./U
 import { translatedItemName, translatedUOMShortName } from "./translationUtilities";
 import { RowType } from "./DataTypes";
 import { getCommonKey } from "./ItemUtilities";
-import { isEmpty } from "lodash";
 import { t } from 'i18next';
 import { log } from './Utilities';
 
@@ -69,7 +68,7 @@ export async function updateItemFromRecipeItem({itemID,listOrGroupID,recipeItem,
     if (!itemExists) {return t("error.no_item_found_update_recipe",{itemName: recipeItem.name}) as string};
     let rowType: RowType | null = getRowTypeFromListOrGroupID(listOrGroupID as string,globalData.listCombinedRows)
     let listGroupID = getListGroupIDFromListOrGroupID(String(listOrGroupID),globalData.listCombinedRows);
-    let updItem: ItemDoc = cloneDeep(foundItem);
+    let updItem: ItemDoc = cloneDeep(foundItem) as ItemDoc;
     updItem.lists.forEach(itemList => {
         if (!itemList.stockedAt) {return}
         if (settings.addListOption === AddListOptions.dontAddAutomatically && 

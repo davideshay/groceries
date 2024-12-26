@@ -6,7 +6,6 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
 import { add,chevronUp,documentTextOutline,searchOutline } from 'ionicons/icons';
 import React, { useState, useEffect, useContext, useRef, KeyboardEvent, useCallback } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
-import { cloneDeep } from 'lodash';
 import './Items.css';
 import { useUpdateGenericDocument, useCreateGenericDocument, useItems } from '../components/Usehooks';
 import { GlobalStateContext } from '../components/GlobalState';
@@ -18,7 +17,7 @@ import SyncIndicator from '../components/SyncIndicator';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
-import { isEqual, debounce } from 'lodash';
+import { isEqual, debounce, cloneDeep } from 'lodash-es';
 import { useTranslation } from 'react-i18next';
 import { log } from "../components/Utilities";
 import { navigateToFirstListID } from '../components/RemoteUtilities';
@@ -371,7 +370,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
     let newStatus = event.detail.checked;
     // make the update in the database, let the refresh of the view change state
-    let itemDoc: ItemDoc = cloneDeep(baseItemDocs.find(element => (element._id === id)))
+    let itemDoc: ItemDoc = cloneDeep(baseItemDocs.find(element => (element._id === id))) as ItemDoc;
     let listChanged=false;
     itemDoc.lists.forEach((list: ItemList) => {
       let updateThisList=false;

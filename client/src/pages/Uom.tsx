@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteGenericDocument,
     useGetOneDoc, useItems } from '../components/Usehooks';
-import { cloneDeep } from 'lodash';
+import { cloneDeep, isEmpty } from 'lodash-es';
 import { PouchResponse, HistoryProps, RowType, ListCombinedRows} from '../components/DataTypes';
 import { ItemDoc, UomDoc, InitUomDoc } from '../components/DBSchema';
 import { add, addCircleOutline, closeCircleOutline, saveOutline, trashOutline } from 'ionicons/icons';
@@ -15,7 +15,6 @@ import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
 import { translatedUOMName } from '../components/translationUtilities';
 import { useDeleteUomFromItems, useDeleteUomFromRecipes } from '../components/uomUtilities';
-import { isEmpty } from 'lodash';
 
 type PageState = {
   uomDoc: UomDoc,
@@ -225,7 +224,7 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   
   function updateCustomAlternateUom(index: number, value: string) {
-    let newAlternates=cloneDeep(pageState.uomDoc.customAlternates)
+    let newAlternates=cloneDeep(pageState.uomDoc.customAlternates) as (string[])
     newAlternates[index]=value;
     setPageState(prevState=>({...prevState,uomDoc: {...prevState.uomDoc,customAlternates: newAlternates}}))
   }
@@ -234,14 +233,14 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
       if (isEmpty(pageState.uomDoc.customAlternates)) {
         setPageState(prevState=>({...prevState,uomDoc:{...prevState.uomDoc,customAlternates: [""]}}));
       } else {
-        let newAlts = cloneDeep(pageState.uomDoc.customAlternates);
+        let newAlts = cloneDeep(pageState.uomDoc.customAlternates) as (string[]);
         newAlts.push("");
         setPageState(prevState=>({...prevState,uomDoc:{...prevState.uomDoc,customAlternates: newAlts}}))
       }
   }
 
   function deleteCustom(index: number) {
-    let newAlts = cloneDeep(pageState.uomDoc.customAlternates);
+    let newAlts = cloneDeep(pageState.uomDoc.customAlternates) as (string[]);
     newAlts.splice(index,1);
     setPageState(prevState=>({...prevState,uomDoc:{...prevState.uomDoc,customAlternates: newAlts}}))
   }

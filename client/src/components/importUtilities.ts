@@ -2,14 +2,13 @@ import { PouchResponse, PouchResponseInit, RecipeFileType, TandoorRecipe } from 
 import { PickFilesResult } from "@capawesome/capacitor-file-picker";
 import zip from 'jszip';
 import { GlobalItemDoc, InitGlobalItem, InitRecipeDoc, RecipeDoc, RecipeInstruction, RecipeItem, RecipeItemInit } from "./DBSchema";
-import { cloneDeep } from "lodash";
+import { cloneDeep, isEmpty } from "lodash-es";
 import { GlobalDataContext, GlobalDataState } from "./GlobalDataProvider";
 import { usePouch } from "use-pouchdb";
 import { useCallback, useContext } from "react";
 import { AlertInput, useIonAlert, useIonLoading } from "@ionic/react";
 import { useTranslation } from "react-i18next";
 import { t } from 'i18next';
-import { isEmpty } from "lodash";
 import { log } from "./Utilities";
 
 export function useProcessInputFile() {

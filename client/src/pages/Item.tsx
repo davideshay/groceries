@@ -9,7 +9,7 @@ import { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import { useCreateGenericDocument, useUpdateGenericDocument, useAddCategoryToLists, 
     useDeleteGenericDocument, useGetOneDoc, useItems, pictureSrcPrefix } from '../components/Usehooks';
 import { GlobalStateContext } from '../components/GlobalState';
-import { cloneDeep, isEmpty, remove } from 'lodash';
+import { cloneDeep, isEmpty, remove } from 'lodash-es';
 import './Item.css';
 import ItemLists from '../components/ItemLists';
 import { getCommonKey, createEmptyItemDoc, checkNameInGlobalItems  } from '../components/ItemUtilities';

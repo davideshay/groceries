@@ -1,7 +1,7 @@
 import { CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
 import { initUsersInfo, ListCombinedRows, RowType, UserIDList, UserInfo, UsersInfo } from './DataTypes';
 import { ListGroupDoc, ListGroupDocInit } from './DBSchema';
-import { cloneDeep } from 'lodash';
+import { cloneDeep } from 'lodash-es';
 import { DBCreds} from './RemoteDBState';
 import { PouchResponse, PouchResponseInit } from './DataTypes';
 import loglevelnext from 'loglevelnext';

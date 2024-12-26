@@ -1,13 +1,12 @@
 import React, { createContext, useCallback, useContext, useEffect, useState} from "react";
 import { Preferences } from '@capacitor/preferences';
-import { pick,cloneDeep } from "lodash";
+import { pick,cloneDeep,isEmpty } from "lodash-es";
 import { isJsonString } from "./Utilities";
 import { RowType } from "./DataTypes";
 import { GlobalSettings, AddListOptions, SettingsDoc, InitSettings, InitSettingsDoc, CategoryColors } from "./DBSchema";
 import { useCreateGenericDocument, useUpdateGenericDocument } from "./Usehooks";
 import { RemoteDBStateContext } from "./RemoteDBState";
 import { useFind } from "use-pouchdb";
-import { isEmpty } from "lodash";
 import { log } from "./Utilities";
 
 export type GlobalState = {
@@ -151,7 +150,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
 
     const getSettings = useCallback( async () => {
         let dbSettingsExist = (settingsDocs.length > 0);
-        let dbSettingsDoc: SettingsDoc = cloneDeep(settingsDocs[0]);
+        let dbSettingsDoc: SettingsDoc = cloneDeep(settingsDocs[0]) as SettingsDoc;
         let dbCategoryColors: CategoryColors = {};
         let { value: storageSettingsStr } = await Preferences.get({ key: 'settings'});
         let storageSettings: GlobalSettings = cloneDeep(InitSettings);
@@ -188,7 +187,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         } else if (storageSettingsExist && dbSettingsExist) {
             await Preferences.remove({key : "settings"});
             if (dbUpdated) {
-                let newSettingsDoc:SettingsDoc = cloneDeep(settingsDocs[0]);
+                let newSettingsDoc:SettingsDoc = cloneDeep(settingsDocs[0]) as SettingsDoc;
                 newSettingsDoc.settings = cloneDeep(dbSettingsDoc.settings);
                 log.debug("Updating settings on DB")
                 await updateSettingDoc(newSettingsDoc)
@@ -197,7 +196,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         } else if (!storageSettingsExist && dbSettingsExist) {
             finalSettings = dbSettingsDoc.settings;
             if (dbUpdated) {
-                let newSettingsDoc: SettingsDoc = cloneDeep(settingsDocs[0]);
+                let newSettingsDoc: SettingsDoc = cloneDeep(settingsDocs[0]) as SettingsDoc;
                 newSettingsDoc.settings = dbSettingsDoc.settings;
                 await updateSettingDoc(newSettingsDoc)
             }

@@ -7,7 +7,7 @@ import { usePouch} from 'use-pouchdb';
 import { ConnectionStatus, DBCreds, DBUUIDAction, LoginType } from '../components/RemoteDBState';
 import { App } from '@capacitor/app';
 import { createNewUser, getTokenInfo, navigateToFirstListID, errorCheckCreds, isServerAvailable, JWTMatchesUser, CreateResponse, createResponseInit, isDBServerAvailable, getDeviceID } from '../components/RemoteUtilities';
-import { cloneDeep } from 'lodash';
+import { cloneDeep } from 'lodash-es';
 import { RemoteDBStateContext, SyncStatus, initialRemoteDBState } from '../components/RemoteDBState';
 import { HistoryProps} from '../components/DataTypes';
 import { apiConnectTimeout } from '../components/Utilities';

@@ -14,7 +14,7 @@ import PQueue from "p-queue";
 import { Capacitor } from "@capacitor/core";
 
 import { minimumAccessRefreshSeconds } from "./DBSchema";
-import { cloneDeep } from "lodash";
+import { cloneDeep } from "lodash-es";
 
 const secondsBetweenRefreshRetries = 30;
 

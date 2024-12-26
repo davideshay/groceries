@@ -14,7 +14,7 @@ import { GlobalDataContext } from '../components/GlobalDataProvider';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
 import { translatedCategoryName } from '../components/translationUtilities';
-import { cloneDeep } from 'lodash';
+import { cloneDeep } from 'lodash-es';
 import { GlobalStateContext } from '../components/GlobalState';
 
 enum ErrorLocation  {

@@ -3,9 +3,9 @@ import {  IonButton,  IonItem, IonLabel, IonCheckbox, IonIcon,
 import { pencilOutline } from 'ionicons/icons';
 import { Fragment, useContext, useState, SetStateAction } from 'react';
 import { sortedItemLists, listIsDifferentThanCommon } from './ItemUtilities';
-import { ItemDoc,  ListDoc } from './DBSchema';
+import { ItemDoc,  ItemList,  ItemListInit,  ListDoc } from './DBSchema';
 import ItemListsModal from '../components/ItemListsModal';
-import { cloneDeep } from 'lodash';
+import { cloneDeep } from 'lodash-es';
 import { ModalState, ModalStateInit } from '../components/DataTypes';
 import './ItemLists.css';
 import { GlobalDataContext } from './GlobalDataProvider';
@@ -24,7 +24,7 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
     const { t } = useTranslation()
     
     function selectList(listID: string, updateVal: boolean) {
-        let newItemDoc=cloneDeep(props.stateItemDoc);
+        let newItemDoc=cloneDeep(props.stateItemDoc) as ItemDoc;
         let listFound=false
         for (let i = 0; i < newItemDoc.lists.length; i++) {
             if (newItemDoc.lists[i].listID === listID) {
@@ -34,13 +34,12 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
             }    
         }
         if (!listFound) {
-            let listobj={
-            listID: listID,
-            boughtCount: 0,
-            active: updateVal,
-            checked: false
-            }
-            newItemDoc.lists.push(listobj);
+            let listObj: ItemList = cloneDeep(ItemListInit) as ItemList;
+            listObj.listID = listID;
+            listObj.boughtCount = 0;
+            listObj.active = updateVal;
+            listObj.completed = false;
+            newItemDoc.lists.push(listObj);
         }
         props.setStateItemDoc(newItemDoc);
     }

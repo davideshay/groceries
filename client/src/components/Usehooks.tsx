@@ -1,7 +1,7 @@
 import { useCallback, useState, useEffect, useContext, useRef } from 'react'
 import { Camera, CameraResultType, CameraSource, Photo } from '@capacitor/camera';
 import { usePouch, useFind } from 'use-pouchdb'
-import { cloneDeep, pull } from 'lodash';
+import { cloneDeep, pull } from 'lodash-es';
 import { RemoteDBStateContext } from './RemoteDBState';
 import { FriendRow,InitFriendRow, ResolvedFriendStatus, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType } from './DataTypes';
 import { FriendDocs,FriendStatus, ListDoc, ListDocs, ItemDocs, ItemDoc, ItemList, ItemListInit, ConflictDocs } from './DBSchema';
@@ -173,7 +173,7 @@ export function useDeleteCategoryFromItems() {
       } catch(err) {response.successful=false; response.fullError=t("error.could_not_find_items"); return response}
       if (itemResults !== undefined && itemResults.hasOwnProperty('docs')) {
         for (let i = 0; i < itemResults.docs.length; i++) {
-          const itemDoc: ItemDoc = cloneDeep(itemResults.docs[i]);
+          const itemDoc: ItemDoc = cloneDeep(itemResults.docs[i]) as ItemDoc;
           itemDoc.lists.forEach(list => {
             list.categoryID = null;
           });
@@ -203,7 +203,7 @@ export function useDeleteCategoryFromLists() {
       } catch(err) {response.successful=false; response.fullError=t("error.could_not_find_items"); return response}
       if (listResults !== undefined && listResults.hasOwnProperty('docs')) {
         for (let i = 0; i < listResults.docs.length; i++) {
-          const listDoc: ListDoc = cloneDeep(listResults.docs[i]);
+          const listDoc: ListDoc = cloneDeep(listResults.docs[i]) as ListDoc;
           let newCats = cloneDeep(listDoc.categories);
           pull(newCats,catID);
           listDoc.categories = newCats;

@@ -1,5 +1,5 @@
 import { IonItem,  IonPopover, IonContent, IonList, IonSearchbar } from "@ionic/react"
-import { cloneDeep } from "lodash"
+import { cloneDeep } from "lodash-es"
 import { useEffect, useState, KeyboardEvent, forwardRef, useImperativeHandle, Ref, useId, useRef } from "react"
 import "./GenericSearchBar.css"
 import { Capacitor } from "@capacitor/core"

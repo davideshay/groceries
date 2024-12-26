@@ -6,7 +6,7 @@ import { useHistory, useParams } from 'react-router-dom';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useGetOneDoc,
    useDeleteGenericDocument, useDeleteListFromItems, useAddListToAllItems } from '../components/Usehooks';
-import { cloneDeep, isEmpty } from 'lodash';
+import { cloneDeep, isEmpty } from 'lodash-es';
 import './List.css';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
 import { PouchResponse, HistoryProps, ListRow, RowType, ListCombinedRows } from '../components/DataTypes';
@@ -92,7 +92,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
         setPageState(prevState => ({...prevState,listDoc: initListDoc,listGroupID: initListDoc.listGroupID, listGroupOwner: newListGroupOwner, needInitListDoc: false, changesMade: false}))
       }
       else if (mode !== "new") {
-        let newListRow: ListRow = cloneDeep(listRows.find((lr: ListRow) => lr.listDoc._id === pageState.selectedListID));
+        let newListRow: ListRow = cloneDeep(listRows.find((lr: ListRow) => lr.listDoc._id === pageState.selectedListID)) as ListRow;
         if (newListRow === undefined) {return}
         setPageState(prevState => ({...prevState,listDoc: newListRow.listDoc, listGroupID: newListRow.listGroupID, listGroupOwner: newListRow.listGroupOwner, changesMade: false}))
       }

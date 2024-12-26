@@ -15,7 +15,7 @@ import { maxAppSupportedSchemaVersion, appVersion , GlobalSettings } from '../co
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
 import { secondsToDHMS } from '../components/Utilities';
-import { cloneDeep } from 'lodash';
+import { cloneDeep } from 'lodash-es';
 import Loading from '../components/Loading';
 import { getTokenInfo, isDBServerAvailable, isServerAvailable } from '../components/RemoteUtilities';
 import { log } from "../components/Utilities";

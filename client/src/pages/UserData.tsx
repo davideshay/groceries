@@ -9,9 +9,8 @@ import { HistoryProps, UserInfo, initUserInfo } from '../components/DataTypes';
 import { GlobalSettings } from '../components/DBSchema';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
-import { isEmpty, isEqual } from 'lodash';
+import { isEmpty, isEqual, cloneDeep } from 'lodash-es';
 import { checkUserByEmailExists, emailPatternValidation, fullnamePatternValidation, updateUserInfo } from '../components/Utilities';
-import { cloneDeep } from 'lodash';
 import Loading from '../components/Loading';
 
 type ErrorInfo = {
