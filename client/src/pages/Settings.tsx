@@ -13,6 +13,7 @@ import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
 import { languageDescriptions } from '../i18n';
 import Loading from '../components/Loading';
+import { Capacitor } from '@capacitor/core';
 
 const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
   const {globalState, settingsLoading, updateSettingKey} = useContext(GlobalStateContext);
@@ -42,7 +43,7 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   const curLanguage = i18n.resolvedLanguage;
-  
+
   return (
     <IonPage>
       <PageHeader title={t("general.settings")} />
@@ -68,26 +69,61 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
             </IonSelect>
           </IonItem>
           <IonItem className="shorter-item-no-padding settings-item" key="language">
-            <IonSelect className="shorter-select shorter-select2" label={t("general.language") as string} interface="popover" onIonChange={(e) => i18n.changeLanguage(e.detail.value)} value={curLanguage}>
-              {languageDescriptions.map((lng: any) => (
-                <IonSelectOption key={"language-"+lng.key} value={lng.key}>
-                  {lng.name}
-                </IonSelectOption>
+            <IonSelect className="shorter-select shorter-select2" label={t("general.language") as string}
+                  interface="popover"
+                  onIonChange={(e) => i18n.changeLanguage(e.detail.value)} value={curLanguage}>
+                      {languageDescriptions.map((lng: any) => (
+                          <IonSelectOption key={"language-"+lng.key} value={lng.key}>
+                            {lng.name}
+                          </IonSelectOption>
               ))}
             </IonSelect>
           </IonItem>
           <IonItem className="shorter-item-no-padding settings-item" key="removesettings">
-            <IonCheckbox justify="space-between" labelPlacement="start" checked={localSettings.removeFromAllLists} onIonChange={(e) => changeSetting("removeFromAllLists",e.detail.checked)}>{t("general.remove_items_all_lists_purchased")}</IonCheckbox>
+            <IonCheckbox justify="space-between" labelPlacement="start"
+                checked={localSettings.removeFromAllLists}
+                onIonChange={(e) => changeSetting("removeFromAllLists",e.detail.checked)}>
+                    {t("general.remove_items_all_lists_purchased")}
+            </IonCheckbox>
           </IonItem>
           <IonItem className="shorter-item-no-padding settings-item" key="deletesettings">
-            <IonCheckbox justify="space-between" labelPlacement="start" checked={localSettings.completeFromAllLists} onIonChange={(e) => changeSetting("completeFromAllLists",e.detail.checked)}>{t("general.delete_all_lists_when_deleting_completed")}</IonCheckbox>
+            <IonCheckbox justify="space-between" labelPlacement="start"
+                checked={localSettings.completeFromAllLists}
+                onIonChange={(e) => changeSetting("completeFromAllLists",e.detail.checked)}>
+                    {t("general.delete_all_lists_when_deleting_completed")}
+            </IonCheckbox>
           </IonItem>
           <IonItem className="shorter-item-no-padding settings-item" key="searchsettings">
-            <IonCheckbox justify="space-between" labelPlacement="start" checked={localSettings.includeGlobalInSearch} onIonChange={(e) => changeSetting("includeGlobalInSearch",e.detail.checked)}>{t("general.include_globalitems_in_search")}</IonCheckbox>
+            <IonCheckbox justify="space-between" labelPlacement="start"
+                checked={localSettings.includeGlobalInSearch}
+                onIonChange={(e) => changeSetting("includeGlobalInSearch",e.detail.checked)}>
+                    {t("general.include_globalitems_in_search")}
+            </IonCheckbox>
           </IonItem>
           <IonItem className="shorter-item-no-padding settings-item" key="dayslog">
             <IonInput className="shorter-input shorter-input2" label={t("general.days_conflict_log_to_view") as string} labelPlacement="start" type="number" min="0" max="25" onIonInput={(e) => changeSetting("daysOfConflictLog", Number(e.detail.value))} value={Number(localSettings?.daysOfConflictLog)}></IonInput>
           </IonItem>
+          <IonItem className="shorter-item-no-padding settings-item" key="loglevel">
+            <IonSelect className="shorter-select shorter-select2" label={t("general.log_level") as string}
+                interface="popover" value={String(localSettings.loggingLevel)}
+                onIonChange={(e) => changeSetting("loggingLevel",Number(e.detail.value))}>
+                    <IonSelectOption key={"log-trace"} value="0">{t("general.trace")}</IonSelectOption>
+                    <IonSelectOption key={"log-debug"} value="1">{t("general.debug")}</IonSelectOption>
+                    <IonSelectOption key={"log-info"} value="2">{t("general.info")}</IonSelectOption>
+                    <IonSelectOption key={"log-warn"} value="3">{t("general.warn")}</IonSelectOption>
+                    <IonSelectOption key={"log-error"} value="4">{t("general.error")}</IonSelectOption>
+                    <IonSelectOption key={"log-silent"} value="5">{t("general.silent")}</IonSelectOption>
+              </IonSelect>
+          </IonItem>
+          {Capacitor.getPlatform() === 'android' && false ? 
+            <IonItem className="shorter-item-no-padding settings-item" key="logtofile">
+              <IonCheckbox justify='space-between' labelPlacement='start'
+                    checked={localSettings.includeGlobalInSearch}
+                    onIonChange={(e) => changeSetting("logToFile",e.detail.checked)}>
+                      {t("general.log_to_file")}
+              </IonCheckbox>
+            </IonItem>
+          : <></>}
           <IonItem className="shorter-item-no-padding" key="helpdocs">
             <IonButton href='https://davideshay.github.io/groceries/userguide/settings/' target='_blank'>{t("general.view_help_docs")}</IonButton>
           </IonItem>

@@ -240,7 +240,18 @@ export const de_translations =
         "theme-light": "Licht",
         "status":"Stand",
         "app_db_server_info":"App- und DB-Serverinformationen",
-        "database":"Datenbank"
+        "database":"Datenbank",
+        "view_help_docs":"Hilfedokumente anzeigen",
+        "manage_data": "Daten verwalten",
+        "log_level":"Protokollebene",
+        "trace":"Verfolgen",
+        "debug":"Debuggen",
+        "info":"Info",
+        "warn":"Warnen",
+        "error":"Fehler",
+        "silent":"Still",
+        "log_to_file":"In Datei protokollieren",
+        "loading_conflict_item":"Konfliktelement wird geladen..."
     },
     "error": {
         "invalid_dbuuid" : "Ungültiger Datenbank-Identifier",

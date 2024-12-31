@@ -207,7 +207,6 @@ function getLoggingLevel(level: string) : number {
     } else if (["5","SILENT","S","NONE","N"].includes(uLevel)) {
         retLevel = 5
     } else {retLevel = 2}
-    console.log("Setting log level to ",retLevel);
     return retLevel;
 }
 

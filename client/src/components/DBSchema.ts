@@ -317,6 +317,15 @@ export enum ThemeType {
     auto = "A"
   }
 
+export enum LogLevelNumber {
+  TRACE = 0,
+  DEBUG = 1,
+  INFO = 2,
+  WARN = 3,
+  ERROR = 4,
+  SILENT = 5
+}
+
 export type GlobalSettings = {
   addListOption: AddListOptions,
   removeFromAllLists: boolean,
@@ -325,7 +334,9 @@ export type GlobalSettings = {
   daysOfConflictLog: Number,
   savedListID?: string | undefined | null,
   alexaDefaultListGroup?: string | undefined | null,
-  theme?: ThemeType
+  theme?: ThemeType,
+  loggingLevel?: LogLevelNumber,
+  logToFile?: boolean
 }
 
 export const InitSettings: GlobalSettings = {
@@ -336,7 +347,9 @@ export const InitSettings: GlobalSettings = {
   daysOfConflictLog: 2,
   savedListID: null,
   alexaDefaultListGroup: null,
-  theme: ThemeType.auto
+  theme: ThemeType.auto,
+  loggingLevel: LogLevelNumber.INFO,
+  logToFile: false
 }
 
 export type CategoryColors = {

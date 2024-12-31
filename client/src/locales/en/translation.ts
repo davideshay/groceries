@@ -242,7 +242,16 @@ export const en_translations =
         "app_db_server_info":"App and DB Server Info",
         "database":"Database",
         "view_help_docs":"View Help Documentation",
-        "manage_data":"Manage Data"
+        "manage_data":"Manage Data",
+        "log_level":"Log Level",
+        "trace":"Trace",
+        "debug":"Debug",
+        "info":"Info",
+        "warn":"Warn",
+        "error":"Error",
+        "silent":"Silent",
+        "log_to_file":"Log To File",
+        "loading_conflict_item":"Loading Conflict Item..."
      },
      "error" : {
         "invalid_dbuuid" : "Invalid Database Unique Identifier",

@@ -240,7 +240,18 @@ export const es_translations =
         "theme-light": "Luz",
         "status": "Condición",
         "app_db_server_info":"Información del servidor de aplicaciones y bases de datos",
-        "database":"Base de datos"
+        "database":"Base de datos",
+        "view_help_docs":"Ver documentos de ayuda",
+        "manage_data": "Administrar datos",
+        "log_level":"Nivel de registro",
+        "trace":"Rastro",
+        "debug":"Depurar",
+        "info":"Información",
+        "warn":"Advertir",
+        "error":"Error",
+        "silent":"Silencioso",
+        "log_to_file": "Registrar en archivo",
+        "loading_conflict_item":"Cargando elemento de conflicto..."
          },
      "error": {
         "invalid_dbuuid" : "Identificador único de base de datos inválido",
