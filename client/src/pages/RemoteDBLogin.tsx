@@ -389,7 +389,6 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
 //      message: "Please check your email for the link to reset your password",
 //      buttons: ["OK"]
 //    })
-
   }
 
   function resetPassword() {

@@ -1,4 +1,4 @@
-const jose = require('jose');
+import * as jose from 'jose'
 import { JWTPayload } from 'jose';
 import { usersDBAsAdmin } from './dbstartup';
 import { couchKey, couchStandardRole } from './apicalls';

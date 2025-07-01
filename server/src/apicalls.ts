@@ -46,13 +46,16 @@ import _ from 'lodash';
 import { cloneDeep, isEmpty } from 'lodash';
 import { usernamePatternValidation, fullnamePatternValidation, getUserDoc, getUserByEmailDoc,
     totalDocCount, isNothing, createNewUser, updateUnregisteredFriends, getFriendDocByUUID,
-    UserResponse, CreateResponseType, checkDBAvailable, getImpactedUsers } from './utilities';
+    UserResponse, CreateResponseType, checkDBAvailable, getImpactedUsers, 
+    updateUserDoc,
+    getUserByResetUUIDDoc} from './utilities';
 import { generateJWT, isValidToken, invalidateToken, JWTMatchesUserDB, TokenReturnType } from './jwt'     
 import type { NextFunction, Request as ExpressRequest, Response as ExpressResponse, RequestHandler } from 'express';
-import { CheckUseEmailReqBody, CheckUserByEmailExistsResponse, CheckUserExistsReqBody, CheckUserExistsResponse, CustomRequest, IssueTokenBody, IssueTokenResponse, LogoutBody, NewUserReqBody, RefreshTokenBody, RefreshTokenResponse, checkUserByEmailExistsResponse } from './datatypes';
+import { CheckUseEmailReqBody, CheckUserByEmailExistsResponse, CheckUserExistsReqBody, CheckUserExistsResponse, CreateAccountParams, CreateAccountResponse, GetUsersInfoRequestBody, GetUsersInfoResponse, IssueTokenBody, IssueTokenResponse, LogoutBody, NewUserReponse, NewUserReqBody, PasswordResetParams, RefreshTokenBody, RefreshTokenResponse, ResetPasswordBody, ResetPasswordFormResponse, ResetPasswordResponse, TriggerRegEmailBody, UpdateUserInfoResponse, UserInfo } from './datatypes';
 import { ConflictDoc, FriendDoc, UserDoc, appVersion } from './schema/DBSchema';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
 import log from 'loglevel';
+import crypto from "crypto";
 
 export function getBooleanFromText(val: string | boolean) {
     if (val === true) {return true}; if (val === false) {return false};
@@ -74,7 +77,7 @@ export async function checkUserExists(req: ExpressRequest<{},CheckUserExistsResp
 
 export async function checkUserByEmailExists(req: ExpressRequest<{},CheckUserByEmailExistsResponse,CheckUseEmailReqBody>, res: ExpressResponse<CheckUserByEmailExistsResponse>) {
     const { email} = req.body;
-    let response: checkUserByEmailExistsResponse = {
+    let response: CheckUserByEmailExistsResponse = {
         username: "",
         fullname: "",
         email: "",
@@ -214,10 +217,10 @@ export async function logout(req: ExpressRequest<{},{},LogoutBody>, res: Express
     catch(err) { log.error("Problem logging out user: ",err); res.sendStatus(404); }
 }
 
-export async function registerNewUser(req: CustomRequest<NewUserReqBody>, res: Response) {
+export async function registerNewUser(req: ExpressRequest<{},NewUserReponse,NewUserReqBody>, res: ExpressResponse) {
     const {username, password, email, fullname, deviceUUID} = req.body;
     log.info("Registering New User: ",username);
-    const registerResponse = {
+    const registerResponse: NewUserReponse = {
         invalidData: false,
         userAlreadyExists: false,
         createdSuccessfully: false,
@@ -256,12 +259,7 @@ export async function registerNewUser(req: CustomRequest<NewUserReqBody>, res: R
     return (registerResponse);
 }
 
-export type GetUsersInfoResponse = {
-    error: boolean,
-    users: { name: string, email: string, fullname: string} []
-}
-
-export async function getUsersInfo (req: Request, res: Response) : Promise<GetUsersInfoResponse>  {
+export async function getUsersInfo (req: ExpressRequest<{},GetUsersInfoResponse,GetUsersInfoRequestBody>, res: ExpressResponse<GetUsersInfoResponse>) : Promise<GetUsersInfoResponse>  {
     // input - json list of userIDs : userIDs: ["username1","username2"] -- should be _users ids 
     //        without the org.couchdb.user prefix
     // return - json array of objects:
@@ -286,15 +284,12 @@ export async function getUsersInfo (req: Request, res: Response) : Promise<GetUs
     return(getResponse);
 }
 
-type UpdateUserInfoResponse = {
-    success: boolean
-}
-export async function updateUserInfo(req: Request, res: Response): Promise<UpdateUserInfoResponse> {
+export async function updateUserInfo(req: ExpressRequest<{},UpdateUserInfoResponse,UserInfo>,res: ExpressResponse<UpdateUserInfoResponse>): Promise<UpdateUserInfoResponse> {
     let userResp: UpdateUserInfoResponse = {success: false};
-    if (isEmpty(req.body?.name) || isEmpty(req.body?.fullname) || isEmpty(req.body?.email)) {
+    if (isEmpty(req.body.name) || isEmpty(req.body.fullname) || isEmpty(req.body.email)) {
         return userResp;
     }
-    if (req.body?.name !== req.body?.username) {return userResp;}
+// (not sure why -- username isn't in request)   if (req.body?.name !== req.body?.username) {return userResp;}
     let userDoc = await getUserDoc(req.body.name);
     if (userDoc.error || userDoc.fullDoc === null) {return userResp}
     userDoc.fullDoc.email = req.body.email;
@@ -306,24 +301,32 @@ export async function updateUserInfo(req: Request, res: Response): Promise<Updat
     return userResp;
 }
 
-export async function createAccountUIGet(req: Request, res: Response) {
+export async function createAccountUIGet(req: ExpressRequest<{},{},{},CreateAccountParams>) {
     // input - query parameter - uuid
     // creates a form pre-filled with email address (cannot change), username,full name, and password
     // on submit (to different endpoint?),
     // check if username or email already exists, if so, error out,
     // otherwise reqister new user
 
-    let respObj = {
-        uuid: req.query.uuid,
+    let respObj: CreateAccountResponse = {
+        uuid: "",
         email: "testemail",
         fullname: "",
         username: "",
         password: "",
         passwordverify: "",
+        refreshjwt: "",
         formError: "",
         disableSubmit: false,
         createdSuccessfully: false
     }
+
+    if (req.query.uuid === null || req.query.uuid === undefined || req.query.uuid === "") {
+        respObj.formError="No UUID sent"
+    }
+
+    respObj.uuid = String(req.query.uuid);
+
     const uuidq = {
         selector: { type: { "$eq": "friend" }, inviteUUID: { "$eq": req.query.uuid}},
         fields: [ "friendID1","friendID2","inviteUUID","inviteEmail","friendStatus"],
@@ -348,15 +351,12 @@ export async function createAccountUIGet(req: Request, res: Response) {
         respObj.disableSubmit = true;
         return (respObj);
     }
-
     return(respObj);
-
 }
 
+export async function createAccountUIPost(req: ExpressRequest<{},{},CreateAccountResponse>) {
 
-export async function createAccountUIPost(req: Request,res: Response) {
-
-    let respObj = {
+    let respObj: CreateAccountResponse = {
         uuid: req.body.uuid,
         email: req.body.email,
         username: (req.body.username == undefined) ? "" : req.body.username,
@@ -449,7 +449,7 @@ export async function createAccountUIPost(req: Request,res: Response) {
     return(respObj);
 }
 
-export async function triggerRegEmail(req: Request, res: Response) {
+export async function triggerRegEmail(req: ExpressRequest<{},{},TriggerRegEmailBody>) {
     const triggerResponse = {
         emailSent : false
     }
@@ -482,21 +482,62 @@ export async function triggerRegEmail(req: Request, res: Response) {
     return (triggerResponse);
 }
 
-export async function resetPassword(req: Request, res: Response) {
-    const resetResponse = {
-        emailSent : false
+// resetPassword is called from the web client/frontend to request a password change, with the username in the body
+export async function resetPassword(req: ExpressRequest<{},ResetPasswordResponse,ResetPasswordBody>) {
+    const resetResponse : ResetPasswordResponse = {
+        emailSent : false,
+        error: ""
     }
     const {username} = req.body;
 
     let userDoc = await getUserDoc(username);
-    if (userDoc.error) {return resetResponse};
+    if (userDoc.error || userDoc.fullDoc === null || userDoc.fullDoc === undefined) {
+        resetResponse.error = "Could not retrieve user from database";
+        return resetResponse
+    };
+
+    // if (userDoc.fullDoc?.reset_password_uuid !== null && userDoc.fullDoc?.reset_password_uuid !== undefined) {
+    //     if (userDoc.fullDoc.reset_password_expire_date === null || userDoc.fullDoc.reset_password_expire_date === undefined) {
+    //         resetResponse.error = "Invalid password expiration time - not specified";
+    //         return resetResponse;
+    //     }
+    //     // reset password request already created, see if it's expired
+    //     try {
+    //         let now = new Date().getTime();
+    //         let expiration = new Date(userDoc.fullDoc.reset_password_expire_date).getTime();
+    //         if (expiration >= now) {
+    //             resetResponse.error = "Existing Password request expired"
+    //         }
+
+    //     } catch(error) {
+    //         resetResponse.error = "Invalid or expired password reset request"
+    //         return resetResponse;
+    //     }
+    // }
+
+    // create new UUID & expiration date
+
+    let newUUID = crypto.randomUUID();
+    let expDate = new Date().toISOString();
+
+    // update userDoc with password uuid and expiration date
+
+    userDoc.fullDoc.reset_password_uuid=newUUID;
+    userDoc.fullDoc.reset_password_expire_date=expDate;
+
+    let updSuccess = await updateUserDoc(userDoc.fullDoc);
+
+    if (!updSuccess) {
+        resetResponse.error = "Unable to update User Document setting UUID for password";
+        return resetResponse;
+    }
 
     let transport = nodemailer.createTransport(smtpOptions);
     transport.verify(function (error,success) {
         if (error) {return resetResponse}
     })
 
-    let resetURL = groceryAPIUrl + "/resetpasswordui?username="+encodeURIComponent(username);
+    let resetURL = groceryAPIUrl + "/resetpasswordui?uuid="+encodeURIComponent(newUUID);
     const message = {
         from: smtpFrom,
         to: userDoc.email,
@@ -511,10 +552,11 @@ export async function resetPassword(req: Request, res: Response) {
     return resetResponse;
 }    
 
-export async function resetPasswordUIGet(req: Request, res: Response) {
-    let respObj = {
+export async function resetPasswordUIGet(req: ExpressRequest<{},{},{},PasswordResetParams>) {
+    let respObj: ResetPasswordFormResponse = {
         email: "",
-        username: String(req.query.username),
+        username: "",
+        uuid: String(req.query.uuid),
         password: "",
         passwordverify: "",
         formError: "",
@@ -522,9 +564,9 @@ export async function resetPasswordUIGet(req: Request, res: Response) {
         resetSuccessfully: false
     }
     
-    let userDoc = await getUserDoc(String(req.query.username));
+    let userDoc = await getUserByResetUUIDDoc(String(req.query.uuid));
     if (userDoc.error) {
-        respObj.formError = "Cannot locate user name "+req.query.username;
+        respObj.formError = "Cannot locate uuid for password reset "+req.query.uuid;
         respObj.disableSubmit = true;
         return respObj
     }

@@ -2,9 +2,9 @@ import { couchUserPrefix, couchStandardRole, accessTokenExpires, refreshTokenExp
 import { usersDBAsAdmin, groceriesDBAsAdmin } from './dbstartup';
 import { generateJWT } from "./jwt";
 import { UserDoc, FriendDoc, FriendDocs, ListGroupDocs, ListGroupDoc} from './schema/DBSchema'
-import { DatabaseGetResponse, DocumentScope, MangoQuery, MangoResponse, MaybeDocument } from "nano";
+import nano, { DatabaseGetResponse, DocumentScope, MangoQuery, MangoResponse, MaybeDocument } from "nano";
 import { cloneDeep } from "lodash";
-import { NewUserReqBody, UserObj, CustomRequest } from "./datatypes";
+import { NewUserReqBody, UserObj } from "./datatypes";
 import log from 'loglevel';
 
 export const uomContent = require("../data/uomContent.json")
@@ -90,6 +90,28 @@ export async function getUserByEmailDoc(email: string) {
     return (userResponse);
 }
 
+export async function getUserByResetUUIDDoc(uuid: string) {
+    const userResponse  = cloneDeep(UserResponseInit);
+    const query: MangoQuery={selector: {"reset_password_uuid": {"$eq": uuid}}, limit: await totalDocCount(usersDBAsAdmin)};
+    let res: MangoResponse<unknown> | null = null;
+    try { res = (await usersDBAsAdmin.find(query) );}
+    catch(err) { log.error("ERROR getting user by email:"); userResponse.error= true }
+    if (!userResponse.error) {
+        if (res != null && res.hasOwnProperty("docs")) {
+            if (res.docs.length = 1) {
+                let resDoc: UserDoc = res.docs[0] as UserDoc;
+                userResponse.username = String(resDoc.name);
+                userResponse.email = String(resDoc.email);
+                userResponse.fullname = String(resDoc.fullname);
+                userResponse.fullDoc = res.docs[0] as UserDoc;
+            } else {
+                userResponse.error = true;
+            }
+        } else { userResponse.error = true}
+    }
+    return (userResponse);
+}
+
 export type CreateResponseType = {
     error: boolean,
     idCreated: string,
@@ -132,6 +154,20 @@ export async function createNewUser(userObj: UserObj, deviceUUID: string) {
         createResponse.idCreated = res.id;
     }
     return (createResponse);
+}
+
+export async function updateUserDoc(userDoc: UserDoc): Promise<boolean> {
+    let res: nano.DocumentInsertResponse | null = null;
+    try {
+        res = await usersDBAsAdmin.insert(userDoc,String(userDoc._id));
+        if (res === null || !res.ok) {
+            return false;
+        }
+        return true;
+    } catch(error) {
+        console.error("Error updating user doc:",error);
+        return false;
+    }
 }
 
 export async function updateUnregisteredFriends(req: CustomRequest<NewUserReqBody>,email: string) {

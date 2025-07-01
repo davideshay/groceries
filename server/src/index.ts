@@ -11,7 +11,7 @@ import {
         updateUserInfo, logout, groceryAPIPort, isAvailable } from './apicalls';
 
 import { dbStartup } from './dbstartup'
-import { CheckUserExistsReqBody, NewUserReqBody, CustomRequest, CheckUseEmailReqBody, IssueTokenBody, RefreshTokenBody, RefreshTokenResponse, IssueTokenResponse, CheckUserExistsResponse, CheckUserByEmailExistsResponse } from './datatypes';
+import { CheckUserExistsReqBody, NewUserReqBody, NewUserReponse, CheckUseEmailReqBody, IssueTokenBody, RefreshTokenBody, RefreshTokenResponse, IssueTokenResponse, CheckUserExistsResponse, CheckUserByEmailExistsResponse, GetUsersInfoResponse, GetUsersInfoRequestBody, UpdateUserInfoResponse, UserInfo, CreateAccountResponse, CreateAccountParams, TriggerRegEmailBody, ResetPasswordBody, ResetPasswordResponse } from './datatypes';
 import path from 'path';
 
 
@@ -34,14 +34,14 @@ async function startup() {
                 { await logout(req,res); res.send(); } );          
         app.post('/checkuserexists', authenticateJWT, async (req: ExpressRequest<{},CheckUserExistsResponse,CheckUserExistsReqBody>, res: ExpressResponse<CheckUserExistsResponse>) => {res.send(await checkUserExists(req,res))});
         app.post('/checkuserbyemailexists', authenticateJWT, async (req: ExpressRequest<{},CheckUserByEmailExistsResponse,CheckUseEmailReqBody>,res: ExpressResponse<CheckUserByEmailExistsResponse>) => {res.send(await checkUserByEmailExists(req,res))})
-        app.post('/registernewuser', async (req: CustomRequest<NewUserReqBody>, res: Response) => res.send(await registerNewUser(req,res)));
-        app.post('/getusersinfo', authenticateJWT, async (req: Request, res: Response) => res.send(await getUsersInfo(req,res)));
-        app.post('/updateuserinfo', authenticateJWT, async (req: Request, res: Response) => res.send(await updateUserInfo(req,res)));
-        app.get('/createaccountui', async (req: Request,res: Response) => res.send(eta.render("createaccount",await createAccountUIGet(req,res))));
-        app.post('/createaccountui', async (req: Request,res: Response) => res.send(eta.render("createaccount",await createAccountUIPost(req,res))));
-        app.post('/triggerregemail', authenticateJWT, async (req: Request,res: Response) => res.send(await triggerRegEmail(req,res)));
-        app.post('/resetpassword', async (req: Request, res: Response) => res.send(eta.render("resetpassword",await resetPassword(req,res))));
-        app.get('/resetpasswordui', async(req: Request,res: Response) => res.send(eta.render("resetpassword", await resetPasswordUIGet(req,res))));
+        app.post('/registernewuser', async (req: ExpressRequest<{},NewUserReponse,NewUserReqBody>, res: ExpressResponse<NewUserReponse>) => {res.send(await registerNewUser(req,res))});
+        app.post('/getusersinfo', authenticateJWT, async (req: ExpressRequest<{},GetUsersInfoResponse,GetUsersInfoRequestBody>, res: ExpressResponse<GetUsersInfoResponse>) => {res.send(await getUsersInfo(req,res))});
+        app.post('/updateuserinfo', authenticateJWT, async (req: ExpressRequest<{},UpdateUserInfoResponse,UserInfo>, res: ExpressResponse<UpdateUserInfoResponse>) => {res.send(await updateUserInfo(req,res))});
+        app.get('/createaccountui', async (req: ExpressRequest<{},{},{},CreateAccountParams>,res: ExpressResponse) => {res.send(eta.render("createaccount",await createAccountUIGet(req)))});
+        app.post('/createaccountui', async (req: ExpressRequest<{},{},CreateAccountResponse>,res: ExpressResponse) => {res.send(eta.render("createaccount",await createAccountUIPost(req)))});
+        app.post('/triggerregemail', authenticateJWT, async (req: ExpressRequest<{},{},TriggerRegEmailBody>,res: ExpressResponse) => {res.send(await triggerRegEmail(req))});
+        app.post('/resetpassword', async (req: ExpressRequest<{},ResetPasswordResponse,ResetPasswordBody>, res: ExpressResponse<ResetPasswordResponse>) => {res.send(await resetPassword(req))});
+        app.get('/resetpasswordui', async(req: ExpressRequest,res: ExpressResponse) => res.send(eta.render("resetpassword", await resetPasswordUIGet(req,res))));
         app.post('/resetpasswordui', async(req: Request,res: Response) => res.send(eta.render("resetpassword", await resetPasswordUIPost(req,res))));
         app.post('/triggerresolveconflicts', authenticateJWT, async (req: Request, res: Response) => res.send(await triggerResolveConflicts(req,res)));
         app.post('/triggerdbcompact', authenticateJWT, async (req: Request,res: Response) => res.send(await triggerDBCompact(req, res)));

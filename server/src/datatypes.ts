@@ -1,5 +1,3 @@
-import { Request } from "express"
-
 export type UserObj = {
     username: string,
     password: string,
@@ -14,6 +12,37 @@ export type NewUserReqBody = {
     fullname: string,
     deviceUUID: string
 }
+
+export type NewUserReponse = {
+    invalidData: boolean,
+    userAlreadyExists: boolean,
+    createdSuccessfully: boolean,
+    creationDisabled: boolean,
+    idCreated: string,
+    refreshJWT: string,
+    accessJWT: string,
+    couchdbUrl: string,
+    couchdbDatabase: string,
+    email: string,
+    fullname: string    
+}
+
+export type GetUsersInfoRequestBody = {
+    userIDs: string[]
+}
+
+export type GetUsersInfoResponse = {
+    error: boolean,
+    users: { name: string, email: string, fullname: string} []
+}
+
+export type UpdateUserInfoResponse = {
+    success: boolean
+}
+
+export type UserInfo = {
+    name: string, email: string, fullname: string
+  }
 
 export interface IssueTokenBody {
     username: string,
@@ -64,10 +93,6 @@ export type CheckUseEmailReqBody = {
     email: string
 }
 
-export interface CustomRequest<T> extends Request {
-    body: T
-}
-
 export type CheckUserByEmailExistsResponse = {
     username: string,
     fullname: string,
@@ -79,3 +104,48 @@ export enum RowType {
     listGroup = "G",
     list = "L"
   }
+
+export interface CreateAccountParams {
+    uuid?: string
+}
+
+export type CreateAccountResponse = {
+    uuid: string,
+    email: string,
+    fullname: string,
+    username: string,
+    password: string,
+    passwordverify: string,
+    refreshjwt: string,
+    formError: string,
+    disableSubmit: boolean,
+    createdSuccessfully: boolean
+}
+
+export type TriggerRegEmailBody = {
+    uuid: string
+}
+
+export type ResetPasswordBody = {
+    username: string
+}
+
+export type ResetPasswordResponse = {
+    emailSent: boolean,
+    error: string
+}
+
+export type ResetPasswordFormResponse = {
+    email: string,
+    username: string,
+    uuid: string,
+    password: string,
+    passwordverify: string,
+    formError: string,
+    disableSubmit: boolean,
+    resetSuccessfully: boolean
+}
+
+export type PasswordResetParams = {
+    uuid: string
+}

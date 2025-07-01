@@ -232,6 +232,8 @@ export type UserDoc = {
   fullname: string,
   roles: string[],
   type: string,
+  reset_password_uuid?: string,
+  reset_password_expire_date?: string,
   password_scheme: string,
   password? : string,
   iterations: Number,
