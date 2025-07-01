@@ -48,8 +48,8 @@ import { usernamePatternValidation, fullnamePatternValidation, getUserDoc, getUs
     totalDocCount, isNothing, createNewUser, updateUnregisteredFriends, getFriendDocByUUID,
     UserResponse, CreateResponseType, checkDBAvailable, getImpactedUsers } from './utilities';
 import { generateJWT, isValidToken, invalidateToken, JWTMatchesUserDB, TokenReturnType } from './jwt'     
-import { NextFunction, Request, Response } from 'express';
-import { CheckUseEmailReqBody, CheckUserExistsReqBody, CustomRequest, NewUserReqBody, RefreshTokenResponse, checkUserByEmailExistsResponse } from './datatypes';
+import type { NextFunction, Request as ExpressRequest, Response as ExpressResponse, RequestHandler } from 'express';
+import { CheckUseEmailReqBody, CheckUserByEmailExistsResponse, CheckUserExistsReqBody, CheckUserExistsResponse, CustomRequest, IssueTokenBody, IssueTokenResponse, LogoutBody, NewUserReqBody, RefreshTokenBody, RefreshTokenResponse, checkUserByEmailExistsResponse } from './datatypes';
 import { ConflictDoc, FriendDoc, UserDoc, appVersion } from './schema/DBSchema';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
 import log from 'loglevel';
@@ -60,9 +60,9 @@ export function getBooleanFromText(val: string | boolean) {
     return trueStrings.includes(String(val).toUpperCase());
 }
 
-export async function checkUserExists(req: CustomRequest<CheckUserExistsReqBody>, res: Response) {
+export async function checkUserExists(req: ExpressRequest<{},CheckUserExistsResponse,CheckUserExistsReqBody>, res: ExpressResponse<CheckUserExistsResponse>) {
     const { username } = req.body;
-    let response = {
+    let response: CheckUserExistsResponse = {
         username: username,
         userExists: false
     }
@@ -72,7 +72,7 @@ export async function checkUserExists(req: CustomRequest<CheckUserExistsReqBody>
     return (response);
 }
 
-export async function checkUserByEmailExists(req: CustomRequest<CheckUseEmailReqBody>, res: Response) {
+export async function checkUserByEmailExists(req: ExpressRequest<{},CheckUserByEmailExistsResponse,CheckUseEmailReqBody>, res: ExpressResponse<CheckUserByEmailExistsResponse>) {
     const { email} = req.body;
     let response: checkUserByEmailExistsResponse = {
         username: "",
@@ -90,25 +90,27 @@ export async function checkUserByEmailExists(req: CustomRequest<CheckUseEmailReq
     return (response);
 }
 
-export async function authenticateJWT(req: Request,res: Response,next: NextFunction) {
+export const authenticateJWT: RequestHandler = async (req: ExpressRequest,res: ExpressResponse,next: NextFunction) => {
     const authHeader = req.headers.authorization;
     if (authHeader) {
         const token = authHeader.split(' ')[1];
         const tokenDecode: TokenReturnType = await isValidToken(token);
         if (!tokenDecode.isValid) {
-            return res.sendStatus(403);
+            res.status(403);
+            return;
         }
         req.body.username = tokenDecode.payload?.sub;
         next();
     } else {
-        res.sendStatus(401);
+        res.send(401);
+        return;
     }
 }
 
-export async function issueToken(req: Request, res: Response) {
+export async function issueToken(req: ExpressRequest<{},IssueTokenResponse,IssueTokenBody>, res: ExpressResponse<IssueTokenResponse>) {
     const { username, password, deviceUUID } = req.body;
     log.info("issuing token for device ID:", JSON.stringify(deviceUUID));
-    let response = {
+    let response: IssueTokenResponse = {
         dbServerAvailable: true,
         loginSuccessful: false,
         email: "",
@@ -146,10 +148,9 @@ export async function issueToken(req: Request, res: Response) {
      try {let userUpd = usersDBAsAdmin.insert(userDoc.fullDoc);}
      catch(err) {log.error("Could not update user: ",username,":",err); response.loginSuccessful=false;}
     return(response);
-
 }
 
-export async function refreshToken(req: Request, res: Response) : Promise<{status: number, response: RefreshTokenResponse}> {
+export async function refreshToken(req: ExpressRequest<{},RefreshTokenResponse,RefreshTokenBody>, res: ExpressResponse<RefreshTokenResponse>) : Promise<{status: number, response: RefreshTokenResponse}> {
     const { refreshJWT, deviceUUID } = req.body;
     log.info("Refreshing token for deviceUUID:",deviceUUID);
     // validate incoming refresh token
@@ -160,7 +161,7 @@ export async function refreshToken(req: Request, res: Response) : Promise<{statu
     //       update userDB with current JWT
     //       return access and refresh JWT
     let status = 200;
-    let response = {
+    let response: RefreshTokenResponse = {
         valid : false,
         dbError: false,
         refreshJWT: "",
@@ -199,7 +200,7 @@ export async function refreshToken(req: Request, res: Response) : Promise<{statu
     return ({status, response});
 }
 
-export async function logout(req: Request, res: Response) {
+export async function logout(req: ExpressRequest<{},{},LogoutBody>, res: ExpressResponse) {
     const { refreshJWT, deviceUUID, username } = req.body;
     log.info("Logging out user: ", username, " for device: ",deviceUUID);
     let userResponse: UserResponse = await getUserDoc(username);

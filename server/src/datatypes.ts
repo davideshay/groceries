@@ -15,8 +15,49 @@ export type NewUserReqBody = {
     deviceUUID: string
 }
 
+export interface IssueTokenBody {
+    username: string,
+    password: string,
+    deviceUUID: string
+}
+
+export interface IssueTokenResponse {
+    dbServerAvailable: boolean,
+    loginSuccessful: boolean,
+    email: string,
+    fullname: string,
+    loginRoles: string[],
+    refreshJWT: string,
+    accessJWT: string,
+    couchdbUrl: string,
+    couchdbDatabase: string
+}
+
+export interface RefreshTokenBody {
+    refreshJWT: string,
+    deviceUUID: string
+}
+
+export interface RefreshTokenResponse {
+        valid : boolean,
+        dbError: boolean,
+        refreshJWT: string,
+        accessJWT: string
+}
+
+export interface LogoutBody {
+    refreshJWT: string,
+    deviceUUID: string,
+    username: string
+}
+
 export type CheckUserExistsReqBody = {
     username: string
+}
+
+export type CheckUserExistsResponse = {
+    username: string,
+    userExists: boolean
 }
 
 export type CheckUseEmailReqBody = {
@@ -27,17 +68,11 @@ export interface CustomRequest<T> extends Request {
     body: T
 }
 
-export type checkUserByEmailExistsResponse = {
+export type CheckUserByEmailExistsResponse = {
     username: string,
     fullname: string,
     email: string,
     userExists: boolean
-}
-
-export type RefreshTokenResponse = {
-    valid: boolean,
-    refreshJWT: string,
-    accessJWT: string
 }
 
 export enum RowType {

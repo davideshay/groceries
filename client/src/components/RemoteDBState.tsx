@@ -232,7 +232,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     const { t } = useTranslation();
     const history = useHistory();
     const refreshTokenLocked = useRef(false);
-    const tokenTimer = useRef<NodeJS.Timeout>();
+    const tokenTimer = useRef<NodeJS.Timeout>(null);
     const retryingNetwork = useRef<boolean>(false);
     const appStatus = useRef<AppStatus>(AppStatus.resumed);
     const broadcastChannel = useRef<BroadcastChannel>(new BroadcastChannel("dupcheck"))
@@ -783,18 +783,27 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
                 break;
             case TokenTimerAction.NeedToStop:
                 log.debug("Stopping standard token timer");
-                clearTimeout(tokenTimer.current);
+                if (tokenTimer.current !== null && tokenTimer.current !== undefined) {
+                    clearTimeout(tokenTimer.current);
+                }
                 setRemoteDBState(prevState => ({...prevState,tokenTimerAction: TokenTimerAction.Stopped}))
                 break;
             case TokenTimerAction.NeedToRestart:
                 log.debug("Restarting Standard Token Timer");
-                clearTimeout(tokenTimer.current);
+                if (tokenTimer.current !== null && tokenTimer.current !== undefined) {
+                    clearTimeout(tokenTimer.current);
+                }
                 setRemoteDBState(prevState => ({...prevState,tokenTimerAction: TokenTimerAction.NeedToStart}))
                 break;
             default:
                 break;
         }
-        return ( () => {clearTimeout(curTimer)})
+        return ( () => {
+                if (curTimer !== null && curTimer !== undefined) {
+                    clearTimeout(curTimer);
+                }
+
+        })
     },[remoteDBState.tokenTimerAction, remoteDBState.accessJWTExpirationTime,refreshTokenAndUpdate])
 
     useEffect(() => {

@@ -1,4 +1,5 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
+import { Request as ExpressRequest, Response as ExpressResponse} from 'express';
 import cors from 'cors';
 import { Eta } from 'eta';
 const app = express();
@@ -10,7 +11,7 @@ import {
         updateUserInfo, logout, groceryAPIPort, isAvailable } from './apicalls';
 
 import { dbStartup } from './dbstartup'
-import { CheckUserExistsReqBody, NewUserReqBody, CustomRequest, CheckUseEmailReqBody } from './datatypes';
+import { CheckUserExistsReqBody, NewUserReqBody, CustomRequest, CheckUseEmailReqBody, IssueTokenBody, RefreshTokenBody, RefreshTokenResponse, IssueTokenResponse, CheckUserExistsResponse, CheckUserByEmailExistsResponse } from './datatypes';
 import path from 'path';
 
 
@@ -24,15 +25,15 @@ async function startup() {
 
 //        app.engine("eta", eta.render);
         app.set("view engine","eta");
-        
-        app.post('/issuetoken', async (req: Request, res: Response) => res.send(await issueToken(req,res)));
-        app.post('/refreshtoken', authenticateJWT, async (req: Request,res: Response) => 
+        app.post("/issuetoken", async (req: ExpressRequest<{},IssueTokenResponse,IssueTokenBody>,res: ExpressResponse<IssueTokenResponse>) => {res.send(await issueToken(req,res))})        
+//        app.post('/issuetoken', async (req: Request<{}, IssueTokenBody>, res: Response) => res.send(await issueToken(req,res)));
+        app.post('/refreshtoken', authenticateJWT, async (req: ExpressRequest<{},RefreshTokenResponse,RefreshTokenBody>,res: ExpressResponse<RefreshTokenResponse>) => 
                 { const {status,response} = await refreshToken(req,res);
                   res.status(status).send(response); } );
-        app.post('/logout', authenticateJWT, async (req: Request,res: Response) => 
+        app.post('/logout', authenticateJWT, async (req: ExpressRequest,res: ExpressResponse) => 
                 { await logout(req,res); res.send(); } );          
-        app.post('/checkuserexists', authenticateJWT, async (req: CustomRequest<CheckUserExistsReqBody>, res: Response) => res.send(await checkUserExists(req,res)));
-        app.post('/checkuserbyemailexists', authenticateJWT, async (req: CustomRequest<CheckUseEmailReqBody>,res: Response) => res.send(await checkUserByEmailExists(req,res)))
+        app.post('/checkuserexists', authenticateJWT, async (req: ExpressRequest<{},CheckUserExistsResponse,CheckUserExistsReqBody>, res: ExpressResponse<CheckUserExistsResponse>) => {res.send(await checkUserExists(req,res))});
+        app.post('/checkuserbyemailexists', authenticateJWT, async (req: ExpressRequest<{},CheckUserByEmailExistsResponse,CheckUseEmailReqBody>,res: ExpressResponse<CheckUserByEmailExistsResponse>) => {res.send(await checkUserByEmailExists(req,res))})
         app.post('/registernewuser', async (req: CustomRequest<NewUserReqBody>, res: Response) => res.send(await registerNewUser(req,res)));
         app.post('/getusersinfo', authenticateJWT, async (req: Request, res: Response) => res.send(await getUsersInfo(req,res)));
         app.post('/updateuserinfo', authenticateJWT, async (req: Request, res: Response) => res.send(await updateUserInfo(req,res)));
