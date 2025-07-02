@@ -3,7 +3,7 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonLis
    IonReorder, IonReorderGroup,ItemReorderEventDetail, IonButtons, IonMenuButton, 
    useIonToast, IonFooter, IonIcon, useIonAlert, IonText, useIonLoading } from '@ionic/react';
 import { useHistory, useParams } from 'react-router-dom';
-import { useState, useEffect, useContext, useRef } from 'react';
+import { useState, useEffect, useContext, useRef, JSX } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useGetOneDoc,
    useDeleteGenericDocument, useDeleteListFromItems, useAddListToAllItems } from '../components/Usehooks';
 import { cloneDeep, isEmpty } from 'lodash-es';

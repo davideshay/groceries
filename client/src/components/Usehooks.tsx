@@ -23,7 +23,7 @@ export const pictureSrcPrefix = "data:image/jpeg;base64,"
 
 export function useGetOneDoc(docID: string | null, attachments: boolean = false) {
   const db = usePouch();
-  const changesRef = useRef<PouchDB.Core.Changes<any>>();
+  const changesRef = useRef<PouchDB.Core.Changes<any>>(null);
   const [doc,setDoc] = useState<any>(null);
   const [attachBlob,setAttachBlob] = useState<Blob|null>(null);
   const [dbError, setDBError] = useState(false);

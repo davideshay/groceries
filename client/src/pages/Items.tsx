@@ -4,7 +4,7 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
   useIonAlert, 
   CheckboxChangeEventDetail} from '@ionic/react';
 import { add,chevronUp,documentTextOutline,searchOutline } from 'ionicons/icons';
-import React, { useState, useEffect, useContext, useRef, KeyboardEvent, useCallback } from 'react';
+import React, { useState, useEffect, useContext, useRef, KeyboardEvent, useCallback, JSX } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import './Items.css';
 import { useUpdateGenericDocument, useCreateGenericDocument, useItems } from '../components/Usehooks';

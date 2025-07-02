@@ -32,7 +32,7 @@ const smtpOptions: SMTPTransport.Options= {
 };
 
 import nodemailer from 'nodemailer';
-import nanoAdmin, { DocumentListResponse,  MangoResponse, MaybeDocument } from 'nano';
+import nanoAdmin, { DocumentListResponse,  MangoQuery,  MangoResponse, MaybeDocument } from 'nano';
 const nanoAdminOpts = {
     url: couchdbInternalUrl,
     requestDefaults: {
@@ -727,6 +727,33 @@ export async function resolveConflicts(): Promise<boolean> {
         let logResult;
         try { logResult = await groceriesDBAsAdmin.insert(logObj as MaybeDocument)}
         catch(err) { log.error("ERROR: creating conflict log document failed: ",err); return false;};        
+    }
+    return true;
+}
+
+export async function expirePasswordResetUserRecords(): Promise<boolean> {
+    const userq: MangoQuery = { selector: { type: "user", name: {$exists: true}}, limit: await totalDocCount(usersDBAsAdmin)};
+    let foundUserDocs: MangoResponse<UserDoc>;
+    try {foundUserDocs = (await usersDBAsAdmin.find(userq) as MangoResponse<UserDoc>);}
+    catch(err) {log.error("Could not find user list during schema update:",err); return false;}
+    log.info("Found users to expire passwords: ", foundUserDocs.docs.length);
+    for (let i = 0; i < foundUserDocs.docs.length; i++) {
+        let userDoc: UserDoc = foundUserDocs.docs[i];
+        if (userDoc.reset_password_uuid !== undefined && userDoc.reset_password_uuid !== null && userDoc.reset_password_uuid !== "") {
+            // Have a user with a reset password uuid. Check if it's expired
+            if (userDoc.reset_password_expire_date !== undefined && userDoc.reset_password_expire_date !== null && userDoc.reset_password_expire_date !== "") {
+                // has expiration date, check against current time.
+                let now = new Date().getTime();
+                let expiration = new Date(userDoc.reset_password_expire_date).getTime();
+                if (expiration >= now) {
+                    let updUserDoc = structuredClone(userDoc);
+                    log.info("Password reset UUID expired for user: ",userDoc.name);
+                    updUserDoc.reset_password_uuid="";
+                    updUserDoc.reset_password_expire_date="";
+                    await usersDBAsAdmin.insert(updUserDoc);
+                }
+            }
+        }
     }
     return true;
 }

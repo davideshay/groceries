@@ -1,6 +1,8 @@
 import { groceriesNanoAsAdmin, usersNanoAsAdmin, couchDatabase, couchAdminPassword, couchAdminUser, couchdbUrl, couchdbInternalUrl, couchStandardRole,
 couchAdminRole, conflictsViewID, conflictsViewName, refreshTokenExpires, accessTokenExpires,
-enableScheduling, resolveConflictsFrequencyMinutes,expireJWTFrequencyMinutes, disableAccountCreation, logLevel, couchKey } from "./apicalls";
+enableScheduling, resolveConflictsFrequencyMinutes,expireJWTFrequencyMinutes, disableAccountCreation, logLevel, couchKey, 
+passwordResetExpireSeconds,
+expirePasswordResetUserRecords} from "./apicalls";
 import { resolveConflicts } from "./apicalls";
 import { expireJWTs, generateJWT } from './jwt'
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
@@ -1899,7 +1901,7 @@ export async function dbStartup() {
         if(isInteger(String(resolveConflictsFrequencyMinutes))) {
             setInterval(() => {resolveConflicts()},60000*Number(resolveConflictsFrequencyMinutes));
             log.info("Conflict resolution scheduled every ",resolveConflictsFrequencyMinutes, " minutes.")
-            let resolveSuccess=resolveConflicts();
+            let resolveSuccess=await resolveConflicts();
             if (!resolveSuccess) {return false;}
         } else {
             log.error("Invalid environment variable for scheduling conflict resolution -- not started.");
@@ -1908,12 +1910,17 @@ export async function dbStartup() {
         if (isInteger(String(expireJWTFrequencyMinutes))) {
             setInterval(() => {expireJWTs()},60000*Number(expireJWTFrequencyMinutes));
             log.info("JWT expiry scheduled every ",expireJWTFrequencyMinutes," minutes.");
-            let jwtSuccess=expireJWTs();
+            let jwtSuccess=await expireJWTs();
             if (!jwtSuccess) {return false;}
         } else {
             log.error("Invalid environment variable for scheduling JWT expiry -- not started");
             return false;
         }
+        setInterval(() => {expirePasswordResetUserRecords()},passwordResetExpireSeconds*1000);
+        log.info("Password Reset UUID expiry scheduled every ",passwordResetExpireSeconds, " seconds.");
+        let passwordResetExpireSuccess=await expirePasswordResetUserRecords();
+        if (!passwordResetExpireSuccess) {return false;};
+
     }
     log.info("Startup process completed")
     return true;    
