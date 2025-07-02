@@ -4,8 +4,9 @@ import { generateJWT } from "./jwt";
 import { UserDoc, FriendDoc, FriendDocs, ListGroupDocs, ListGroupDoc} from './schema/DBSchema'
 import nano, { DatabaseGetResponse, DocumentScope, MangoQuery, MangoResponse, MaybeDocument } from "nano";
 import { cloneDeep } from "lodash";
-import { NewUserReqBody, UserObj } from "./datatypes";
+import { NewUserReponse, NewUserReqBody, UserObj } from "./datatypes";
 import log from 'loglevel';
+import type { Request as ExpressRequest } from 'express';
 
 export const uomContent = require("../data/uomContent.json")
 export const globalItems = require("../data/globalItems.json");
@@ -82,6 +83,7 @@ export async function getUserByEmailDoc(email: string) {
                 userResponse.username = String(resDoc.name);
                 userResponse.email = String(resDoc.email);
                 userResponse.fullname = String(resDoc.fullname);
+                userResponse.fullDoc = resDoc;
             } else {
                 userResponse.error = true;
             }
@@ -170,7 +172,7 @@ export async function updateUserDoc(userDoc: UserDoc): Promise<boolean> {
     }
 }
 
-export async function updateUnregisteredFriends(req: CustomRequest<NewUserReqBody>,email: string) {
+export async function updateUnregisteredFriends(req: ExpressRequest<{},NewUserReponse,NewUserReqBody>,email: string) {
     const emailq = {
         selector: { type: { "$eq": "friend" }, inviteEmail: { "$eq": email}},
         limit: await totalDocCount(groceriesDBAsAdmin)

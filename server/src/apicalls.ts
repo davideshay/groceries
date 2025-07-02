@@ -51,11 +51,13 @@ import { usernamePatternValidation, fullnamePatternValidation, getUserDoc, getUs
     getUserByResetUUIDDoc} from './utilities';
 import { generateJWT, isValidToken, invalidateToken, JWTMatchesUserDB, TokenReturnType } from './jwt'     
 import type { NextFunction, Request as ExpressRequest, Response as ExpressResponse, RequestHandler } from 'express';
-import { CheckUseEmailReqBody, CheckUserByEmailExistsResponse, CheckUserExistsReqBody, CheckUserExistsResponse, CreateAccountParams, CreateAccountResponse, GetUsersInfoRequestBody, GetUsersInfoResponse, IssueTokenBody, IssueTokenResponse, LogoutBody, NewUserReponse, NewUserReqBody, PasswordResetParams, RefreshTokenBody, RefreshTokenResponse, ResetPasswordBody, ResetPasswordFormResponse, ResetPasswordResponse, TriggerRegEmailBody, UpdateUserInfoResponse, UserInfo } from './datatypes';
+import { CheckUseEmailReqBody, CheckUserByEmailExistsResponse, CheckUserExistsReqBody, CheckUserExistsResponse, CreateAccountParams, CreateAccountResponse, GetUsersInfoRequestBody, GetUsersInfoResponse, IsAvailableResponse, IssueTokenBody, IssueTokenResponse, LogoutBody, NewUserReponse, NewUserReqBody, RefreshTokenBody, RefreshTokenResponse, ResetPasswordBody, ResetPasswordFormResponse, ResetPasswordParams, ResetPasswordResponse, TriggerRegEmailBody, UpdateUserInfoResponse, UserInfo } from './datatypes';
 import { ConflictDoc, FriendDoc, UserDoc, appVersion } from './schema/DBSchema';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
 import log from 'loglevel';
 import crypto from "crypto";
+export const passwordResetExpireSeconds = 3600;
+
 
 export function getBooleanFromText(val: string | boolean) {
     if (val === true) {return true}; if (val === false) {return false};
@@ -496,29 +498,10 @@ export async function resetPassword(req: ExpressRequest<{},ResetPasswordResponse
         return resetResponse
     };
 
-    // if (userDoc.fullDoc?.reset_password_uuid !== null && userDoc.fullDoc?.reset_password_uuid !== undefined) {
-    //     if (userDoc.fullDoc.reset_password_expire_date === null || userDoc.fullDoc.reset_password_expire_date === undefined) {
-    //         resetResponse.error = "Invalid password expiration time - not specified";
-    //         return resetResponse;
-    //     }
-    //     // reset password request already created, see if it's expired
-    //     try {
-    //         let now = new Date().getTime();
-    //         let expiration = new Date(userDoc.fullDoc.reset_password_expire_date).getTime();
-    //         if (expiration >= now) {
-    //             resetResponse.error = "Existing Password request expired"
-    //         }
-
-    //     } catch(error) {
-    //         resetResponse.error = "Invalid or expired password reset request"
-    //         return resetResponse;
-    //     }
-    // }
-
     // create new UUID & expiration date
 
     let newUUID = crypto.randomUUID();
-    let expDate = new Date().toISOString();
+    let expDate = new Date(new Date().getTime() + (passwordResetExpireSeconds*1000)).toISOString();
 
     // update userDoc with password uuid and expiration date
 
@@ -552,7 +535,7 @@ export async function resetPassword(req: ExpressRequest<{},ResetPasswordResponse
     return resetResponse;
 }    
 
-export async function resetPasswordUIGet(req: ExpressRequest<{},{},{},PasswordResetParams>) {
+export async function resetPasswordUIGet(req: ExpressRequest<{},{},{},ResetPasswordParams>) {
     let respObj: ResetPasswordFormResponse = {
         email: "",
         username: "",
@@ -568,15 +551,49 @@ export async function resetPasswordUIGet(req: ExpressRequest<{},{},{},PasswordRe
     if (userDoc.error) {
         respObj.formError = "Cannot locate uuid for password reset "+req.query.uuid;
         respObj.disableSubmit = true;
+        return respObj;
+    }
+
+    if (userDoc.fullDoc === null || userDoc.fullDoc === undefined) {
+        respObj.formError = "Cannot locate user record for password reset";
+        respObj.disableSubmit = true;
+        return respObj;
+    }
+
+    if (userDoc.fullDoc.reset_password_uuid !== null && userDoc.fullDoc.reset_password_uuid !== undefined) {
+        if (userDoc.fullDoc.reset_password_expire_date === null || userDoc.fullDoc.reset_password_expire_date === undefined) {
+            respObj.formError = "Invalid password expiration time - not specified";
+            respObj.disableSubmit = true;
+            return respObj;
+        }
+        // reset password request already created, see if it's expired
+        try {
+            let now = new Date().getTime();
+            let expiration = new Date(userDoc.fullDoc.reset_password_expire_date).getTime();
+            if (expiration >= now) {
+                respObj.formError = "Existing password request expired. Reset again.";
+                respObj.disableSubmit = true;
+                return respObj;
+            }
+        } catch(error) {
+            respObj.formError = "Invalid or expired password reset request";
+            respObj.disableSubmit = true;
+            return respObj;
+        }
+    } else {
+        respObj.formError = "No password reset UUID on user record or date invalid";
+        respObj.disableSubmit = true;
         return respObj
     }
+
     respObj.email = userDoc.email;
     return respObj;
 }
 
-export async function resetPasswordUIPost(req: Request, res: Response) {
-    let respObj = {
+export async function resetPasswordUIPost(req: ExpressRequest<{},{},ResetPasswordFormResponse>) {
+    let respObj: ResetPasswordFormResponse = {
         username: req.body.username,
+        uuid: String(req.query.uuid),
         password: (req.body.password == undefined) ? "" : req.body.password,
         passwordverify: (req.body.passwordverify == undefined) ? "" : req.body.passwordverify,
         email: (req.body.email),
@@ -593,27 +610,57 @@ export async function resetPasswordUIPost(req: Request, res: Response) {
         return (respObj);
     }
 
-    let userResponse: UserResponse = await getUserDoc(req.body.username);
-    if (userResponse == null || userResponse.fullDoc == null) {
+    let userResponse = await getUserByResetUUIDDoc(String(req.body.uuid));
+    if (userResponse == null || userResponse.fullDoc == null || userResponse.error) {
         respObj.resetSuccessfully = false;
+        respObj.formError = "Could not locate user record to reset password";
         return respObj;
     }
-    if (!userResponse.error) {
-        let newDoc: UserDoc =cloneDeep(userResponse.fullDoc);
-        newDoc.password=req.body.password;
-        let newDocFiltered = _.pick(newDoc,['_id','_rev','name','email','fullname','roles','type','password','refreshJWTs']);
-        try {let docupdate = await usersDBAsAdmin.insert(newDocFiltered);}
-        catch(err) {log.error("Couldn't update user/reset password:",err);
-                    respObj.formError="Database error resetting password";
-                    respObj.resetSuccessfully=false;
-                    return respObj;}
+
+    if (userResponse.fullDoc.reset_password_uuid !== null && userResponse.fullDoc.reset_password_uuid !== undefined) {
+        if (userResponse.fullDoc.reset_password_expire_date === null || userResponse.fullDoc.reset_password_expire_date === undefined) {
+            respObj.formError = "Invalid password expiration time - not specified";
+            respObj.disableSubmit = true;
+            return respObj;
+        }
+        // reset password request already created, see if it's expired
+        try {
+            let now = new Date().getTime();
+            let expiration = new Date(userResponse.fullDoc.reset_password_expire_date).getTime();
+            if (expiration >= now) {
+                respObj.formError = "Existing password request expired. Reset again.";
+                respObj.disableSubmit = true;
+                return respObj;
+            }
+        } catch(error) {
+            respObj.formError = "Invalid or expired password reset request";
+            respObj.disableSubmit = true;
+            return respObj;
+        }
+    } else {
+        respObj.formError = "No Reset Password UUID on user record, or date invalid";
+        respObj.disableSubmit = true;
+        return respObj;
     }
+    
+    let newDoc: UserDoc =cloneDeep(userResponse.fullDoc);
+    newDoc.password=req.body.password;
+    newDoc.reset_password_uuid="";
+    newDoc.reset_password_expire_date="";
+    let newDocFiltered = _.omit(newDoc,["password_scheme","iterations","derived_key","salt"])
+//        let newDocFiltered = _.pick(newDoc,['_id','_rev','name','email','fullname','roles','type','reset_password','reset_password_expire_date','password','refreshJWTs']);
+    try {let docupdate = await usersDBAsAdmin.insert(newDocFiltered);}
+    catch(err) {log.error("Couldn't update user/reset password:",err);
+                respObj.formError="Database error resetting password";
+                respObj.resetSuccessfully=false;
+                return respObj;}
+    
     respObj.resetSuccessfully = true;
     return(respObj);
 }
 
-export async function isAvailable(req: Request, res: Response) {
-    let respObj = {
+export async function isAvailable() {
+    let respObj: IsAvailableResponse = {
         apiServerAvailable: true,
         dbServerAvailable : await checkDBAvailable(groceriesDBAsAdmin),
         apiServerAppVersion: appVersion
@@ -684,7 +731,7 @@ export async function resolveConflicts(): Promise<boolean> {
     return true;
 }
 
-export async function triggerResolveConflicts(req: Request,res: Response) {
+export async function triggerResolveConflicts() {
     let respObj = {
         triggered: true
     };
@@ -696,7 +743,7 @@ async function compactDB() {
     groceriesNanoAsAdmin.db.compact(couchDatabase);
 }
 
-export async function triggerDBCompact(req: Request,res: Response) {
+export async function triggerDBCompact() {
     let respObj = {
         triggered: true
     };

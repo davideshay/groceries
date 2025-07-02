@@ -11,7 +11,13 @@ import {
         updateUserInfo, logout, groceryAPIPort, isAvailable } from './apicalls';
 
 import { dbStartup } from './dbstartup'
-import { CheckUserExistsReqBody, NewUserReqBody, NewUserReponse, CheckUseEmailReqBody, IssueTokenBody, RefreshTokenBody, RefreshTokenResponse, IssueTokenResponse, CheckUserExistsResponse, CheckUserByEmailExistsResponse, GetUsersInfoResponse, GetUsersInfoRequestBody, UpdateUserInfoResponse, UserInfo, CreateAccountResponse, CreateAccountParams, TriggerRegEmailBody, ResetPasswordBody, ResetPasswordResponse } from './datatypes';
+import { CheckUserExistsReqBody, NewUserReqBody, NewUserReponse, CheckUseEmailReqBody, IssueTokenBody, 
+        RefreshTokenBody, RefreshTokenResponse, IssueTokenResponse, CheckUserExistsResponse,
+        CheckUserByEmailExistsResponse, GetUsersInfoResponse, GetUsersInfoRequestBody,
+        UpdateUserInfoResponse, UserInfo, CreateAccountResponse, CreateAccountParams,
+        TriggerRegEmailBody, ResetPasswordBody, ResetPasswordResponse, ResetPasswordFormResponse,
+        TriggerResponse, IsAvailableResponse, 
+        ResetPasswordParams} from './datatypes';
 import path from 'path';
 
 
@@ -41,11 +47,11 @@ async function startup() {
         app.post('/createaccountui', async (req: ExpressRequest<{},{},CreateAccountResponse>,res: ExpressResponse) => {res.send(eta.render("createaccount",await createAccountUIPost(req)))});
         app.post('/triggerregemail', authenticateJWT, async (req: ExpressRequest<{},{},TriggerRegEmailBody>,res: ExpressResponse) => {res.send(await triggerRegEmail(req))});
         app.post('/resetpassword', async (req: ExpressRequest<{},ResetPasswordResponse,ResetPasswordBody>, res: ExpressResponse<ResetPasswordResponse>) => {res.send(await resetPassword(req))});
-        app.get('/resetpasswordui', async(req: ExpressRequest,res: ExpressResponse) => res.send(eta.render("resetpassword", await resetPasswordUIGet(req,res))));
-        app.post('/resetpasswordui', async(req: Request,res: Response) => res.send(eta.render("resetpassword", await resetPasswordUIPost(req,res))));
-        app.post('/triggerresolveconflicts', authenticateJWT, async (req: Request, res: Response) => res.send(await triggerResolveConflicts(req,res)));
-        app.post('/triggerdbcompact', authenticateJWT, async (req: Request,res: Response) => res.send(await triggerDBCompact(req, res)));
-        app.get('/isavailable', async (req: Request, res: Response) => res.send(await isAvailable(req,res)));
+        app.get('/resetpasswordui', async(req: ExpressRequest<{},{},{},ResetPasswordParams>,res: ExpressResponse) => {res.send(eta.render("resetpassword", await resetPasswordUIGet(req)))});
+        app.post('/resetpasswordui', async(req: ExpressRequest<{},{},ResetPasswordFormResponse>,res: ExpressResponse) => {res.send(eta.render("resetpassword", await resetPasswordUIPost(req)))});
+        app.post('/triggerresolveconflicts', authenticateJWT, async (req: ExpressRequest<{},TriggerResponse,{}>, res: ExpressResponse<TriggerResponse>) => {res.send(await triggerResolveConflicts())});
+        app.post('/triggerdbcompact', authenticateJWT, async (req: ExpressRequest<{},TriggerResponse,{}>,res: ExpressResponse<TriggerResponse>) => {res.send(await triggerDBCompact())});
+        app.get('/isavailable', async (req: ExpressRequest<{},IsAvailableResponse,{}>, res: ExpressResponse<IsAvailableResponse>) => {res.send(await isAvailable())});
         let startupSuccess = await dbStartup();
         if (!startupSuccess) {
                 console.log("---ERROR IN STARTUP--- EXITING BACKEND");

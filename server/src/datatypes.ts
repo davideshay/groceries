@@ -146,6 +146,16 @@ export type ResetPasswordFormResponse = {
     resetSuccessfully: boolean
 }
 
-export type PasswordResetParams = {
+export type ResetPasswordParams = {
     uuid: string
+}
+
+export type TriggerResponse = {
+    triggered: boolean
+}
+
+export type IsAvailableResponse = {
+    apiServerAvailable: boolean,
+    dbServerAvailable : boolean,
+    apiServerAppVersion: string
 }
