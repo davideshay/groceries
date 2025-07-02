@@ -374,15 +374,26 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
   
   async function callResetPasswordAPI() {
     const options: HttpOptions = {
-        url: String(remoteDBCreds.apiServerURL+"/resetpassword"),
+        url: String(formState.apiServerURL+"/resetpassword"),
         method: "POST",
         headers: { 'Content-Type': 'application/json',
                    'Accept': 'application/json'},
-        data: { username: remoteDBCreds.dbUsername },   
+        data: { username: formState.dbUsername },   
         connectTimeout: apiConnectTimeout        
     };
-    try {await CapacitorHttp.post(options);}
-    catch(err) {log.error("Resetting password",err);
+    try {
+      let resp=await CapacitorHttp.post(options);
+      if (resp.status !== 200) {
+        setRemoteState(prevState=>({...prevState,formError: t("error.api_server_error_resetting_password")}))
+      } else {
+        if (resp.data.error) {
+          setRemoteState(prevState=>({...prevState,formError: resp.data.error}));
+        } else {
+          setRemoteState(prevState=>({...prevState,formError: t("general.password_reset_email_sent")}));
+        }
+      }
+
+    } catch(err) {log.error("Resetting password",err);
                 setRemoteDBState(prevState=>({...prevState,apiServerAvailable: false}))}
 //    presentAlert({
 //      header: "Password Request Sent",
@@ -392,7 +403,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function resetPassword() {
-    if (remoteDBCreds.dbUsername === "" || remoteDBCreds.dbUsername === null || remoteDBCreds.dbUsername === undefined) {
+    if (formState.dbUsername === "" || formState.dbUsername === null || formState.dbUsername === undefined) {
       setRemoteState(prevState => ({...prevState, formError: t("error.must_enter_username_reset_password")}))
     } else {
       presentAlert({

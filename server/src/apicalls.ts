@@ -491,7 +491,6 @@ export async function resetPassword(req: ExpressRequest<{},ResetPasswordResponse
         error: ""
     }
     const {username} = req.body;
-
     let userDoc = await getUserDoc(username);
     if (userDoc.error || userDoc.fullDoc === null || userDoc.fullDoc === undefined) {
         resetResponse.error = "Could not retrieve user from database";
@@ -502,6 +501,7 @@ export async function resetPassword(req: ExpressRequest<{},ResetPasswordResponse
 
     let newUUID = crypto.randomUUID();
     let expDate = new Date(new Date().getTime() + (passwordResetExpireSeconds*1000)).toISOString();
+    log.debug("resetting password, new uuid:", newUUID, " on date:",expDate, "cur time is: ", new Date().toISOString());
 
     // update userDoc with password uuid and expiration date
 
@@ -548,6 +548,7 @@ export async function resetPasswordUIGet(req: ExpressRequest<{},{},{},ResetPassw
     }
     
     let userDoc = await getUserByResetUUIDDoc(String(req.query.uuid));
+    console.debug("User Doc from reset password request:",JSON.stringify(userDoc,null,3));
     if (userDoc.error) {
         respObj.formError = "Cannot locate uuid for password reset "+req.query.uuid;
         respObj.disableSubmit = true;
@@ -561,6 +562,7 @@ export async function resetPasswordUIGet(req: ExpressRequest<{},{},{},ResetPassw
     }
 
     if (userDoc.fullDoc.reset_password_uuid !== null && userDoc.fullDoc.reset_password_uuid !== undefined) {
+        log.debug("have a reset password uuid:",userDoc.fullDoc.reset_password_uuid, " with exp:",userDoc.fullDoc.reset_password_expire_date);
         if (userDoc.fullDoc.reset_password_expire_date === null || userDoc.fullDoc.reset_password_expire_date === undefined) {
             respObj.formError = "Invalid password expiration time - not specified";
             respObj.disableSubmit = true;
@@ -570,7 +572,8 @@ export async function resetPasswordUIGet(req: ExpressRequest<{},{},{},ResetPassw
         try {
             let now = new Date().getTime();
             let expiration = new Date(userDoc.fullDoc.reset_password_expire_date).getTime();
-            if (expiration >= now) {
+            log.debug("Now:",now, " expiration:",expiration);
+            if (now >= expiration) {
                 respObj.formError = "Existing password request expired. Reset again.";
                 respObj.disableSubmit = true;
                 return respObj;
@@ -585,7 +588,7 @@ export async function resetPasswordUIGet(req: ExpressRequest<{},{},{},ResetPassw
         respObj.disableSubmit = true;
         return respObj
     }
-
+    respObj.username = userDoc.username;
     respObj.email = userDoc.email;
     return respObj;
 }
@@ -593,7 +596,7 @@ export async function resetPasswordUIGet(req: ExpressRequest<{},{},{},ResetPassw
 export async function resetPasswordUIPost(req: ExpressRequest<{},{},ResetPasswordFormResponse>) {
     let respObj: ResetPasswordFormResponse = {
         username: req.body.username,
-        uuid: String(req.query.uuid),
+        uuid: String(req.body.uuid),
         password: (req.body.password == undefined) ? "" : req.body.password,
         passwordverify: (req.body.passwordverify == undefined) ? "" : req.body.passwordverify,
         email: (req.body.email),
@@ -627,7 +630,7 @@ export async function resetPasswordUIPost(req: ExpressRequest<{},{},ResetPasswor
         try {
             let now = new Date().getTime();
             let expiration = new Date(userResponse.fullDoc.reset_password_expire_date).getTime();
-            if (expiration >= now) {
+            if (now >= expiration) {
                 respObj.formError = "Existing password request expired. Reset again.";
                 respObj.disableSubmit = true;
                 return respObj;
@@ -647,7 +650,7 @@ export async function resetPasswordUIPost(req: ExpressRequest<{},{},ResetPasswor
     newDoc.password=req.body.password;
     newDoc.reset_password_uuid="";
     newDoc.reset_password_expire_date="";
-    let newDocFiltered = _.omit(newDoc,["password_scheme","iterations","derived_key","salt"])
+    let newDocFiltered = _.omit(newDoc,["password_scheme","iterations","derived_key","salt","pbkdf2_prf"])
 //        let newDocFiltered = _.pick(newDoc,['_id','_rev','name','email','fullname','roles','type','reset_password','reset_password_expire_date','password','refreshJWTs']);
     try {let docupdate = await usersDBAsAdmin.insert(newDocFiltered);}
     catch(err) {log.error("Couldn't update user/reset password:",err);
@@ -736,7 +739,8 @@ export async function expirePasswordResetUserRecords(): Promise<boolean> {
     let foundUserDocs: MangoResponse<UserDoc>;
     try {foundUserDocs = (await usersDBAsAdmin.find(userq) as MangoResponse<UserDoc>);}
     catch(err) {log.error("Could not find user list during schema update:",err); return false;}
-    log.info("Found users to expire passwords: ", foundUserDocs.docs.length);
+    log.info("Found users to check expired password resets: ", foundUserDocs.docs.length);
+    let expiredCnt=0;
     for (let i = 0; i < foundUserDocs.docs.length; i++) {
         let userDoc: UserDoc = foundUserDocs.docs[i];
         if (userDoc.reset_password_uuid !== undefined && userDoc.reset_password_uuid !== null && userDoc.reset_password_uuid !== "") {
@@ -745,15 +749,21 @@ export async function expirePasswordResetUserRecords(): Promise<boolean> {
                 // has expiration date, check against current time.
                 let now = new Date().getTime();
                 let expiration = new Date(userDoc.reset_password_expire_date).getTime();
-                if (expiration >= now) {
+                if (now >= expiration) {
                     let updUserDoc = structuredClone(userDoc);
                     log.info("Password reset UUID expired for user: ",userDoc.name);
+                    expiredCnt++;
                     updUserDoc.reset_password_uuid="";
                     updUserDoc.reset_password_expire_date="";
                     await usersDBAsAdmin.insert(updUserDoc);
                 }
             }
         }
+    }
+    if (expiredCnt = 0 ) {
+        log.info("No users had expired password reset records");
+    } else {
+        log.info("Expired ",expiredCnt, " users password reset records");
     }
     return true;
 }

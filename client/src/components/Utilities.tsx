@@ -225,3 +225,5 @@ export function secondsToDHMS(seconds: number) : string {
 export const DEFAULT_API_URL=(window as any)._env_.DEFAULT_API_URL === undefined ? "https://groceries.mydomain.com/api" : (window as any)._env_.DEFAULT_API_URL
 export const LOG_LEVEL= (window as any)._env_.LOG_LEVEL === undefined ? "INFO" : (window as any)._env_.LOG_LEVEL
 export const log = loglevelnext.create({name: "applogger", level: getLoggingLevel(LOG_LEVEL)})
+
+console.log("Environment: ", {DEFAULT_API_URL,LOG_LEVEL});

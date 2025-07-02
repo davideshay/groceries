@@ -100,7 +100,9 @@ export async function getUserByResetUUIDDoc(uuid: string) {
     catch(err) { log.error("ERROR getting user by email:"); userResponse.error= true }
     if (!userResponse.error) {
         if (res != null && res.hasOwnProperty("docs")) {
-            if (res.docs.length = 1) {
+            log.debug("docs result:",JSON.stringify(res.docs,null,3));
+            log.debug("docs length:",res.docs.length);
+            if (res.docs.length === 1) {
                 let resDoc: UserDoc = res.docs[0] as UserDoc;
                 userResponse.username = String(resDoc.name);
                 userResponse.email = String(resDoc.email);
@@ -110,6 +112,8 @@ export async function getUserByResetUUIDDoc(uuid: string) {
                 userResponse.error = true;
             }
         } else { userResponse.error = true}
+    } else {
+        userResponse.error = true;
     }
     return (userResponse);
 }

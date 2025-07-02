@@ -251,7 +251,8 @@ export const en_translations =
         "error":"Error",
         "silent":"Silent",
         "log_to_file":"Log To File",
-        "loading_conflict_item":"Loading Conflict Item..."
+        "loading_conflict_item":"Loading Conflict Item...",
+        "password_reset_email_sent":"Password Reset email sent to address on file"
      },
      "error" : {
         "invalid_dbuuid" : "Invalid Database Unique Identifier",
@@ -394,7 +395,8 @@ export const en_translations =
         "deleting_listgroup_detail": "Cannot delete the last remaining list group. Please add another one first if you really wish to delete.",
         "need_one_alexa_default": "There should be one list group marked as the Alexa default. Currently there are {{count}} list groups marked as the default if you save this list group. If one is not specified, Alexa will use the first available list group. If more than one is specified, it will use the first one alphabetically.",
         "different_server_local_app_versions": "This application version is different than the one on the server. You could encounter errors if you continue and should upgrade the client or server to be in sync before proceeding.",
-        "different_server_local_app_versions_short": "Application version different on remote server"
+        "different_server_local_app_versions_short": "Application version different on remote server",
+        "api_server_error_resetting_password": "API Server Error when resetting password"
     },
     "itemtext": {
         "item_is_on_these_lists": "Item is on these lists:",
