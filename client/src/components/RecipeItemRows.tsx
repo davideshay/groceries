@@ -4,7 +4,7 @@ import { translatedItemName, translatedUOMShortName } from "./translationUtiliti
 import { RecipeDoc, UomDoc } from "./DBSchema";
 import { IonButton, IonCheckbox, IonCol, IonGrid, IonIcon, IonItem, IonRow } from "@ionic/react";
 import { useTranslation } from "react-i18next";
-import { cloneDeep } from "lodash";
+import { cloneDeep } from "lodash-es";
 import { pencilOutline, trashOutline } from "ionicons/icons";
 import Fraction from 'fraction.js';
 

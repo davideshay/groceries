@@ -4,7 +4,7 @@ import { addCircleOutline, closeCircleOutline, saveOutline } from 'ionicons/icon
 import { SetStateAction, useContext } from 'react';    
 import {  ModalState, ModalStateInit } from '../components/DataTypes';
 import {  CategoryDocs, ItemDoc, ItemList} from '../components/DBSchema';
-import { cloneDeep } from 'lodash';
+import { cloneDeep } from 'lodash-es';
 import { GlobalDataContext } from './GlobalDataProvider';
 import { useTranslation } from 'react-i18next';
 import { translatedCategoryName, translatedUOMName } from './translationUtilities';

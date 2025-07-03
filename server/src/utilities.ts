@@ -2,10 +2,11 @@ import { couchUserPrefix, couchStandardRole, accessTokenExpires, refreshTokenExp
 import { usersDBAsAdmin, groceriesDBAsAdmin } from './dbstartup';
 import { generateJWT } from "./jwt";
 import { UserDoc, FriendDoc, FriendDocs, ListGroupDocs, ListGroupDoc} from './schema/DBSchema'
-import { DatabaseGetResponse, DocumentScope, MangoQuery, MangoResponse, MaybeDocument } from "nano";
+import nano, { DatabaseGetResponse, DocumentScope, MangoQuery, MangoResponse, MaybeDocument } from "nano";
 import { cloneDeep } from "lodash";
-import { NewUserReqBody, UserObj, CustomRequest } from "./datatypes";
+import { NewUserReponse, NewUserReqBody, UserObj } from "./datatypes";
 import log from 'loglevel';
+import type { Request as ExpressRequest } from 'express';
 
 export const uomContent = require("../data/uomContent.json")
 export const globalItems = require("../data/globalItems.json");
@@ -82,10 +83,37 @@ export async function getUserByEmailDoc(email: string) {
                 userResponse.username = String(resDoc.name);
                 userResponse.email = String(resDoc.email);
                 userResponse.fullname = String(resDoc.fullname);
+                userResponse.fullDoc = resDoc;
             } else {
                 userResponse.error = true;
             }
         } else { userResponse.error = true}
+    }
+    return (userResponse);
+}
+
+export async function getUserByResetUUIDDoc(uuid: string) {
+    const userResponse  = cloneDeep(UserResponseInit);
+    const query: MangoQuery={selector: {"reset_password_uuid": {"$eq": uuid}}, limit: await totalDocCount(usersDBAsAdmin)};
+    let res: MangoResponse<unknown> | null = null;
+    try { res = (await usersDBAsAdmin.find(query) );}
+    catch(err) { log.error("ERROR getting user by email:"); userResponse.error= true }
+    if (!userResponse.error) {
+        if (res != null && res.hasOwnProperty("docs")) {
+            log.debug("docs result:",JSON.stringify(res.docs,null,3));
+            log.debug("docs length:",res.docs.length);
+            if (res.docs.length === 1) {
+                let resDoc: UserDoc = res.docs[0] as UserDoc;
+                userResponse.username = String(resDoc.name);
+                userResponse.email = String(resDoc.email);
+                userResponse.fullname = String(resDoc.fullname);
+                userResponse.fullDoc = res.docs[0] as UserDoc;
+            } else {
+                userResponse.error = true;
+            }
+        } else { userResponse.error = true}
+    } else {
+        userResponse.error = true;
     }
     return (userResponse);
 }
@@ -134,7 +162,21 @@ export async function createNewUser(userObj: UserObj, deviceUUID: string) {
     return (createResponse);
 }
 
-export async function updateUnregisteredFriends(req: CustomRequest<NewUserReqBody>,email: string) {
+export async function updateUserDoc(userDoc: UserDoc): Promise<boolean> {
+    let res: nano.DocumentInsertResponse | null = null;
+    try {
+        res = await usersDBAsAdmin.insert(userDoc,String(userDoc._id));
+        if (res === null || !res.ok) {
+            return false;
+        }
+        return true;
+    } catch(error) {
+        console.error("Error updating user doc:",error);
+        return false;
+    }
+}
+
+export async function updateUnregisteredFriends(req: ExpressRequest<{},NewUserReponse,NewUserReqBody>,email: string) {
     const emailq = {
         selector: { type: { "$eq": "friend" }, inviteEmail: { "$eq": email}},
         limit: await totalDocCount(groceriesDBAsAdmin)

@@ -7,7 +7,7 @@ import { RemoteDBStateContext } from "./RemoteDBState";
 import { translatedCategoryName, translatedItemName, translatedUOMName } from "./translationUtilities";
 import loglevelnext from 'loglevelnext';
 const log = loglevelnext.create({name: "applogger", level: 0})
-import { cloneDeep } from "lodash";
+import { cloneDeep } from "lodash-es";
 
 export type GlobalDataState = {
     itemDocs: ItemDocs,

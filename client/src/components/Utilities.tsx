@@ -1,7 +1,7 @@
 import { CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
 import { initUsersInfo, ListCombinedRows, RowType, UserIDList, UserInfo, UsersInfo } from './DataTypes';
 import { ListGroupDoc, ListGroupDocInit } from './DBSchema';
-import { cloneDeep } from 'lodash';
+import { cloneDeep } from 'lodash-es';
 import { DBCreds} from './RemoteDBState';
 import { PouchResponse, PouchResponseInit } from './DataTypes';
 import loglevelnext from 'loglevelnext';
@@ -207,7 +207,6 @@ function getLoggingLevel(level: string) : number {
     } else if (["5","SILENT","S","NONE","N"].includes(uLevel)) {
         retLevel = 5
     } else {retLevel = 2}
-    console.log("Setting log level to ",retLevel);
     return retLevel;
 }
 
@@ -226,3 +225,5 @@ export function secondsToDHMS(seconds: number) : string {
 export const DEFAULT_API_URL=(window as any)._env_.DEFAULT_API_URL === undefined ? "https://groceries.mydomain.com/api" : (window as any)._env_.DEFAULT_API_URL
 export const LOG_LEVEL= (window as any)._env_.LOG_LEVEL === undefined ? "INFO" : (window as any)._env_.LOG_LEVEL
 export const log = loglevelnext.create({name: "applogger", level: getLoggingLevel(LOG_LEVEL)})
+
+console.log("Environment: ", {DEFAULT_API_URL,LOG_LEVEL});

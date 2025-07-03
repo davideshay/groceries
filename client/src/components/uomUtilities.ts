@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { usePouch } from "use-pouchdb";
 import { PouchResponse, PouchResponseInit } from "./DataTypes";
-import { cloneDeep } from "lodash";
+import { cloneDeep } from "lodash-es";
 import { ItemDoc, RecipeDoc } from "./DBSchema";
 import { log } from "./Utilities";
 

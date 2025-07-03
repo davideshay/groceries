@@ -3,7 +3,7 @@ import { IonContent,IonPage, IonButton, IonList,
 import { useParams } from 'react-router-dom';
 import { useGetOneDoc} from '../components/Usehooks';
 import { useContext, useRef } from 'react';
-import { isEqual, pull } from 'lodash';
+import { isEqual, pull } from 'lodash-es';
 import { HistoryProps } from '../components/DataTypes';
 import { ConflictDoc } from '../components/DBSchema';
 import './Category.css';

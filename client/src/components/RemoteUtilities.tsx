@@ -8,7 +8,7 @@ import { DBUUIDAction, DBUUIDCheck } from "./RemoteDBState";
 import { History } from "history";
 import { urlPatternValidation, usernamePatternValidation, emailPatternValidation,
         fullnamePatternValidation, apiConnectTimeout, isJsonString, DEFAULT_API_URL, getRowTypeFromListOrGroupID } from "./Utilities";
-import { cloneDeep, pick, keys, isEqual } from 'lodash';
+import { cloneDeep, pick, keys, isEqual } from 'lodash-es';
 import { Device } from '@capacitor/device';
 import { t } from "i18next";
 import { log } from "./Utilities";

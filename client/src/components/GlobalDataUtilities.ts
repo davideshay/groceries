@@ -1,7 +1,7 @@
 import { ListCombinedRow, ListCombinedRows, ListRow, RowType } from "./DataTypes";
 import { ListDocInit, ListDocs, ListGroupDoc, ListGroupDocs } from "./DBSchema";
 import { DBCreds } from "./RemoteDBState";
-import { cloneDeep } from "lodash";
+import { cloneDeep } from "lodash-es";
 
 const systemListCombinedRow : ListCombinedRow = {
     rowType: RowType.listGroup,

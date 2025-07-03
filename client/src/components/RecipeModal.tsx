@@ -4,7 +4,7 @@ import { translatedItemName, translatedUOMName } from "./translationUtilities";
 import { RecipeDoc, RecipeItem } from "./DBSchema";
 import { IonButton, IonIcon, IonInput, IonItem, IonList, IonModal, IonSelect, IonSelectOption, IonTextarea, IonTitle } from "@ionic/react";
 import { useTranslation } from "react-i18next";
-import { cloneDeep } from "lodash";
+import { cloneDeep } from "lodash-es";
 import { returnDownBackOutline } from "ionicons/icons";
 
 export type RecipeSearchData = {

@@ -4,10 +4,9 @@ import {initItemRow, ItemRow, ItemSearch, ListCombinedRow, ListCombinedRows,
 import { GlobalState } from "./GlobalState";
 import { AddListOptions, CategoryColors, DefaultColor, GlobalSettings } from './DBSchema';
 import { UomDoc, ItemDoc, ItemDocs, ItemList, ListDocs, ListDoc, CategoryDoc, GlobalItemDocs } from './DBSchema';
-import { cloneDeep } from 'lodash';
+import { cloneDeep, isEmpty } from 'lodash-es';
 import { t } from 'i18next';
 import { translatedCategoryName, translatedItemName, translatedItemNameWithUOM, translatedUOMShortName } from './translationUtilities';
-import { isEmpty } from 'lodash';
 import { getListGroupIDFromListOrGroupID } from './Utilities';
 import { GlobalDataContext } from './GlobalDataProvider';
 

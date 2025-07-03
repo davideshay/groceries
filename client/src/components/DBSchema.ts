@@ -1,5 +1,5 @@
 export const maxAppSupportedSchemaVersion = 7;
-export const appVersion = "1.1.6";
+export const appVersion = "1.1.7";
 export const minimumAccessRefreshSeconds = 300;
 export const DefaultColor = "#ffffff";
 
@@ -232,6 +232,8 @@ export type UserDoc = {
   fullname: string,
   roles: string[],
   type: string,
+  reset_password_uuid?: string,
+  reset_password_expire_date?: string,
   password_scheme: string,
   password? : string,
   iterations: Number,
@@ -317,6 +319,15 @@ export enum ThemeType {
     auto = "A"
   }
 
+export enum LogLevelNumber {
+  TRACE = 0,
+  DEBUG = 1,
+  INFO = 2,
+  WARN = 3,
+  ERROR = 4,
+  SILENT = 5
+}
+
 export type GlobalSettings = {
   addListOption: AddListOptions,
   removeFromAllLists: boolean,
@@ -325,7 +336,9 @@ export type GlobalSettings = {
   daysOfConflictLog: Number,
   savedListID?: string | undefined | null,
   alexaDefaultListGroup?: string | undefined | null,
-  theme?: ThemeType
+  theme?: ThemeType,
+  loggingLevel?: LogLevelNumber,
+  logToFile?: boolean
 }
 
 export const InitSettings: GlobalSettings = {
@@ -336,7 +349,9 @@ export const InitSettings: GlobalSettings = {
   daysOfConflictLog: 2,
   savedListID: null,
   alexaDefaultListGroup: null,
-  theme: ThemeType.auto
+  theme: ThemeType.auto,
+  loggingLevel: LogLevelNumber.INFO,
+  logToFile: false
 }
 
 export type CategoryColors = {

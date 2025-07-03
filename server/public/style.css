@@ -1,0 +1,127 @@
+* {
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+    inset: unset;
+    max-width: none;
+    max-height: none;
+    font-weight: normal;
+    font-weight: 400;
+    font-size: 1rem;
+    text-wrap: pretty;
+    line-height: 1.25;
+    font-family: sans-serif;
+    background: none;
+    border: none;
+    outline: none;
+    color: inherit;
+    border-radius: 0;
+}
+body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f0f0f0;
+    width: 100%;
+    min-height: 100svh;
+    color: #000000;
+    padding: 2rem;
+}
+main {
+    width: 100%;
+    max-width: 30rem;
+}
+form, h1, h2 {
+    display: block;
+}
+h1, h2 {
+    display: block;
+    margin-bottom: 1rem;
+}
+h1 {
+    text-wrap: balance;
+    font-size: 1.5rem;
+    font-weight: 700;
+    text-align: center;
+}
+p {
+    margin-top: 0.5rem;
+}
+form {
+    display: flex;
+}
+form, form * {
+    width: 100%;
+    display: block;
+}
+form label {
+    color: #808080;
+    font-size: 0.875rem;
+}
+form .error-container {
+    text-align: center;
+    color: #bb3333;
+}
+input {
+    line-height: 1.5;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+}
+input[type="text"], input[type="password"] {
+    border: 2px solid #bfbfbf;
+    background: #ffffff;
+    margin-bottom: 0.75rem;
+}
+input[hidden] {
+    display: none;
+}
+input[readonly] {
+    background: none;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    margin-bottom: 0.75rem;
+}
+.read-only {
+    margin-bottom: 0.75rem;
+}
+input[type="text"]:focus-visible, input[type="password"]:focus-visible {
+    border-color: #1776e3;
+}
+.password-input-container {
+    position: relative;
+}
+.password-input-container input {
+    padding-right: 3.25rem;
+}
+.password-input-container img {
+    display: block;
+    cursor: pointer;
+    aspect-ratio: 1;
+    width: 2.5rem;
+    padding: 0.375rem;
+    margin: 2px;
+    position: absolute;
+    right: 0.25rem;;
+    top: 0;
+    opacity: 0.8;
+}
+.password-input-container img.icon-hidden {
+    opacity: 0.5;
+}
+.password-input-container img.focus-visible {
+    outline: 2px solid #1776e3;
+}
+input[type="submit"] {
+    background: #1776e3;
+    color: #ffffff;
+    width: max-content;
+    margin-top: 1rem;
+    justify-self: end;
+    cursor: pointer;
+}
+input[type="submit"]:focus-visible {
+    scale: 1.1;
+    outline: 2px solid #1776e3;
+    outline-offset: 2px;
+}

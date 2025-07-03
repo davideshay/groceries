@@ -17,11 +17,12 @@
     <meta name="format-detection" content="telephone=no" />
     <meta name="msapplication-tap-highlight" content="no" />
     <meta http-equiv="Content-Security-Policy" 
-    content="
-      worker-src blob:; 
-      child-src blob: gap:;
-      img-src 'self' blob: data:;
-      default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: gap: content:">    <link rel="manifest" href="manifest.json" />
+      content="
+        worker-src blob: 'self'; 
+        child-src blob: gap:;
+        img-src 'self' blob: data:;
+        default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: gap: content:">
+    <link rel="manifest" href="manifest.json" />
 
     <link rel="shortcut icon" type="image/svg" href="/assets/icon/favicon.svg" />
 
@@ -29,10 +30,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lobster+Two:ital@1&display=swap" rel="stylesheet">
     
-    <!-- add to homescreen for ios -->
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="Ionic App" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   </head>
 
   <body>

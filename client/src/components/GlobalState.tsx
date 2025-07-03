@@ -1,13 +1,12 @@
 import React, { createContext, useCallback, useContext, useEffect, useState} from "react";
 import { Preferences } from '@capacitor/preferences';
-import { pick,cloneDeep } from "lodash";
+import { pick,cloneDeep,isEmpty } from "lodash-es";
 import { isJsonString } from "./Utilities";
 import { RowType } from "./DataTypes";
-import { GlobalSettings, AddListOptions, SettingsDoc, InitSettings, InitSettingsDoc, CategoryColors } from "./DBSchema";
+import { GlobalSettings, AddListOptions, SettingsDoc, InitSettings, InitSettingsDoc, CategoryColors, LogLevelNumber } from "./DBSchema";
 import { useCreateGenericDocument, useUpdateGenericDocument } from "./Usehooks";
 import { RemoteDBStateContext } from "./RemoteDBState";
 import { useFind } from "use-pouchdb";
-import { isEmpty } from "lodash";
 import { log } from "./Utilities";
 
 export type GlobalState = {
@@ -27,7 +26,7 @@ export interface GlobalStateContextType {
     settingsLoading: boolean,
     setGlobalState: React.Dispatch<React.SetStateAction<GlobalState>>,
     setStateInfo: (key: string, value: string | null | RowType) => void,
-    updateSettingKey: (key: string, value: AddListOptions | boolean | number | string | null) => Promise<boolean>,
+    updateSettingKey: (key: string, value: AddListOptions | boolean | number | string | null | LogLevelNumber) => Promise<boolean>,
     updateCategoryColor: (catID: string, color: string) => Promise<boolean>,
     deleteCategoryColor: (catID: string) => Promise<boolean>
 }
@@ -146,12 +145,20 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
             newSettings.theme = InitSettings.theme;
             updated = true;
         }
+        if (!newSettings.hasOwnProperty('loggingLevel')) {
+            newSettings.loggingLevel = InitSettings.loggingLevel
+            updated = true;
+        }
+        if (!newSettings.hasOwnProperty('logToFile')) {
+            newSettings.logToFile = InitSettings.logToFile
+            updated = true;
+        }
         return [newSettings, updated]
     }
 
     const getSettings = useCallback( async () => {
         let dbSettingsExist = (settingsDocs.length > 0);
-        let dbSettingsDoc: SettingsDoc = cloneDeep(settingsDocs[0]);
+        let dbSettingsDoc: SettingsDoc = cloneDeep(settingsDocs[0]) as SettingsDoc;
         let dbCategoryColors: CategoryColors = {};
         let { value: storageSettingsStr } = await Preferences.get({ key: 'settings'});
         let storageSettings: GlobalSettings = cloneDeep(InitSettings);
@@ -188,7 +195,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         } else if (storageSettingsExist && dbSettingsExist) {
             await Preferences.remove({key : "settings"});
             if (dbUpdated) {
-                let newSettingsDoc:SettingsDoc = cloneDeep(settingsDocs[0]);
+                let newSettingsDoc:SettingsDoc = cloneDeep(settingsDocs[0]) as SettingsDoc;
                 newSettingsDoc.settings = cloneDeep(dbSettingsDoc.settings);
                 log.debug("Updating settings on DB")
                 await updateSettingDoc(newSettingsDoc)
@@ -197,7 +204,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         } else if (!storageSettingsExist && dbSettingsExist) {
             finalSettings = dbSettingsDoc.settings;
             if (dbUpdated) {
-                let newSettingsDoc: SettingsDoc = cloneDeep(settingsDocs[0]);
+                let newSettingsDoc: SettingsDoc = cloneDeep(settingsDocs[0]) as SettingsDoc;
                 newSettingsDoc.settings = dbSettingsDoc.settings;
                 await updateSettingDoc(newSettingsDoc)
             }
@@ -212,6 +219,10 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
             getSettings()
         }
     },[remoteDBState.initialSyncComplete, remoteDBState.workingOffline, settingsLoading, settingsError,getSettings, settingsDocs])
+
+    useEffect( () => {
+        log.level=Number(globalState.settings.loggingLevel);
+    },[globalState.settings.loggingLevel])
 
 
     let value: GlobalStateContextType = {globalState, setGlobalState, setStateInfo, updateSettingKey, updateCategoryColor, deleteCategoryColor, settingsLoading: settingsLoading};
