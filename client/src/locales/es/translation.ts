@@ -251,7 +251,8 @@ export const es_translations =
         "error":"Error",
         "silent":"Silencioso",
         "log_to_file": "Registrar en archivo",
-        "loading_conflict_item":"Cargando elemento de conflicto..."
+        "loading_conflict_item":"Cargando elemento de conflicto...",
+        "password_reset_email_sent":"Correo electrónico de restablecimiento de contraseña enviado a la dirección registrada"
          },
      "error": {
         "invalid_dbuuid" : "Identificador único de base de datos inválido",
@@ -394,7 +395,8 @@ export const es_translations =
         "deleting_listgroup_detail": "No se puede eliminar el último grupo de lista restante. Por favor, agregue otro primero si realmente desea eliminarlo.",
         "need_one_alexa_default": "Debe haber un grupo de lista marcado como predeterminado para Alexa. Actualmente hay {{count}} grupos de listas marcados como predeterminados si guarda este grupo de lista. Si no se especifica ninguno, Alexa utilizará el primer grupo de lista disponible. Si se especifican más de uno, se utilizará el primero en orden alfabético.",
         "different_server_local_app_versions": "Esta versión de la aplicación es diferente a la del servidor. Podrías encontrar errores si continúas y debes actualizar el cliente o el servidor para que estén sincronizados antes de continuar.",
-        "different_server_local_app_versions_short": "La versión de la aplicación es diferente en el servidor remoto"
+        "different_server_local_app_versions_short": "La versión de la aplicación es diferente en el servidor remoto",
+        "api_server_error_resetting_password": "Error del servidor de API al restablecer la contraseña"
     },
     "itemtext": {
         "item_is_on_these_lists": "El artículo está en estas listas:",

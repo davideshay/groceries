@@ -52,7 +52,7 @@ const AppMenu: React.FC = () => {
         {listItem(t('general.settings'),"/settings")}
         {listItem(t('general.status'),"/status")}
         {listItem(t('general.user_info'),"/userdata")}
-        {listItem(t('general.login'),"/login")}
+        {listItem(t('general.logout'),"/login")}
       </>
   } else {
     contentElem = 

@@ -115,7 +115,7 @@ export type CreateAccountResponse = {
     fullname: string,
     username: string,
     password: string,
-    passwordverify: string,
+    passwordVerify: string,
     refreshjwt: string,
     formError: string,
     disableSubmit: boolean,
@@ -140,7 +140,7 @@ export type ResetPasswordFormResponse = {
     username: string,
     uuid: string,
     password: string,
-    passwordverify: string,
+    passwordVerify: string,
     formError: string,
     disableSubmit: boolean,
     resetSuccessfully: boolean

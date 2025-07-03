@@ -252,7 +252,7 @@ export const en_translations =
         "silent":"Silent",
         "log_to_file":"Log To File",
         "loading_conflict_item":"Loading Conflict Item...",
-        "password_reset_email_sent":"Password Reset email sent to address on file"
+        "password_reset_email_sent":"Password reset email sent to address on file"
      },
      "error" : {
         "invalid_dbuuid" : "Invalid Database Unique Identifier",

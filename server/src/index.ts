@@ -32,6 +32,9 @@ async function startup() {
 
 //        app.engine("eta", eta.render);
         app.set("view engine","eta");
+
+        app.use("/public",express.static("public"));
+
         app.post("/issuetoken", async (req: ExpressRequest<{},IssueTokenResponse,IssueTokenBody>,res: ExpressResponse<IssueTokenResponse>) => {
             res.send(await issueToken(req,res))
         })        

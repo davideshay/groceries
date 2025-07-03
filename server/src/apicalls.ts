@@ -316,7 +316,7 @@ export async function createAccountUIGet(req: ExpressRequest<{},{},{},CreateAcco
         fullname: "",
         username: "",
         password: "",
-        passwordverify: "",
+        passwordVerify: "",
         refreshjwt: "",
         formError: "",
         disableSubmit: false,
@@ -364,7 +364,7 @@ export async function createAccountUIPost(req: ExpressRequest<{},{},CreateAccoun
         username: (req.body.username == undefined) ? "" : req.body.username,
         fullname: (req.body.fullname == undefined) ? "" : req.body.fullname,
         password: (req.body.password == undefined) ? "" : req.body.password,
-        passwordverify: (req.body.passwordverify == undefined) ? "" : req.body.passwordverify,
+        passwordVerify: (req.body.passwordVerify == undefined) ? "" : req.body.passwordVerify,
         refreshjwt: "",
         formError: "",
         disableSubmit: false,
@@ -390,7 +390,7 @@ export async function createAccountUIPost(req: ExpressRequest<{},{},CreateAccoun
     if (req.body.password.length < 5 ) {
         respObj.formError = "Please enter a password 5 characters or longer";
         return (respObj);} 
-    if (req.body.password != req.body.passwordverify) {
+    if (req.body.password != req.body.passwordVerify) {
         respObj.formError = "Passwords do not match";
         return (respObj);}
     let foundUserDoc; let userAlreadyExists=true;
@@ -541,7 +541,7 @@ export async function resetPasswordUIGet(req: ExpressRequest<{},{},{},ResetPassw
         username: "",
         uuid: String(req.query.uuid),
         password: "",
-        passwordverify: "",
+        passwordVerify: "",
         formError: "",
         disableSubmit: false,
         resetSuccessfully: false
@@ -598,17 +598,23 @@ export async function resetPasswordUIPost(req: ExpressRequest<{},{},ResetPasswor
         username: req.body.username,
         uuid: String(req.body.uuid),
         password: (req.body.password == undefined) ? "" : req.body.password,
-        passwordverify: (req.body.passwordverify == undefined) ? "" : req.body.passwordverify,
+        passwordVerify: (req.body.passwordVerify == undefined) ? "" : req.body.passwordVerify,
         email: (req.body.email),
         formError: "",
         disableSubmit: false,
         resetSuccessfully: false
     }
+
+    if (!req.body.password || !req.body.passwordVerify) {
+        respObj.formError = "Error, form password fields not defined";
+        return (respObj);
+    }
+
     if (req.body.password.length < 5 ) {
         respObj.formError = "Please enter a password 5 characters or longer";
         return (respObj);
     } 
-    if (req.body.password != req.body.passwordverify) {
+    if (req.body.password != req.body.passwordVerify) {
         respObj.formError = "Passwords do not match";
         return (respObj);
     }
