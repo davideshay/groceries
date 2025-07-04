@@ -32,7 +32,6 @@ import "./Colors.css"
 import { Provider } from 'use-pouchdb';
 import PouchDB from 'pouchdb';
 import find from 'pouchdb-find';
-import '@capacitor-community/safe-area';
 import { GlobalDataProvider } from './components/GlobalDataProvider';
 // import log from 'loglevel';
 

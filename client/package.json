@@ -4,7 +4,6 @@
   "private": true,
   "dependencies": {
     "@awesome-cordova-plugins/chooser-simple-file": "^8.0.2",
-    "@capacitor-community/safe-area": "^7.0.0-alpha.1",
     "@capacitor/android": "^7.4.0",
     "@capacitor/app": "^7.0.1",
     "@capacitor/camera": "^7.0.1",
