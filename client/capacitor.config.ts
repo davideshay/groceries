@@ -6,18 +6,12 @@ const config: CapacitorConfig = {
   plugins:  {
     CapacitorCookies: { enabled: true},
     CapacitorHttp: { enabled: true},
-    SafeArea: {
-      enabled: true,
-      customColorsForSystemBars: true,
-      statusBarColor: '#000000',
-      statusBarContent: 'light',
-      navigationBarColor: '#000000',
-      navigationBarContent: 'light',
-      offset: 0,
-    },
+    // Keyboard: {
+    //   resizeOnFullScreen: true
+    // },
   },
   webDir: 'build',
-   android: {
+  android: {
   //   captureInput: true,
   //   useLegacyBridge: true
    },

@@ -28,21 +28,57 @@ import Status from "./Status";
 import UserData from './UserData';
 
 import { GlobalStateContext } from '../components/GlobalState';
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { ThemeType } from '../components/DBSchema';
 import ManageData from './ManageData';
+import { SafeArea } from '../plugins/safe-area';
+import { log } from '../components/Utilities';
 
 
 const AppContent: React.FC = () => {
-
     const { globalState} = useContext(GlobalStateContext);
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+    const [systemDark, setSystemDark] = useState<boolean>(true);
 
-    if (globalState.settings.theme == ThemeType.dark || (globalState.settings.theme == ThemeType.auto && prefersDark.matches)) {
-        document.documentElement.classList.add('ion-palette-dark');
-    } else {
-        document.documentElement.classList.remove('ion-palette-dark');
-    }
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        // Create media query for dark mode
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+        // Set initial state
+        setSystemDark(mediaQuery.matches);
+
+        // Handler for media query changes
+        const handleChange = (e: MediaQueryListEvent) => {
+            log.debug("media query change, setting systemDark to:", e.matches);
+            setSystemDark(e.matches);
+        };
+
+        // Add event listener
+        mediaQuery.addEventListener('change', handleChange);
+
+        // Cleanup function
+        return () => {
+            mediaQuery.removeEventListener('change', handleChange);
+        };
+    }, []);
+
+    useEffect( () => {
+        const resetTheme = async () => {
+            log.debug("Resetting theme to :", globalState.settings.theme, " with prefersDark.matches: ", systemDark)
+            if (globalState.settings.theme == ThemeType.dark || (globalState.settings.theme == ThemeType.auto && systemDark)) {
+                log.debug("Setting them to dark mode in JS");
+                document.documentElement.classList.add('ion-palette-dark');
+                await SafeArea.initialize();
+                await SafeArea.changeSystemBarsIconsAppearance({isLight: false});
+            } else {
+                log.debug("Setting them to light mode in JS");
+                document.documentElement.classList.remove('ion-palette-dark');
+                await SafeArea.initialize();
+                await SafeArea.changeSystemBarsIconsAppearance({isLight: true});
+            }
+        }
+        resetTheme();
+    },[globalState.settings.theme,systemDark])
 
 
     return(

@@ -109,7 +109,7 @@ return (
       <IonItem><IonText>{errorInfo.formError}</IonText></IonItem>
       <IonToolbar>
         <IonButtons slot="end">
-          <IonButton fill="solid" size="small" color="primary" onClick={() => doUpdateUserInfo()} key="updateuser">{t("general.update_user_info")}</IonButton>
+          <IonButton fill="solid" size="small" color="primary" className="primary-button" onClick={() => doUpdateUserInfo()} key="updateuser">{t("general.update_user_info")}</IonButton>
         </IonButtons>
       </IonToolbar>
     </IonList>

@@ -242,7 +242,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
            <IonButton fill="outline" color="secondary" onClick={() => goBack("/categories")}><IonIcon slot="start" icon={closeCircleOutline}></IonIcon>{t("general.cancel")}</IonButton>
           </IonButtons>
           <IonButtons slot="end">
-          <IonButton fill="solid" color="primary" onClick={() => updateThisCategory()}>
+          <IonButton fill="solid" color="primary" className="primary-button" onClick={() => updateThisCategory()}>
               <IonIcon slot="start" icon={(mode === "new" ? addCircleOutline : saveOutline)}></IonIcon>
               {(mode === "new") ? t("general.add") : t("general.save")}
             </IonButton>

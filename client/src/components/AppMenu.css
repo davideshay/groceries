@@ -1,3 +1,8 @@
+ion-menu ion-content {
+    --padding-top: var(--ion-safe-area-top);
+}
+
+
 ion-item.app-menu-item, ion-item.menu-item-label {
     text-transform: none;
     font-size: 16px;

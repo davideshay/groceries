@@ -265,7 +265,7 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
           <IonButton key="cancelbutton" fill="outline" color="secondary" onClick={() => setPageState(prevState => ({...prevState,formError: "",  inAddMode: false, newFriendEmail: "", newFriendName: ""}))}><IonIcon slot="start" icon={closeCircleOutline}></IonIcon>{t("general.cancel")}</IonButton>
         </IonButtons> 
         <IonButtons slot="end">
-          <IonButton key="addbutton" fill="solid" color="primary" onClick={() => submitForm()}><IonIcon slot="start" icon={addCircleOutline}></IonIcon>{t("general.add")}</IonButton>
+          <IonButton key="addbutton" fill="solid" color="primary" className="primary-button" onClick={() => submitForm()}><IonIcon slot="start" icon={addCircleOutline}></IonIcon>{t("general.add")}</IonButton>
         </IonButtons>
       </IonToolbar>
       </Fragment>

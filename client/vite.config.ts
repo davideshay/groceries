@@ -20,7 +20,8 @@ export default defineConfig({
       }
     }},
   },
-  plugins: [react(), 
+  plugins: [
+    react(), 
     // visualizer({
     //   open: true, // Open the report in your browser
     //   filename: 'stats.html', // Save the report to a file
