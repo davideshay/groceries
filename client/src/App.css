@@ -44,3 +44,36 @@ ion-reorder-group ion-checkbox {
     outline: none;
     box-shadow: 0 0 15px 10px var(--ion-item-background,#ffffff);
 }
+
+body {
+    --ion-safe-area-top: var(--android-safe-area-top, env(safe-area-inset-top));
+    --ion-safe-area-left: var(--android-safe-area-left, env(safe-area-inset-left));
+    --ion-safe-area-right: var(--android-safe-area-right, env(safe-area-inset-right));
+    --ion-safe-area-bottom: var(--android-safe-area-bottom, env(safe-area-inset-bottom));
+    position: relative;
+}
+
+body::before, body::after {
+    content: "";
+    width: 100%;
+    position: absolute;
+    z-index: 999;
+}
+
+body::before {
+    top: 0;
+    height: var(--ion-safe-area-top, 0px);
+}
+
+body::after {
+    bottom: 0;
+    height: var(--ion-safe-area-bottom, 0px);
+}
+
+ion-fab {
+    bottom: calc(10px + var(--ion-safe-area-bottom, 0px));
+}
+
+ion-content {
+    --padding-bottom: var(--ion-safe-area-bottom);
+}

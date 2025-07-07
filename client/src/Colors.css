@@ -6,17 +6,26 @@ ion-item.item-completed::part(native) {
 ion-icon.sync-icon {
     color: #a0a0a0;
 }
-ion-button.button-solid, ion-button.my-primary-button.ion-color::part(native) {
+ion-button.button-solid, ion-button.primary-button.ion-color::part(native), ion-fab-button {
     color: #ffffff;
     --color: #ffffff;
 }
 
+body::after {
+    backdrop-filter: blur(1px);
+}
+
 /* LIGHT MODE */
 
-ion-item, ion-list-header, ion-header, ion-toolbar, ion-list, ion-title.modal-title, #item-search-box-id, #items-page-header, #items-page-header > ion-item  {
+body::before, ion-item, ion-list-header, ion-header, ion-toolbar, ion-list, ion-title.modal-title, #item-search-box-id, #items-page-header, #items-page-header > ion-item  {
     --background: #fafafa;
     background: #fafafa;
 }
+
+body::after {
+    background-color: #ffffffaa;
+}
+
 ion-item:hover, ion-list-header:hover, ion-header:hover, ion-toolbar:hover  {
     --background: #f0f0f0;
     background: #f0f0f0;
@@ -29,7 +38,7 @@ ion-item-divider.category-divider {
     --background: #ededed;
     background: #ededed;
 }
-ion-list.ion-items-list {
+ion-content, ion-list.ion-items-list {
     background: #ffffff;
 }
 ion-item.itemrow-outer {
@@ -42,9 +51,12 @@ ion-item-divider.uncategorized-color {
 /* DARK MODE */
 
 .ion-palette-dark {
-    ion-item, ion-list-header, ion-header, ion-toolbar, ion-list, ion-title.modal-title, #item-search-box-id, #items-page-header, #items-page-header > ion-item  {
+    body::before, ion-item, ion-list-header, ion-header, ion-toolbar, ion-list, ion-title.modal-title, #item-search-box-id, #items-page-header, #items-page-header > ion-item  {
         --background: #202020;
         background: #202020;
+    }
+    body::after {
+        background-color: #000000aa;
     }
     ion-item:hover, ion-list-header:hover, ion-header:hover, ion-toolbar:hover {
         --background: #2d2d2d;
@@ -57,7 +69,7 @@ ion-item-divider.uncategorized-color {
         --background: #393939;
         background: #393939;
     }
-    ion-list.ion-items-list {
+    ion-content, ion-list.ion-items-list {
         background: #000000;
     }
     ion-item.itemrow-outer {
@@ -65,34 +77,5 @@ ion-item-divider.uncategorized-color {
     }
     ion-item-divider.uncategorized-color {
         border-color: #ffffff;
-    }
-}
-
-@media (prefers-color-scheme: dark) {
-    .ion-palette-dark {
-        ion-item, ion-list-header, ion-header, ion-toolbar, ion-list, #item-search-box-id, #items-page-header, #items-page-header > ion-item  {
-            --background: #202020;
-            background: #202020;
-        }
-        ion-item:hover, ion-list-header:hover, ion-header:hover, ion-toolbar:hover {
-            --background: #2d2d2d;
-            background: #2d2d2d;
-            --background-activated: none;
-            --background-focused: none;
-            --background-hover: none;
-        }
-        ion-item-divider.category-divider {
-            --background: #393939;
-            background: #393939;
-        }
-        ion-list.ion-items-list {
-            background: #000000;
-        }
-        ion-item.itemrow-outer {
-            border-color: #646464;
-        }
-        ion-item-divider.uncategorized-color {
-            border-color: #ffffff;
-        }
     }
 }

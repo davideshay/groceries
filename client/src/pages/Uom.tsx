@@ -323,7 +323,7 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
            <IonButton fill="outline" color="secondary" onClick={() => goBack("/uoms")}><IonIcon slot="start" icon={closeCircleOutline}></IonIcon>{t("general.cancel")}</IonButton>
           </IonButtons>
           <IonButtons slot="end">
-          <IonButton fill="solid" color="primary" onClick={() => updateThisUom()}>
+          <IonButton fill="solid" color="primary" className="primary-button" onClick={() => updateThisUom()}>
               <IonIcon slot="start" icon={(mode === "new" ? addCircleOutline : saveOutline)}></IonIcon>
               {(mode === "new") ? t("general.add") : t("general.save")}
             </IonButton>

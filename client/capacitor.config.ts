@@ -5,10 +5,13 @@ const config: CapacitorConfig = {
   appName: 'Specifically Clementines',
   plugins:  {
     CapacitorCookies: { enabled: true},
-    CapacitorHttp: { enabled: true}
+    CapacitorHttp: { enabled: true},
+    // Keyboard: {
+    //   resizeOnFullScreen: true
+    // },
   },
   webDir: 'build',
-   android: {
+  android: {
   //   captureInput: true,
   //   useLegacyBridge: true
    },

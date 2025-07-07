@@ -63,7 +63,7 @@ const AppMenu: React.FC = () => {
 
   return (
   <IonMenu contentId="main" type="overlay">
-    <IonContent className="ion-no-padding">
+    <IonContent>
       <IonList className="ion-no-padding">
         <IonListHeader className="app-name ion-text-center ion-justify-content-center">
           <img className="app-icon" src="assets/icon/favicon.svg" alt="Clementine" />

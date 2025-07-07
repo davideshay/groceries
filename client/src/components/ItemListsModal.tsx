@@ -119,7 +119,7 @@ const ItemListsModal: React.FC<ModalProps> = (props: ModalProps) => {
           <IonButton fill="outline" color="secondary" key="modal-close" onClick={() => cancelModal()}><IonIcon icon={closeCircleOutline}></IonIcon>{t("general.cancel")}</IonButton>
         </IonButtons>
         <IonButtons slot="end">
-          <IonButton fill="solid" color="primary" key="modalok" onClick={() => saveModal()}><IonIcon icon={saveOutline}></IonIcon>{t("general.save")}</IonButton>
+          <IonButton fill="solid" color="primary" className="primary-button" key="modalok" onClick={() => saveModal()}><IonIcon icon={saveOutline}></IonIcon>{t("general.save")}</IonButton>
         </IonButtons>
       </IonToolbar>
     </IonModal>

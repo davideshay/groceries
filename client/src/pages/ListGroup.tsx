@@ -374,9 +374,9 @@ function deletePrompt() {
   let updateButton=[];
   if (iAmListOwner) {
     if (mode === "new") {
-      updateButton.push(<IonButton color="primary" fill="solid" key="add" onClick={() => updateThisItem()}>{t("general.add")}<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
+      updateButton.push(<IonButton color="primary" className="primary-button" fill="solid" key="add" onClick={() => updateThisItem()}>{t("general.add")}<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
     } else {
-      updateButton.push(<IonButton color="primary" fill="solid" key="update" onClick={() => updateThisItem()}>{t("general.save")}<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
+      updateButton.push(<IonButton color="primary" className="primary-button" fill="solid" key="update" onClick={() => updateThisItem()}>{t("general.save")}<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
     }
   }
 
