@@ -16,7 +16,6 @@
     "@capacitor/keyboard": "^7.0.1",
     "@capacitor/network": "^7.0.1",
     "@capacitor/preferences": "^7.0.1",
-    "@capacitor/status-bar": "^7.0.1",
     "@capawesome/capacitor-file-picker": "^7.2.0",
     "@ionic/core": "^8.6.3",
     "@ionic/pwa-elements": "^3.3.0",

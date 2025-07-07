@@ -18,7 +18,6 @@ dependencies {
     implementation project(':capacitor-keyboard')
     implementation project(':capacitor-network')
     implementation project(':capacitor-preferences')
-    implementation project(':capacitor-status-bar')
     implementation project(':capawesome-capacitor-file-picker')
 
 }
