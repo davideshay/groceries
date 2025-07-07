@@ -9,7 +9,7 @@
     * You should have a ".env" file locally with an assignment pointing to your backend/API component. For development, this might be something like:
     ```DEFAULT_API_URL=http://localhost:3333```
     For production, this might be:
-    ```DEFAULT_API_URL=https://groceries.mydomain.com/api```
+    ```DEFAULT_API_URL=https://groceries.mydomain.com/api``` . (This would only be if you are able to route "/api" through a reverse proxy/etc. to the actual endpoint. The backend server just listens on "/", not on "/api", so to the backend, it would respond to "/registernewuser" and not to "/api/registernewuser").  If your docker or other setup is not capable of routing specific url paths like this, you would likely need to setup something like "groceriesapi.mydomain.com" and just point that directly to the backend server/port.
 * Installation instructions for Android / iOS
     * Ensure you have Ionic and Capacitor installed on your machine, per the instructions on those websites. For android, you will need the Android Studio installed, or xCode for iOS.
     * In the client directory, do `npm install`.
