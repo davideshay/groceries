@@ -19,7 +19,7 @@ import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
 import { isEqual, debounce, cloneDeep } from 'lodash-es';
 import { useTranslation } from 'react-i18next';
-import { log } from "../components/Utilities";
+import log from "../components/logger";
 import { navigateToFirstListID } from '../components/RemoteUtilities';
 import { Capacitor } from '@capacitor/core';
 import { translatedItemName } from '../components/translationUtilities';

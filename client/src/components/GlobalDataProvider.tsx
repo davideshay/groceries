@@ -5,7 +5,7 @@ import { ListCombinedRows, ListRow } from "./DataTypes";
 import { getListRows } from "./GlobalDataUtilities";
 import { RemoteDBStateContext } from "./RemoteDBState";
 import { translatedCategoryName, translatedItemName, translatedUOMName } from "./translationUtilities";
-import {log} from './Utilities';
+import log from './logger';
 import { cloneDeep } from "lodash-es";
 
 export type GlobalDataState = {
@@ -177,6 +177,7 @@ export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: Glo
     },[listsLoading, listDocs, listGroupDocs, listGroupsLoading, remoteDBCreds, remoteDBState.workingOffline, remoteDBState.initialSyncComplete, remoteDBState.dbServerAvailable])
 
     useEffect( () => {
+        log.debug("New data reload status:",dataReloadStatus);
         if (dataReloadStatus === DataReloadStatus.ReloadNeeded) {
             log.debug("Global data reload initiated");
             setDataReloadStatus(DataReloadStatus.ReloadInProcess);

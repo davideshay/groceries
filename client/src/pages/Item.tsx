@@ -21,7 +21,7 @@ import { GlobalDataContext } from '../components/GlobalDataProvider';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
 import { translatedCategoryName, translatedItemName, translatedUOMName } from '../components/translationUtilities';
-import { log } from "../components/Utilities";
+import log from "../components/logger";
 
 enum ErrorLocation  {
    Name, PluralName, General

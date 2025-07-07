@@ -7,7 +7,7 @@ import { translatedItemName, translatedUOMShortName } from "./translationUtiliti
 import { RowType } from "./DataTypes";
 import { getCommonKey } from "./ItemUtilities";
 import { t } from 'i18next';
-import { log } from './Utilities';
+import log from './logger';
 
 export async function isRecipeItemOnList({ recipeItem, listOrGroupID,globalData, db} : 
     {recipeItem: RecipeItem, listOrGroupID: string | null,

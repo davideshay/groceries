@@ -8,7 +8,7 @@ import PouchDB from 'pouchdb';
 import { getTokenInfo, refreshToken, errorCheckCreds , checkJWT, checkDBUUID, getPrefsDBCreds, isServerAvailable, JWTMatchesUser, getDeviceID } from "./RemoteUtilities";
 import { useTranslation } from 'react-i18next';    
 import { UserIDList } from "./DataTypes";
-import { log } from "./Utilities";
+import log from "./logger";
 import { useHistory } from "react-router";
 import PQueue from "p-queue";
 import { Capacitor } from "@capacitor/core";

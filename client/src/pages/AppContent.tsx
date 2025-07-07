@@ -32,7 +32,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { ThemeType } from '../components/DBSchema';
 import ManageData from './ManageData';
 import { SafeArea } from '../plugins/safe-area';
-import { log } from '../components/Utilities';
+import log from '../components/logger';
 
 
 const AppContent: React.FC = () => {

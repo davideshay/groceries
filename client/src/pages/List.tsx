@@ -18,7 +18,7 @@ import { Loading } from '../components/Loading';
 import { GlobalDataContext } from '../components/GlobalDataProvider';
 import { useTranslation } from 'react-i18next';
 import { translatedCategoryName } from '../components/translationUtilities';
-import { log } from "../components/Utilities";
+import log from "../components/logger";
 
 interface PageState {
   needInitListDoc: boolean,

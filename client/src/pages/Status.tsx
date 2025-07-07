@@ -18,7 +18,7 @@ import { secondsToDHMS } from '../components/Utilities';
 import { cloneDeep } from 'lodash-es';
 import Loading from '../components/Loading';
 import { getTokenInfo, isDBServerAvailable, isServerAvailable } from '../components/RemoteUtilities';
-import { log } from "../components/Utilities";
+import log from "../components/logger";
 import { Capacitor } from '@capacitor/core';
 
 type ErrorInfo = {

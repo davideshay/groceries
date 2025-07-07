@@ -7,7 +7,7 @@ import { GlobalSettings, AddListOptions, SettingsDoc, InitSettings, InitSettings
 import { useCreateGenericDocument, useUpdateGenericDocument } from "./Usehooks";
 import { RemoteDBStateContext } from "./RemoteDBState";
 import { useFind } from "use-pouchdb";
-import { log } from "./Utilities";
+import log from "./logger";
 
 export type GlobalState = {
     itemMode?: string,
@@ -221,7 +221,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
     },[remoteDBState.initialSyncComplete, remoteDBState.workingOffline, settingsLoading, settingsError,getSettings, settingsDocs])
 
     useEffect( () => {
-        log.level=Number(globalState.settings.loggingLevel);
+        log.setLevel(Number(globalState.settings.loggingLevel) as LogLevelNumber);
     },[globalState.settings.loggingLevel])
 
 

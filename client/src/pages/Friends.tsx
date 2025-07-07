@@ -16,7 +16,7 @@ import { checkUserByEmailExists, emailPatternValidation, apiConnectTimeout } fro
 import { Loading } from '../components/Loading';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
-import { log } from "../components/Utilities";
+import log from "../components/logger";
 
 /* 
 

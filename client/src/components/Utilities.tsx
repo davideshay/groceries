@@ -4,7 +4,7 @@ import { ListGroupDoc, ListGroupDocInit } from './DBSchema';
 import { cloneDeep } from 'lodash-es';
 import { DBCreds} from './RemoteDBState';
 import { PouchResponse, PouchResponseInit } from './DataTypes';
-import loglevelnext from 'loglevelnext';
+import log from './logger';
 import { t } from "i18next"
 
 export const apiConnectTimeout = 500;
@@ -191,25 +191,6 @@ export function getRowTypeFromListOrGroupID(listOrGroupID: string, listCombinedR
     else { return newListRow.rowType}
 }
 
-function getLoggingLevel(level: string) : number {
-    let uLevel=level.toUpperCase();
-    let retLevel: number = 3;
-    if (["0","TRACE","T"].includes(uLevel)) {
-        retLevel = 0 
-    } else if (["1","DEBUG","D"].includes(uLevel)) {
-        retLevel = 1
-    } else if (["2","INFO","INFORMATION","I"].includes(uLevel)) {
-        retLevel = 2
-    } else if (["3","WARN","WARNING","W"].includes(uLevel)) {
-        retLevel = 3
-    } else if (["4","ERROR","E"].includes(uLevel)) {
-        retLevel = 4
-    } else if (["5","SILENT","S","NONE","N"].includes(uLevel)) {
-        retLevel = 5
-    } else {retLevel = 2}
-    return retLevel;
-}
-
 export function secondsToDHMS(seconds: number) : string {
     let d: number = 0; let h: number = 0; let m: number =0; let s : number = 0;
     if (seconds < 0) { seconds = seconds * -1;}
@@ -222,8 +203,4 @@ export function secondsToDHMS(seconds: number) : string {
     return outStr;
 }
 
-export const DEFAULT_API_URL=(window as any)._env_.DEFAULT_API_URL === undefined ? "https://groceries.mydomain.com/api" : (window as any)._env_.DEFAULT_API_URL
-export const LOG_LEVEL= (window as any)._env_.LOG_LEVEL === undefined ? "INFO" : (window as any)._env_.LOG_LEVEL
-export const log = loglevelnext.create({name: "applogger", level: getLoggingLevel(LOG_LEVEL)})
-
-console.log("Environment: ", {DEFAULT_API_URL,LOG_LEVEL});
+export const DEFAULT_API_URL=(window as any)._env_.DEFAULT_API_URL === undefined ? "https://groceries.mydomain.com/api" : (window as any)._env_.DEFAULT_API_URL;

@@ -14,7 +14,7 @@ import { apiConnectTimeout } from '../components/Utilities';
 import { useTranslation } from 'react-i18next';
 import PageHeader from '../components/PageHeader';
 import { DataReloadStatus, GlobalDataContext } from '../components/GlobalDataProvider';
-import { log } from "../components/Utilities";
+import log from "../components/logger";
 import { GlobalStateContext, initialGlobalState } from '../components/GlobalState';
 import { useHistory } from 'react-router';
 

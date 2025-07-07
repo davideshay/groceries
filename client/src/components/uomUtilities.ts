@@ -3,7 +3,7 @@ import { usePouch } from "use-pouchdb";
 import { PouchResponse, PouchResponseInit } from "./DataTypes";
 import { cloneDeep } from "lodash-es";
 import { ItemDoc, RecipeDoc } from "./DBSchema";
-import { log } from "./Utilities";
+import log from "./logger";
 
 export function useDeleteUomFromItems() {
     const db=usePouch()

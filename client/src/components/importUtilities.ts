@@ -9,7 +9,7 @@ import { useCallback, useContext } from "react";
 import { AlertInput, useIonAlert, useIonLoading } from "@ionic/react";
 import { useTranslation } from "react-i18next";
 import { t } from 'i18next';
-import { log } from "./Utilities";
+import log from "./logger";
 
 export function useProcessInputFile() {
     const db = usePouch();
