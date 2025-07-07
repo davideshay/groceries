@@ -25,7 +25,7 @@ jobs:
      - name: Set up JDK
        uses: actions/setup-java@v3
        with:
-         java-version: 17
+         java-version: 21
          distribution: 'temurin'
          cache: gradle
      - name: Set up Node.js
@@ -72,17 +72,17 @@ jobs:
           unzip /tmp/app-release.zip -d /tmp
           cp /tmp/universal.apk /tmp/clementines.apk
      - name: Upload APK
-       uses: actions/upload-artifact@v3
+       uses: actions/upload-artifact@v4
        with:
         name: clementines.apk
         path: /tmp/clementines.apk
      - name: Upload AAB
-       uses: actions/upload-artifact@v3
+       uses: actions/upload-artifact@v4
        with:
         name: clementines.aab
         path: client/android/app/build/outputs/bundle/release/app-release.aab
      - name: Upload Signed AAB
-       uses: actions/upload-artifact@v3
+       uses: actions/upload-artifact@v4
        with:
         name: clementines-signed.aab
         path: client/android/app/build/outputs/bundle/release/app-release-signed.aab
