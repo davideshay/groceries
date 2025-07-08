@@ -32,7 +32,6 @@
     "jwt-decode": "^4.0.0",
     "lodash-es": "4.17.21",
     "loglevel": "^1.9.2",
-    "loglevelnext": "6.0.0",
     "p-queue": "^8.1.0",
     "pouchdb": "^9.0.0",
     "pouchdb-core": "^9.0.0",
@@ -45,7 +44,8 @@
     "typescript": "^5.8.3",
     "use-pouchdb": "^2.0.2",
     "uuid": "^11.1.0",
-    "vite": "^7.0.2"
+    "vite": "^7.0.2",
+    "zustand": "^5.0.6"
   },
   "scripts": {
     "ionic:serve:before": "bin/updateenv.sh && cp env-config.js ./public/env-config.js",

@@ -55,17 +55,17 @@ const App: React.FC = () => {
   return (
   <IonApp>
     <ErrorBoundary>
-    <IonReactRouter>
-    <Provider pouchdb={db}>
-    <RemoteDBStateProvider>
-    <GlobalStateProvider>
-    <GlobalDataProvider>
-    <AppContent />
-    </GlobalDataProvider>
-    </GlobalStateProvider>
-    </RemoteDBStateProvider>
-    </Provider>
-    </IonReactRouter>
+      <IonReactRouter>
+        <Provider pouchdb={db}>
+          <RemoteDBStateProvider>
+            <GlobalStateProvider>
+              <GlobalDataProvider>
+                <AppContent />
+              </GlobalDataProvider>
+            </GlobalStateProvider>
+          </RemoteDBStateProvider>
+        </Provider>
+      </IonReactRouter>
     </ErrorBoundary>
   </IonApp>
   )
