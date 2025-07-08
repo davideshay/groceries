@@ -15,6 +15,7 @@ import { Capacitor } from "@capacitor/core";
 
 import { minimumAccessRefreshSeconds } from "./DBSchema";
 import { cloneDeep } from "lodash-es";
+import { useGlobalDataStore } from "./GlobalData";
 
 const secondsBetweenRefreshRetries = 30;
 
@@ -221,6 +222,7 @@ type RemoteDBStateProviderProps = {
 }
 
 export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (props: RemoteDBStateProviderProps) => {
+    const { iniitalize } = useGlobalDataStore();
     const [remoteDBState,setRemoteDBState] = useState<RemoteDBState>(initialRemoteDBState);
     const loginAttempted = useRef(false);
     const loginType = useRef<LoginType>(LoginType.autoLoginSpecificURL);
@@ -290,6 +292,11 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         broadcastChannel.current.postMessage(BroadcastMessage.CheckAlive);
         setRemoteDBState(prevState => ({...prevState,dupCheck: DupCheckStatus.messageSent}))
     }
+
+    useEffect( () => {
+        iniitalize(db,remoteDBCreds,remoteDBState);
+    },[db,remoteDBCreds,remoteDBState])
+
 
     const checkRetryNetworkIsUp = useCallback( async () => {
         let netOnline = (await Network.getStatus()).connected;

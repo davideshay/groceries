@@ -1,45 +1,9 @@
-import React, { createContext, useState, useEffect, useContext, useCallback} from "react";
+import { create } from 'zustand';
 import { CategoryDocs, GlobalItemDocs, ItemDocs, ListDocs, ListGroupDocs, RecipeDoc, UomDoc } from "./DBSchema";
 import { ListCombinedRows, ListRow } from "./DataTypes";
 import { getListRows } from "./GlobalDataUtilities";
-import { RemoteDBStateContext } from "./RemoteDBState";
 import { translatedCategoryName, translatedItemName, translatedUOMName } from "./translationUtilities";
 import log from './logger';
-import { cloneDeep } from "lodash-es";
-import {create} from "zustand";
-import PouchDb from "pouchdb-core";
-
-export type GlobalDataType = {
-    db: PouchDB.Database,
-    itemDocs: ItemDocs,
-    itemsLoading:  boolean,
-    itemError: PouchDB.Core.Error | null,
-    globalItemDocs: GlobalItemDocs,
-    globalItemsLoading: boolean,
-    globalItemError: PouchDB.Core.Error | null,
-    listDocs: ListDocs,
-    listsLoading: boolean,
-    listError: PouchDB.Core.Error | null,
-    listGroupDocs: ListGroupDocs,
-    listGroupsLoading: boolean,
-    listGroupError: PouchDB.Core.Error | null,
-    recipeListGroup: string | null,
-    categoryDocs: CategoryDocs,
-    categoryLoading: boolean,
-    categoryError: PouchDB.Core.Error | null,
-    uomDocs: UomDoc[],
-    uomLoading: boolean,
-    uomError: PouchDB.Core.Error | null,
-    recipeDocs: RecipeDoc[],
-    recipesLoading: boolean,
-    recipesError: PouchDB.Core.Error | null,
-    listRowsLoaded: boolean,
-    listRows: ListRow[],
-    listCombinedRows: ListCombinedRows,
-    dataReloadStatus: DataReloadStatus,
-    waitForReload: () => void,
-    initialize: () => void
-}
 
 export enum DataReloadStatus {
     ReloadNeeded = "N",
@@ -47,202 +11,317 @@ export enum DataReloadStatus {
     ReloadComplete = "C"
 }
 
-export const useGlobalData = create<GlobalDataType>((set) => ({
-    itemDocs : [],
-    itemsLoading: false,
-    itemError: null,
+export interface GlobalDataState {
+    itemDocs: ItemDocs;
+    globalItemDocs: GlobalItemDocs;
+    listDocs: ListDocs;
+    listGroupDocs: ListGroupDocs;
+    recipeListGroup: string | null;
+    categoryDocs: CategoryDocs;
+    uomDocs: UomDoc[];
+    recipeDocs: RecipeDoc[];
+    listRowsLoaded: boolean;
+    listRows: ListRow[];
+    listCombinedRows: ListCombinedRows;
+    dataReloadStatus: DataReloadStatus;
+    isLoading: boolean;
+    error: PouchDB.Core.Error | null;
+    
+    // Database reference
+    db: PouchDB.Database | null;
+    remoteDBCreds: any;
+    remoteDBState: any;
+    
+    // Change listener reference for cleanup
+    changeListener: PouchDB.Core.Changes<{}> | null;
+}
+
+export interface GlobalDataActions {
+    // Initialize the store with database and credentials
+    initialize: (db: PouchDB.Database, remoteDBCreds: any, remoteDBState: any) => () => void;
+    
+    // Load all data from PouchDB
+    loadAllData: () => Promise<void>;
+    
+    // Data reload management
+    waitForReload: () => void;
+    
+    // Parse all documents and organize by type
+    parseAllDocuments: (docs: any[]) => void;
+    
+    // Update list rows after data changes
+    updateListRows: () => void;
+    
+    // Cleanup function
+    cleanup: () => void;
+}
+
+export type GlobalDataStore = GlobalDataState & GlobalDataActions;
+
+const initialState: GlobalDataState = {
+    itemDocs: [],
     globalItemDocs: [],
-    globalItemsLoading: false,
-    globalItemError: null,
     listDocs: [],
-    listsLoading: false,
-    listError: null,
     listGroupDocs: [],
-    listGroupsLoading: false,
-    listGroupError: null,
     recipeListGroup: null,
     categoryDocs: [],
-    categoryLoading: false,
-    categoryError: null,
     uomDocs: [],
-    uomLoading: false,
-    uomError: null,
     recipeDocs: [],
-    recipesLoading: false,
-    recipesError: null,
     listRowsLoaded: false,
     listRows: [],
     listCombinedRows: [],
     dataReloadStatus: DataReloadStatus.ReloadNeeded,
-    waitForReload: () => set((state) => ({
-        dataReloadStatus: DataReloadStatus.ReloadNeeded
-    })),
-    initialize: () => {}
+    isLoading: false,
+    error: null,
+    db: null,
+    remoteDBCreds: null,
+    remoteDBState: null,
+    changeListener: null,
+};
 
-
-}));
-
-
-
-export const GlobalDataProvider: React.FC<GlobalDataProviderProps> = (props: GlobalDataProviderProps) => {
-    const [ listRows, setListRows ] = useState<ListRow[]>([]);
-    const [ listCombinedRows, setListCombinedRows] = useState<ListCombinedRows>([]);
-    const [ listRowsLoaded, setListRowsLoaded] = useState(false);
-    const [ recipeListGroup, setRecipeListGroup] = useState<string|null>(null);
-    const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
-    const [ dataReloadStatus, setDataReloadStatus] = useState<DataReloadStatus>(DataReloadStatus.ReloadNeeded);
-
-    const { docs: globalItemDocs, loading: globalItemsLoading, error: globalItemError} = useFind({
-        index: "stdTypeName",
-        selector: { 
-            "type": "globalitem",
-            "name": { "$exists": true } 
-            }
-        });
-
-    const { docs: listGroupDocs, loading: listGroupsLoading, error: listGroupError} = useFind({
-        index: "stdTypeName",
-        selector: { 
-            "type": "listgroup",
-            "name": { "$exists": true },
-            "$or": [
-                { "listGroupOwner": remoteDBCreds.dbUsername },
-                { "sharedWith": {"$elemMatch" : {"$eq" : remoteDBCreds.dbUsername}}}
-            ] 
-            }
-        });
-
-    const { docs: categoryDocs, loading: categoryLoading, error: categoryError} = useFind({
-        index: "stdTypeName",
-        selector: { 
-            "type": "category",
-            "name": { "$exists": true },
-            "$or": [
-                {"listGroupID": "system" },
-                {"listGroupID": {"$in": (listGroupDocs.map(lg => (lg._id)))}}
-            ]
-            }
-        });
-
-    const { docs: listDocs, loading: listsLoading, error: listError} = useFind({
-        index: "stdTypeName",
-        selector: { 
-            "type": "list",
-            "name": { "$exists": true },
-            "listGroupID": {"$in": (listGroupDocs.map(lg => (lg._id)))}
-            }
-        });
-
-    const { docs: recipeDocs, loading: recipesLoading, error: recipesError} = useFind({
-        index: "stdTypeName",
-        selector: { 
-            "type": "recipe",
-            "name": { "$exists": true },
-            "listGroupID": {"$in": (listGroupDocs.map(lg => (lg._id)))}
-            }
-        });
-    
-        const { docs: itemDocs, loading: itemsLoading, error: itemError} = useFind({
-        index: "stdTypeName",
-        selector: { 
-            "type": "item",
-            "name": { "$exists": true },
-            "listGroupID": {"$in": (listGroupDocs.map(lg => (lg._id)))}
-            }
-            });
+export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
+        ...initialState,
         
-    const { docs: uomDocs, loading: uomLoading, error: uomError} = useFind({
-        index: "stdTypeName",
-        selector: { 
-            "type": "uom",
-            "name": { "$exists": true }, 
-            "$or": [
-                {"listGroupID": "system" },
-                {"listGroupID": {"$in": (listGroupDocs.map(lg => (lg._id)))}}
-            ]
+        initialize: (db, remoteDBCreds, remoteDBState) => {
+            const state = get();
+            
+            // Cleanup existing listener if any
+            if (state.changeListener) {
+                state.changeListener.cancel();
             }
-        });
-
-    useEffect( () => {
-//        log.debug("Global Data change: ",{listsLoading, listDocs, offline: remoteDBState.workingOffline, syncomplete: remoteDBState.initialSyncComplete})
-        if (!listsLoading && !listGroupsLoading && 
-                (remoteDBState.initialSyncComplete || !remoteDBState.dbServerAvailable)) {
-            setListRowsLoaded(false);
-            const { listRows: localListRows, listCombinedRows: localListCombinedRows, recipeListGroup: localRecipeListGroup} = getListRows(listDocs as ListDocs,listGroupDocs as ListGroupDocs,remoteDBCreds)
-            setListRows(localListRows);
-            setListCombinedRows(localListCombinedRows);
-            setRecipeListGroup(localRecipeListGroup);
-            setListRowsLoaded(true);
-        }
-    },[listsLoading, listDocs, listGroupDocs, listGroupsLoading, remoteDBCreds, remoteDBState.workingOffline, remoteDBState.initialSyncComplete, remoteDBState.dbServerAvailable])
-
-    useEffect( () => {
-        log.debug("New data reload status:",dataReloadStatus);
-        if (dataReloadStatus === DataReloadStatus.ReloadNeeded) {
-            log.debug("Global data reload initiated");
-            setDataReloadStatus(DataReloadStatus.ReloadInProcess);
-            return
-        }
-        if (dataReloadStatus === DataReloadStatus.ReloadInProcess) {
-            if (! (itemsLoading || globalItemsLoading || listsLoading || listGroupsLoading || categoryLoading || uomLoading)) {
-                log.debug("Global data reload complete")
-                setDataReloadStatus(DataReloadStatus.ReloadComplete);
+            
+            set({ db, remoteDBCreds, remoteDBState });
+            
+            // Start initial data load
+            get().loadAllData();
+            
+            // Set up change listener
+            const changes = db.changes({
+                since: 'now',
+                live: true,
+                include_docs: true
+            });
+            
+            changes.on('change', (change) => {
+                log.debug('Database change detected:', change.id);
+                // Reload all data when any change occurs
+                get().loadAllData();
+            });
+            
+            changes.on('error', (error) => {
+                log.error('Database changes error:', error);
+                set({ error: error as PouchDB.Core.Error });
+            });
+            
+            set({ changeListener: changes });
+            
+            // Return cleanup function
+            return () => {
+                changes.cancel();
+                set({ changeListener: null });
+            };
+        },
+        
+        loadAllData: async () => {
+            const { db } = get();
+            if (!db) return;
+            
+            set({ 
+                isLoading: true, 
+                error: null,
+                dataReloadStatus: DataReloadStatus.ReloadInProcess 
+            });
+            
+            try {
+                log.debug('Loading all documents from database');
+                
+                const result = await db.allDocs({
+                    include_docs: true
+                });
+                
+                const docs = result.rows
+                    .map(row => row.doc)
+                    .filter(doc => doc && !doc._id.startsWith('_design/'));
+                
+                log.debug(`Loaded ${docs.length} documents from database`);
+                
+                get().parseAllDocuments(docs);
+                get().updateListRows();
+                
+                set({ 
+                    isLoading: false,
+                    dataReloadStatus: DataReloadStatus.ReloadComplete 
+                });
+                
+            } catch (error) {
+                log.error('Error loading all data:', error);
+                set({ 
+                    error: error as PouchDB.Core.Error,
+                    isLoading: false,
+                    dataReloadStatus: DataReloadStatus.ReloadNeeded 
+                });
+            }
+        },
+        
+        parseAllDocuments: (docs) => {
+            const { remoteDBCreds } = get();
+            if (!remoteDBCreds) return;
+            
+            log.debug('Parsing documents by type');
+            
+            // Initialize arrays for each document type
+            const globalItems: any[] = [];
+            const listGroups: any[] = [];
+            const categories: any[] = [];
+            const lists: any[] = [];
+            const recipes: any[] = [];
+            const items: any[] = [];
+            const uoms: any[] = [];
+            
+            // Parse all documents by type
+            docs.forEach(doc => {
+                if (!doc || !doc.type || !doc.name) return;
+                
+                switch (doc.type) {
+                    case 'globalitem':
+                        globalItems.push(doc);
+                        break;
+                        
+                    case 'listgroup':
+                        // Filter by ownership and sharing
+                        if (doc.listGroupOwner === remoteDBCreds.dbUsername ||
+                            (doc.sharedWith && doc.sharedWith.includes(remoteDBCreds.dbUsername))) {
+                            listGroups.push(doc);
+                        }
+                        break;
+                        
+                    case 'category':
+                        categories.push(doc);
+                        break;
+                        
+                    case 'list':
+                        lists.push(doc);
+                        break;
+                        
+                    case 'recipe':
+                        recipes.push(doc);
+                        break;
+                        
+                    case 'item':
+                        items.push(doc);
+                        break;
+                        
+                    case 'uom':
+                        uoms.push(doc);
+                        break;
+                }
+            });
+            
+            // Get allowed list group IDs for filtering
+            const allowedListGroupIds = listGroups.map(lg => lg._id);
+            const allowedListGroupIdsWithSystem = ['system', ...allowedListGroupIds];
+            
+            // Filter and sort each document type
+            const sortedGlobalItems = globalItems
+                .sort((a, b) => 
+                    translatedItemName(String(a._id), a.name, a.name)
+                        .toLocaleUpperCase()
+                        .localeCompare(translatedItemName(String(b._id), b.name, b.name).toLocaleUpperCase())
+                );
+            
+            const sortedListGroups = listGroups
+                .sort((a, b) => a.name.toLocaleUpperCase().localeCompare(b.name.toLocaleUpperCase()));
+            
+            const filteredAndSortedCategories = categories
+                .filter(doc => allowedListGroupIdsWithSystem.includes(doc.listGroupID))
+                .sort((a, b) => 
+                    translatedCategoryName(a._id, a.name)
+                        .toUpperCase()
+                        .localeCompare(translatedCategoryName(b._id, b.name).toUpperCase())
+                );
+            
+            const filteredLists = lists
+                .filter(doc => allowedListGroupIds.includes(doc.listGroupID));
+            
+            const filteredAndSortedRecipes = recipes
+                .filter(doc => allowedListGroupIds.includes(doc.listGroupID))
+                .sort((a, b) => a.name.toLocaleUpperCase().localeCompare(b.name.toLocaleUpperCase()));
+            
+            const filteredItems = items
+                .filter(doc => allowedListGroupIds.includes(doc.listGroupID));
+            
+            const filteredAndSortedUoms = uoms
+                .filter(doc => allowedListGroupIdsWithSystem.includes(doc.listGroupID))
+                .sort((a, b) => 
+                    translatedUOMName(a._id as string, a.description, a.pluralDescription)
+                        .toUpperCase()
+                        .localeCompare(translatedUOMName(b._id as string, b.description, b.pluralDescription).toUpperCase())
+                );
+            
+            log.debug('Parsed documents:', {
+                globalItems: sortedGlobalItems.length,
+                listGroups: sortedListGroups.length,
+                categories: filteredAndSortedCategories.length,
+                lists: filteredLists.length,
+                recipes: filteredAndSortedRecipes.length,
+                items: filteredItems.length,
+                uoms: filteredAndSortedUoms.length
+            });
+            
+            // Update the store with parsed and sorted data
+            set({
+                globalItemDocs: sortedGlobalItems as GlobalItemDocs,
+                listGroupDocs: sortedListGroups as ListGroupDocs,
+                categoryDocs: filteredAndSortedCategories as CategoryDocs,
+                listDocs: filteredLists as ListDocs,
+                recipeDocs: filteredAndSortedRecipes as RecipeDoc[],
+                itemDocs: filteredItems as ItemDocs,
+                uomDocs: filteredAndSortedUoms as UomDoc[]
+            });
+        },
+        
+        updateListRows: () => {
+            const { listDocs, listGroupDocs, remoteDBCreds, remoteDBState } = get();
+            
+            if (!remoteDBState.initialSyncComplete && remoteDBState.dbServerAvailable) {
+                log.debug('Skipping list rows update - sync not complete');
+                return;
+            }
+            
+            log.debug('Updating list rows');
+            set({ listRowsLoaded: false });
+            
+            const { listRows, listCombinedRows, recipeListGroup } = getListRows(
+                listDocs, 
+                listGroupDocs, 
+                remoteDBCreds
+            );
+            
+            set({ 
+                listRows, 
+                listCombinedRows, 
+                recipeListGroup, 
+                listRowsLoaded: true 
+            });
+            
+            log.debug('List rows updated:', {
+                listRows: listRows.length,
+                listCombinedRows: listCombinedRows.length,
+                recipeListGroup
+            });
+        },
+        
+        waitForReload: () => {
+            log.debug("Wait for Reload Triggered");
+            set({ dataReloadStatus: DataReloadStatus.ReloadNeeded });
+            get().loadAllData();
+        },
+        
+        cleanup: () => {
+            const { changeListener } = get();
+            if (changeListener) {
+                changeListener.cancel();
+                set({ changeListener: null });
             }
         }
-    },[itemsLoading,globalItemsLoading,listsLoading,listGroupsLoading,categoryLoading,uomLoading,dataReloadStatus])
-
-
-    const waitForReload = useCallback( () => {
-        log.debug("Wait for Reload Triggered")
-        setDataReloadStatus(DataReloadStatus.ReloadNeeded);
-    },[setDataReloadStatus])
-
-    useEffect( () => {
-        if (globalItemError || listGroupError || categoryError || listError || recipesError || itemError || uomError) {
-            log.error("Error retrieving global data:",cloneDeep({globalItemError,listGroupError,categoryError,listError,recipesError,itemError,uomError}))
-        }    
-    },[globalItemError,listGroupError,categoryError,listError,recipesError,itemError,uomError])
-
-    let value: GlobalDataState = {
-            itemDocs: itemDocs as ItemDocs,
-            itemsLoading,
-            itemError,
-            globalItemDocs: (globalItemDocs as GlobalItemDocs).sort(function (a,b) {
-                return translatedItemName(String(a._id),a.name,a.name).toLocaleUpperCase().localeCompare(translatedItemName(String(b._id),b.name,b.name).toLocaleUpperCase())
-            }),
-            globalItemsLoading,
-            globalItemError,
-            listDocs: listDocs as ListDocs,
-            listsLoading,
-            listError,
-            listGroupDocs: (listGroupDocs as ListGroupDocs).sort(function (a,b) {
-                return a.name.toLocaleUpperCase().localeCompare(b.name.toLocaleUpperCase())
-            }),
-            listGroupsLoading,
-            listGroupError,
-            recipeListGroup,
-            categoryDocs: (categoryDocs as CategoryDocs).sort(function (a,b) {
-                return translatedCategoryName(a._id,a.name).toUpperCase().localeCompare(translatedCategoryName(b._id,b.name).toUpperCase())
-            }),
-            categoryLoading,
-            categoryError,
-            uomDocs: (uomDocs as UomDoc[]).sort(function(a,b) {
-                return translatedUOMName(a._id as string,a.description,a.pluralDescription).toUpperCase().localeCompare(translatedUOMName(b._id as string,b.description,b.pluralDescription).toUpperCase())
-            }),
-            uomLoading,
-            uomError,
-            recipeDocs: (recipeDocs as RecipeDoc[]).sort(function(a,b) {
-                return a.name.toLocaleUpperCase().localeCompare(b.name.toLocaleUpperCase())
-            }),
-            recipesLoading,
-            recipesError,
-            listRows: listRows as ListRow[],
-            listRowsLoaded,
-            listCombinedRows: listCombinedRows as ListCombinedRows,
-            dataReloadStatus: dataReloadStatus,
-            waitForReload: waitForReload
-        };
-    return (
-        <GlobalDataContext.Provider value={value}>{props.children}</GlobalDataContext.Provider>
-      );
-}
+    }));
