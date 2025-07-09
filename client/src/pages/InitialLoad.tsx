@@ -1,18 +1,17 @@
 import { IonHeader, IonPage, IonTitle, IonToolbar, IonLoading, IonContent, IonText } from '@ionic/react';
 import { isPlatform } from '@ionic/core';
 import { useContext, useEffect, useRef} from 'react';
-import { usePouch } from 'use-pouchdb';
 import { ConnectionStatus, LoginType, RemoteDBStateContext } from '../components/RemoteDBState';
 import { navigateToFirstListID } from '../components/RemoteUtilities';
 import ErrorPage from './ErrorPage';
 import { History } from 'history';
-import { DataReloadStatus, GlobalDataContext } from '../components/GlobalDataProvider';
 import { useTranslation } from 'react-i18next';
 import log from "../components/logger";
 import { GlobalStateContext } from '../components/GlobalState';
 import { useHistory } from 'react-router';
 import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
+import { DataReloadStatus, useGlobalDataStore } from '../components/GlobalData';
 
 type InitialLoadProps = {
   history : History
@@ -20,9 +19,8 @@ type InitialLoadProps = {
 
 const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
     const { remoteDBState, remoteDBCreds, remoteDB, setLoginType, setRemoteDBState} = useContext(RemoteDBStateContext);
-    const { listError ,listRowsLoaded, listRows, listsLoading, listCombinedRows, dataReloadStatus } = useContext(GlobalDataContext)
+    const { db, error ,listRowsLoaded, listRows, isLoading, listCombinedRows, dataReloadStatus } = useGlobalDataStore();
     const { globalState, setGlobalState } = useContext(GlobalStateContext);
-    const db=usePouch();
     const screenLoading = useRef(true);
     const history = useHistory();
     const { t } = useTranslation();
@@ -45,12 +43,12 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
             setRemoteDBState(prevState => ({...prevState,initialNavComplete: true}));
             setGlobalState(prevState => ({...prevState,initialLoadCompleted: true}));
         }
-        if (listRowsLoaded && !listsLoading) {
+        if (listRowsLoaded && !isLoading) {
             if ((remoteDBState.connectionStatus === ConnectionStatus.loginComplete && globalState.settingsLoaded && dataReloadStatus === DataReloadStatus.ReloadComplete)) {
                 initialStartup();
             } 
         }      
-    },[db, remoteDB, listRows, listCombinedRows, history, remoteDBCreds.dbUsername, remoteDBState.connectionStatus, listRowsLoaded, listsLoading, setRemoteDBState, dataReloadStatus, globalState.settings, globalState.settingsLoaded, setGlobalState])   
+    },[db, remoteDB, listRows, listCombinedRows, history, remoteDBCreds.dbUsername, remoteDBState.connectionStatus, listRowsLoaded, isLoading, setRemoteDBState, dataReloadStatus, globalState.settings, globalState.settingsLoaded, setGlobalState])   
 
     useEffect(() => {
         async function dismissToLogin() {
@@ -64,7 +62,7 @@ const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
         }
     },[remoteDBState.connectionStatus,history,setRemoteDBState, setGlobalState])
 
-    if (listError) {return (
+    if (error) {return (
         <ErrorPage errorText={t("error.loading_list_info") as string}></ErrorPage>
     )}
 

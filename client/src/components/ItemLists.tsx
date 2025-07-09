@@ -1,15 +1,15 @@
 import {  IonButton,  IonItem, IonLabel, IonCheckbox, IonIcon, 
     IonGrid, IonRow, IonCol, IonText, CheckboxCustomEvent,  } from '@ionic/react';
 import { pencilOutline } from 'ionicons/icons';
-import { Fragment, useContext, useState, SetStateAction } from 'react';
+import { Fragment, useState, SetStateAction } from 'react';
 import { sortedItemLists, listIsDifferentThanCommon } from './ItemUtilities';
 import { ItemDoc,  ItemList,  ItemListInit,  ListDoc } from './DBSchema';
 import ItemListsModal from '../components/ItemListsModal';
 import { cloneDeep } from 'lodash-es';
 import { ModalState, ModalStateInit } from '../components/DataTypes';
 import './ItemLists.css';
-import { GlobalDataContext } from './GlobalDataProvider';
 import { useTranslation } from 'react-i18next';
+import { useGlobalDataStore } from './GlobalData';
 
 export type ItemListsProps = { 
     stateItemDoc: ItemDoc,
@@ -20,7 +20,7 @@ export type ItemListsProps = {
     
 const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
     const [modalState, setModalState] = useState<ModalState>(ModalStateInit)
-    const globalData = useContext(GlobalDataContext)
+    const listDocs = useGlobalDataStore((state) => state.listDocs);
     const { t } = useTranslation()
     
     function selectList(listID: string, updateVal: boolean) {
@@ -49,8 +49,8 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
         for (let i = 0; i < props.stateItemDoc.lists.length; i++) {
           if (props.stateItemDoc.lists[i].listID === listID) { listIdx=i; break;}
         }
-        let listFoundIdx=globalData.listDocs.findIndex((element: ListDoc) => (element._id === listID));
-        let listName = (listFoundIdx === -1) ? "" : globalData.listDocs[listFoundIdx].name
+        let listFoundIdx=listDocs.findIndex((element: ListDoc) => (element._id === listID));
+        let listName = (listFoundIdx === -1) ? "" : listDocs[listFoundIdx].name
         setModalState(prevState => ({...prevState,isOpen: true, selectedListId: listID, 
           selectedListName: listName, selectedListIdx: listIdx, itemList: cloneDeep(props.stateItemDoc.lists[listIdx])}));
     }
@@ -61,14 +61,14 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
         <IonCol size="10"><IonLabel key="listlabel" position='stacked'>{t('itemtext.item_is_on_these_lists')}</IonLabel></IonCol>
         <IonCol size="2"><IonLabel key="resetlabel" position="stacked">{t('general.edit')}</IonLabel></IonCol></IonRow>
     )
-    let sortedLists = sortedItemLists(props.stateItemDoc.lists,globalData.listDocs);
+    let sortedLists = sortedItemLists(props.stateItemDoc.lists,listDocs);
     
     for (let i = 0; i < sortedLists.length; i++) {
       let listID = sortedLists[i].listID;
-      let itemFoundIdx=globalData.listDocs.findIndex((element: ListDoc) => (element._id === listID));
+      let itemFoundIdx=listDocs.findIndex((element: ListDoc) => (element._id === listID));
       if (itemFoundIdx !== -1) {
         let itemActive=(sortedLists[i].active);
-        let listName=globalData.listDocs[itemFoundIdx].name;
+        let listName=listDocs[itemFoundIdx].name;
         listsInnerElem.push(
           <IonRow key={listID} className={listIsDifferentThanCommon(sortedLists,i) ? "highlighted-row ion-no-padding" : "ion-no-padding"}>
             <IonCol className="ion-no-padding" size="1"><IonCheckbox aria-label="" onIonChange={(e: CheckboxCustomEvent) => selectList(listID,Boolean(e.detail.checked))} checked={itemActive}></IonCheckbox></IonCol>

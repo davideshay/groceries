@@ -17,11 +17,11 @@ import { PouchResponse, ListRow, RowType, PouchResponseInit} from '../components
 import { UomDoc, ItemDoc, ItemDocInit, ItemList, ItemListInit, CategoryDoc, ImageDoc, ImageDocInit, InitUomDoc, InitCategoryDoc, CategoryDocs } from '../components/DBSchema';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
-import { GlobalDataContext } from '../components/GlobalDataProvider';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
 import { translatedCategoryName, translatedItemName, translatedUOMName } from '../components/translationUtilities';
 import log from "../components/logger";
+import { useGlobalDataStore } from '../components/GlobalData';
 
 enum ErrorLocation  {
    Name, PluralName, General
@@ -56,35 +56,35 @@ const Item: React.FC = (props) => {
   const { takePhoto } = usePhotoGallery();
   const { dbError: itemsError, itemRowsLoaded, itemRows } = useItems({selectedListGroupID: stateItemDoc.listGroupID, isReady: !itemLoading, needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const { globalState, setStateInfo} = useContext(GlobalStateContext);
-  const globalData  = useContext(GlobalDataContext);
   const [presentAlert] = useIonAlert();
   const [presentToast] = useIonToast();
   const { t } = useTranslation();
+  const {listRows, listDocs, listRowsLoaded, listCombinedRows, error, isLoading, globalItemDocs, categoryDocs, uomDocs} = useGlobalDataStore();
   
   const groupIDForList = useCallback((listID: string) => {
     let retGID="";
-    let searchList=globalData.listRows.find((el: ListRow) => el.listDoc._id === listID);
+    let searchList=listRows.find((el: ListRow) => el.listDoc._id === listID);
     if (searchList) {retGID = String(searchList.listGroupID)}
     return retGID;
-  },[globalData.listRows])
+  },[listRows])
 
   const addDeleteLists = useCallback((itemDoc: ItemDoc) => {
     let newItemDoc: ItemDoc =cloneDeep(itemDoc);
     // loop through all the lists with the same listgroup. if the list is in the
     // listgroup, but not on the item add it.
-    for (let i = 0; i < globalData.listRows.length; i++) {
-      if (globalData.listRows[i].listGroupID !== newItemDoc.listGroupID) {continue}
-      let foundIdx=newItemDoc.lists.findIndex((el: ItemList) => el.listID === globalData.listRows[i].listDoc._id)
+    for (let i = 0; i < listRows.length; i++) {
+      if (listRows[i].listGroupID !== newItemDoc.listGroupID) {continue}
+      let foundIdx=newItemDoc.lists.findIndex((el: ItemList) => el.listID === listRows[i].listDoc._id)
       if (foundIdx === -1) {
           let newItemList: ItemList = cloneDeep(ItemListInit);
-          newItemList.listID = String(globalData.listRows[i].listDoc._id);
-          newItemList.active = getCommonKey(itemDoc,"active",globalData.listDocs);
-          newItemList.categoryID = getCommonKey(itemDoc,"categoryID",globalData.listDocs);
-          newItemList.completed = getCommonKey(itemDoc,"completed",globalData.listDocs);
-          newItemList.note = getCommonKey(itemDoc,"note",globalData.listDocs);
-          newItemList.quantity = getCommonKey(itemDoc,"quantity",globalData.listDocs);
-          newItemList.stockedAt = getCommonKey(itemDoc,"stockedAt",globalData.listDocs);
-          newItemList.uomName = getCommonKey(itemDoc,"uomName",globalData.listDocs);
+          newItemList.listID = String(listRows[i].listDoc._id);
+          newItemList.active = getCommonKey(itemDoc,"active",listDocs);
+          newItemList.categoryID = getCommonKey(itemDoc,"categoryID",listDocs);
+          newItemList.completed = getCommonKey(itemDoc,"completed",listDocs);
+          newItemList.note = getCommonKey(itemDoc,"note",listDocs);
+          newItemList.quantity = getCommonKey(itemDoc,"quantity",listDocs);
+          newItemList.stockedAt = getCommonKey(itemDoc,"stockedAt",listDocs);
+          newItemList.uomName = getCommonKey(itemDoc,"uomName",listDocs);
           newItemDoc.lists.push(newItemList);
       }  
     }
@@ -95,7 +95,7 @@ const Item: React.FC = (props) => {
     // check if any of the item-lists has a categoryID that is no longer in the active categories 
     // in the list, if so, set to null
     for (const itemList of currentLists) {
-      let listDoc = globalData.listDocs.find(list => list._id === itemList.listID);
+      let listDoc = listDocs.find(list => list._id === itemList.listID);
       if (listDoc === undefined)  { // shouldn't happen at list point... 
           itemList.categoryID = null
       } else {
@@ -104,10 +104,10 @@ const Item: React.FC = (props) => {
     }
     newItemDoc.lists=currentLists;
     return(newItemDoc);
-  },[globalData.listRows, globalData.listDocs,groupIDForList])
+  },[listRows,listDocs,groupIDForList])
 
   useEffect( () => {
-    if (!itemLoading && mode !== "new" && itemDoc && globalData.listRowsLoaded) {
+    if (!itemLoading && mode !== "new" && itemDoc && listRowsLoaded) {
       let newItemDoc: ItemDoc = cloneDeep(itemDoc);
       if (!newItemDoc.hasOwnProperty('imageID')) {
         newItemDoc.imageID = null;
@@ -118,7 +118,7 @@ const Item: React.FC = (props) => {
       newItemDoc = addDeleteLists(newItemDoc);
       setStateItemDoc(cloneDeep(newItemDoc));
     }
-  },[itemLoading,mode,itemDoc,globalData.listRowsLoaded,addDeleteLists])
+  },[itemLoading,mode,itemDoc,listRowsLoaded,addDeleteLists])
 
   useEffect( () => {
     if (!imageLoading && mode !== "new" && imageDoc) {
@@ -127,21 +127,21 @@ const Item: React.FC = (props) => {
   },[imageLoading,mode,imageDoc])
 
   useEffect( () => {
-    if (!itemLoading && mode === "new" && !globalData.listsLoading && globalData.listRowsLoaded && needInitItemDoc) {
-        let newItemDoc = createEmptyItemDoc(globalData.listRows,globalState,globalData.globalItemDocs)
+    if (!itemLoading && mode === "new" && !isLoading && listRowsLoaded && needInitItemDoc) {
+        let newItemDoc = createEmptyItemDoc(listRows,globalState,globalItemDocs)
         setStateInfo("newItemMode","none");
         setNeedInitItemDoc(false);
         setStateItemDoc(newItemDoc);
     }
-  },[globalState,mode,setStateInfo,itemLoading,itemDoc,globalData.listsLoading,globalData.listDocs,globalData.listRowsLoaded, globalData.listRows, globalData.globalItemDocs,globalState.itemMode,globalState.newItemName, globalState.callingListID, needInitItemDoc]);
+  },[globalState,mode,setStateInfo,itemLoading,itemDoc,isLoading,listDocs,listRowsLoaded, listRows, globalItemDocs,globalState.itemMode,globalState.newItemName, globalState.callingListID, needInitItemDoc]);
 
-  if (itemError || imageError || globalData.listError || globalData.categoryError || globalData.uomError || itemsError) { 
-    log.error("Error loading item info:",cloneDeep({itemError,imageError,listError: globalData.listError, categoryError: globalData.categoryError, uomError: globalData.uomError, itemsError}));
+  if (itemError || imageError || error ||  itemsError) { 
+    log.error("Error loading item info:",cloneDeep({itemError,imageError,listError: error, itemsError}));
     return (
     <ErrorPage errorText={t("error.loading_item_info_restart") as string}></ErrorPage>
   )}
 
-  if ((itemLoading && routeItemID !== null) || globalData.listsLoading || !globalData.listRowsLoaded || globalData.categoryLoading || globalData.uomLoading || !itemRowsLoaded || isEmpty(stateItemDoc))  {
+  if ((itemLoading && routeItemID !== null) || isLoading || !listRowsLoaded || !itemRowsLoaded || isEmpty(stateItemDoc))  {
     return ( <Loading isOpen={screenLoading.current} message={t("general.loading_item")}  /> )
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   };
@@ -180,7 +180,7 @@ const Item: React.FC = (props) => {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.cannot_use_name_existing_item"), hasError: true}}))
       return false;
     }
-    let [globalExists,] = checkNameInGlobalItems(globalData.globalItemDocs,stateItemDoc.name, String(stateItemDoc.pluralName));
+    let [globalExists,] = checkNameInGlobalItems(globalItemDocs,stateItemDoc.name, String(stateItemDoc.pluralName));
     if ( stateItemDoc.globalItemID == null && globalExists) {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.cannot_use_name_existing_globalitem"), hasError: true}}))
       return false;
@@ -215,7 +215,7 @@ const Item: React.FC = (props) => {
     let newItemDoc: ItemDoc = cloneDeep(stateItemDoc);
     newItemDoc.lists.forEach((list: ItemList) => {
       if (key === "categoryID") {
-        let listDoc = globalData.listDocs.find(ld => ld._id === list.listID);
+        let listDoc = listDocs.find(ld => ld._id === list.listID);
         if (listDoc !== undefined) {
           if (listDoc.categories.includes(String(val))) {
             (list as any)[key] = val;
@@ -232,7 +232,7 @@ const Item: React.FC = (props) => {
 
   async function addNewCategory(listGroupID: string, category: string) {
     let alreadyFound=false;
-    (globalData.categoryDocs as CategoryDoc[]).forEach((cat) => 
+    (categoryDocs as CategoryDoc[]).forEach((cat) => 
       {
         if ( ["system",listGroupID].includes(String(cat.listGroupID))  && category.toUpperCase() === cat.name.toUpperCase()) {alreadyFound=true}
       });
@@ -245,7 +245,7 @@ const Item: React.FC = (props) => {
       let result = await addCategoryDoc(newCategoryDoc);
       if (result.successful) {
           updateAllKey("categoryID",result.pouchData.id as string);
-          let addResponse = await addCategoryToLists(result.pouchData.id as string,listGroupID,globalData.listCombinedRows)
+          let addResponse = await addCategoryToLists(result.pouchData.id as string,listGroupID,listCombinedRows)
           if (addResponse.successful) {
             let newStateItemDoc: ItemDoc = cloneDeep(stateItemDoc);
             for (const stateList of newStateItemDoc.lists) {
@@ -266,7 +266,7 @@ const Item: React.FC = (props) => {
 
   async function addNewUOM(listGroupID: string, uomData: UomDoc) {
     let alreadyFound = false;
-    (globalData.uomDocs as UomDoc[]).forEach((uom) => {
+    (uomDocs as UomDoc[]).forEach((uom) => {
       if (["system",listGroupID].includes(String(uom.listGroupID)) && uom.name.toUpperCase() === uomData.name.toUpperCase()) {alreadyFound=true;}
     });
     if (alreadyFound) {
@@ -283,7 +283,7 @@ const Item: React.FC = (props) => {
       return false;
     }
     alreadyFound = false;
-    (globalData.uomDocs as UomDoc[]).forEach((uom) => {
+    (uomDocs as UomDoc[]).forEach((uom) => {
       if (["system",listGroupID].includes(String(uom.listGroupID)) && uom.description.toUpperCase() === uomData.description.toUpperCase()) {alreadyFound=true;}
     });
     if (alreadyFound) {
@@ -295,7 +295,7 @@ const Item: React.FC = (props) => {
       return false;
     }
     alreadyFound = false;
-    (globalData.uomDocs as UomDoc[]).forEach((uom) => {
+    (uomDocs as UomDoc[]).forEach((uom) => {
       if (["system",listGroupID].includes(String(uom.listGroupID)) && uom.pluralDescription.toUpperCase() === uomData.pluralDescription.toUpperCase()) {alreadyFound=true;}
     });
     if (alreadyFound) {
@@ -387,7 +387,7 @@ const Item: React.FC = (props) => {
     setStateImageDoc(prevState => ({...prevState,imageBase64: null}));
   }
 
-  let thisListGroup = globalData.listCombinedRows.find(el => el.listGroupID === stateItemDoc.listGroupID);
+  let thisListGroup = listCombinedRows.find(el => el.listGroupID === stateItemDoc.listGroupID);
   let photoExists = stateImageDoc.imageBase64 !== null;
   
   let photoBase64: string = "";    
@@ -399,7 +399,7 @@ const Item: React.FC = (props) => {
     let catDocs:CategoryDocs = [];
     let activeCatIDs = new Set<string>();
     for (const list of stateItemDoc.lists) {
-      const thisList = globalData.listDocs.find(ld => ld._id === list.listID);
+      const thisList = listDocs.find(ld => ld._id === list.listID);
       if (thisList !== undefined) {
         for (const cat of thisList.categories) {
           activeCatIDs.add(cat)
@@ -407,7 +407,7 @@ const Item: React.FC = (props) => {
       } 
     }
     activeCatIDs.forEach(catID => {
-      let catDoc = globalData.categoryDocs.find(cat => cat._id === catID);
+      let catDoc = categoryDocs.find(cat => cat._id === catID);
       if (catDoc !== undefined) {
         catDocs.push(catDoc);
       }
@@ -453,11 +453,11 @@ const Item: React.FC = (props) => {
               <IonItem key="quantity">
                 <IonGrid className="ion-no-padding">
                 <IonRow>
-                  <IonCol className="ion-no-padding" size="3"><IonInput label={t("general.quantity") as string} labelPlacement="stacked" type="number" min="0" max="9999" onIonInput={(e) => updateAllKey("quantity",Number(e.detail.value))} value={getCommonKey(stateItemDoc,"quantity",globalData.listDocs)}></IonInput></IonCol>
+                  <IonCol className="ion-no-padding" size="3"><IonInput label={t("general.quantity") as string} labelPlacement="stacked" type="number" min="0" max="9999" onIonInput={(e) => updateAllKey("quantity",Number(e.detail.value))} value={getCommonKey(stateItemDoc,"quantity",listDocs)}></IonInput></IonCol>
                   <IonCol className="ion-no-padding" size="8">
-                    <IonSelect label={t("general.uom_abbrev") as string} labelPlacement='stacked' interface="popover" onIonChange={(ev) => updateAllKey("uomName", ev.detail.value)} value={getCommonKey(stateItemDoc,"uomName",globalData.listDocs)}>
+                    <IonSelect label={t("general.uom_abbrev") as string} labelPlacement='stacked' interface="popover" onIonChange={(ev) => updateAllKey("uomName", ev.detail.value)} value={getCommonKey(stateItemDoc,"uomName",listDocs)}>
                     <IonSelectOption key="uom-undefined" value={null}>{t("general.no_uom")}</IonSelectOption>
-                    {globalData.uomDocs.filter(uom => (["system",stateItemDoc.listGroupID].includes(uom.listGroupID))).map((uom) => (
+                    {uomDocs.filter(uom => (["system",stateItemDoc.listGroupID].includes(uom.listGroupID))).map((uom) => (
                       <IonSelectOption key={uom.name} value={uom.name}>{translatedUOMName(uom._id!,uom.description,uom.pluralDescription)}</IonSelectOption>
                     ))}
                     </IonSelect>
@@ -474,7 +474,7 @@ const Item: React.FC = (props) => {
                 <IonGrid className="ion-no-padding">
                   <IonRow>
                     <IonCol className="ion-no-padding" size="11">
-                      <IonSelect label={t("general.category") as string} labelPlacement="stacked" interface="popover" onIonChange={(ev) => updateAllKey("categoryID",ev.detail.value)} value={getCommonKey(stateItemDoc,"categoryID",globalData.listDocs)}>
+                      <IonSelect label={t("general.category") as string} labelPlacement="stacked" interface="popover" onIonChange={(ev) => updateAllKey("categoryID",ev.detail.value)} value={getCommonKey(stateItemDoc,"categoryID",listDocs)}>
                         <IonSelectOption key="cat-undefined" value={null}>{t("general.uncategorized")}</IonSelectOption>
                           {getCombinedCategories().map((cat) => (
                             <IonSelectOption key={cat._id} value={cat._id}>
@@ -492,7 +492,7 @@ const Item: React.FC = (props) => {
                 </IonGrid>
               </IonItem>
               <IonItem key="note">
-                <IonTextarea label={t("general.note") as string} labelPlacement="stacked" placeholder={t("general.item_note") as string} inputMode='text' debounce={100} rows={4} onIonInput={(ev) => updateAllKey("note",String(ev.detail.value))} value={getCommonKey(stateItemDoc,"note",globalData.listDocs)}>   
+                <IonTextarea label={t("general.note") as string} labelPlacement="stacked" placeholder={t("general.item_note") as string} inputMode='text' debounce={100} rows={4} onIonInput={(ev) => updateAllKey("note",String(ev.detail.value))} value={getCommonKey(stateItemDoc,"note",listDocs)}>   
                 </IonTextarea>
               </IonItem>
             </IonCard>

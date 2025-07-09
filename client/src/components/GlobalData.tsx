@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { CategoryDocs, GlobalItemDocs, ItemDocs, ListDocs, ListGroupDocs, RecipeDoc, UomDoc } from "./DBSchema";
+import { CategoryDocs, ConflictDocs, FriendDocs, GlobalItemDocs, InitSettingsDoc, ItemDocs, ListDocs, ListGroupDocs, RecipeDoc, SettingsDoc, UomDoc } from "./DBSchema";
 import { ListCombinedRows, ListRow } from "./DataTypes";
 import { getListRows } from "./GlobalDataUtilities";
 import { translatedCategoryName, translatedItemName, translatedUOMName } from "./translationUtilities";
@@ -20,6 +20,9 @@ export interface GlobalDataState {
     categoryDocs: CategoryDocs;
     uomDocs: UomDoc[];
     recipeDocs: RecipeDoc[];
+    settingsDoc: SettingsDoc;
+    friendDocs: FriendDocs;
+    conflictDocs: ConflictDocs;
     listRowsLoaded: boolean;
     listRows: ListRow[];
     listCombinedRows: ListCombinedRows;
@@ -67,6 +70,9 @@ const initialState: GlobalDataState = {
     categoryDocs: [],
     uomDocs: [],
     recipeDocs: [],
+    settingsDoc: InitSettingsDoc,
+    friendDocs: [],
+    conflictDocs: [],
     listRowsLoaded: false,
     listRows: [],
     listCombinedRows: [],
@@ -83,6 +89,7 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
         ...initialState,
         
         initialize: (db, remoteDBCreds, remoteDBState) => {
+            console.log("initialize called...");
             const state = get();
             
             // Cleanup existing listener if any
@@ -103,13 +110,13 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
             });
             
             changes.on('change', (change) => {
-                log.debug('Database change detected:', change.id);
+                console.debug('Database change detected:', change.id);
                 // Reload all data when any change occurs
                 get().loadAllData();
             });
             
             changes.on('error', (error) => {
-                log.error('Database changes error:', error);
+                console.error('Database changes error:', error);
                 set({ error: error as PouchDB.Core.Error });
             });
             
@@ -133,7 +140,7 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
             });
             
             try {
-                log.debug('Loading all documents from database');
+                console.debug('Loading all documents from database');
                 
                 const result = await db.allDocs({
                     include_docs: true
@@ -154,7 +161,7 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
                 });
                 
             } catch (error) {
-                log.error('Error loading all data:', error);
+                console.error('Error loading all data:', error);
                 set({ 
                     error: error as PouchDB.Core.Error,
                     isLoading: false,
@@ -164,10 +171,10 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
         },
         
         parseAllDocuments: (docs) => {
-            const { remoteDBCreds } = get();
+            const { remoteDBCreds, remoteDBState } = get();
             if (!remoteDBCreds) return;
             
-            log.debug('Parsing documents by type');
+            console.debug('Parsing documents by type');
             
             // Initialize arrays for each document type
             const globalItems: any[] = [];
@@ -175,9 +182,14 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
             const categories: any[] = [];
             const lists: any[] = [];
             const recipes: any[] = [];
+            let settings: SettingsDoc = InitSettingsDoc;
             const items: any[] = [];
             const uoms: any[] = [];
-            
+            const friends: any[] = [];
+            const conflicts: any[] = [];
+             
+            console.log("processing all documents. remoteDB creds:",{remoteDBCreds,remoteDBState});
+
             // Parse all documents by type
             docs.forEach(doc => {
                 if (!doc || !doc.type || !doc.name) return;
@@ -206,6 +218,10 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
                     case 'recipe':
                         recipes.push(doc);
                         break;
+                    
+                    case 'settings':
+                        settings=structuredClone(doc);
+                        break;
                         
                     case 'item':
                         items.push(doc);
@@ -213,6 +229,14 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
                         
                     case 'uom':
                         uoms.push(doc);
+                        break;
+
+                    case "friend":
+                        friends.push(doc);
+                        break;
+
+                    case "conflictlog":
+                        conflicts.push(doc);
                         break;
                 }
             });
@@ -258,14 +282,17 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
                         .localeCompare(translatedUOMName(b._id as string, b.description, b.pluralDescription).toUpperCase())
                 );
             
-            log.debug('Parsed documents:', {
+            console.debug('Parsed documents:', {
                 globalItems: sortedGlobalItems.length,
                 listGroups: sortedListGroups.length,
                 categories: filteredAndSortedCategories.length,
                 lists: filteredLists.length,
                 recipes: filteredAndSortedRecipes.length,
+                settings,
                 items: filteredItems.length,
-                uoms: filteredAndSortedUoms.length
+                uoms: filteredAndSortedUoms.length,
+                friends: friends.length,
+                conflicts: conflicts.length
             });
             
             // Update the store with parsed and sorted data
@@ -275,8 +302,11 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
                 categoryDocs: filteredAndSortedCategories as CategoryDocs,
                 listDocs: filteredLists as ListDocs,
                 recipeDocs: filteredAndSortedRecipes as RecipeDoc[],
+                settingsDoc: settings,
                 itemDocs: filteredItems as ItemDocs,
-                uomDocs: filteredAndSortedUoms as UomDoc[]
+                uomDocs: filteredAndSortedUoms as UomDoc[],
+                friendDocs: friends as FriendDocs,
+                conflictDocs: conflicts as ConflictDocs
             });
         },
         
@@ -284,11 +314,11 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
             const { listDocs, listGroupDocs, remoteDBCreds, remoteDBState } = get();
             
             if (!remoteDBState.initialSyncComplete && remoteDBState.dbServerAvailable) {
-                log.debug('Skipping list rows update - sync not complete');
+                console.debug('Skipping list rows update - sync not complete');
                 return;
             }
             
-            log.debug('Updating list rows');
+            console.debug('Updating list rows');
             set({ listRowsLoaded: false });
             
             const { listRows, listCombinedRows, recipeListGroup } = getListRows(

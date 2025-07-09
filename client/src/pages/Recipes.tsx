@@ -1,6 +1,6 @@
 import { IonContent, IonPage, IonList, IonItem, IonFab,
      IonFabButton, IonIcon, IonFooter, IonButton } from '@ionic/react';
-import { useContext, useRef } from 'react';
+import { useRef } from 'react';
 import { add } from 'ionicons/icons';
 import { HistoryProps } from '../components/DataTypes';
 import ErrorPage from './ErrorPage';
@@ -8,19 +8,19 @@ import { Loading } from '../components/Loading';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router';
-import { GlobalDataContext } from '../components/GlobalDataProvider';
+import { useGlobalDataStore } from '../components/GlobalData';
 
 const Recipes: React.FC<HistoryProps> = (props: HistoryProps) => {
   const screenLoading=useRef(true);
   const { t } = useTranslation();
-  const { recipeDocs, recipesLoading, recipesError} = useContext(GlobalDataContext);
+  const { recipeDocs, isLoading, error} = useGlobalDataStore();
   const history = useHistory()
 
-  if (recipesError) { return (
+  if (error) { return (
     <ErrorPage errorText={t('error.loading_recipes') as string}></ErrorPage>
   )}
 
-  if (recipesLoading) { 
+  if (isLoading) { 
     return ( <Loading isOpen={screenLoading.current} message={t("general.loading_recipes")}  /> )
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   }

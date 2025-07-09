@@ -1,16 +1,17 @@
 import {  IonItem, IonButton, IonMenuToggle, IonIcon } from '@ionic/react';
-import { JSX, useContext } from 'react';
+import { JSX } from 'react';
 import { pencilOutline } from 'ionicons/icons';
 import './ListsAll.css';
 import { RowType } from './DataTypes';
-import { GlobalDataContext } from './GlobalDataProvider';
+import { useGlobalDataStore } from './GlobalData';
 
 interface ListsAllProps {
   separatePage: boolean
 }
 
 const ListsAll: React.FC<ListsAllProps> = (props: ListsAllProps) => {
-  const { listRowsLoaded, listCombinedRows} = useContext(GlobalDataContext)
+  const listRowsLoaded = useGlobalDataStore((state) => state.listRowsLoaded);
+  const listCombinedRows = useGlobalDataStore((state) => state.listCombinedRows);
 
   if (!listRowsLoaded) { return (<></>) }
   

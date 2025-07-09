@@ -16,13 +16,13 @@ import { getAllSearchRows, getItemRows, filterSearchRows, checkNameInGlobalItems
 import SyncIndicator from '../components/SyncIndicator';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
-import { GlobalDataContext } from '../components/GlobalDataProvider';
 import { isEqual, debounce, cloneDeep } from 'lodash-es';
 import { useTranslation } from 'react-i18next';
 import log from "../components/logger";
 import { navigateToFirstListID } from '../components/RemoteUtilities';
 import { Capacitor } from '@capacitor/core';
 import { translatedItemName } from '../components/translationUtilities';
+import { useGlobalDataStore } from '../components/GlobalData';
 
 const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode: routeMode, id: routeListID  } = useParams<{mode: string, id: string}>();
@@ -41,7 +41,6 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   const updateItemInList = useUpdateGenericDocument();
   const addNewItem = useCreateGenericDocument();
   const screenLoading = useRef(true);
-  const globalData = useContext(GlobalDataContext);
   const { dbError: baseItemError, itemRowsLoaded: baseItemRowsLoaded, itemRows: baseItemDocs} = useItems(
       {selectedListGroupID: pageState.groupIDforSelectedList,
         isReady: (pageState.groupIDforSelectedList !== null && pageState.selectedListOrGroupID !== null),
@@ -52,7 +51,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       isReady: (pageState.groupIDforSelectedList !== null && pageState.selectedListOrGroupID !== null),
       needListGroupID: true, activeOnly: false, selectedListID: pageState.selectedListOrGroupID,
       selectedListType: pageState.selectedListType});
-  const { listError , listDocs, listCombinedRows,listRows, listRowsLoaded, uomDocs, uomLoading, uomError, categoryDocs, categoryLoading, categoryError, itemDocs } = useContext(GlobalDataContext);
+  const { error , isLoading, listDocs, listCombinedRows,listRows, listRowsLoaded, uomDocs, categoryDocs, itemDocs, globalItemDocs } = useGlobalDataStore();
   const { globalState,setStateInfo: setGlobalStateInfo, updateSettingKey} = useContext(GlobalStateContext);
   const {t} = useTranslation();
   const contentRef = useRef<any>(null);
@@ -85,7 +84,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   },[listRowsLoaded,pageState.selectedListOrGroupID,getGroupIDForList])
 
   useEffect( () => {
-    if (baseItemRowsLoaded && listRowsLoaded && !categoryLoading && !uomLoading && !globalData.globalItemsLoading) {
+    if (baseItemRowsLoaded && listRowsLoaded && !isLoading) {
       setPageState( (prevState) => {
         const [newItemRows,newCategoryRows] = getItemRows(baseItemDocs as ItemDocs, listCombinedRows, categoryDocs as CategoryDoc[], uomDocs as UomDoc[], pageState.selectedListType, pageState.selectedListOrGroupID, prevState.categoryRows, globalState.categoryColors)
         return (
@@ -95,15 +94,15 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
           })
       });
     }
-  },[baseItemRowsLoaded, listRowsLoaded, categoryLoading, uomLoading, globalData.globalItemsLoading,
+  },[baseItemRowsLoaded, listRowsLoaded, isLoading, 
     uomDocs, baseItemDocs, listCombinedRows, categoryDocs, pageState.selectedListOrGroupID, pageState.selectedListType, globalState.categoryColors]);
 
   useEffect( () => {
-    if (baseSearchItemRowsLoaded && !globalData.globalItemsLoading) {
+    if (baseSearchItemRowsLoaded && !isLoading) {
       setSearchState(prevState => ({...prevState,isOpen: false, isFocused: false}));
-      setSearchRows(getAllSearchRows(baseSearchItemDocs as ItemDocs,pageState.selectedListOrGroupID, pageState.selectedListType, listDocs, globalData.globalItemDocs as GlobalItemDocs, globalState.settings));
+      setSearchRows(getAllSearchRows(baseSearchItemDocs as ItemDocs,pageState.selectedListOrGroupID, pageState.selectedListType, listDocs, globalItemDocs as GlobalItemDocs, globalState.settings));
     }
-  },[baseSearchItemRowsLoaded, globalData.globalItemsLoading, globalData.globalItemDocs, baseSearchItemDocs, pageState.selectedListOrGroupID, pageState.selectedListType, listDocs, globalState.settings])
+  },[baseSearchItemRowsLoaded, isLoading, globalItemDocs, baseSearchItemDocs, pageState.selectedListOrGroupID, pageState.selectedListType, listDocs, globalState.settings])
 
   const filterAndCheckRows = useCallback((searchCriteria: string, setFocus : boolean) => {
     let filterRows=filterSearchRows(searchRows, searchCriteria)
@@ -321,14 +320,14 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         setGlobalStateInfo("itemMode","new");
         setGlobalStateInfo("callingListID",pageState.selectedListOrGroupID);
         setGlobalStateInfo("callingListType",pageState.selectedListType);
-        let [,globalItemID] = checkNameInGlobalItems(globalData.globalItemDocs,itemName,itemName);
+        let [,globalItemID] = checkNameInGlobalItems(globalItemDocs,itemName,itemName);
         setGlobalStateInfo("newItemGlobalItemID",globalItemID)
         setGlobalStateInfo("newItemName",itemName);
         setSearchState(prevState => ({...prevState, isOpen: false,searchCriteria:"",filteredSearchRows: [],isFocused: false}))
         history.push("/item/new/");
       }
     }
-  ,[history,isItemAlreadyInList,addExistingItemToList,pageState.selectedListOrGroupID,pageState.selectedListType,setGlobalStateInfo,t,globalData.globalItemDocs])
+  ,[history,isItemAlreadyInList,addExistingItemToList,pageState.selectedListOrGroupID,pageState.selectedListType,setGlobalStateInfo,t,globalItemDocs])
   
   useEffect( () => {
     function beforeInputData(e:any) {
@@ -403,8 +402,8 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     completeRowFunc(id,index,event);
   },[completeItemRow])
 
-  if (baseItemError || baseSearchError || listError || categoryError  || uomError || globalData.globalItemError) {
-    log.error("Error loading items:",cloneDeep({baseItemError,baseSearchError,listError,categoryError, uomError, globalItemError: globalData.globalItemError}));
+  if (baseItemError || baseSearchError || error ) {
+    log.error("Error loading items:",cloneDeep({baseItemError,baseSearchError,error}));
     return (
     <ErrorPage errorText={t("general.loading_item_info_restart") as string}></ErrorPage>
   )}
@@ -417,7 +416,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
 // Reduce states that cause showing of loading screen to reduce page blink effect when clicking on-off items
   
-   if (!listRowsLoaded || categoryLoading || globalData.globalItemsLoading || uomLoading)  {
+   if (!listRowsLoaded || isLoading )  {
     return ( <Loading isOpen={screenLoading.current} message={t("general.loading_items")} /> )
   };
   
@@ -445,7 +444,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function enterSearchBox() {
-    if (globalData.listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length <=0) {
+    if (listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length <=0) {
       return;
     }
     let toOpen=true;
@@ -528,7 +527,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     keyboardClose: false,
     onDidDismiss: () => {leaveSearchBox()},
   }
-  if (globalData.listRows && globalData.listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length >0) {
+  if (listRows && listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length >0) {
     popOverProps.trigger = "item-search-box-id"
   }
   let popOverElem = (
@@ -574,7 +573,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         <IonItem key="searchbar" className="item-search">
            <IonIcon icon={searchOutline}  slot="start"/>
            <IonInput key="itemsearchbox" id="item-search-box-id" aria-label="" className="ion-no-padding input-search" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="text" enterkeyhint="enter"
-              disabled={globalData.listRows !== undefined ? globalData.listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length <=0 : true}
+              disabled={listRows !== undefined ? listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length <=0 : true}
               clearInput={true}  placeholder={t("general.search") as string} fill="solid"
               onKeyDown= {(e) => searchKeyPress(e)}
               onIonInput={(e) => updateSearchCriteria(e)}
@@ -595,7 +594,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         </IonFabButton>
       </IonFab>)
 
-  if (globalData.listRows && globalData.listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length <=0) {return(
+  if (listRows && listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length <=0) {return(
     <IonPage>
       {headerElem}
       <IonContent>

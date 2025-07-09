@@ -6,12 +6,12 @@ import { HistoryProps, RowType, RecipeFileTypes } from '../components/DataTypes'
 import { returnDownBackOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
-import { GlobalDataContext } from '../components/GlobalDataProvider';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
 import { FilePicker, PickFilesResult } from '@capawesome/capacitor-file-picker';
 import { Filesystem } from '@capacitor/filesystem';
 import {useProcessInputFile } from '../components/importUtilities';
+import { useGlobalDataStore } from '../components/GlobalData';
 
 type PageState = {
   recipeFormat: string,
@@ -26,15 +26,15 @@ const RecipeImport: React.FC<HistoryProps> = (props: HistoryProps) => {
         needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const {goBack} = useContext(NavContext);
   const screenLoading = useRef(true);
-  const globalData = useContext(GlobalDataContext);
+  const globalData = useGlobalDataStore();
   const { t } = useTranslation();
   const processInputFile = useProcessInputFile();
 
-  if ( globalData.listError || itemError ){ return (
+  if ( globalData.error || itemError ){ return (
     <ErrorPage errorText={t("error.loading_recipe_import") as string}></ErrorPage>
     )};
 
-  if (  globalData.categoryLoading || !globalData.listRowsLoaded || !itemRowsLoaded)  {
+  if (  globalData.isLoading || !globalData.listRowsLoaded || !itemRowsLoaded)  {
     return ( <Loading isOpen={screenLoading.current} message={t("general.loading_recipe_import")} />)
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   };

@@ -3,7 +3,6 @@ import { IonContent, IonPage, IonList, IonItem,
         IonItemDivider, IonButtons, IonToolbar, IonText, IonIcon, IonGrid, IonRow, IonCol, IonPopover, IonTitle } from '@ionic/react';
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';        
 import { closeCircle, checkmarkCircle, helpCircleOutline } from 'ionicons/icons';
-import { usePouch } from 'use-pouchdb';
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
 import './Settings.css';
@@ -20,6 +19,7 @@ import Loading from '../components/Loading';
 import { getTokenInfo, isDBServerAvailable, isServerAvailable } from '../components/RemoteUtilities';
 import log from "../components/logger";
 import { Capacitor } from '@capacitor/core';
+import { useGlobalDataStore } from '../components/GlobalData';
 
 type ErrorInfo = {
   isError: boolean,
@@ -36,7 +36,7 @@ const ErrorInfoInit: ErrorInfo = {
 }
 
 const Status: React.FC<HistoryProps> = (props: HistoryProps) => {
-  const db = usePouch();
+  const db = useGlobalDataStore((state) => state.db)
   const [presentAlert] = useIonAlert();
   const {globalState, settingsLoading} = useContext(GlobalStateContext);
   const { remoteDBCreds, remoteDBState, setRemoteDBState } = useContext(RemoteDBStateContext);
@@ -87,7 +87,7 @@ const Status: React.FC<HistoryProps> = (props: HistoryProps) => {
   };
 
   async function destroyDB() {
-    await db.destroy();
+    if (db !== null) {await db.destroy()};
     let credsStr=JSON.stringify({});
     await Preferences.set({key: 'dbcreds', value: credsStr})
     if (Capacitor.isNativePlatform()) {App.exitApp();}

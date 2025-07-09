@@ -1,11 +1,10 @@
-import { useContext } from "react";
-import { GlobalDataContext } from "./GlobalDataProvider";
 import { translatedItemName, translatedUOMName } from "./translationUtilities";
 import { RecipeDoc, RecipeItem } from "./DBSchema";
 import { IonButton, IonIcon, IonInput, IonItem, IonList, IonModal, IonSelect, IonSelectOption, IonTextarea, IonTitle } from "@ionic/react";
 import { useTranslation } from "react-i18next";
 import { cloneDeep } from "lodash-es";
 import { returnDownBackOutline } from "ionicons/icons";
+import { useGlobalDataStore } from "./GlobalData";
 
 export type RecipeSearchData = {
     name: string,
@@ -29,7 +28,7 @@ type RecipeModalProps = {
 }
 
 const RecipeModal: React.FC<RecipeModalProps> = (props: RecipeModalProps) => {
-    const globalData = useContext(GlobalDataContext); 
+    const uomDocs = useGlobalDataStore((state) => state.uomDocs);
     const { t } = useTranslation();
 
 return (
@@ -59,7 +58,7 @@ return (
                     updRecipeDoc.items[props.selectedItemIdx].recipeUOMName = ev.detail.value;
                     props.updateRecipeDoc(updRecipeDoc); }}>
                 <IonSelectOption key="uom-undefined" value={null}>{t('general.no_uom')}</IonSelectOption>
-                {globalData.uomDocs.filter(uom => (["system",props.recipeDoc.listGroupID].includes(String(uom.listGroupID)))).map((uom) => (
+                {uomDocs.filter(uom => (["system",props.recipeDoc.listGroupID].includes(String(uom.listGroupID)))).map((uom) => (
                         <IonSelectOption key={uom.name} value={uom.name}>
                         {translatedUOMName(uom._id as string,uom.description,uom.pluralDescription)}
                         </IonSelectOption>
@@ -80,7 +79,7 @@ return (
                     updRecipeDoc.items[props.selectedItemIdx].shoppingUOMName = ev.detail.value;
                     props.updateRecipeDoc(updRecipeDoc);}}>
                 <IonSelectOption key="uom-undefined" value={null}>{t('general.no_uom')}</IonSelectOption>
-                {globalData.uomDocs.filter(uom => (["system",props.recipeDoc.listGroupID].includes(String(uom.listGroupID)))).map((uom) => (
+                {uomDocs.filter(uom => (["system",props.recipeDoc.listGroupID].includes(String(uom.listGroupID)))).map((uom) => (
                         <IonSelectOption key={uom.name} value={uom.name}>
                         {translatedUOMName(uom._id as string,uom.description, uom.pluralDescription)}
                         </IonSelectOption>

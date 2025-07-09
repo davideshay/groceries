@@ -15,10 +15,10 @@ import SyncIndicator from '../components/SyncIndicator';
 import { closeCircleOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
-import { GlobalDataContext } from '../components/GlobalDataProvider';
 import { useTranslation } from 'react-i18next';
 import { translatedCategoryName } from '../components/translationUtilities';
 import log from "../components/logger";
+import { useGlobalDataStore } from '../components/GlobalData';
 
 interface PageState {
   needInitListDoc: boolean,
@@ -57,8 +57,8 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   const addListToAllItems = useAddListToAllItems();
   const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
   const [ presentToast ] = useIonToast();
-  const { listError, listDocs, listsLoading, listRowsLoaded, listRows, listCombinedRows,
-          categoryDocs, categoryLoading, categoryError } = useContext(GlobalDataContext);
+  const { error, isLoading, listDocs, listRowsLoaded, listRows, listCombinedRows,
+          categoryDocs } = useGlobalDataStore();
   const { loading: listGroupLoading, doc: listGroupDoc, dbError: listGroupError} = useGetOneDoc(pageState.listGroupID);
   const [presentAlert] = useIonAlert();
   const screenLoading = useRef(true);
@@ -71,7 +71,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   },[routeID])
 
   useEffect( () => {
-    if (!listsLoading && listRowsLoaded && !categoryLoading) {
+    if (!isLoading && listRowsLoaded) {
       if (mode === "new" && pageState.needInitListDoc) {
         let initListDoc : ListDoc = cloneDeep(ListDocInit);
         let newListGroupOwner: string|null = null;
@@ -97,15 +97,15 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
         setPageState(prevState => ({...prevState,listDoc: newListRow.listDoc, listGroupID: newListRow.listGroupID, listGroupOwner: newListRow.listGroupOwner, changesMade: false}))
       }
     }
-  },[listsLoading, listRowsLoaded, listGroupLoading, listDocs, listRows, pageState.needInitListDoc, listCombinedRows, mode, listGroupDoc, categoryLoading,categoryDocs,pageState.selectedListID, remoteDBState.accessJWT]);
+  },[isLoading, listRowsLoaded, listGroupLoading, listDocs, listRows, pageState.needInitListDoc, listCombinedRows, mode, listGroupDoc, categoryDocs,pageState.selectedListID, remoteDBState.accessJWT]);
 
-  if (listError || listGroupError || categoryError) {
+  if (error || listGroupError) {
     screenLoading.current=false;
     return (
     <ErrorPage errorText={t("error.loading_list_info") as string}></ErrorPage>
   )}
 
-  if (listsLoading || !listRowsLoaded || categoryLoading || isEmpty(pageState.listDoc) || (listGroupLoading && pageState.listGroupID !== null) || pageState.deletingDoc)  {
+  if (isLoading || !listRowsLoaded || isEmpty(pageState.listDoc) || (listGroupLoading && pageState.listGroupID !== null) || pageState.deletingDoc)  {
     return ( <Loading isOpen={screenLoading.current} message={t("general.loading_list")} /> )
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   };

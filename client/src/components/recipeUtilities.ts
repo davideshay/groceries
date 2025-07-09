@@ -1,6 +1,5 @@
 import { cloneDeep, isEmpty } from "lodash-es";
 import { ItemDoc, ItemDocInit, ItemList, ItemListInit, RecipeItem } from "./DBSchema";
-import { GlobalDataState } from "./GlobalDataProvider";
 import { AddListOptions, GlobalSettings } from "./DBSchema";
 import { getListGroupIDFromListOrGroupID, getRowTypeFromListOrGroupID} from "./Utilities";
 import { translatedItemName, translatedUOMShortName } from "./translationUtilities";
@@ -8,10 +7,11 @@ import { RowType } from "./DataTypes";
 import { getCommonKey } from "./ItemUtilities";
 import { t } from 'i18next';
 import log from './logger';
+import { GlobalDataStore } from "./GlobalData";
 
 export async function isRecipeItemOnList({ recipeItem, listOrGroupID,globalData, db} : 
     {recipeItem: RecipeItem, listOrGroupID: string | null,
-    globalData : GlobalDataState, db: PouchDB.Database}): Promise<[boolean, string|null]> {
+    globalData : GlobalDataStore, db: PouchDB.Database}): Promise<[boolean, string|null]> {
 
     let inList = false;
     let itemID: string|null = null
@@ -51,7 +51,7 @@ export async function isRecipeItemOnList({ recipeItem, listOrGroupID,globalData,
 }
 
 export async function updateItemFromRecipeItem({itemID,listOrGroupID,recipeItem,globalData, settings, db}:
-    {itemID: string, listOrGroupID: string | null, recipeItem: RecipeItem, globalData: GlobalDataState, 
+    {itemID: string, listOrGroupID: string | null, recipeItem: RecipeItem, globalData: GlobalDataStore, 
         settings: GlobalSettings, db: PouchDB.Database}) : Promise<string> {
     
     let status="";
@@ -113,7 +113,7 @@ export async function updateItemFromRecipeItem({itemID,listOrGroupID,recipeItem,
 }
 
 export async function createNewItemFromRecipeItem({listOrGroupID,recipeItem,globalData,settings, db} : 
-    {listOrGroupID: string | null, recipeItem: RecipeItem, globalData: GlobalDataState, settings: GlobalSettings, db: PouchDB.Database}) : Promise<string> {
+    {listOrGroupID: string | null, recipeItem: RecipeItem, globalData: GlobalDataStore, settings: GlobalSettings, db: PouchDB.Database}) : Promise<string> {
 
     let status="";
     if (!recipeItem.addToList) {return (t("error.recipe_item_not_selected_to_add",{recipeName: recipeItem.name}) as string)};

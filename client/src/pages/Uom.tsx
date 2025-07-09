@@ -10,11 +10,11 @@ import { ItemDoc, UomDoc, InitUomDoc } from '../components/DBSchema';
 import { add, addCircleOutline, closeCircleOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
-import { GlobalDataContext } from '../components/GlobalDataProvider';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
 import { translatedUOMName } from '../components/translationUtilities';
 import { useDeleteUomFromItems, useDeleteUomFromRecipes } from '../components/uomUtilities';
+import { useGlobalDataStore } from '../components/GlobalData';
 
 type PageState = {
   uomDoc: UomDoc,
@@ -49,10 +49,9 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
   const deleteUomFromRecipes = useDeleteUomFromRecipes();
   const { doc: uomDoc, loading: uomLoading} = useGetOneDoc(routeID);
   const { dbError: itemError, itemRowsLoaded, itemRows } = useItems({selectedListGroupID: null, isReady: true, needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
-  const { recipesError,recipesLoading,recipeDocs} = useContext(GlobalDataContext)
+  const { error,isLoading,recipeDocs, listRowsLoaded, uomDocs, listCombinedRows} = useGlobalDataStore();
   const {goBack} = useContext(NavContext);
   const screenLoading = useRef(true);
-  const globalData = useContext(GlobalDataContext);
   const { t } = useTranslation();
 
   useEffect( () => {
@@ -67,11 +66,11 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   },[uomLoading,uomDoc,pageState.needInitUomDoc,mode]);
 
-  if ( globalData.listError || recipesError || itemError ) { return (
+  if ( error || itemError ) { return (
     <ErrorPage errorText={t("error.loading_uom") as string}></ErrorPage>
     )};
 
-  if ( uomLoading || recipesLoading || !pageState.uomDoc || pageState.deletingUom || !globalData.listRowsLoaded || !itemRowsLoaded)  {
+  if ( uomLoading || isLoading || !pageState.uomDoc || pageState.deletingUom || !listRowsLoaded || !itemRowsLoaded)  {
     return ( <Loading isOpen={screenLoading.current} message={t("general.loading_uom")} />)
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   };
@@ -97,7 +96,7 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
       return false;
     }
     let uomDup=false;
-    (globalData.uomDocs).forEach((doc) => {
+    (uomDocs).forEach((doc) => {
       if ((doc._id !== pageState.uomDoc._id) && 
       (["system",pageState.uomDoc.listGroupID].includes(doc.listGroupID)) && (
           (doc.name.toUpperCase() === pageState.uomDoc.name.toUpperCase()) || 
@@ -252,7 +251,7 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
           <IonList className="ion-no-padding">
             <IonItem key="listgroup">
               <IonSelect disabled={mode!=="new"} key="listgroupsel" label={t("general.list_group") as string} labelPlacement='stacked' interface="popover" onIonChange={(e) => updateListGroup(e.detail.value)} value={pageState.uomDoc.listGroupID}>
-                { (cloneDeep(globalData.listCombinedRows) as ListCombinedRows).filter(lr => (lr.rowType === RowType.listGroup)).map((lr) => 
+                { (cloneDeep(listCombinedRows) as ListCombinedRows).filter(lr => (lr.rowType === RowType.listGroup)).map((lr) => 
                   ( <IonSelectOption key={lr.rowKey} value={lr.listGroupID} disabled={lr.listGroupID === "system"}>{lr.listGroupName}</IonSelectOption> )
                 )}
               </IonSelect>

@@ -3,17 +3,16 @@ import { PickFilesResult } from "@capawesome/capacitor-file-picker";
 import zip from 'jszip';
 import { GlobalItemDoc, InitGlobalItem, InitRecipeDoc, RecipeDoc, RecipeInstruction, RecipeItem, RecipeItemInit } from "./DBSchema";
 import { cloneDeep, isEmpty } from "lodash-es";
-import { GlobalDataContext, GlobalDataState } from "./GlobalDataProvider";
-import { usePouch } from "use-pouchdb";
-import { useCallback, useContext } from "react";
+import { useCallback } from "react";
 import { AlertInput, useIonAlert, useIonLoading } from "@ionic/react";
 import { useTranslation } from "react-i18next";
 import { t } from 'i18next';
 import log from "./logger";
+import { GlobalDataStore, useGlobalDataStore } from "./GlobalData";
 
 export function useProcessInputFile() {
-    const db = usePouch();
-    const globalData = useContext(GlobalDataContext);
+    const db = useGlobalDataStore((state) => state.db);
+    const globalData = useGlobalDataStore();
     const [ presentAlert ] = useIonAlert();
     const [ presentLoading,dismissLoading] = useIonLoading();
     const { t } = useTranslation();
@@ -21,9 +20,10 @@ export function useProcessInputFile() {
         async (fileType: RecipeFileType, pickResults: PickFilesResult): Promise<[boolean,string]> => {
             let success: boolean = false;
             let errorMessage: string = "";
+            if (db === null) {return [false,""]};
             async function triggerLoadTandoor(alertData: any, recipeObjs: TandoorRecipe[]) {
                 await presentLoading(t("general.importing_recipes") as string);
-                const statusMessage = await loadTandoorRecipes(alertData,recipeObjs,db,globalData)
+                const statusMessage = await loadTandoorRecipes(alertData,recipeObjs,db as PouchDB.Database,globalData)
                 await dismissLoading();
                 await presentAlert({
                       header: t("general.import_recipe_results"),
@@ -105,7 +105,7 @@ async function processTandoorZip(inputFile: PickFilesResult) : Promise<TandoorRe
     return response;
 }
 
-async function loadTandoorRecipes(alertData: string[],recipeObjs: TandoorRecipe[],db: PouchDB.Database,globalData: GlobalDataState) : Promise<string> {
+async function loadTandoorRecipes(alertData: string[],recipeObjs: TandoorRecipe[],db: PouchDB.Database,globalData: GlobalDataStore) : Promise<string> {
     if (alertData === undefined || alertData.length === 0) {return t("error.nothing_to_load") as string};
     let statusFull = ""
     for (let i = 0; i < alertData.length; i++) {
@@ -122,7 +122,7 @@ async function loadTandoorRecipes(alertData: string[],recipeObjs: TandoorRecipe[
     return statusFull;
 }
 
-async function createTandoorRecipe(recipeObj: TandoorRecipe, db: PouchDB.Database, globalData: GlobalDataState): Promise<[boolean,string]> {
+async function createTandoorRecipe(recipeObj: TandoorRecipe, db: PouchDB.Database, globalData: GlobalDataStore): Promise<[boolean,string]> {
     let newRecipeDoc: RecipeDoc = cloneDeep(InitRecipeDoc);
     newRecipeDoc.name = recipeObj.name;
     let newInstructions: RecipeInstruction[] = [];
@@ -175,7 +175,7 @@ async function createTandoorRecipe(recipeObj: TandoorRecipe, db: PouchDB.Databas
     return [response.successful,t("general.loaded_recipe_successfully", {name: recipeObj.name})]
 }
 
-function findMatchingUOM(uom: string, globalData: GlobalDataState): string {
+function findMatchingUOM(uom: string, globalData: GlobalDataStore): string {
     if (uom === null || uom === undefined) {return ""};
     let foundUOM = globalData.uomDocs.find(u => ( ["system",globalData.recipeListGroup].includes(String(u.listGroupID)) && (u.description.toUpperCase() === uom.toUpperCase() || u.pluralDescription.toUpperCase() === uom.toUpperCase())));
     if (foundUOM === undefined) {
@@ -207,7 +207,7 @@ function findMatchingUOM(uom: string, globalData: GlobalDataState): string {
     else { return foundUOM.name}
 }
 
-export function findMatchingGlobalItem(foodName: string|null, globalData: GlobalDataState) : [string|null,string, GlobalItemDoc] {
+export function findMatchingGlobalItem(foodName: string|null, globalData: GlobalDataStore) : [string|null,string, GlobalItemDoc] {
     let sysItemKey = "system:item";
     let returnInitGlobalItem = cloneDeep(InitGlobalItem)
     if (foodName === null) {return [null,"",returnInitGlobalItem]}

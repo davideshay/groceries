@@ -10,12 +10,12 @@ import { ItemDoc, CategoryDoc, InitCategoryDoc, DefaultColor } from '../componen
 import { addCircleOutline, closeCircleOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
-import { GlobalDataContext } from '../components/GlobalDataProvider';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
 import { translatedCategoryName } from '../components/translationUtilities';
 import { cloneDeep } from 'lodash-es';
 import { GlobalStateContext } from '../components/GlobalState';
+import { useGlobalDataStore } from '../components/GlobalData';
 
 enum ErrorLocation  {
    Name, General
@@ -41,13 +41,19 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   const deleteCategoryFromLists = useDeleteCategoryFromLists();
   const addCategoryToLists = useAddCategoryToLists();
   const { doc: categoryDoc, loading: categoryLoading} = useGetOneDoc(routeID);
-  const { dbError: itemError, itemRowsLoaded, itemRows } = useItems({selectedListGroupID: null, isReady: true, needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
+  const { itemRowsLoaded, itemRows } = useItems({selectedListGroupID: null, isReady: true, needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const {goBack} = useContext(NavContext);
   const screenLoading = useRef(true);
-  const globalData = useContext(GlobalDataContext);
   const {globalState, updateCategoryColor, deleteCategoryColor} = useContext(GlobalStateContext)
   const [presentDeleting,dismissDeleting] = useIonLoading();
   const { t } = useTranslation();
+  const error = useGlobalDataStore((state) => state.error);
+  const loading = useGlobalDataStore((state) => state.isLoading);
+  const listRows = useGlobalDataStore((state) => state.listRows);
+  const listRowsLoaded = useGlobalDataStore((state) => state.listRowsLoaded);
+  const categoryDocs = useGlobalDataStore((state) => state.categoryDocs);
+  const listCombinedRows = useGlobalDataStore((state) => state.listCombinedRows);
+
 
   useEffect( () => {
     let newCategoryDoc: CategoryDoc;
@@ -71,11 +77,11 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
     if (categoryDoc !== null) {setStateCategoryDoc(categoryDoc)}
   },[categoryDoc])
 
-  if ( globalData.listError || itemError || globalData.categoryError !== null) { return (
+  if (error) { return (
     <ErrorPage errorText={t("error.loading_category_info") as string}></ErrorPage>
     )};
 
-  if ( categoryLoading || globalData.categoryLoading || !stateCategoryDoc || deletingCategory || !globalData.listRowsLoaded || !itemRowsLoaded)  {
+  if ( categoryLoading || loading || !stateCategoryDoc || deletingCategory || !listRowsLoaded || !itemRowsLoaded)  {
     return ( <Loading isOpen={screenLoading.current} message={t("general.loading_category")} />)
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   };
@@ -95,7 +101,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
       return false;
     }
     let categoryDup=false;
-    (globalData.categoryDocs as CategoryDoc[]).forEach((doc) => {
+    (categoryDocs as CategoryDoc[]).forEach((doc) => {
       if ((["system",stateCategoryDoc.listGroupID].includes(String(doc.listGroupID))) && 
           (doc._id !== stateCategoryDoc._id) && 
           (doc.name.toUpperCase() === stateCategoryDoc.name.toUpperCase() || translatedCategoryName(doc._id,doc.name).toUpperCase() === stateCategoryDoc.name.toUpperCase())) {
@@ -116,7 +122,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
       result = await createCategory(stateCategoryDoc);
       if (result.successful) {
         catID = String(result.pouchData.id);
-        let catListAddResponse = await addCategoryToLists(catID,stateCategoryDoc.listGroupID,globalData.listCombinedRows);
+        let catListAddResponse = await addCategoryToLists(catID,stateCategoryDoc.listGroupID,listCombinedRows);
         if (!catListAddResponse.successful) {
           setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.error_adding_category"), hasError: true}}));
           return;
@@ -151,7 +157,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   async function getNumberOfListsUsingCategory() {
     let numResults = 0;
     if (stateCategoryDoc === null) return numResults;
-    globalData.listRows.forEach( (lr: ListRow) => {
+    listRows.forEach( (lr: ListRow) => {
       if (lr.listDoc.categories.includes(String(stateCategoryDoc._id))) {
         numResults++;
       }
@@ -222,7 +228,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
             </IonItem>
             <IonItem key="listgroup">
               <IonSelect disabled={mode!=="new"} key="listgroupsel" label={t("general.list_group") as string} labelPlacement='stacked' interface="popover" onIonChange={(e) => updateListGroup(e.detail.value)} value={stateCategoryDoc.listGroupID}>
-                { (cloneDeep(globalData.listCombinedRows) as ListCombinedRows).filter(lr => (lr.rowType === RowType.listGroup)).map((lr) => 
+                { (cloneDeep(listCombinedRows) as ListCombinedRows).filter(lr => (lr.rowType === RowType.listGroup)).map((lr) => 
                   ( <IonSelectOption key={lr.rowKey} value={lr.listGroupID} disabled={lr.listGroupID === "system"}>{lr.listGroupName}</IonSelectOption> )
                 )}
               </IonSelect>

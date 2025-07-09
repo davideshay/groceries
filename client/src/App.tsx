@@ -29,10 +29,9 @@ import "./Colors.css"
 /* Theme variables */
 // import './theme/variables.css';
 
-import { Provider } from 'use-pouchdb';
 import PouchDB from 'pouchdb';
 import find from 'pouchdb-find';
-import { GlobalDataProvider } from './components/GlobalDataProvider';
+
 // import log from 'loglevel';
 
 setupIonicReact({
@@ -56,15 +55,11 @@ const App: React.FC = () => {
   <IonApp>
     <ErrorBoundary>
       <IonReactRouter>
-        <Provider pouchdb={db}>
-          <RemoteDBStateProvider>
+          <RemoteDBStateProvider pouchDB={db}>
             <GlobalStateProvider>
-              <GlobalDataProvider>
                 <AppContent />
-              </GlobalDataProvider>
             </GlobalStateProvider>
           </RemoteDBStateProvider>
-        </Provider>
       </IonReactRouter>
     </ErrorBoundary>
   </IonApp>

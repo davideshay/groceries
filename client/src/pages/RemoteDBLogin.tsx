@@ -3,7 +3,6 @@ import { IonContent, IonPage, IonButton, IonList, IonInput, IonItem,
 import { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { eye, eyeOff } from 'ionicons/icons';
 import { Capacitor, CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
-import { usePouch} from 'use-pouchdb';
 import { ConnectionStatus, DBCreds, DBUUIDAction, LoginType } from '../components/RemoteDBState';
 import { App } from '@capacitor/app';
 import { createNewUser, getTokenInfo, navigateToFirstListID, errorCheckCreds, isServerAvailable, JWTMatchesUser, CreateResponse, createResponseInit, isDBServerAvailable, getDeviceID } from '../components/RemoteUtilities';
@@ -13,10 +12,10 @@ import { HistoryProps} from '../components/DataTypes';
 import { apiConnectTimeout } from '../components/Utilities';
 import { useTranslation } from 'react-i18next';
 import PageHeader from '../components/PageHeader';
-import { DataReloadStatus, GlobalDataContext } from '../components/GlobalDataProvider';
 import log from "../components/logger";
 import { GlobalStateContext, initialGlobalState } from '../components/GlobalState';
 import { useHistory } from 'react-router';
+import { DataReloadStatus, useGlobalDataStore } from '../components/GlobalData';
 
 enum LoginOptions {
   Unknown = "U",
@@ -98,14 +97,13 @@ states to support:
  */
 
 const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
-    const db=usePouch();
     const [remoteState,setRemoteState]=useState<RemoteState>(initRemoteState);
     const [formState,setFormState]=useState<FormState>(initFormState);
     const showingVersionAlert = useRef(false);
     const [presentAlert, dismissAlert] = useIonAlert();
     const { remoteDBState, remoteDBCreds, setRemoteDBState, setRemoteDBCreds, removeUserInfoDBCreds, stopSyncAndCloseRemote,
       assignDB, setDBCredsValue, setLoginType, attemptFullLogin} = useContext(RemoteDBStateContext);
-    const { dataReloadStatus, waitForReload, listRows, listRowsLoaded, listsLoading, listCombinedRows } = useContext(GlobalDataContext);
+    const { db, dataReloadStatus, waitForReload, listRows, listRowsLoaded, isLoading, listCombinedRows } = useGlobalDataStore();
     const { globalState, setGlobalState} = useContext(GlobalStateContext);
     const [ present, dismiss ]= useIonLoading();
     const { t } = useTranslation();
@@ -121,7 +119,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     },[setRemoteDBState])
 
     const destroyAndExit = useCallback(async () => {
-      await db.destroy();
+      if (db !== null) await db.destroy();
       await removeUserInfoDBCreds(true);
       exitApp();
     },[db,exitApp,removeUserInfoDBCreds])  
@@ -255,7 +253,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
         navigateToFirstListID(history,listRows,listCombinedRows , globalState.settings.savedListID);
         setRemoteDBState(prevState =>({...prevState,initialNavComplete: true}));
       }
-      if (listRowsLoaded && !listsLoading) {
+      if (listRowsLoaded && !isLoading) {
         if (remoteDBState.connectionStatus === ConnectionStatus.cannotStart) {
           log.error("Detected cannot start, setting initRemoteState");
           setRemoteState(initRemoteState);
@@ -265,7 +263,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
           doNav();
         }
       }
-    },[remoteDBState.initialNavComplete, remoteDBState.initialSyncComplete ,remoteDBState.loggedIn, remoteDBState.workingOffline, remoteDBState.connectionStatus, db, listRows, listCombinedRows, listRowsLoaded, listsLoading, dataReloadStatus,dismiss, setRemoteDBState, globalState.settings, globalState.settingsLoaded, history]);
+    },[remoteDBState.initialNavComplete, remoteDBState.initialSyncComplete ,remoteDBState.loggedIn, remoteDBState.workingOffline, remoteDBState.connectionStatus, db, listRows, listCombinedRows, listRowsLoaded, isLoading, dataReloadStatus,dismiss, setRemoteDBState, globalState.settings, globalState.settingsLoaded, history]);
 
     function updateDBCredsFromResponse(response: CreateResponse): DBCreds {
       let newDBCreds=cloneDeep(remoteDBCreds);

@@ -6,8 +6,8 @@ import { RowType } from "./DataTypes";
 import { GlobalSettings, AddListOptions, SettingsDoc, InitSettings, InitSettingsDoc, CategoryColors, LogLevelNumber } from "./DBSchema";
 import { useCreateGenericDocument, useUpdateGenericDocument } from "./Usehooks";
 import { RemoteDBStateContext } from "./RemoteDBState";
-import { useFind } from "use-pouchdb";
 import log from "./logger";
+import { useGlobalDataStore } from "./GlobalData";
 
 export type GlobalState = {
     itemMode?: string,
@@ -63,10 +63,9 @@ type GlobalStateProviderProps = {
 export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: GlobalStateProviderProps) => {
     const [globalState,setGlobalState] = useState<GlobalState>(initialGlobalState);
     const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
-    const { docs: settingsDocs, loading: settingsLoading, error: settingsError} = useFind({
-        index: "stdTypeUsername",
-        selector: {type: "settings", "username": remoteDBCreds.dbUsername}
-    })
+    const settingsDoc  = useGlobalDataStore((state) => state.settingsDoc);
+    const loading  = useGlobalDataStore((state) => state.isLoading);
+    const error = useGlobalDataStore((state) => state.error)
     const updateSettingDoc = useUpdateGenericDocument();
     const createSettingDoc = useCreateGenericDocument();
 
@@ -76,7 +75,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
 
     async function updateSettingKey(key: string, value: AddListOptions | boolean | number | string | null): Promise<boolean> {
         setGlobalState(prevState => ({...prevState,settings: {...prevState.settings, [key]: value}}))
-        let dbSettingsDoc: SettingsDoc = settingsDocs[0] as SettingsDoc;
+        let dbSettingsDoc: SettingsDoc = settingsDoc as SettingsDoc;
         let newSettingsDoc: SettingsDoc = {...dbSettingsDoc,settings: {...dbSettingsDoc.settings,[key]: value}};
         await updateSettingDoc(newSettingsDoc);
         return true;
@@ -84,7 +83,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
 
     async function updateCategoryColor(catID: string, color: string): Promise<boolean> {
         if (isEmpty(color) || isEmpty(catID)) { return false;}
-        let curSettingsDoc: SettingsDoc = settingsDocs[0] as SettingsDoc;
+        let curSettingsDoc: SettingsDoc = settingsDoc as SettingsDoc;
         let curCategoryColors: CategoryColors = {}
         if (curSettingsDoc.categoryColors) {
             curCategoryColors = curSettingsDoc.categoryColors;
@@ -97,7 +96,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
 
     async function deleteCategoryColor(catID: string): Promise<boolean> {
         if (isEmpty(catID)) { return false;}
-        let curSettingsDoc: SettingsDoc = settingsDocs[0] as SettingsDoc;
+        let curSettingsDoc: SettingsDoc = settingsDoc as SettingsDoc;
         let curCategoryColors: CategoryColors = {}
         if (curSettingsDoc.categoryColors) {
             curCategoryColors = cloneDeep(curSettingsDoc.categoryColors);
@@ -157,8 +156,8 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
     }
 
     const getSettings = useCallback( async () => {
-        let dbSettingsExist = (settingsDocs.length > 0);
-        let dbSettingsDoc: SettingsDoc = cloneDeep(settingsDocs[0]) as SettingsDoc;
+        let dbSettingsExist = (settingsDoc !== null);
+        let dbSettingsDoc: SettingsDoc = cloneDeep(settingsDoc) as SettingsDoc;
         let dbCategoryColors: CategoryColors = {};
         let { value: storageSettingsStr } = await Preferences.get({ key: 'settings'});
         let storageSettings: GlobalSettings = cloneDeep(InitSettings);
@@ -195,7 +194,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         } else if (storageSettingsExist && dbSettingsExist) {
             await Preferences.remove({key : "settings"});
             if (dbUpdated) {
-                let newSettingsDoc:SettingsDoc = cloneDeep(settingsDocs[0]) as SettingsDoc;
+                let newSettingsDoc:SettingsDoc = cloneDeep(settingsDoc) as SettingsDoc;
                 newSettingsDoc.settings = cloneDeep(dbSettingsDoc.settings);
                 log.debug("Updating settings on DB")
                 await updateSettingDoc(newSettingsDoc)
@@ -204,7 +203,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         } else if (!storageSettingsExist && dbSettingsExist) {
             finalSettings = dbSettingsDoc.settings;
             if (dbUpdated) {
-                let newSettingsDoc: SettingsDoc = cloneDeep(settingsDocs[0]) as SettingsDoc;
+                let newSettingsDoc: SettingsDoc = cloneDeep(settingsDoc) as SettingsDoc;
                 newSettingsDoc.settings = dbSettingsDoc.settings;
                 await updateSettingDoc(newSettingsDoc)
             }
@@ -212,20 +211,20 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         setGlobalState(prevState => ({...prevState,settings: finalSettings, categoryColors: dbCategoryColors}))
         setGlobalState(prevState => ({...prevState,settingsLoaded: true}));
         return (finalSettings);
-    },[createSettingDoc,remoteDBCreds.dbUsername,settingsDocs,updateSettingDoc])
+    },[createSettingDoc,remoteDBCreds.dbUsername,settingsDoc,updateSettingDoc])
 
     useEffect( () => {
-        if ((remoteDBState.initialSyncComplete || remoteDBState.workingOffline) && !settingsLoading && (settingsError === null)) {
+        if ((remoteDBState.initialSyncComplete || remoteDBState.workingOffline) && !loading && (error === null)) {
             getSettings()
         }
-    },[remoteDBState.initialSyncComplete, remoteDBState.workingOffline, settingsLoading, settingsError,getSettings, settingsDocs])
+    },[remoteDBState.initialSyncComplete, remoteDBState.workingOffline, loading, error,getSettings, settingsDoc])
 
     useEffect( () => {
         log.setLevel(Number(globalState.settings.loggingLevel) as LogLevelNumber);
     },[globalState.settings.loggingLevel])
 
 
-    let value: GlobalStateContextType = {globalState, setGlobalState, setStateInfo, updateSettingKey, updateCategoryColor, deleteCategoryColor, settingsLoading: settingsLoading};
+    let value: GlobalStateContextType = {globalState, setGlobalState, setStateInfo, updateSettingKey, updateCategoryColor, deleteCategoryColor, settingsLoading: loading};
     return (
         <GlobalStateContext.Provider value={value}>{props.children}</GlobalStateContext.Provider>
       );

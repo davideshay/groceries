@@ -1,13 +1,13 @@
 import { IonTitle,  IonButton, IonList, IonInput, IonSelect, IonCheckbox, IonIcon,
     IonSelectOption, IonTextarea, IonGrid, IonRow, IonCol, IonText, IonModal, IonToolbar, IonButtons } from '@ionic/react';
 import { addCircleOutline, closeCircleOutline, saveOutline } from 'ionicons/icons';    
-import { SetStateAction, useContext } from 'react';    
+import { SetStateAction } from 'react';    
 import {  ModalState, ModalStateInit } from '../components/DataTypes';
 import {  CategoryDocs, ItemDoc, ItemList} from '../components/DBSchema';
 import { cloneDeep } from 'lodash-es';
-import { GlobalDataContext } from './GlobalDataProvider';
 import { useTranslation } from 'react-i18next';
 import { translatedCategoryName, translatedUOMName } from './translationUtilities';
+import { useGlobalDataStore } from './GlobalData';
 
 type ModalProps = {
     stateItemDoc: ItemDoc,
@@ -19,7 +19,9 @@ type ModalProps = {
 }
   
 const ItemListsModal: React.FC<ModalProps> = (props: ModalProps) => {
-    const globalData = useContext(GlobalDataContext);
+    const listDocs = useGlobalDataStore((state) => state.listDocs);
+    const categoryDocs = useGlobalDataStore((state) => state.categoryDocs);
+    const uomDocs = useGlobalDataStore((state) => state.uomDocs);
     const { t } = useTranslation()
     
     function saveModal() {
@@ -39,10 +41,10 @@ const ItemListsModal: React.FC<ModalProps> = (props: ModalProps) => {
     
     function getActiveCategories(): CategoryDocs {
       let catDocs: CategoryDocs = [];
-      const thisListDoc = globalData.listDocs.find(ld => ld._id === props.modalState.selectedListId);
+      const thisListDoc = listDocs.find(ld => ld._id === props.modalState.selectedListId);
       if (thisListDoc === undefined) {return catDocs;}
       for (const cat of thisListDoc.categories) {
-        const thisCat = globalData.categoryDocs.find(cds => cds._id === cat);
+        const thisCat = categoryDocs.find(cds => cds._id === cat);
         if (thisCat !== undefined) {catDocs.push(thisCat)}
       }
       return catDocs.sort(function (a,b) {
@@ -88,7 +90,7 @@ const ItemListsModal: React.FC<ModalProps> = (props: ModalProps) => {
             <IonCol size="7">
               <IonSelect label={t('general.uom_abbrev') as string} labelPlacement="stacked" interface="popover" onIonChange={(ev) => props.setModalState(prevState => ({...prevState, itemList: {...prevState.itemList, uomName: ev.detail.value}}))} value={props.modalState.itemList.uomName}>
                   <IonSelectOption key="uom-undefined" value={null}>{t('general.no_uom')}</IonSelectOption>
-                  {globalData.uomDocs.filter(uom => (["system",props.stateItemDoc.listGroupID].includes(uom.listGroupID))).map((uom) => (
+                  {uomDocs.filter(uom => (["system",props.stateItemDoc.listGroupID].includes(uom.listGroupID))).map((uom) => (
                     <IonSelectOption key={uom.name} value={uom.name}>
                       {translatedUOMName(uom._id as string,uom.description,uom.pluralDescription)}
                     </IonSelectOption>

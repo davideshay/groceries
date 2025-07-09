@@ -15,11 +15,10 @@ import './ListGroup.css';
 import { closeCircleOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
-import { GlobalDataContext } from '../components/GlobalDataProvider';
 import { useTranslation } from 'react-i18next';
 import log from "../components/logger";
 import { updateTriggerDoc } from '../components/RemoteUtilities';
-import { usePouch } from 'use-pouchdb';
+import { useGlobalDataStore } from '../components/GlobalData';
 import { GlobalStateContext } from '../components/GlobalState';
 
 interface PageState {
@@ -62,14 +61,18 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { remoteDBState, remoteDBCreds, setRemoteDBState, restartSync } = useContext(RemoteDBStateContext);
   const [ presentToast ] = useIonToast();
   const {useFriendState, friendRows} = useFriends(String(remoteDBCreds.dbUsername));
-  const { listCombinedRows, listRows, listRowsLoaded, listError } = useContext(GlobalDataContext);
+  const error = useGlobalDataStore((state) => state.error);
+  const listCombinedRows = useGlobalDataStore((state) => state.listCombinedRows);
+  const listRows = useGlobalDataStore((state) => state.listRows);
+  const listRowsLoaded = useGlobalDataStore((state) => state.listRowsLoaded);
+  const db = useGlobalDataStore((state) => state.db);
   const { globalState, updateSettingKey } = useContext(GlobalStateContext);
   const { loading: listGroupLoading, doc: listGroupDoc, dbError: listGroupError } = useGetOneDoc(pageState.selectedListGroupID);
   const [presentAlert,dismissAlert] = useIonAlert();
   const screenLoading = useRef(true);
   const history = useHistory();
   const { t } = useTranslation();
-  const db = usePouch();
+  
 
   useEffect( () => {
     setPageState(prevState => ({...prevState,
@@ -120,7 +123,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   },[listGroupLoading, listGroupDoc, listRowsLoaded, mode, useFriendState,friendRows,pageState.selectedListGroupID, globalState.settings.alexaDefaultListGroup,remoteDBState.accessJWT, pageState.needInitListGroupDoc,remoteDBCreds.apiServerURL,remoteDBCreds.dbUsername,remoteDBState.dbServerAvailable,setRemoteDBState]);
 
-  if (listError || listGroupError  || useFriendState === UseFriendState.error) {
+  if (error || listGroupError  || useFriendState === UseFriendState.error) {
     <ErrorPage errorText={t('error.loading_list_group') as string}></ErrorPage>
   }
 

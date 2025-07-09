@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {initItemRow, ItemRow, ItemSearch, ListCombinedRow, ListCombinedRows,
      ListRow, RowType, ItemSearchType, CategoryRows, CategoryRow, ItemRows, initCategoryRow, ListSelectRow, ListSelectRows} from '../components/DataTypes';
 import { GlobalState } from "./GlobalState";
@@ -8,7 +8,7 @@ import { cloneDeep, isEmpty } from 'lodash-es';
 import { t } from 'i18next';
 import { translatedCategoryName, translatedItemName, translatedItemNameWithUOM, translatedUOMShortName } from './translationUtilities';
 import { getListGroupIDFromListOrGroupID } from './Utilities';
-import { GlobalDataContext } from './GlobalDataProvider';
+import { useGlobalDataStore } from './GlobalData';
 
 export function getGroupIDForList(listID: string, listDocs: ListDocs): string | null {
     let retGID = null;
@@ -408,14 +408,18 @@ function getListSelectRows(listCombinedRows: ListCombinedRows, itemDocs: ItemDoc
 }
 
 export function useListSelectRows() {
-  const { listCombinedRows, listRowsLoaded ,itemDocs, itemsLoading } = useContext(GlobalDataContext);
+  const listCombinedRows = useGlobalDataStore((state) => state.listCombinedRows);
+  const listRowsLoaded = useGlobalDataStore((state) => state.listRowsLoaded);
+  const itemDocs = useGlobalDataStore((state) => state.itemDocs);
+  const loading = useGlobalDataStore((state) => state.isLoading);
+
   const [ listSelectRows, setListSelectRows ] = useState<ListSelectRows>([]);
 
   useEffect( () => {
-    if (listRowsLoaded && !itemsLoading) {
+    if (listRowsLoaded && !loading) {
       setListSelectRows(getListSelectRows(listCombinedRows,itemDocs));
     }
-  },[listRowsLoaded,itemsLoading,listCombinedRows,itemDocs])
+  },[listRowsLoaded,loading,listCombinedRows,itemDocs])
 
   return listSelectRows;
 }

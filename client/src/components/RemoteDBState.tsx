@@ -1,5 +1,4 @@
 import React, { createContext, useState, useEffect, useRef, useCallback} from "react";
-import { usePouch} from 'use-pouchdb';
 import { Preferences } from '@capacitor/preferences';
 import { getUsersInfo, initialSetupActivities } from '../components/Utilities'; 
 import { App } from '@capacitor/app';
@@ -219,10 +218,11 @@ export const RemoteDBStateContext = createContext(initialContext)
 
 type RemoteDBStateProviderProps = {
     children: React.ReactNode;
+    pouchDB: PouchDB.Database
 }
 
 export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (props: RemoteDBStateProviderProps) => {
-    const { iniitalize } = useGlobalDataStore();
+    const { initialize } = useGlobalDataStore();
     const [remoteDBState,setRemoteDBState] = useState<RemoteDBState>(initialRemoteDBState);
     const loginAttempted = useRef(false);
     const loginType = useRef<LoginType>(LoginType.autoLoginSpecificURL);
@@ -230,7 +230,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     const syncListGroupIDs = useRef<string[]>([]);
     const [, forceUpdateState] = React.useState<{}>();
     const forceUpdate = React.useCallback(() => forceUpdateState({}), []);
-    const db=usePouch();
+    const db=props.pouchDB;
     const { t } = useTranslation();
     const history = useHistory();
     const refreshTokenLocked = useRef(false);
@@ -238,6 +238,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     const retryingNetwork = useRef<boolean>(false);
     const appStatus = useRef<AppStatus>(AppStatus.resumed);
     const broadcastChannel = useRef<BroadcastChannel>(new BroadcastChannel("dupcheck"))
+    const initializedGlobalData = useRef<boolean>(false);
 
     function setLoginType(lType: LoginType) {
         loginType.current = lType;
@@ -294,7 +295,10 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     }
 
     useEffect( () => {
-        iniitalize(db,remoteDBCreds,remoteDBState);
+        if (!initializedGlobalData.current && db !== null && (remoteDBState.initialSyncComplete || remoteDBState.workingOffline)) {
+            initializedGlobalData.current = true;
+            initialize(db,remoteDBCreds.current,remoteDBState);
+        }
     },[db,remoteDBCreds,remoteDBState])
 
 

@@ -1,17 +1,22 @@
 import { useCallback } from "react";
-import { usePouch } from "use-pouchdb";
 import { PouchResponse, PouchResponseInit } from "./DataTypes";
 import { cloneDeep } from "lodash-es";
 import { ItemDoc, RecipeDoc } from "./DBSchema";
 import log from "./logger";
+import { useGlobalDataStore } from "./GlobalData";
 
 export function useDeleteUomFromItems() {
-    const db=usePouch()
+    const db=useGlobalDataStore((state)=>state.db);
   
     return useCallback(
       async (uomID: string) => {
         let response: PouchResponse = cloneDeep(PouchResponseInit);
         let itemResults: PouchDB.Find.FindResponse<{}>
+        if (db === null) {
+          response.successful = false;
+          response.errorText = "No database available";
+          return response;
+        }
         try { itemResults = await db.find({
             use_index: "stdTypeLists",
             selector: {
@@ -37,12 +42,13 @@ export function useDeleteUomFromItems() {
   }
 
   export function useDeleteUomFromRecipes() {
-    const db=usePouch()
+    const db=useGlobalDataStore((state)=>state.db);
   
     return useCallback(
       async (uomID: string) => {
         let response: PouchResponse = cloneDeep(PouchResponseInit);
         let recipeResults: PouchDB.Find.FindResponse<{}>
+        if (db === null) {response.successful = false; response.errorText="No database available"; return response;}
         try { recipeResults = await db.find({
           use_index: "stdType",
           selector: {
