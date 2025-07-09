@@ -220,7 +220,8 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
     },[remoteDBState.initialSyncComplete, remoteDBState.workingOffline, loading, error,getSettings, settingsDoc])
 
     useEffect( () => {
-        log.setLevel(Number(globalState.settings.loggingLevel) as LogLevelNumber);
+        console.log("setting log level to:",globalState.settings.loggingLevel);
+        // log.setLevel(Number(globalState.settings.loggingLevel) as LogLevelNumber);
     },[globalState.settings.loggingLevel])
 
 

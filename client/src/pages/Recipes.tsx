@@ -13,7 +13,9 @@ import { useGlobalDataStore } from '../components/GlobalData';
 const Recipes: React.FC<HistoryProps> = (props: HistoryProps) => {
   const screenLoading=useRef(true);
   const { t } = useTranslation();
-  const { recipeDocs, isLoading, error} = useGlobalDataStore();
+  const recipeDocs = useGlobalDataStore((state) => state.recipeDocs);
+  const isLoading = useGlobalDataStore((state) => state.isLoading);
+  const error = useGlobalDataStore((state) => state.error);
   const history = useHistory()
 
   if (error) { return (

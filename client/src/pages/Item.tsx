@@ -59,7 +59,15 @@ const Item: React.FC = (props) => {
   const [presentAlert] = useIonAlert();
   const [presentToast] = useIonToast();
   const { t } = useTranslation();
-  const {listRows, listDocs, listRowsLoaded, listCombinedRows, error, isLoading, globalItemDocs, categoryDocs, uomDocs} = useGlobalDataStore();
+  const listRows = useGlobalDataStore((state) => state.listRows);
+  const listDocs = useGlobalDataStore((state) => state.listDocs);
+  const listRowsLoaded = useGlobalDataStore((state) => state.listRowsLoaded);
+  const listCombinedRows = useGlobalDataStore((state) => state.listCombinedRows);
+  const error = useGlobalDataStore((state) => state.error);
+  const isLoading = useGlobalDataStore((state) => state.isLoading);
+  const globalItemDocs = useGlobalDataStore((state) => state.globalItemDocs);
+  const categoryDocs = useGlobalDataStore((state) => state.categoryDocs);
+  const uomDocs = useGlobalDataStore((state) => state.uomDocs);
   
   const groupIDForList = useCallback((listID: string) => {
     let retGID="";

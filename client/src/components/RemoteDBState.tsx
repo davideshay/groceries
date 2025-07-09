@@ -222,7 +222,7 @@ type RemoteDBStateProviderProps = {
 }
 
 export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (props: RemoteDBStateProviderProps) => {
-    const { initialize } = useGlobalDataStore();
+    const initialize = useGlobalDataStore((state) => state.initialize);
     const [remoteDBState,setRemoteDBState] = useState<RemoteDBState>(initialRemoteDBState);
     const loginAttempted = useRef(false);
     const loginType = useRef<LoginType>(LoginType.autoLoginSpecificURL);

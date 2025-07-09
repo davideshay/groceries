@@ -26,15 +26,17 @@ const RecipeImport: React.FC<HistoryProps> = (props: HistoryProps) => {
         needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const {goBack} = useContext(NavContext);
   const screenLoading = useRef(true);
-  const globalData = useGlobalDataStore();
+  const error = useGlobalDataStore((state) => state.error);
+  const isLoading = useGlobalDataStore((state) => state.isLoading);
+  const listRowsLoaded = useGlobalDataStore((state) => state.listRowsLoaded);
   const { t } = useTranslation();
   const processInputFile = useProcessInputFile();
 
-  if ( globalData.error || itemError ){ return (
+  if ( error || itemError ){ return (
     <ErrorPage errorText={t("error.loading_recipe_import") as string}></ErrorPage>
     )};
 
-  if (  globalData.isLoading || !globalData.listRowsLoaded || !itemRowsLoaded)  {
+  if (  isLoading || !listRowsLoaded || !itemRowsLoaded)  {
     return ( <Loading isOpen={screenLoading.current} message={t("general.loading_recipe_import")} />)
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   };

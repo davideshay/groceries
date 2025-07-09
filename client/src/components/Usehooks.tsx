@@ -288,7 +288,12 @@ export function useItems({selectedListGroupID,isReady, needListGroupID, activeOn
   const [itemRowsLoaded, setItemRowsLoaded] = useState(false);
   const [itemRowsLoading, setItemRowsLoading] = useState(false);
   const [dbError, setDBError] = useState(false);
-  const { error, listCombinedRows, listRowsLoaded, listDocs, isLoading, itemDocs } = useGlobalDataStore()
+  const error = useGlobalDataStore((state) => state.error);
+  const isLoading = useGlobalDataStore((state) => state.isLoading);
+  const listCombinedRows = useGlobalDataStore((state) => state.listCombinedRows);
+  const listRowsLoaded = useGlobalDataStore((state) => state.listRowsLoaded);
+  const listDocs = useGlobalDataStore((state) => state.listDocs);
+  const itemDocs = useGlobalDataStore((state) => state.itemDocs);
   
 
   const buildItemRows = useCallback( () => {
@@ -434,7 +439,9 @@ export function useFriends(username: string) : { useFriendState: UseFriendState,
     useEffect( () => {
         if (error) {setUseFriendState((prevState) => UseFriendState.error); return};
         if (isLoading) {setUseFriendState((prevState) => UseFriendState.baseFriendsLoading); return;};
-        setUseFriendState((prevState) => UseFriendState.baseFriendsLoaded);
+        if (useFriendState === UseFriendState.baseFriendsLoading) {
+          setUseFriendState((prevState) => UseFriendState.baseFriendsLoaded);
+        }
     },[useFriendState] )
 
 

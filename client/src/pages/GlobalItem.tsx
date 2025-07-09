@@ -22,7 +22,10 @@ const GlobalItem: React.FC<HistoryProps> = (props: HistoryProps) => {
   const {goBack} = useContext(NavContext);
   const screenLoading = useRef(true);
   const { t } = useTranslation();
-  const  {error, isLoading, uomDocs, categoryDocs} = useGlobalDataStore();
+  const error = useGlobalDataStore((state) => state.error);
+  const isLoading = useGlobalDataStore((state) => state.isLoading);
+  const uomDocs = useGlobalDataStore((state) => state.uomDocs);
+  const categoryDocs = useGlobalDataStore((state) => state.categoryDocs);
 
   if ( globalItemError || error) { return (
     <ErrorPage errorText={t("error.loading_global_item") as string}></ErrorPage>

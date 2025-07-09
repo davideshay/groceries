@@ -51,7 +51,18 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       isReady: (pageState.groupIDforSelectedList !== null && pageState.selectedListOrGroupID !== null),
       needListGroupID: true, activeOnly: false, selectedListID: pageState.selectedListOrGroupID,
       selectedListType: pageState.selectedListType});
-  const { error , isLoading, listDocs, listCombinedRows,listRows, listRowsLoaded, uomDocs, categoryDocs, itemDocs, globalItemDocs } = useGlobalDataStore();
+  const error = useGlobalDataStore((state) => state.error);
+  const isLoading = useGlobalDataStore((state) => state.isLoading);
+  const listDocs = useGlobalDataStore((state) => state.listDocs);
+  const listCombinedRows = useGlobalDataStore((state) => state.listCombinedRows);
+  const listRows = useGlobalDataStore((state) => state.listRows);
+  const listRowsLoaded = useGlobalDataStore((state) => state.listRowsLoaded);
+  const uomDocs = useGlobalDataStore((state) => state.uomDocs);
+  const categoryDocs = useGlobalDataStore((state) => state.categoryDocs);
+  const itemDocs = useGlobalDataStore((state) => state.itemDocs);
+  const globalItemDocs = useGlobalDataStore((state) => state.globalItemDocs);
+
+
   const { globalState,setStateInfo: setGlobalStateInfo, updateSettingKey} = useContext(GlobalStateContext);
   const {t} = useTranslation();
   const contentRef = useRef<any>(null);

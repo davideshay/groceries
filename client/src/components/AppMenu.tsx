@@ -12,7 +12,6 @@ const AppMenu: React.FC = () => {
   const { remoteDBCreds, remoteDBState } = useContext(RemoteDBStateContext);
   const {useFriendState,friendRows} = useFriends(String(remoteDBCreds.dbUsername));
   const { t } = useTranslation();
- 
   const listHeader = (headerName: string) => {
     return (<IonItemDivider className="category-divider">{headerName}</IonItemDivider>)
   }

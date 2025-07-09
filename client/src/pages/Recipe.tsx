@@ -165,7 +165,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
     let updRecipeDoc: RecipeDoc = cloneDeep(pageState.recipeDoc);
     let globalItemID: null | string = null;
     let newRecipeName: string = "";
-    [globalItemID,newRecipeName] = findMatchingGlobalItem(name,globalData);  
+    [globalItemID,newRecipeName] = findMatchingGlobalItem(name);  
     if (globalItemID == null) {
         newRecipeName= name;
     }
@@ -240,15 +240,14 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
       newListItem.globalItemID = item.globalItemID;
       newListItem.name = item.name;
       if (db !== null) {
-        const [inList, itemID] = await isRecipeItemOnList({recipeItem: item, listOrGroupID: pageState.selectedListOrGroupID,
-            globalData, db: db});
+        const [inList, itemID] = await isRecipeItemOnList({recipeItem: item, listOrGroupID: pageState.selectedListOrGroupID});
         if (inList && itemID !== null && db !== null) {
           let status=await updateItemFromRecipeItem({itemID: itemID, listOrGroupID: pageState.selectedListOrGroupID,
-                recipeItem: item, globalData: globalData, settings: globalState.settings, db: db})
+                recipeItem: item, settings: globalState.settings })
           if (status !== "") {statusComplete = statusComplete + "\n" + status};   
         } else {
           let status=await createNewItemFromRecipeItem({listOrGroupID: pageState.selectedListOrGroupID,
-                recipeItem: item, globalData: globalData, settings: globalState.settings, db: db})
+                recipeItem: item, settings: globalState.settings })
           if (status !== "") {statusComplete = statusComplete + "\n" + status};     
        }
       }

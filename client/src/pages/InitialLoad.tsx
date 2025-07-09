@@ -19,7 +19,13 @@ type InitialLoadProps = {
 
 const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
     const { remoteDBState, remoteDBCreds, remoteDB, setLoginType, setRemoteDBState} = useContext(RemoteDBStateContext);
-    const { db, error ,listRowsLoaded, listRows, isLoading, listCombinedRows, dataReloadStatus } = useGlobalDataStore();
+    const db = useGlobalDataStore((state) => state.db);
+    const error = useGlobalDataStore((state) => state.error);
+    const isLoading = useGlobalDataStore((state) => state.isLoading);
+    const listRowsLoaded = useGlobalDataStore((state) => state.listRowsLoaded);
+    const listRows = useGlobalDataStore((state) => state.listRows);
+    const listCombinedRows = useGlobalDataStore((state) => state.listCombinedRows);
+    const dataReloadStatus = useGlobalDataStore((state) => state.dataReloadStatus);
     const { globalState, setGlobalState } = useContext(GlobalStateContext);
     const screenLoading = useRef(true);
     const history = useHistory();

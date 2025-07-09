@@ -8,11 +8,10 @@ import { AlertInput, useIonAlert, useIonLoading } from "@ionic/react";
 import { useTranslation } from "react-i18next";
 import { t } from 'i18next';
 import log from "./logger";
-import { GlobalDataStore, useGlobalDataStore } from "./GlobalData";
+import { useGlobalDataStore } from "./GlobalData";
 
 export function useProcessInputFile() {
     const db = useGlobalDataStore((state) => state.db);
-    const globalData = useGlobalDataStore();
     const [ presentAlert ] = useIonAlert();
     const [ presentLoading,dismissLoading] = useIonLoading();
     const { t } = useTranslation();
@@ -23,7 +22,7 @@ export function useProcessInputFile() {
             if (db === null) {return [false,""]};
             async function triggerLoadTandoor(alertData: any, recipeObjs: TandoorRecipe[]) {
                 await presentLoading(t("general.importing_recipes") as string);
-                const statusMessage = await loadTandoorRecipes(alertData,recipeObjs,db as PouchDB.Database,globalData)
+                const statusMessage = await loadTandoorRecipes(alertData,recipeObjs)
                 await dismissLoading();
                 await presentAlert({
                       header: t("general.import_recipe_results"),
@@ -55,7 +54,7 @@ export function useProcessInputFile() {
             }
             return [success,errorMessage]
         }
-    ,[globalData,db,dismissLoading,presentAlert,presentLoading,t])
+    ,[db,dismissLoading,presentAlert,presentLoading,t])
 }
 
 function getTandoorAlertInputs(recipeObjs: TandoorRecipe[]): AlertInput[] {
@@ -105,24 +104,25 @@ async function processTandoorZip(inputFile: PickFilesResult) : Promise<TandoorRe
     return response;
 }
 
-async function loadTandoorRecipes(alertData: string[],recipeObjs: TandoorRecipe[],db: PouchDB.Database,globalData: GlobalDataStore) : Promise<string> {
+async function loadTandoorRecipes(alertData: string[],recipeObjs: TandoorRecipe[]) : Promise<string> {
     if (alertData === undefined || alertData.length === 0) {return t("error.nothing_to_load") as string};
     let statusFull = ""
     for (let i = 0; i < alertData.length; i++) {
         let recipe = recipeObjs.find((recipe) => (recipe.name === alertData[i]));
         if (recipe === undefined) {log.error("Could not find recipe - "+alertData[i]); continue};
-        if (await checkRecipeExists(recipe.name,db)) {
+        if (await checkRecipeExists(recipe.name)) {
             log.warn("Could not import: "+alertData[i]+" - Duplicate");
             statusFull=statusFull+"\n"+t("error.could_not_import_recipe_dup",{recipe:alertData[i]});
             continue;
         }
-        const [,statusMessage] = await createTandoorRecipe(recipe,db,globalData);
+        const [,statusMessage] = await createTandoorRecipe(recipe);
         statusFull=statusFull+"\n"+statusMessage
     }
     return statusFull;
 }
 
-async function createTandoorRecipe(recipeObj: TandoorRecipe, db: PouchDB.Database, globalData: GlobalDataStore): Promise<[boolean,string]> {
+async function createTandoorRecipe(recipeObj: TandoorRecipe): Promise<[boolean,string]> {
+    let db = useGlobalDataStore((state) => state.db);
     let newRecipeDoc: RecipeDoc = cloneDeep(InitRecipeDoc);
     newRecipeDoc.name = recipeObj.name;
     let newInstructions: RecipeInstruction[] = [];
@@ -138,17 +138,17 @@ async function createTandoorRecipe(recipeObj: TandoorRecipe, db: PouchDB.Databas
     recipeObj.steps.forEach(step => {
         step.ingredients.forEach(ingredient => {
             let recipeItem: RecipeItem = cloneDeep(RecipeItemInit);
-            [recipeItem.globalItemID,recipeItem.name,matchGlobalItem] = findMatchingGlobalItem(ingredient.food.name,globalData);  
+            [recipeItem.globalItemID,recipeItem.name,matchGlobalItem] = findMatchingGlobalItem(ingredient.food.name);  
             if (recipeItem.globalItemID == null) {
-                [recipeItem.globalItemID,recipeItem.name,matchGlobalItem] = findMatchingGlobalItem(ingredient.food.plural_name,globalData);
+                [recipeItem.globalItemID,recipeItem.name,matchGlobalItem] = findMatchingGlobalItem(ingredient.food.plural_name);
             }
             if (recipeItem.globalItemID == null) {
                 recipeItem.name = ingredient.food.name as string;
             }
             if (ingredient.unit !== null) {
-                recipeItem.recipeUOMName = findMatchingUOM(ingredient.unit.name as string,globalData);
+                recipeItem.recipeUOMName = findMatchingUOM(ingredient.unit.name as string);
                 if (recipeItem.recipeUOMName === "") {
-                    recipeItem.recipeUOMName = findMatchingUOM(ingredient.unit.plural_name as string,globalData);
+                    recipeItem.recipeUOMName = findMatchingUOM(ingredient.unit.plural_name as string);
                 }
                 if (recipeItem.recipeUOMName === "" && recipeItem.globalItemID !== null && matchGlobalItem.defaultUOM !== null) {
                     recipeItem.recipeUOMName = matchGlobalItem.defaultUOM;
@@ -169,18 +169,22 @@ async function createTandoorRecipe(recipeObj: TandoorRecipe, db: PouchDB.Databas
     let curDateStr=(new Date()).toISOString()
     newRecipeDoc.updatedAt = curDateStr;
     let response: PouchResponse = cloneDeep(PouchResponseInit);
+    if (db === null) {return [false,"No DB Available"];}
     try { response.pouchData = await db.post(newRecipeDoc); }
     catch(err) { response.successful = false; response.fullError = err; log.error("Creating recipe failed",err);}
     if (!response.pouchData.ok) { response.successful = false;}
     return [response.successful,t("general.loaded_recipe_successfully", {name: recipeObj.name})]
 }
 
-function findMatchingUOM(uom: string, globalData: GlobalDataStore): string {
+function findMatchingUOM(uom: string): string {
+    const uomDocs = useGlobalDataStore((state) => state.uomDocs);
+    const recipeListGroup = useGlobalDataStore((state) => state.recipeListGroup);
+
     if (uom === null || uom === undefined) {return ""};
-    let foundUOM = globalData.uomDocs.find(u => ( ["system",globalData.recipeListGroup].includes(String(u.listGroupID)) && (u.description.toUpperCase() === uom.toUpperCase() || u.pluralDescription.toUpperCase() === uom.toUpperCase())));
+    let foundUOM = uomDocs.find(u => ( ["system",recipeListGroup].includes(String(u.listGroupID)) && (u.description.toUpperCase() === uom.toUpperCase() || u.pluralDescription.toUpperCase() === uom.toUpperCase())));
     if (foundUOM === undefined) {
-        foundUOM = globalData.uomDocs.find(u => {
-            if (!["system",globalData.recipeListGroup].includes(String(u.listGroupID))) {return false}
+        foundUOM = uomDocs.find(u => {
+            if (!["system",recipeListGroup].includes(String(u.listGroupID))) {return false}
             let foundAlt = false;
             if (u.hasOwnProperty("alternates") && u.alternates !== null) {
                 let upperAlternates = u.alternates!.map(el => (el.replace(/\W|_/g, '').toUpperCase()))
@@ -197,7 +201,7 @@ function findMatchingUOM(uom: string, globalData: GlobalDataStore): string {
         }
     }
     if (foundUOM === undefined) {
-        let translatedUOM = globalData.uomDocs.find(u=> ( ["system",globalData.recipeListGroup].includes(u.listGroupID) && (t("uom."+u.name,{count:1})).toLocaleUpperCase() === uom.toLocaleUpperCase() ) || (t("uom."+u.name,{count: 2}).toLocaleUpperCase() === uom.toLocaleUpperCase()) );
+        let translatedUOM = uomDocs.find(u=> ( ["system",recipeListGroup].includes(u.listGroupID) && (t("uom."+u.name,{count:1})).toLocaleUpperCase() === uom.toLocaleUpperCase() ) || (t("uom."+u.name,{count: 2}).toLocaleUpperCase() === uom.toLocaleUpperCase()) );
         if (translatedUOM === undefined) {
             return "";
         } else {
@@ -207,13 +211,14 @@ function findMatchingUOM(uom: string, globalData: GlobalDataStore): string {
     else { return foundUOM.name}
 }
 
-export function findMatchingGlobalItem(foodName: string|null, globalData: GlobalDataStore) : [string|null,string, GlobalItemDoc] {
+export function findMatchingGlobalItem(foodName: string|null) : [string|null,string, GlobalItemDoc] {
+    let globalItemDocs = useGlobalDataStore((state) => state.globalItemDocs);
     let sysItemKey = "system:item";
     let returnInitGlobalItem = cloneDeep(InitGlobalItem)
     if (foodName === null) {return [null,"",returnInitGlobalItem]}
-    let globalItem = globalData.globalItemDocs.find(gi => (gi.name.toUpperCase() === foodName.toUpperCase()));
+    let globalItem = globalItemDocs.find(gi => (gi.name.toUpperCase() === foodName.toUpperCase()));
     if (globalItem === undefined) {
-        let translatedGlobal = globalData.globalItemDocs.find(git =>{
+        let translatedGlobal = globalItemDocs.find(git =>{
         return(
         (t("globalitem."+(git._id as string).substring(sysItemKey.length+1),{count: 1}).toLocaleUpperCase() === foodName.toLocaleUpperCase()) || 
         (t("globalitem."+(git._id as string).substring(sysItemKey.length+1),{count: 2}).toLocaleUpperCase() === foodName.toLocaleUpperCase()) )  })
@@ -223,16 +228,9 @@ export function findMatchingGlobalItem(foodName: string|null, globalData: Global
     else {return [globalItem._id as string,globalItem.name as string,globalItem]}
 }
 
-async function checkRecipeExists(recipeName: string, db: PouchDB.Database): Promise<boolean> {
+async function checkRecipeExists(recipeName: string): Promise<boolean> {
     let exists=false;
-    let recipeResults: PouchDB.Find.FindResponse<{}> = {docs: []}
-    try {recipeResults = await db.find({
-        use_index: "stdTypeName",
-        selector: {
-          type: "recipe",
-          name: recipeName }
-      })}
-    catch(err) {exists=false; return exists};
-    if (recipeResults.docs.length > 0) {exists = true};
+    let recipeDocs = useGlobalDataStore((state) => state.recipeDocs);
+    exists = recipeDocs.some((recipe) => recipe.name === recipeName);
     return exists;
 }

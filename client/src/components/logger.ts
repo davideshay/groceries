@@ -23,4 +23,6 @@ function getLoggingLevel(level: string) : LogLevelNumbers {
 
 log.setLevel(getLoggingLevel(LOG_LEVEL));
 
+console.log("logging level set to: ",LOG_LEVEL);
+
 export default log;

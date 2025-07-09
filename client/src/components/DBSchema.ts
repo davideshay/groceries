@@ -383,3 +383,11 @@ export type TriggerDoc = {
   triggerData: any,
   updatedAt: string
 }
+
+
+export type GenericBaseGroceryDoc = TriggerDoc | SettingsDoc | RecipeDoc | FriendDoc | UserDoc | ListGroupDoc | ListDoc | GlobalItemDoc | ImageDoc | ItemDoc | UomDoc | UUIDDoc | CategoryDoc | ConflictDoc
+export type GenericGroceryDoc = GenericBaseGroceryDoc & {
+    _deleted: boolean
+  }
+
+export type GroceryDocType = "trigger" | "settings" | "recipe" | "friend" | "user" | "listgroup" | "list" | "globalitem" | "image" | "item" | "uom" | "dbuuid" | "category" | "conflictlog"

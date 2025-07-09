@@ -31,6 +31,7 @@ import "./Colors.css"
 
 import PouchDB from 'pouchdb';
 import find from 'pouchdb-find';
+import { useSyncLocalPouchChangesToGlobalData } from './components/GlobalData';
 
 // import log from 'loglevel';
 
@@ -43,6 +44,7 @@ const App: React.FC = () => {
 
   PouchDB.plugin(find);
   const [db, ] = useState(() => new PouchDB('local', {revs_limit: 10, auto_compaction: true, size: 250}))
+  useSyncLocalPouchChangesToGlobalData();
 
 
   // Back button listener functionality now in RemoteDBState
@@ -50,6 +52,8 @@ const App: React.FC = () => {
   useEffect( () => {
     db.setMaxListeners(20);
   },[db]);
+
+console.log("App overall re-rendering...");
 
   return (
   <IonApp>

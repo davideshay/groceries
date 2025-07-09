@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { CategoryDocs, ConflictDocs, FriendDocs, GlobalItemDocs, InitSettingsDoc, ItemDocs, ListDocs, ListGroupDocs, RecipeDoc, SettingsDoc, UomDoc } from "./DBSchema";
+import { useEffect, useRef } from 'react';
+import { CategoryDocs, ConflictDocs, FriendDocs, GenericGroceryDoc, GlobalItemDocs, InitSettingsDoc, ItemDocs, ListDocs, ListGroupDocs, RecipeDoc, SettingsDoc, UomDoc } from "./DBSchema";
 import { ListCombinedRows, ListRow } from "./DataTypes";
 import { getListRows } from "./GlobalDataUtilities";
 import { translatedCategoryName, translatedItemName, translatedUOMName } from "./translationUtilities";
@@ -34,14 +35,12 @@ export interface GlobalDataState {
     db: PouchDB.Database | null;
     remoteDBCreds: any;
     remoteDBState: any;
-    
-    // Change listener reference for cleanup
-    changeListener: PouchDB.Core.Changes<{}> | null;
+
 }
 
 export interface GlobalDataActions {
     // Initialize the store with database and credentials
-    initialize: (db: PouchDB.Database, remoteDBCreds: any, remoteDBState: any) => () => void;
+    initialize: (db: PouchDB.Database, remoteDBCreds: any, remoteDBState: any) => void;
     
     // Load all data from PouchDB
     loadAllData: () => Promise<void>;
@@ -82,7 +81,6 @@ const initialState: GlobalDataState = {
     db: null,
     remoteDBCreds: null,
     remoteDBState: null,
-    changeListener: null,
 };
 
 export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
@@ -90,43 +88,12 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
         
         initialize: (db, remoteDBCreds, remoteDBState) => {
             console.log("initialize called...");
-            const state = get();
-            
-            // Cleanup existing listener if any
-            if (state.changeListener) {
-                state.changeListener.cancel();
-            }
-            
+                        
             set({ db, remoteDBCreds, remoteDBState });
             
             // Start initial data load
             get().loadAllData();
             
-            // Set up change listener
-            const changes = db.changes({
-                since: 'now',
-                live: true,
-                include_docs: true
-            });
-            
-            changes.on('change', (change) => {
-                console.debug('Database change detected:', change.id);
-                // Reload all data when any change occurs
-                get().loadAllData();
-            });
-            
-            changes.on('error', (error) => {
-                console.error('Database changes error:', error);
-                set({ error: error as PouchDB.Core.Error });
-            });
-            
-            set({ changeListener: changes });
-            
-            // Return cleanup function
-            return () => {
-                changes.cancel();
-                set({ changeListener: null });
-            };
         },
         
         loadAllData: async () => {
@@ -171,10 +138,8 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
         },
         
         parseAllDocuments: (docs) => {
-            const { remoteDBCreds, remoteDBState } = get();
+            const { remoteDBCreds } = get();
             if (!remoteDBCreds) return;
-            
-            console.debug('Parsing documents by type');
             
             // Initialize arrays for each document type
             const globalItems: any[] = [];
@@ -187,12 +152,10 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
             const uoms: any[] = [];
             const friends: any[] = [];
             const conflicts: any[] = [];
-             
-            console.log("processing all documents. remoteDB creds:",{remoteDBCreds,remoteDBState});
 
             // Parse all documents by type
             docs.forEach(doc => {
-                if (!doc || !doc.type || !doc.name) return;
+                if (!doc || !doc.type) return;
                 
                 switch (doc.type) {
                     case 'globalitem':
@@ -238,9 +201,12 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
                     case "conflictlog":
                         conflicts.push(doc);
                         break;
+
+                    default:
+                        
                 }
             });
-            
+
             // Get allowed list group IDs for filtering
             const allowedListGroupIds = listGroups.map(lg => lg._id);
             const allowedListGroupIdsWithSystem = ['system', ...allowedListGroupIds];
@@ -282,17 +248,17 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
                         .localeCompare(translatedUOMName(b._id as string, b.description, b.pluralDescription).toUpperCase())
                 );
             
-            console.debug('Parsed documents:', {
-                globalItems: sortedGlobalItems.length,
-                listGroups: sortedListGroups.length,
-                categories: filteredAndSortedCategories.length,
-                lists: filteredLists.length,
-                recipes: filteredAndSortedRecipes.length,
+            console.log('Parsed documents:', {
+                globalItems: sortedGlobalItems,
+                listGroups: sortedListGroups,
+                categories: filteredAndSortedCategories,
+                lists: filteredLists,
+                recipes: filteredAndSortedRecipes,
                 settings,
-                items: filteredItems.length,
-                uoms: filteredAndSortedUoms.length,
-                friends: friends.length,
-                conflicts: conflicts.length
+                items: filteredItems,
+                uoms: filteredAndSortedUoms,
+                friends: friends,
+                conflicts: conflicts
             });
             
             // Update the store with parsed and sorted data
@@ -312,6 +278,7 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
         
         updateListRows: () => {
             const { listDocs, listGroupDocs, remoteDBCreds, remoteDBState } = get();
+            console.log("Updating List Rows...");
             
             if (!remoteDBState.initialSyncComplete && remoteDBState.dbServerAvailable) {
                 console.debug('Skipping list rows update - sync not complete');
@@ -334,7 +301,7 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
                 listRowsLoaded: true 
             });
             
-            log.debug('List rows updated:', {
+            console.log('List rows updated:', {
                 listRows: listRows.length,
                 listCombinedRows: listCombinedRows.length,
                 recipeListGroup
@@ -342,16 +309,128 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
         },
         
         waitForReload: () => {
-            log.debug("Wait for Reload Triggered");
+            console.log("Wait for Reload Triggered");
             set({ dataReloadStatus: DataReloadStatus.ReloadNeeded });
             get().loadAllData();
         },
         
         cleanup: () => {
-            const { changeListener } = get();
-            if (changeListener) {
-                changeListener.cancel();
-                set({ changeListener: null });
-            }
         }
     }));
+
+// export type GroceryDocType = "trigger" | "settings" | "recipe" | "friend" | "user" | "listgroup" | "list" | "globalitem" | "image" | "item" | "uom" | "dbuuid" | "category" | "conflictlog"
+
+export function useSyncLocalPouchChangesToGlobalData() {
+    const db = useGlobalDataStore((state) => state.db);
+    const loadAllData = useGlobalDataStore((state) => state.loadAllData);
+    const listenerStarted = useRef(false);
+
+
+    function deleteADocFromArray(docType: string,changeDoc: GenericGroceryDoc):  boolean {
+        let fullLoadNeeded = false;
+        switch (docType) {
+            case "settings":
+                // should never be deleted
+                fullLoadNeeded = true;
+                break;
+            case "recipe":
+                const newRecipes: RecipeDoc[] = useGlobalDataStore.getState().recipeDocs.filter((recipe) => recipe._id !== changeDoc._id);
+                useGlobalDataStore.setState({recipeDocs: newRecipes});
+                break;
+            case "friend":
+                const newFriends: FriendDocs = useGlobalDataStore.getState().friendDocs.filter((friend) => friend._id !== changeDoc._id);
+                useGlobalDataStore.setState({friendDocs: newFriends});
+                break;
+            case "user":
+                // should not be deleted
+                fullLoadNeeded = true;
+                break;
+            case "listgroup":
+                const newListGroups: ListGroupDocs = useGlobalDataStore.getState().listGroupDocs.filter((lg) => lg._id !== changeDoc._id);
+                useGlobalDataStore.setState({listGroupDocs: newListGroups});
+                break;
+            case "list":
+                const newLists: ListDocs = useGlobalDataStore.getState().listDocs.filter((list) => list._id !== changeDoc._id);
+                useGlobalDataStore.setState({listDocs: newLists});
+                break;
+            case "globalitem":
+                // should never be deleted
+                fullLoadNeeded = true;
+                break;
+            case "image":
+                // not a part of global data, could be large data amounts
+                fullLoadNeeded
+                break;
+
+            case "item":
+                const newItems: ItemDocs = itemDocs.filter((item) => item._id !== changeDoc._id);
+                useGlobalDataStore.setState({itemDocs: newItems});
+                console.log("set state of new itemDocs complete");
+                break;
+        
+            default:
+                break;
+        }
+        return fullLoadNeeded;
+
+    }
+
+
+
+    function processRecordChange(change: PouchDB.Core.ChangesResponseChange<{}>) {
+        const changeDoc: GenericGroceryDoc = change.doc as GenericGroceryDoc;
+        if (!changeDoc) {return;}
+        if (changeDoc._deleted) {
+            deleteADocFromArray(changeDoc.type,changeDoc);
+            console.log("DELETED DOC:",changeDoc)
+            return;
+        } else {
+            console.log("add/change doc",changeDoc)
+        }
+
+    }
+
+    useEffect(() => {
+        if (db === null) {
+            console.log("No database available");
+            return;
+        }
+
+        if (listenerStarted.current) {
+            console.log("Change listeners already started...");
+            return;
+        }
+
+            // Set up change listener
+        const changes = db.changes({
+            since: 'now',
+            live: true,
+            include_docs: true
+        });
+
+        listenerStarted.current = true;
+        
+        changes.on('change', (change) => {
+            console.log('Database change detected:', change.id);
+            processRecordChange(change)
+            console.log("Done processing individual change");
+            // Reload all data when any change occurs
+            loadAllData();
+        });
+        
+        changes.on('error', (error) => {
+            console.log('Database changes error:', error);
+            useGlobalDataStore.setState({ error: error as PouchDB.Core.Error });
+        });
+        
+        // Return cleanup function
+        return () => {
+            changes.cancel();
+            listenerStarted.current = false;
+        };
+
+
+    },[db])
+
+
+}

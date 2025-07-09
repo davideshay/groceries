@@ -57,8 +57,13 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   const addListToAllItems = useAddListToAllItems();
   const { remoteDBState, remoteDBCreds } = useContext(RemoteDBStateContext);
   const [ presentToast ] = useIonToast();
-  const { error, isLoading, listDocs, listRowsLoaded, listRows, listCombinedRows,
-          categoryDocs } = useGlobalDataStore();
+  const error = useGlobalDataStore((state) => state.error);
+  const isLoading = useGlobalDataStore((state) => state.isLoading);
+  const listDocs = useGlobalDataStore((state) => state.listDocs);
+  const listRowsLoaded = useGlobalDataStore((state) => state.listRowsLoaded);
+  const listRows = useGlobalDataStore((state) => state.listRows);
+  const listCombinedRows = useGlobalDataStore((state) => state.listCombinedRows);
+  const categoryDocs = useGlobalDataStore((state) => state.categoryDocs);
   const { loading: listGroupLoading, doc: listGroupDoc, dbError: listGroupError} = useGetOneDoc(pageState.listGroupID);
   const [presentAlert] = useIonAlert();
   const screenLoading = useRef(true);

@@ -103,7 +103,13 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     const [presentAlert, dismissAlert] = useIonAlert();
     const { remoteDBState, remoteDBCreds, setRemoteDBState, setRemoteDBCreds, removeUserInfoDBCreds, stopSyncAndCloseRemote,
       assignDB, setDBCredsValue, setLoginType, attemptFullLogin} = useContext(RemoteDBStateContext);
-    const { db, dataReloadStatus, waitForReload, listRows, listRowsLoaded, isLoading, listCombinedRows } = useGlobalDataStore();
+    const db = useGlobalDataStore((state) => state.db);
+    const dataReloadStatus = useGlobalDataStore((state) => state.dataReloadStatus);
+    const waitForReload = useGlobalDataStore((state) => state.waitForReload);
+    const listRows = useGlobalDataStore((state) => state.listRows);
+    const listRowsLoaded = useGlobalDataStore((state) => state.listRowsLoaded);
+    const isLoading = useGlobalDataStore((state) => state.isLoading);
+    const listCombinedRows = useGlobalDataStore((state) => state.listCombinedRows);
     const { globalState, setGlobalState} = useContext(GlobalStateContext);
     const [ present, dismiss ]= useIonLoading();
     const { t } = useTranslation();

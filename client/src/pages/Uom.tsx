@@ -49,7 +49,12 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
   const deleteUomFromRecipes = useDeleteUomFromRecipes();
   const { doc: uomDoc, loading: uomLoading} = useGetOneDoc(routeID);
   const { dbError: itemError, itemRowsLoaded, itemRows } = useItems({selectedListGroupID: null, isReady: true, needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
-  const { error,isLoading,recipeDocs, listRowsLoaded, uomDocs, listCombinedRows} = useGlobalDataStore();
+  const error = useGlobalDataStore((state) => state.error);
+  const isLoading = useGlobalDataStore((state) => state.isLoading);
+  const recipeDocs = useGlobalDataStore((state) => state.recipeDocs);
+  const listRowsLoaded = useGlobalDataStore((state) => state.listRowsLoaded);
+  const uomDocs = useGlobalDataStore((state) => state.uomDocs);
+  const listCombinedRows = useGlobalDataStore((state) => state.listCombinedRows);
   const {goBack} = useContext(NavContext);
   const screenLoading = useRef(true);
   const { t } = useTranslation();
