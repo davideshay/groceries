@@ -14,7 +14,7 @@ const ListsAll: React.FC<ListsAllProps> = (props: ListsAllProps) => {
   const listCombinedRows = useGlobalDataStore((state) => state.listCombinedRows);
 
   if (!listRowsLoaded) { return (<></>) }
-  
+
   function addRow({separatePage, showLinkID, editLinkID, rowKey, rowName, extraClass }: 
       { separatePage: boolean, showLinkID?: string, editLinkID: string, rowKey: string, rowName: string, extraClass: string}) {
     const isUngroupedHeader = (rowKey.startsWith("G-null"));
@@ -43,7 +43,7 @@ const ListsAll: React.FC<ListsAllProps> = (props: ListsAllProps) => {
     }
     if (separatePage) {return baseRow}
     else {
-      return (<IonMenuToggle className="menu-list-item-toggle" key={rowKey} auto-hide={false}>
+      return (<IonMenuToggle className="menu-list-item-toggle" key={rowKey} autoHide={false}>
         {baseRow}
       </IonMenuToggle>)
     }
@@ -84,7 +84,7 @@ const ListsAll: React.FC<ListsAllProps> = (props: ListsAllProps) => {
       )      
     }   
   })
-  
+
   return (
       <>
         {listsElem}

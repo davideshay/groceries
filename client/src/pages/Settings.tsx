@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { languageDescriptions } from '../i18n';
 import Loading from '../components/Loading';
 import { Capacitor } from '@capacitor/core';
+import log from "../components/logger";
 
 const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
   const {globalState, settingsLoading, updateSettingKey} = useContext(GlobalStateContext);
@@ -25,6 +26,7 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
   const screenLoading = useRef(false);
 
   useEffect( () => {
+    log.debug("change in settings:",{settingsLoaded: globalState.settingsLoaded,localSettingsInitialized,settings: globalState.settings})
     if (!localSettingsInitialized && globalState.settingsLoaded) {
       setLocalSettings(prevState=>(globalState.settings));
       setUserInfo({name: String(remoteDBCreds.dbUsername), email: String(remoteDBCreds.email), fullname: String(remoteDBCreds.fullName)})

@@ -53,8 +53,6 @@ const App: React.FC = () => {
     db.setMaxListeners(20);
   },[db]);
 
-console.log("App overall re-rendering...");
-
   return (
   <IonApp>
     <ErrorBoundary>
