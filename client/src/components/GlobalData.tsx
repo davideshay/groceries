@@ -239,8 +239,6 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
                         .localeCompare(translatedUOMName(b._id as string, b.description, b.pluralDescription).toUpperCase())
                 );
 
-            log.debug("settings",settings);
-
             // Update the store with parsed and sorted data
             set({
                 globalItemDocs: sortedGlobalItems as GlobalItemDocs,
@@ -316,6 +314,10 @@ export function useSyncLocalPouchChangesToGlobalData() {
         
         changes.on('change', (change) => {
             log.debug('Database change detected:', change.id);
+            // The easiest approach is to just reload from pouchDB "alldocs" collection. This is taking less than 200ms overall.
+            // Although processing a deletion can be done much faster, any change or add would require re-running sorting and other functions
+            // It's also impossible to determine the difference between an add and a change in this change emitter, so you need to check
+            // if a document exists first to determine whether to add or change. Ultimately not worth it.
             loadAllData();
         });
         

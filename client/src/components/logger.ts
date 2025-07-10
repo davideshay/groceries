@@ -1,6 +1,13 @@
 // logger.js
 import log, { LogLevelNumbers } from 'loglevel';
-export const LOG_LEVEL: string = (window as any)._env_.LOG_LEVEL === undefined ? "INFO" : (window as any)._env_.LOG_LEVEL;
+import { Capacitor } from '@capacitor/core';
+// import { Preferences } from '@capacitor/preferences';
+import { Filesystem, Directory, Encoding, PermissionStatus } from '@capacitor/filesystem';
+
+const LOG_LEVEL: string = (window as any)._env_.LOG_LEVEL === undefined ? "INFO" : (window as any)._env_.LOG_LEVEL;
+const AndroidLogFileName = "groceries-log.txt";
+export let androidLogPermissionsError = false;
+
 
 function getLoggingLevel(level: string) : LogLevelNumbers {
     let uLevel=level.toUpperCase();
@@ -21,7 +28,57 @@ function getLoggingLevel(level: string) : LogLevelNumbers {
     return retLevel as LogLevelNumbers;
 }
 
+async function openAndroidLogFile() {
+    let checkPerms = await Filesystem.checkPermissions();
+    let reqPerms: PermissionStatus;
+    let proceed =false;
+    if (checkPerms.publicStorage === "prompt" || checkPerms.publicStorage === "prompt-with-rationale") {
+        reqPerms = await Filesystem.requestPermissions();
+        if (reqPerms.publicStorage === "granted") {
+            proceed = true;
+        }
+    } else {
+        proceed = true;
+    }
+    if (!proceed) {
+        console.log("No permissions given to create log file");
+        return;
+    }
+
+    await Filesystem.writeFile({
+        path: AndroidLogFileName,
+        data: "Android Log File starting: " + ((new Date().toLocaleDateString()) + " " + (new Date().toLocaleTimeString())),
+        directory: Directory.Documents,
+        encoding: Encoding.UTF8
+    })
+}
+
+async function startLogging() {
+if (Capacitor.getPlatform() === "android") {    
+    await openAndroidLogFile();
+    var originalFactory = log.methodFactory;
+    log.methodFactory = function (methodName, logLevel, loggerName) {
+        let rawMethod = originalFactory(methodName, logLevel, loggerName);
+
+        return function () {
+            let messages = [];
+            for (var i = 0; i < arguments.length; i++) {
+                messages.push(arguments[i]);
+            }
+            Filesystem.appendFile({
+                path: AndroidLogFileName,
+                data: messages.join(","),
+                directory: Directory.Documents,
+                encoding: Encoding.UTF8
+            })
+            rawMethod.apply(undefined, messages);
+        };
+    };
+}
 log.setLevel(getLoggingLevel(LOG_LEVEL));
+}
+
+startLogging();
 
 console.log("logging level set to: ",LOG_LEVEL);
 

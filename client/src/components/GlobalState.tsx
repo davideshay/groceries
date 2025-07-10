@@ -66,6 +66,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
     const settingsDoc  = useGlobalDataStore((state) => state.settingsDoc);
     const loading  = useGlobalDataStore((state) => state.isLoading);
     const error = useGlobalDataStore((state) => state.error)
+    const globalDataLoaded = useGlobalDataStore((state) => state.listRowsLoaded);
     const updateSettingDoc = useUpdateGenericDocument();
     const createSettingDoc = useCreateGenericDocument();
 
@@ -214,14 +215,14 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
     },[createSettingDoc,remoteDBCreds.dbUsername,settingsDoc,updateSettingDoc])
 
     useEffect( () => {
-        if ((remoteDBState.initialSyncComplete || remoteDBState.workingOffline) && !loading && (error === null)) {
+        if ((remoteDBState.initialSyncComplete || remoteDBState.workingOffline) && !loading && globalDataLoaded && (error === null)) {
             getSettings()
         }
     },[remoteDBState.initialSyncComplete, remoteDBState.workingOffline, loading, error,getSettings, settingsDoc])
 
     useEffect( () => {
         console.log("setting log level to:",globalState.settings.loggingLevel);
-        // log.setLevel(Number(globalState.settings.loggingLevel) as LogLevelNumber);
+        log.setLevel(Number(globalState.settings.loggingLevel) as LogLevelNumber);
     },[globalState.settings.loggingLevel])
 
 
