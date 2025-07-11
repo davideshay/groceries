@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { languageDescriptions } from '../i18n';
 import Loading from '../components/Loading';
 import { Capacitor } from '@capacitor/core';
+import { prefsLoggingSettings,enableFileLogging,disableFileLogging, setPrefsLoggingLevel, clearLogFile } from '../components/logger';
 
 const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
   const {globalState, settingsLoading, updateSettingKey} = useContext(GlobalStateContext);
@@ -28,6 +29,7 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
     if (!localSettingsInitialized && globalState.settingsLoaded) {
       setLocalSettings(prevState=>(globalState.settings));
       setUserInfo({name: String(remoteDBCreds.dbUsername), email: String(remoteDBCreds.email), fullname: String(remoteDBCreds.fullName)})
+      setLocalSettings(prevState=>({...prevState,logToFile: prefsLoggingSettings.logToFile}));
       setLocalSettingsInitialized(true);
     }
   },[globalState.settings,localSettingsInitialized,globalState.settingsLoaded, remoteDBCreds.fullName, remoteDBCreds.email, remoteDBCreds.dbUsername])
@@ -42,7 +44,17 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
     setLocalSettings(prevState => ({...prevState,[key]: value}));
   }
 
+  function changeLogToFileSetting(value: boolean) {
+    if (value) {
+      enableFileLogging();
+    } else {
+      disableFileLogging();
+    }
+  }
+
   const curLanguage = i18n.resolvedLanguage;
+  const isAndroid = Capacitor.getPlatform() === "android";
+
 
   return (
     <IonPage>
@@ -106,7 +118,12 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
           <IonItem className="shorter-item-no-padding settings-item" key="loglevel">
             <IonSelect className="shorter-select shorter-select2" label={t("general.log_level") as string}
                 interface="popover" value={String(localSettings.loggingLevel)}
-                onIonChange={(e) => changeSetting("loggingLevel",Number(e.detail.value))}>
+                onIonChange={
+                  (e) => {
+                    changeSetting("loggingLevel",Number(e.detail.value));
+                    setPrefsLoggingLevel(Number(e.detail.value));
+                  }
+                  }>
                     <IonSelectOption key={"log-trace"} value="0">{t("general.trace")}</IonSelectOption>
                     <IonSelectOption key={"log-debug"} value="1">{t("general.debug")}</IonSelectOption>
                     <IonSelectOption key={"log-info"} value="2">{t("general.info")}</IonSelectOption>
@@ -115,14 +132,19 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
                     <IonSelectOption key={"log-silent"} value="5">{t("general.silent")}</IonSelectOption>
               </IonSelect>
           </IonItem>
-          {Capacitor.getPlatform() === 'android' && false ? 
+          {isAndroid ?
+            <> 
             <IonItem className="shorter-item-no-padding settings-item" key="logtofile">
               <IonCheckbox justify='space-between' labelPlacement='start'
-                    checked={localSettings.includeGlobalInSearch}
-                    onIonChange={(e) => changeSetting("logToFile",e.detail.checked)}>
+                    checked={localSettings.logToFile}
+                    onIonChange={(e) => changeLogToFileSetting(e.detail.checked)}>
                       {t("general.log_to_file")}
               </IonCheckbox>
             </IonItem>
+            <IonItem className="shorter-item-no-padding settings-item" key="clearfile">
+              <IonButton onClick={(e) => {clearLogFile()}}>Clear Log File</IonButton>
+            </IonItem>
+            </>
           : <></>}
           <IonItem className="shorter-item-no-padding" key="helpdocs">
             <IonButton href='https://davideshay.github.io/groceries/userguide/settings/' target='_blank'>{t("general.view_help_docs")}</IonButton>
