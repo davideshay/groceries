@@ -45,6 +45,7 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function changeLogToFileSetting(value: boolean) {
+    setLocalSettings(prevState => ({...prevState,logToFile: value}));
     if (value) {
       enableFileLogging();
     } else {

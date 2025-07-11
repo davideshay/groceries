@@ -44,8 +44,8 @@ function getLoggingLevel(level: string) : LogLevelNumbers {
     return retLevel as LogLevelNumbers;
 }
 
-async function openAndroidLogFile() {
-    let checkPerms = await Filesystem.checkPermissions();
+async function checkAndRequestPermissions() : Promise<boolean> {
+        let checkPerms = await Filesystem.checkPermissions();
     let reqPerms: PermissionStatus;
     let proceed =false;
     if (checkPerms.publicStorage === "prompt" || checkPerms.publicStorage === "prompt-with-rationale") {
@@ -59,14 +59,26 @@ async function openAndroidLogFile() {
     if (!proceed) {
         console.log("No permissions given to create log file");
         androidLogPermissionsError = true;
-        return;
     }
-    await Filesystem.writeFile({
-        path: AndroidLogFileName,
-        data: ("Android Log File starting: " + ((new Date().toLocaleDateString()) + " " + (new Date().toLocaleTimeString())) + "\n" ),
-        directory: Directory.Documents,
-        encoding: Encoding.UTF8
-    })
+    return proceed;
+}
+
+
+async function openAndroidLogFile() {
+    androidLogPermissionsError = false;
+    if (await checkAndRequestPermissions()) {
+        try {
+            await Filesystem.writeFile({
+                path: AndroidLogFileName,
+                data: ("Android Log File starting: " + ((new Date().toLocaleDateString()) + " " + (new Date().toLocaleTimeString())) + "\n" ),
+                directory: Directory.Documents,
+                encoding: Encoding.UTF8
+            })
+        } catch(error) {
+            console.error("Could not write Android file:",error);
+            androidLogPermissionsError = true;
+        }
+    }
 }
 
 
@@ -107,7 +119,17 @@ export async function disableFileLogging() {
 }
 
 export async function clearLogFile() {
-    await openAndroidLogFile();
+    if (await checkAndRequestPermissions()) {
+        try {
+            await Filesystem.deleteFile({
+                path: AndroidLogFileName,
+                directory: Directory.Documents
+            })
+        }
+        catch(error) {
+            console.error("Could not delete/clear log file:",error);
+        }
+    }
 }
 
 function formatLogMessage(methodName: string, messages: any[]): string {
