@@ -396,7 +396,8 @@ export const de_translations =
         "need_one_alexa_default": "Es sollte eine Listen-Gruppe als Standard für Alexa markiert sein. Derzeit sind {{count}} Listen-Gruppen als Standard markiert, wenn Sie diese Liste speichern. Wenn keine spezifiziert ist, verwendet Alexa die erste verfügbare Listen-Gruppe. Wenn mehr als eine spezifiziert ist, wird die alphabetisch erste verwendet.",
         "different_server_local_app_versions": "Diese Anwendungsversion unterscheidet sich von der auf dem Server. Sie könnten Fehler auftreten, wenn Sie fortfahren, und sollten entweder den Client oder den Server aktualisieren, um sicherzustellen, dass sie synchron sind, bevor Sie fortfahren.",
         "different_server_local_app_versions_short": "Anwendungsversion auf entferntem Server unterschiedlich",
-        "api_server_error_resetting_password": "API-server-fehler beim zurücksetzen des passworts"
+        "api_server_error_resetting_password": "API-server-fehler beim zurücksetzen des passworts",
+        "different_database_username": "Die lokal gespeicherte Datenbank gehört zu einem anderen Benutzernamen. Um eine korrekte Synchronisierung sicherzustellen, sollten Sie die Datenbank löschen und die Anwendung neu starten. Falls Sie einen falschen Benutzernamen eingegeben haben, wählen Sie „Abbrechen“."
     },
     "itemtext": {
         "item_is_on_these_lists": "Artikel ist auf diesen Listen:",

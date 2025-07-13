@@ -34,7 +34,7 @@ const FormErrorInit = {
 
 const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
-  if ( mode === "new" ) { routeID = "<new>"};
+  let routeUomID : string|null = (mode === "new") ? null : routeID;
   const [pageState,setPageState] = useState<PageState>({
     uomDoc: InitUomDoc, needInitUomDoc: true,
     deletingUom: false
@@ -47,7 +47,7 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
   const deleteUom = useDeleteGenericDocument();
   const deleteUomFromItems = useDeleteUomFromItems();
   const deleteUomFromRecipes = useDeleteUomFromRecipes();
-  const { doc: uomDoc, loading: uomLoading} = useGetOneDoc(routeID);
+  const { doc: uomDoc, loading: uomLoading} = useGetOneDoc(routeUomID);
   const { dbError: itemError, itemRowsLoaded, itemRows } = useItems({selectedListGroupID: null, isReady: true, needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const error = useGlobalDataStore((state) => state.error);
   const isLoading = useGlobalDataStore((state) => state.isLoading);

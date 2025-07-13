@@ -1,4 +1,4 @@
-import { Redirect, Route, Switch} from 'react-router-dom';
+import { Redirect, Route, Switch, useHistory} from 'react-router-dom';
 import { IonSplitPane, IonRouterOutlet} from '@ionic/react';
 
 import List from "./List";
@@ -33,11 +33,13 @@ import { ThemeType } from '../components/DBSchema';
 import ManageData from './ManageData';
 import { SafeArea } from '../plugins/safe-area';
 import log from '../components/logger';
+import { popoverController } from '@ionic/core';
 
 
 const AppContent: React.FC = () => {
     const { globalState} = useContext(GlobalStateContext);
     const [systemDark, setSystemDark] = useState<boolean>(true);
+    const history = useHistory();
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -80,6 +82,15 @@ const AppContent: React.FC = () => {
         resetTheme();
     },[globalState.settings.theme,systemDark])
 
+    useEffect(() => {
+        const unlisten = history.listen(async () => {
+            const popover = await popoverController.getTop();
+            if (popover) {
+                await popover.dismiss();
+            }
+        });
+        return unlisten;
+    }, [history]);
 
     return(
             <IonSplitPane contentId="main">

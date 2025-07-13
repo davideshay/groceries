@@ -74,6 +74,8 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   const { t } = useTranslation();
   
 
+  console.log({useFriendState,friendRows});
+
   useEffect( () => {
     setPageState(prevState => ({...prevState,
       selectedListGroupID: (routeID === "<new>" ? null : routeID)}));

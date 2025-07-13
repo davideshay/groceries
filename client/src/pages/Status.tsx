@@ -13,7 +13,7 @@ import { HistoryProps, UserInfo, initUserInfo } from '../components/DataTypes';
 import { maxAppSupportedSchemaVersion, appVersion , GlobalSettings } from '../components/DBSchema';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
-import { secondsToDHMS } from '../components/Utilities';
+import { secondsToDHMS, PrefsLastUsernameKey } from '../components/Utilities';
 import { cloneDeep } from 'lodash-es';
 import Loading from '../components/Loading';
 import { getTokenInfo, isDBServerAvailable, isServerAvailable } from '../components/RemoteUtilities';
@@ -90,6 +90,7 @@ const Status: React.FC<HistoryProps> = (props: HistoryProps) => {
     if (db !== null) {await db.destroy()};
     let credsStr=JSON.stringify({});
     await Preferences.set({key: 'dbcreds', value: credsStr})
+    await Preferences.remove({key: PrefsLastUsernameKey});
     if (Capacitor.isNativePlatform()) {App.exitApp();}
     setRemoteDBState(initialRemoteDBState);
     window.location.replace('/');

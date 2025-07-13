@@ -8,6 +8,7 @@ import log from './logger';
 import { t } from "i18next"
 
 export const apiConnectTimeout = 500;
+export const PrefsLastUsernameKey = "lastuser";
 
 export function isJsonString(str: string): boolean {
     try {

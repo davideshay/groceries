@@ -99,7 +99,8 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
             set({ 
                 isLoading: true, 
                 error: null,
-                dataReloadStatus: DataReloadStatus.ReloadInProcess 
+                dataReloadStatus: DataReloadStatus.ReloadInProcess,
+                listRowsLoaded: false 
             });
             
             try {
@@ -320,20 +321,14 @@ export function useSyncLocalPouchChangesToGlobalData() {
             // if a document exists first to determine whether to add or change. Ultimately not worth it.
             loadAllData();
         });
-        
         changes.on('error', (error) => {
             log.error('Database changes error:', error);
             useGlobalDataStore.setState({ error: error as PouchDB.Core.Error });
         });
-        
         // Return cleanup function
         return () => {
             changes.cancel();
             listenerStarted.current = false;
         };
-
-
     },[db])
-
-
 }

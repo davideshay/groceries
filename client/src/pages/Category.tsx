@@ -28,6 +28,7 @@ const FormErrorInit = {  [ErrorLocation.Name]:       {errorMessage:"", hasError:
 const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
   if ( mode === "new" ) { routeID = "<new>"};
+  let routeCategoryID: string|null = (mode === "new") ? null : routeID;
   const [needInitCategoryDoc,setNeedInitCategoryDoc] = useState(true);
   const [stateCategoryDoc,setStateCategoryDoc] = useState<CategoryDoc>(InitCategoryDoc);
   const [stateColor,setStateColor] = useState<string>(DefaultColor);
@@ -40,7 +41,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   const deleteCategoryFromItems = useDeleteCategoryFromItems();
   const deleteCategoryFromLists = useDeleteCategoryFromLists();
   const addCategoryToLists = useAddCategoryToLists();
-  const { doc: categoryDoc, loading: categoryLoading} = useGetOneDoc(routeID);
+  const { doc: categoryDoc, loading: categoryLoading} = useGetOneDoc(routeCategoryID);
   const { itemRowsLoaded, itemRows } = useItems({selectedListGroupID: null, isReady: true, needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const {goBack} = useContext(NavContext);
   const screenLoading = useRef(true);

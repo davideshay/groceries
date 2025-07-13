@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useRef, useCallback} from "react";
 import { Preferences } from '@capacitor/preferences';
-import { getUsersInfo, initialSetupActivities } from '../components/Utilities'; 
+import { getUsersInfo, initialSetupActivities, PrefsLastUsernameKey } from '../components/Utilities'; 
 import { App } from '@capacitor/app';
 import { Network } from '@capacitor/network';
 import PouchDB from 'pouchdb';
@@ -103,7 +103,8 @@ export enum DBUUIDAction {
     exit_app_schema_mismatch = 2,
     exit_local_remote_schema_mismatch = 3,
     exit_no_uuid_on_server = 4,
-    exit_different_uuids = 5
+    exit_different_uuids = 5,
+    exit_different_username = 6
 }  
 
 export enum RefreshTokenResults {
@@ -474,7 +475,11 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
                         let pouchPromise : Promise<Response> = new Promise((resolve,reject)=>(resolve(pouchResponse)))
                         return pouchPromise}
                     }}) }
-        catch(err) {log.error("Could not assign PouchDB Remote Server:",err); return false;}        
+        catch(err) {log.error("Could not assign PouchDB Remote Server:",err); return false;}
+        let {value} = await Preferences.get({key: PrefsLastUsernameKey});
+        if (value !== null && value !== "" && value !== remoteDBCreds.current.dbUsername) {
+
+        }
         globalRemoteDB.setMaxListeners(40);    
         setRemoteDBState(prevState => ({...prevState,connectionStatus: ConnectionStatus.dbAssigned, 
                 accessJWT: accessJWT, accessJWTExpirationTime: tokenInfo.expireDate }));  
@@ -486,6 +491,12 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         if (appStatus.current === AppStatus.paused || appStatus.current === AppStatus.pausing) {
             log.error("Not checking ID and syncing, app pausing..."); return false;
         }
+        let {value} = await Preferences.get({key: PrefsLastUsernameKey});
+        if (value !== null && value !== "" && value !== remoteDBCreds.current.dbUsername) {
+            setRemoteDBState(prevState => ({...prevState,credsError: true, credsErrorText: t("error.changed_username"), dbUUIDAction: DBUUIDAction.exit_different_username, connectionStatus: ConnectionStatus.navToLoginScreen}))
+            return;
+        }
+
         let DBUUIDCheck = await checkDBUUID(db as PouchDB.Database,globalRemoteDB as PouchDB.Database,String(remoteDBCreds.current.dbUsername),remoteDBState.apiServerVersion, remoteDBState.ignoreAppVersionWarning);
         // if (appStatus.current === AppStatus.paused || appStatus.current === AppStatus.pausing) {
         //     log.error("Not checking ID and syncing, app pausing..."); return false;
@@ -503,6 +514,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
             setRemoteDBState(prevState => ({...prevState,connectionStatus: ConnectionStatus.syncStarted}));
 //            await initialSetupActivities(globalRemoteDB as PouchDB.Database,remoteDBCreds.current.dbUsername as string)
             log.debug("DB Unique ID check passed. Setup Activities complete. Starting Sync.");
+            await Preferences.set({key: PrefsLastUsernameKey,value: String(remoteDBCreds.current.dbUsername)})
             startSync();
         }
     },[db,startSync,t,remoteDBState.apiServerVersion, remoteDBState.ignoreAppVersionWarning])

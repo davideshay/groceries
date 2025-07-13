@@ -1,5 +1,7 @@
 import { useCallback, useState, useEffect, useContext, useRef } from 'react'
 import { Camera, CameraResultType, CameraSource, Photo } from '@capacitor/camera';
+import { useLocation } from 'react-router-dom';
+import { popoverController } from '@ionic/core';
 import { cloneDeep, pull } from 'lodash-es';
 import { RemoteDBStateContext } from './RemoteDBState';
 import { FriendRow,InitFriendRow, ResolvedFriendStatus, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType } from './DataTypes';
@@ -37,7 +39,7 @@ export function useGetOneDoc(docID: string | null, attachments: boolean = false)
       let success=true; setDBError(false);
       let docRet = null;
       try  {docRet = await db.get(id,{attachments: attachments});}
-      catch(err) {success=false; setDBError(true); log.error("Error retrieving doc:",err);}
+      catch(err) {success=false; setDBError(true); log.error("Error retrieving doc with id:",id,err);}
       let docAtt: Blob| null = null;
       let attSuccess=true;
       try {docAtt = (await db.getAttachment(id,"item.jpg") as Blob)}
@@ -371,6 +373,7 @@ export function useFriends(username: string) : { useFriendState: UseFriendState,
   const { t }= useTranslation();
   const friendDocs = useGlobalDataStore((state) => state.friendDocs);
   const isLoading = useGlobalDataStore((state) => state.isLoading);
+  const friendsLoaded = useGlobalDataStore((state) => state.listRowsLoaded);
   const error = useGlobalDataStore((state) => state.error);
   
     const loadFriendRows = useCallback( async () => {
@@ -439,12 +442,10 @@ export function useFriends(username: string) : { useFriendState: UseFriendState,
     useEffect( () => {
         if (error) {setUseFriendState((prevState) => UseFriendState.error); return};
         if (isLoading) {setUseFriendState((prevState) => UseFriendState.baseFriendsLoading); return;};
-        if (useFriendState === UseFriendState.baseFriendsLoading) {
+        if (useFriendState === UseFriendState.baseFriendsLoading || (friendsLoaded && useFriendState === UseFriendState.init)) {
           setUseFriendState((prevState) => UseFriendState.baseFriendsLoaded);
         }
-    },[useFriendState] )
-
-
+    },[useFriendState,friendsLoaded] )
     return({useFriendState: useFriendState, friendRows});
 }
 
@@ -518,7 +519,6 @@ export function useAddListToAllItems() {
     },[db])
 }
 
-
 export function usePhotoGallery() {
   const { t } = useTranslation();
   const takePhoto = async () => {
@@ -551,3 +551,18 @@ export function usePhotoGallery() {
     takePhoto,
   };
 }
+
+export const useClosePopoversOnNavigation = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    const closePopovers = async () => {
+      const popover = await popoverController.getTop();
+      if (popover) {
+        await popover.dismiss();
+      }
+    };
+
+    closePopovers();
+  }, [location.pathname]);
+};

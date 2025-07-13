@@ -44,7 +44,7 @@ const FormErrorInit = { [ErrorLocation.Name]:       {errorMessage:"", hasError: 
 
 const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
   let { mode, id: routeID } = useParams<{mode: string, id: string}>();
-  if ( mode === "new" ) { routeID = "<new>"};
+  let routeRecipeID: string|null = (mode === "new") ? null : routeID;
   const [pageState, setPageState] = useState<PageState>({
       recipeDoc: cloneDeep(InitRecipeDoc),needInitDoc: true,
       deletingRecipe: false, selectedListOrGroupID: null, selectedItemIdx: 0,
@@ -56,7 +56,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
   const updateRecipe  = useUpdateGenericDocument();
   const createRecipe = useCreateGenericDocument();
   const deleteRecipe = useDeleteGenericDocument();
-  const { doc: recipeDoc, loading: recipeLoading, dbError: recipeError} = useGetOneDoc(routeID);
+  const { doc: recipeDoc, loading: recipeLoading, dbError: recipeError} = useGetOneDoc(routeRecipeID);
   const recipeDocs = useGlobalDataStore((state) => state.recipeDocs);
   const loading = useGlobalDataStore((state) => state.isLoading);
   const error = useGlobalDataStore((state) => state.error);

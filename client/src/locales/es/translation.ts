@@ -396,7 +396,8 @@ export const es_translations =
         "need_one_alexa_default": "Debe haber un grupo de lista marcado como predeterminado para Alexa. Actualmente hay {{count}} grupos de listas marcados como predeterminados si guarda este grupo de lista. Si no se especifica ninguno, Alexa utilizará el primer grupo de lista disponible. Si se especifican más de uno, se utilizará el primero en orden alfabético.",
         "different_server_local_app_versions": "Esta versión de la aplicación es diferente a la del servidor. Podrías encontrar errores si continúas y debes actualizar el cliente o el servidor para que estén sincronizados antes de continuar.",
         "different_server_local_app_versions_short": "La versión de la aplicación es diferente en el servidor remoto",
-        "api_server_error_resetting_password": "Error del servidor de API al restablecer la contraseña"
+        "api_server_error_resetting_password": "Error del servidor de API al restablecer la contraseña",
+        "different_database_username": "La base de datos almacenada localmente pertenece a un nombre de usuario diferente. Para garantizar que la sincronización funcione correctamente, debe eliminar la base de datos y reiniciar la aplicación. Si ha introducido un nombre de usuario incorrecto, elija cancelar."
     },
     "itemtext": {
         "item_is_on_these_lists": "El artículo está en estas listas:",
