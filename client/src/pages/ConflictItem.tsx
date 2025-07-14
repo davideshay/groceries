@@ -12,12 +12,10 @@ import { Loading } from '../components/Loading';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
 
-const ConflictItem: React.FC<HistoryProps> = (props: HistoryProps) => {
-  let { id: routeID } = useParams<{ id: string}>();
+const ConflictItem: React.FC<HistoryProps> = () => {
+  const { id: routeID } = useParams<{ id: string}>();
   const { t } = useTranslation()
-
   const { doc: conflictDoc, loading: conflictLoading, dbError: conflictError } = useGetOneDoc(routeID);
-
   const {goBack} = useContext(NavContext);
   const screenLoading = useRef(true);
 
@@ -35,9 +33,10 @@ const ConflictItem: React.FC<HistoryProps> = (props: HistoryProps) => {
   const winnerText = JSON.stringify(conflictDoc.winner,null,4);
   const losersText = JSON.stringify(conflictDoc.losers,null,4);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function getObjectDiff(obj1: any, obj2: any) {
     const diff = Object.keys(obj1).reduce((result, key) => {
-        if (!obj2.hasOwnProperty(key)) {
+        if (!Object.prototype.hasOwnProperty.call(obj2, key)) {
             result.push(key);
         } else if (isEqual(obj1[key], obj2[key])) {
             const resultKeyIndex = result.indexOf(key);
@@ -51,7 +50,7 @@ const ConflictItem: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   const mainPropsDifferent= new Set();
   (conflictDoc as ConflictDoc).losers.forEach((loser) => {
-    let initDiffs=getObjectDiff(conflictDoc.winner,loser);
+    const initDiffs=getObjectDiff(conflictDoc.winner,loser);
     pull(initDiffs,'_rev','updatedAt','_conflicts');
     initDiffs.forEach(element => {
       mainPropsDifferent.add(element);  

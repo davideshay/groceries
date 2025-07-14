@@ -6,6 +6,7 @@ import { Filesystem, Directory, Encoding, PermissionStatus } from '@capacitor/fi
 import { Preferences } from '@capacitor/preferences';
 import { LogLevelNumber } from './DBSchema';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const LOG_LEVEL: string = (window as any)._env_.LOG_LEVEL === undefined ? "INFO" : (window as any)._env_.LOG_LEVEL;
 const AndroidLogFileName = "groceries-log.txt";
 const PrefsLoggingKey = "logging";
@@ -26,7 +27,7 @@ export let prefsLoggingSettings: PrefsLoggingSettings = structuredClone(initPref
 const originalFactory = log.methodFactory;
 
 function getLoggingLevel(level: string) : LogLevelNumbers {
-    let uLevel=level.toUpperCase();
+    const uLevel=level.toUpperCase();
     let retLevel: number = 3;
     if (["0","TRACE","T"].includes(uLevel)) {
         retLevel = 0 
@@ -45,7 +46,7 @@ function getLoggingLevel(level: string) : LogLevelNumbers {
 }
 
 async function checkAndRequestPermissions() : Promise<boolean> {
-        let checkPerms = await Filesystem.checkPermissions();
+    const checkPerms = await Filesystem.checkPermissions();
     let reqPerms: PermissionStatus;
     let proceed =false;
     if (checkPerms.publicStorage === "prompt" || checkPerms.publicStorage === "prompt-with-rationale") {
@@ -88,7 +89,7 @@ export async function getLoggingSettings() {
         try {
             prefsLoggingSettings = JSON.parse(value);
         } catch(error) {
-            console.error("Could not parse logging settings");
+            console.error("Could not parse logging settings:",error);
         }
     }
 }
@@ -132,6 +133,7 @@ export async function clearLogFile() {
     }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function formatLogMessage(methodName: string, messages: any[]): string {
     const timestamp = new Date().toISOString();
     const level = methodName.toUpperCase();
@@ -149,13 +151,13 @@ function formatLogMessage(methodName: string, messages: any[]): string {
         } else if (Array.isArray(msg)) {
             try {
                 return JSON.stringify(msg, null, 2);
-            } catch (e) {
+            } catch {
                 return `[Array: ${msg.length} items]`;
             }
         } else if (typeof msg === 'object') {
             try {
                 return JSON.stringify(msg, null, 2);
-            } catch (e) {
+            } catch {
                 // Handle circular references or non-serializable objects
                 return `[Object: ${Object.prototype.toString.call(msg)}]`;
             }
@@ -168,11 +170,12 @@ function formatLogMessage(methodName: string, messages: any[]): string {
 
 function setToFileLoggingFactory() {
     log.methodFactory = function (methodName, logLevel, loggerName) {
-        let rawMethod = originalFactory(methodName, logLevel, loggerName);
+        const rawMethod = originalFactory(methodName, logLevel, loggerName);
 
         return function () {
-            let messages = [];
-            for (var i = 0; i < arguments.length; i++) {
+            const messages = [];
+            for (let i = 0; i < arguments.length; i++) {
+                // eslint-disable-next-line prefer-rest-params
                 messages.push(arguments[i]);
             }
             // Format messages for file output
@@ -187,6 +190,7 @@ function setToFileLoggingFactory() {
                 console.error('Failed to write to log file:', err);
             });                
             // Call original method with original arguments
+            // eslint-disable-next-line prefer-spread
             rawMethod.apply(undefined, messages);
         };
     };

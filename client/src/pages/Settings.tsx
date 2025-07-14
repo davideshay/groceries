@@ -11,12 +11,12 @@ import { HistoryProps, UserInfo, initUserInfo } from '../components/DataTypes';
 import { GlobalSettings, AddListOptions} from '../components/DBSchema';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
-import { languageDescriptions } from '../i18n';
+import { LanguageDescription, languageDescriptions } from '../i18n';
 import Loading from '../components/Loading';
 import { Capacitor } from '@capacitor/core';
 import { prefsLoggingSettings,enableFileLogging,disableFileLogging, setPrefsLoggingLevel, clearLogFile } from '../components/logger';
 
-const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
+const Settings: React.FC<HistoryProps> = () => {
   const {globalState, settingsLoading, updateSettingKey} = useContext(GlobalStateContext);
   const { remoteDBCreds, } = useContext(RemoteDBStateContext);
   const [localSettings, setLocalSettings] = useState<GlobalSettings>(InitSettings)
@@ -27,7 +27,7 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   useEffect( () => {
     if (!localSettingsInitialized && globalState.settingsLoaded) {
-      setLocalSettings(prevState=>(globalState.settings));
+      setLocalSettings(globalState.settings);
       setUserInfo({name: String(remoteDBCreds.dbUsername), email: String(remoteDBCreds.email), fullname: String(remoteDBCreds.fullName)})
       setLocalSettings(prevState=>({...prevState,logToFile: prefsLoggingSettings.logToFile}));
       setLocalSettingsInitialized(true);
@@ -85,7 +85,7 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
             <IonSelect className="shorter-select shorter-select2" label={t("general.language") as string}
                   interface="popover"
                   onIonChange={(e) => i18n.changeLanguage(e.detail.value)} value={curLanguage}>
-                      {languageDescriptions.map((lng: any) => (
+                      {languageDescriptions.map((lng: LanguageDescription) => (
                           <IonSelectOption key={"language-"+lng.key} value={lng.key}>
                             {lng.name}
                           </IonSelectOption>
@@ -143,7 +143,7 @@ const Settings: React.FC<HistoryProps> = (props: HistoryProps) => {
               </IonCheckbox>
             </IonItem>
             <IonItem className="shorter-item-no-padding settings-item" key="clearfile">
-              <IonButton onClick={(e) => {clearLogFile()}}>Clear Log File</IonButton>
+              <IonButton onClick={() => {clearLogFile()}}>Clear Log File</IonButton>
             </IonItem>
             </>
           : <></>}

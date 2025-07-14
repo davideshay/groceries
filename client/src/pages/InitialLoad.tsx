@@ -17,7 +17,7 @@ type InitialLoadProps = {
   history : History
 }
 
-const InitialLoad: React.FC<InitialLoadProps> = (props: InitialLoadProps) => {
+const InitialLoad: React.FC<InitialLoadProps> = () => {
     const { remoteDBState, remoteDBCreds, remoteDB, setLoginType, setRemoteDBState} = useContext(RemoteDBStateContext);
     const db = useGlobalDataStore((state) => state.db);
     const error = useGlobalDataStore((state) => state.error);

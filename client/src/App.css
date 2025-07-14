@@ -39,10 +39,9 @@ ion-reorder-group ion-checkbox {
     margin-right: 1.25rem;
 }
 
-.floating-error-footer {
+.floating-footer {
     border: none;
     outline: none;
-    box-shadow: 0 0 15px 10px var(--ion-item-background,#ffffff);
 }
 
 body {
@@ -76,4 +75,8 @@ ion-fab {
 
 ion-content {
     --padding-bottom: var(--ion-safe-area-bottom);
+}
+
+ion-popover::part(content) {
+    margin-bottom: var(--ion-safe-area-bottom);
 }

@@ -26,7 +26,7 @@ interface PageState {
   listGroupDoc: ListGroupDoc,
   alexaDefault: boolean,
   selectedListGroupID: string | null,
-  changesMade: Boolean,
+  changesMade: boolean,
   usersLoaded: boolean,
   usersInfo: UsersInfo,
   deletingDoc: boolean
@@ -39,14 +39,14 @@ const FormErrorInit = { [ErrorLocation.Name]:       {errorMessage:"", hasError: 
                         [ErrorLocation.General]:    {errorMessage:"", hasError: false}
                     }
 
-const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
-  let { mode, id: routeID } = useParams<{mode: string, id: string}>();
-  if ( mode === "new" ) { routeID = "<new>"};
+const ListGroup: React.FC<HistoryProps> = () => {
+  const { mode, id: routeID } = useParams<{mode: string, id: string}>();
+  const routeListGroupID = (mode === "new") ? "<new>" : routeID; 
   const [pageState,setPageState] = useState<PageState>({
     needInitListGroupDoc: (mode === "new") ? true : false,
     listGroupDoc: ListGroupDocInit,
     alexaDefault: false,
-    selectedListGroupID: (routeID === "<new>" ? null : routeID),
+    selectedListGroupID: (routeListGroupID === "<new>" ? null : routeListGroupID),
     changesMade: false,
     usersLoaded: false,
     usersInfo: [],
@@ -78,8 +78,8 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   useEffect( () => {
     setPageState(prevState => ({...prevState,
-      selectedListGroupID: (routeID === "<new>" ? null : routeID)}));
-  },[routeID])
+      selectedListGroupID: (routeListGroupID === "<new>" ? null : routeListGroupID)}));
+  },[routeListGroupID])
 
   function changeListUpdateState(listGroupID: string) {
     setPageState(prevState => ({...prevState,
@@ -103,7 +103,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
     if (listRowsLoaded && (useFriendState === UseFriendState.rowsLoaded ||  !remoteDBState.dbServerAvailable) && (!listGroupLoading || mode==="new")) {
       let sharedWith: string[] = [];
       if (mode === "new" && pageState.needInitListGroupDoc) {
-        let initListGroupDoc: ListGroupDoc = cloneDeep(ListGroupDocInit);
+        const initListGroupDoc: ListGroupDoc = cloneDeep(ListGroupDocInit);
         initListGroupDoc.listGroupOwner=String(remoteDBCreds.dbUsername);
         friendRows.forEach((fr: FriendRow) => {
           initListGroupDoc.sharedWith.push(fr.targetUserName);
@@ -112,12 +112,12 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
       }
       else if (mode !== "new") {
         sharedWith = (listGroupDoc as ListGroupDoc).sharedWith;
-        let newDoc: ListGroupDoc = cloneDeep(listGroupDoc);
-        let alexaDefault= (newDoc._id === globalState.settings.alexaDefaultListGroup)
-        if(!newDoc.hasOwnProperty("alexaDefault")) {newDoc.alexaDefault = false;}
+        const newDoc: ListGroupDoc = cloneDeep(listGroupDoc);
+        const alexaDefault= (newDoc._id === globalState.settings.alexaDefaultListGroup)
+        if(!Object.prototype.hasOwnProperty.call(newDoc, "alexaDefault")) {newDoc.alexaDefault = false;}
         setPageState(prevState => ({...prevState,listGroupDoc: newDoc, alexaDefault: alexaDefault, changesMade: false}))
       }
-      let userIDList: UserIDList = cloneDeep(initUserIDList);
+      const userIDList: UserIDList = cloneDeep(initUserIDList);
       sharedWith.forEach((user: string) => {
         userIDList.userIDs.push(user);
       });
@@ -137,7 +137,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
   screenLoading.current=false;
 
   async function updateThisItem() {
-    setFormErrors(prevState=>(FormErrorInit))
+    setFormErrors(FormErrorInit);
     if (pageState.listGroupDoc.name === "" || pageState.listGroupDoc.name === undefined || pageState.listGroupDoc.name === null) {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.must_enter_a_name"), hasError: true }}));
       return false;
@@ -210,7 +210,7 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   }
 
-  let assignedListsElem=[];
+  const assignedListsElem=[];
   assignedListsElem.push(<IonItemDivider key="assigneddivider" className="category-divider">{t("general.lists_assigned_to_group")}</IonItemDivider>)
   listCombinedRows.forEach((lcr: ListCombinedRow)  => {
     if (lcr.rowType === RowType.list && lcr.listGroupID === pageState.selectedListGroupID) {
@@ -218,14 +218,14 @@ const ListGroup: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   });
 
-  let usersElem=[];
+  const usersElem=[];
   let ownerText="";
   let iAmListOwner=false;
   if (pageState.listGroupDoc.listGroupOwner === remoteDBCreds.dbUsername) {
     ownerText = t("general.you_are_listgroup_owner");
     iAmListOwner=true;
   } else {
-    let ownerRow=friendRows.find(el => (el.targetUserName === pageState.listGroupDoc.listGroupOwner));
+    const ownerRow=friendRows.find(el => (el.targetUserName === pageState.listGroupDoc.listGroupOwner));
     ownerText = ownerRow?.targetFullName + " " +t("general.is_listgroup_owner");
   }
 
@@ -277,13 +277,13 @@ async function deleteListGroupFromDB() {
   let delSuccess = true;
   for (let i = 0; i < listRows.length; i++) {
     if (listRows[i].listGroupID === pageState.selectedListGroupID) {
-      let response = await deleteList(listRows[i].listDoc);
+      const response = await deleteList(listRows[i].listDoc);
       if (!response.successful) {delSuccess = false;}
     }  
   }
-  let response = await deleteItemsInListGroup(String(pageState.selectedListGroupID));
+  const response = await deleteItemsInListGroup(String(pageState.selectedListGroupID));
   if (response.successful) {
-    let delResponse = await deleteListGroup(pageState.listGroupDoc);
+    const delResponse = await deleteListGroup(pageState.listGroupDoc);
     if (delResponse.successful) {
       if (globalState.settings.alexaDefaultListGroup === pageState.listGroupDoc._id) {
         updateSettingKey("alexaDefaultListGroup",null);
@@ -307,7 +307,7 @@ async function deleteListGroupFromDB() {
 
 function deletePrompt() {
   setPageState(prevState => ({...prevState,deletingDoc: true}));
-  setFormErrors(prevState=>(FormErrorInit));
+  setFormErrors(FormErrorInit);
   let ownListGroupsCount=0;
   for (let i = 0; i < listCombinedRows.length; i++) {
     if (listCombinedRows[i].rowType === RowType.listGroup && 
@@ -335,16 +335,16 @@ function deletePrompt() {
     })
   }              
 }
-  let selectOptionListElem = (
+  const selectOptionListElem = (
     listCombinedRows.filter(lg => (lg.rowType === RowType.listGroup && !lg.hidden)).map((list: ListCombinedRow) => (
       <IonSelectOption key={list.rowKey} value={list.listGroupID}>
         {list.listGroupName}
       </IonSelectOption>) 
       ))
 
-  let selectElem=[];
+  const selectElem=[];
   if (pageState.changesMade) {
-    let alertOptions={
+    const alertOptions={
       header: t("general.changing_selected_listgroup"),
       message: t("general.changing_selected_listgroup_detail")
     }
@@ -355,7 +355,7 @@ function deletePrompt() {
       </IonSelect>
     )  
   } else {
-    let iopts={};
+    const iopts={};
     selectElem.push(
       <IonSelect label={t("general.editing_listgroup")+":"} aria-label={t("general.editing_listgroup")+":"} key="list-notchanged" interface="popover" interfaceOptions={iopts} onIonChange={(ev) => changeListUpdateState(ev.detail.value)} value={pageState.selectedListGroupID}>
         {selectOptionListElem}
@@ -363,7 +363,7 @@ function deletePrompt() {
     ) 
   }
   
-  let selectDropDown=[];
+  const selectDropDown=[];
     if (mode === "new") {
       selectDropDown.push(<IonTitle className="ion-no-padding" key="createnew">{t("general.creating_listgroup")}</IonTitle>)
     } else {  
@@ -376,7 +376,7 @@ function deletePrompt() {
     )
   }
 
-  let updateButton=[];
+  const updateButton=[];
   if (iAmListOwner) {
     if (mode === "new") {
       updateButton.push(<IonButton color="primary" className="primary-button" fill="solid" key="add" onClick={() => updateThisItem()}>{t("general.add")}<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
@@ -385,10 +385,10 @@ function deletePrompt() {
     }
   }
 
-  let lastRemainingListGroup = listCombinedRows.filter( lcr =>
+  const lastRemainingListGroup = listCombinedRows.filter( lcr =>
       lcr.rowType === RowType.listGroup && !lcr.listGroupRecipe  &&
       lcr.listGroupOwner === remoteDBCreds.dbUsername).length <= 1;
-  let deleteButton=[];
+  const deleteButton=[];
   if (iAmListOwner && !pageState.listGroupDoc.recipe && !lastRemainingListGroup) {
     deleteButton.push(<IonButton key="delete" fill="outline" color="danger"  onClick={() => deletePrompt()}>{t("general.delete")}<IonIcon slot="start" icon={trashOutline}></IonIcon></IonButton>)
   }
@@ -434,7 +434,7 @@ function deletePrompt() {
             {usersElem}
             </IonItemGroup>
           </IonList>
-          <IonFooter className="floating-error-footer">
+          <IonFooter className="floating-footer">
               {
                 formErrors[ErrorLocation.General].hasError ? <IonItem className="shorter-item-some-padding" lines="none"><IonText color="danger">{formErrors[ErrorLocation.General].errorMessage}</IonText></IonItem> : <></>
               }  

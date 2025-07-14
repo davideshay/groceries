@@ -27,7 +27,7 @@ emailError: "",
 formError: ""
 }
 
-const UserData: React.FC<HistoryProps> = (props: HistoryProps) => {
+const UserData: React.FC<HistoryProps> = () => {
 const {globalState, settingsLoading } = useContext(GlobalStateContext);
 const { remoteDBCreds, setDBCredsValue, remoteDBState } = useContext(RemoteDBStateContext);
 const [, setLocalSettings] = useState<GlobalSettings>(InitSettings)
@@ -39,7 +39,7 @@ const screenLoading = useRef(false);
 
 useEffect( () => {
 if (!localSettingsInitialized && globalState.settingsLoaded) {
-  setLocalSettings(prevState=>(globalState.settings));
+  setLocalSettings(globalState.settings);
   setUserInfo({name: String(remoteDBCreds.dbUsername), email: String(remoteDBCreds.email), fullname: String(remoteDBCreds.fullName)})
   setLocalSettingsInitialized(true);
 }
@@ -64,13 +64,13 @@ if (isEqual(userInfo,{name: remoteDBCreds.dbUsername, email: remoteDBCreds.email
   return;
 }
 if (userInfo.email !== remoteDBCreds.email) {
-    let checkExists = await checkUserByEmailExists(userInfo.email,remoteDBCreds);
+    const checkExists = await checkUserByEmailExists(userInfo.email,remoteDBCreds);
     if (checkExists.userExists && checkExists.username !== remoteDBCreds.dbUsername) {
       setErrorInfo(prevState=>({...prevState,emailError: "Email already exists under different user", isError: true}));
       return;
     }
 }
-let updateSuccess = await updateUserInfo(String(remoteDBCreds.apiServerURL),remoteDBState.accessJWT,userInfo)
+const updateSuccess = await updateUserInfo(String(remoteDBCreds.apiServerURL),remoteDBState.accessJWT,userInfo)
 if (!updateSuccess) {
   setErrorInfo(prevState=>({...prevState,formError: "Error updating user info, retry"}));
   return

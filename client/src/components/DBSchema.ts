@@ -41,7 +41,9 @@ export interface ConflictDoc {
   type: string,
   docType: string,
   impactedUsers: string[],
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   winner: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   losers: any[],
   updatedAt: string
 }
@@ -236,10 +238,10 @@ export type UserDoc = {
   reset_password_expire_date?: string,
   password_scheme: string,
   password? : string,
-  iterations: Number,
+  iterations: number,
   derived_key: string,
   salt: string,
-  refreshJWTs: {}
+  refreshJWTs: object
 }
 
 export type FriendDoc = {
@@ -333,7 +335,7 @@ export type GlobalSettings = {
   removeFromAllLists: boolean,
   completeFromAllLists: boolean,
   includeGlobalInSearch: boolean,
-  daysOfConflictLog: Number,
+  daysOfConflictLog: number,
   savedListID?: string | undefined | null,
   alexaDefaultListGroup?: string | undefined | null,
   theme?: ThemeType,
@@ -380,6 +382,7 @@ export type TriggerDoc = {
   _id?: string,
   _rev?: string,
   type: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   triggerData: any,
   updatedAt: string
 }

@@ -32,8 +32,8 @@ const FormErrorInit = {  [ErrorLocation.Name]:       {errorMessage:"", hasError:
                       [ErrorLocation.General]:    {errorMessage:"", hasError: false}
                     }
 
-const Item: React.FC = (props) => {
-  let { mode, itemid } = useParams<{mode: string, itemid: string}>();
+const Item: React.FC = () => {
+  const { mode, itemid } = useParams<{mode: string, itemid: string}>();
   const routeItemID = (mode === "new" ? null : itemid)
   const [needInitItemDoc,setNeedInitItemDoc] = useState((mode === "new") ? true: false);
   const [stateItemDoc,setStateItemDoc] = useState<ItemDoc>(ItemDocInit);
@@ -71,20 +71,20 @@ const Item: React.FC = (props) => {
   
   const groupIDForList = useCallback((listID: string) => {
     let retGID="";
-    let searchList=listRows.find((el: ListRow) => el.listDoc._id === listID);
+    const searchList=listRows.find((el: ListRow) => el.listDoc._id === listID);
     if (searchList) {retGID = String(searchList.listGroupID)}
     return retGID;
   },[listRows])
 
   const addDeleteLists = useCallback((itemDoc: ItemDoc) => {
-    let newItemDoc: ItemDoc =cloneDeep(itemDoc);
+    const newItemDoc: ItemDoc =cloneDeep(itemDoc);
     // loop through all the lists with the same listgroup. if the list is in the
     // listgroup, but not on the item add it.
     for (let i = 0; i < listRows.length; i++) {
       if (listRows[i].listGroupID !== newItemDoc.listGroupID) {continue}
-      let foundIdx=newItemDoc.lists.findIndex((el: ItemList) => el.listID === listRows[i].listDoc._id)
+      const foundIdx=newItemDoc.lists.findIndex((el: ItemList) => el.listID === listRows[i].listDoc._id)
       if (foundIdx === -1) {
-          let newItemList: ItemList = cloneDeep(ItemListInit);
+          const newItemList: ItemList = cloneDeep(ItemListInit);
           newItemList.listID = String(listRows[i].listDoc._id);
           newItemList.active = getCommonKey(itemDoc,"active",listDocs);
           newItemList.categoryID = getCommonKey(itemDoc,"categoryID",listDocs);
@@ -98,12 +98,12 @@ const Item: React.FC = (props) => {
     }
     // now loop through all the lists on the item, and see if they are in the right listgroup.
     // if not, delete the list from the item
-    let currentLists: ItemList[]=cloneDeep(newItemDoc.lists);
+    const currentLists: ItemList[]=cloneDeep(newItemDoc.lists);
     remove(currentLists, (list: ItemList) => { return groupIDForList(list.listID) !== newItemDoc.listGroupID})
     // check if any of the item-lists has a categoryID that is no longer in the active categories 
     // in the list, if so, set to null
     for (const itemList of currentLists) {
-      let listDoc = listDocs.find(list => list._id === itemList.listID);
+      const listDoc = listDocs.find(list => list._id === itemList.listID);
       if (listDoc === undefined)  { // shouldn't happen at list point... 
           itemList.categoryID = null
       } else {
@@ -117,10 +117,10 @@ const Item: React.FC = (props) => {
   useEffect( () => {
     if (!itemLoading && mode !== "new" && itemDoc && listRowsLoaded) {
       let newItemDoc: ItemDoc = cloneDeep(itemDoc);
-      if (!newItemDoc.hasOwnProperty('imageID')) {
+      if (!Object.prototype.hasOwnProperty.call(newItemDoc, 'imageID')) {
         newItemDoc.imageID = null;
       }
-      if (!newItemDoc.hasOwnProperty('pluralName')) {
+      if (!Object.prototype.hasOwnProperty.call(newItemDoc, 'pluralName')) {
         newItemDoc.pluralName = "";
       }
       newItemDoc = addDeleteLists(newItemDoc);
@@ -136,7 +136,7 @@ const Item: React.FC = (props) => {
 
   useEffect( () => {
     if (!itemLoading && mode === "new" && !isLoading && listRowsLoaded && needInitItemDoc) {
-        let newItemDoc = createEmptyItemDoc(listRows,globalState,globalItemDocs)
+        const newItemDoc = createEmptyItemDoc(listRows,globalState,globalItemDocs)
         setStateInfo("newItemMode","none");
         setNeedInitItemDoc(false);
         setStateItemDoc(newItemDoc);
@@ -157,10 +157,10 @@ const Item: React.FC = (props) => {
   screenLoading.current=false;
   
   async function updateThisItem() {
-    setFormErrors(prevState => (FormErrorInit));
+    setFormErrors(FormErrorInit);
     let result: PouchResponse = cloneDeep(PouchResponseInit);
     let imgResult: PouchResponse = cloneDeep(PouchResponseInit);
-    let newItemDoc: ItemDoc = cloneDeep(stateItemDoc);
+    const newItemDoc: ItemDoc = cloneDeep(stateItemDoc);
     if (stateItemDoc.name === undefined || stateItemDoc.name==="" || stateItemDoc.name === null) {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.must_enter_a_name"), hasError: true}}))
       return false;
@@ -188,7 +188,7 @@ const Item: React.FC = (props) => {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.cannot_use_name_existing_item"), hasError: true}}))
       return false;
     }
-    let [globalExists,] = checkNameInGlobalItems(globalItemDocs,stateItemDoc.name, String(stateItemDoc.pluralName));
+    const [globalExists,] = checkNameInGlobalItems(globalItemDocs,stateItemDoc.name, String(stateItemDoc.pluralName));
     if ( stateItemDoc.globalItemID == null && globalExists) {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.cannot_use_name_existing_globalitem"), hasError: true}}))
       return false;
@@ -220,18 +220,21 @@ const Item: React.FC = (props) => {
   }
 
   function updateAllKey(key: string, val: string | boolean | number| null) {
-    let newItemDoc: ItemDoc = cloneDeep(stateItemDoc);
+    const newItemDoc: ItemDoc = cloneDeep(stateItemDoc);
     newItemDoc.lists.forEach((list: ItemList) => {
       if (key === "categoryID") {
-        let listDoc = listDocs.find(ld => ld._id === list.listID);
+        const listDoc = listDocs.find(ld => ld._id === list.listID);
         if (listDoc !== undefined) {
           if (listDoc.categories.includes(String(val))) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (list as any)[key] = val;
           } else {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (list as any)[key] = null;
           }
         }
       } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (list as any)[key] = val;
       }
     })
@@ -247,15 +250,15 @@ const Item: React.FC = (props) => {
     if (alreadyFound) {
       presentToast({message: t("error.duplicate_category_name"), duration: 1500, position: "middle"})
     } else {  
-      let newCategoryDoc: CategoryDoc = cloneDeep(InitCategoryDoc);
+      const newCategoryDoc: CategoryDoc = cloneDeep(InitCategoryDoc);
       newCategoryDoc.listGroupID = listGroupID;
       newCategoryDoc.name = category;
-      let result = await addCategoryDoc(newCategoryDoc);
+      const result = await addCategoryDoc(newCategoryDoc);
       if (result.successful) {
           updateAllKey("categoryID",result.pouchData.id as string);
-          let addResponse = await addCategoryToLists(result.pouchData.id as string,listGroupID,listCombinedRows)
+          const addResponse = await addCategoryToLists(result.pouchData.id as string,listGroupID,listCombinedRows)
           if (addResponse.successful) {
-            let newStateItemDoc: ItemDoc = cloneDeep(stateItemDoc);
+            const newStateItemDoc: ItemDoc = cloneDeep(stateItemDoc);
             for (const stateList of newStateItemDoc.lists) {
               stateList.categoryID = result.pouchData.id as string;
             }
@@ -310,12 +313,12 @@ const Item: React.FC = (props) => {
       presentToast({message: t("error.uom_plural_description_exists"), duration: 1500, position: "middle"});
       return false;
     }
-    let newUOMDoc: UomDoc = cloneDeep(InitUomDoc);
+    const newUOMDoc: UomDoc = cloneDeep(InitUomDoc);
     newUOMDoc.listGroupID = listGroupID;
     newUOMDoc.name = uomData.name;
     newUOMDoc.description = uomData.description;
     newUOMDoc.pluralDescription = uomData.pluralDescription;
-    let result = await addUOMDoc(newUOMDoc);
+    const result = await addUOMDoc(newUOMDoc);
     if (result.successful) {
         updateAllKey("uomName",uomData.name);
     } else {
@@ -362,9 +365,8 @@ const Item: React.FC = (props) => {
   }  
 
   async function deleteItemFromDB() {
-      setFormErrors(prevState => (FormErrorInit));
-      let result: PouchResponse;
-      result = await delItem(stateItemDoc);
+      setFormErrors(FormErrorInit);
+      const result: PouchResponse = await delItem(stateItemDoc);
       if (result.successful) {
         goBack();
       } else {
@@ -383,7 +385,7 @@ const Item: React.FC = (props) => {
   }
   
   async function getNewPhoto() {
-    let newPhoto = await takePhoto();
+    const newPhoto = await takePhoto();
     if (newPhoto !== undefined && newPhoto !== null) {
       setStateImageDoc(prevState => ({...prevState, imageBase64: (newPhoto as string)}))
     }
@@ -395,8 +397,8 @@ const Item: React.FC = (props) => {
     setStateImageDoc(prevState => ({...prevState,imageBase64: null}));
   }
 
-  let thisListGroup = listCombinedRows.find(el => el.listGroupID === stateItemDoc.listGroupID);
-  let photoExists = stateImageDoc.imageBase64 !== null;
+  const thisListGroup = listCombinedRows.find(el => el.listGroupID === stateItemDoc.listGroupID);
+  const photoExists = stateImageDoc.imageBase64 !== null;
   
   let photoBase64: string = "";    
   if (photoExists) {
@@ -404,8 +406,8 @@ const Item: React.FC = (props) => {
   }
 
   function getCombinedCategories(): CategoryDocs {
-    let catDocs:CategoryDocs = [];
-    let activeCatIDs = new Set<string>();
+    const catDocs:CategoryDocs = [];
+    const activeCatIDs = new Set<string>();
     for (const list of stateItemDoc.lists) {
       const thisList = listDocs.find(ld => ld._id === list.listID);
       if (thisList !== undefined) {
@@ -415,7 +417,7 @@ const Item: React.FC = (props) => {
       } 
     }
     activeCatIDs.forEach(catID => {
-      let catDoc = categoryDocs.find(cat => cat._id === catID);
+      const catDoc = categoryDocs.find(cat => cat._id === catID);
       if (catDoc !== undefined) {
         catDocs.push(catDoc);
       }
@@ -471,7 +473,7 @@ const Item: React.FC = (props) => {
                     </IonSelect>
                   </IonCol>
                   <IonCol className="ion-no-padding" size="1">
-                    <IonButton fill="default" onClick={(e) => {addUOMPopup()}}>
+                    <IonButton fill="default" onClick={() => {addUOMPopup()}}>
                       <IonIcon icon={addCircleOutline}></IonIcon>
                     </IonButton>
                   </IonCol>
@@ -508,7 +510,7 @@ const Item: React.FC = (props) => {
                       addCategoryPopup={addCategoryPopup} addUOMPopup={addUOMPopup} />
           </IonList>
       </IonContent>
-      <IonFooter className="floating-error-footer">
+      <IonFooter className="floating-footer">
         {
           formErrors[ErrorLocation.General].hasError ? <IonItem className="shorter-item-some-padding" color="danger" lines="none">{formErrors[ErrorLocation.General].errorMessage}</IonItem> : <></>
         }  

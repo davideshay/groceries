@@ -37,13 +37,13 @@ const FormErrorInit = { [ErrorLocation.Name]:       {errorMessage:"", hasError: 
                         [ErrorLocation.General]:    {errorMessage:"", hasError: false}
                     }
 
-const List: React.FC<HistoryProps> = (props: HistoryProps) => {
-  let { mode, id: routeID } = useParams<{mode: string, id: string}>();
-  if ( mode === "new" ) { routeID = "<new>"};
+const List: React.FC<HistoryProps> = () => {
+  const { mode, id: routeID } = useParams<{mode: string, id: string}>();
+  const routeListID: string|null = (mode === "new") ? "<new>" : routeID;
   const [pageState,setPageState] = useState<PageState>({
     needInitListDoc: (mode === "new") ? true : false,
     listDoc: cloneDeep(ListDocInit),
-    selectedListID: routeID,
+    selectedListID: routeListID,
     listGroupID: null,
     listGroupOwner: null,
     changesMade: false,
@@ -78,7 +78,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   useEffect( () => {
     if (!isLoading && listRowsLoaded) {
       if (mode === "new" && pageState.needInitListDoc) {
-        let initListDoc : ListDoc = cloneDeep(ListDocInit);
+        const initListDoc : ListDoc = cloneDeep(ListDocInit);
         let newListGroupOwner: string|null = null;
         if (listCombinedRows.length > 0) {
           for (let i = 0; i <  listCombinedRows.length; i++) {
@@ -92,12 +92,12 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
         } else {
           initListDoc.listGroupID=null
         }
-        let initCategories= categoryDocs.length > 0 ? categoryDocs.filter(cat => (["system",initListDoc.listGroupID].includes(cat.listGroupID))).map(cat => String(cat._id)) : [];
+        const initCategories= categoryDocs.length > 0 ? categoryDocs.filter(cat => (["system",initListDoc.listGroupID].includes(cat.listGroupID))).map(cat => String(cat._id)) : [];
         initListDoc.categories = initCategories;
         setPageState(prevState => ({...prevState,listDoc: initListDoc,listGroupID: initListDoc.listGroupID, listGroupOwner: newListGroupOwner, needInitListDoc: false, changesMade: false}))
       }
       else if (mode !== "new") {
-        let newListRow: ListRow = cloneDeep(listRows.find((lr: ListRow) => lr.listDoc._id === pageState.selectedListID)) as ListRow;
+        const newListRow: ListRow = cloneDeep(listRows.find((lr: ListRow) => lr.listDoc._id === pageState.selectedListID)) as ListRow;
         if (newListRow === undefined) {return}
         setPageState(prevState => ({...prevState,listDoc: newListRow.listDoc, listGroupID: newListRow.listGroupID, listGroupOwner: newListRow.listGroupOwner, changesMade: false}))
       }
@@ -125,7 +125,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   async function updateThisItem() {
-    setFormErrors(prevState=>(FormErrorInit));
+    setFormErrors(FormErrorInit);
     if (pageState.listDoc.name === "" || pageState.listDoc.name === undefined || pageState.listDoc.name === null) {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.must_enter_a_name"), hasError: true }}));
       return false;
@@ -143,7 +143,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
     if (mode === "new") {
       response = await createList(pageState.listDoc);
       if (response.successful) {
-        let addedToItems = addListToAllItems({listGroupID: String(pageState.listGroupID) ,listID: response.pouchData.id as string, listDocs: listDocs})
+        const addedToItems = addListToAllItems({listGroupID: String(pageState.listGroupID) ,listID: response.pouchData.id as string, listDocs: listDocs})
         if (!addedToItems) {response.successful = false;}
       }
     }
@@ -161,7 +161,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
     // The `from` and `to` properties contain the index of the item
     // when the drag started and ended, respectively
     log.debug("called with event:",event.detail);
-    let newPageState=cloneDeep(pageState);
+    const newPageState=cloneDeep(pageState);
     log.debug("curr categories:",cloneDeep(pageState.listDoc.categories));
     newPageState.listDoc.categories.splice(event.detail.to,0,newPageState.listDoc.categories.splice(event.detail.from,1)[0]);
     log.debug("updated state categories",cloneDeep(newPageState.listDoc.categories));
@@ -203,7 +203,7 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function getNewCategories(existingCategories: string[],newListGroupID: string) {
-    let newCategories: string[] = [];
+    const newCategories: string[] = [];
     for (let i = 0; i < existingCategories.length; i++) {
       const existingCat = existingCategories[i];
       if (categoryDocs.filter(cat => (["system",newListGroupID].includes(String(cat.listGroupID)))).map(cat => (String(cat._id))).includes(existingCat)) {
@@ -215,16 +215,16 @@ const List: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   function updateListGroup(updGroup: string) {
     if (pageState.listGroupID !== updGroup) {
-      let newCategories = getNewCategories(pageState.listDoc.categories,updGroup);
+      const newCategories = getNewCategories(pageState.listDoc.categories,updGroup);
       setPageState(prevState => ({...prevState, changesMade: true, listDoc: {...prevState.listDoc, categories: newCategories, listGroupID: updGroup}, listGroupID: updGroup}))
     }
   }
 
 async function deleteListFromDB() {
   presentDeleting(String(t("general.deleting_list")));
-  let response = await deleteListFromItems(String(pageState.selectedListID));
+  const response = await deleteListFromItems(String(pageState.selectedListID));
   if (response.successful) {
-    let delResponse = await deleteList((pageState.listDoc));
+    const delResponse = await deleteList((pageState.listDoc));
     if (delResponse.successful) {
       dismissDeleting();
       setPageState(prevState => ({...prevState,deletingDoc: false}));
@@ -254,14 +254,14 @@ function deletePrompt() {
   })
 }
 
-  let categoryElem=[];
+  const categoryElem=[];
   let categoryLines=[];
 
   function catItem(id: string, active: boolean) {
     const actname=active ? "active" : "inactive"
     const catDoc : CategoryDoc | undefined = (categoryDocs as CategoryDoc[]).find(element => (element._id === id))
     if (catDoc !== undefined) {
-      let name = translatedCategoryName((catDoc as CategoryDoc)._id,(catDoc as CategoryDoc).name);
+      const name = translatedCategoryName((catDoc as CategoryDoc)._id,(catDoc as CategoryDoc).name);
       return (
         <IonItem key={pageState.selectedListID+"-"+actname+"-"+id} slot="start">
             <IonCheckbox justify="start" key={pageState.selectedListID+"-"+actname+"-"+id} onIonChange={(e) => updateCat(id,Boolean(e.detail.checked))} checked={active}></IonCheckbox>
@@ -291,7 +291,7 @@ function deletePrompt() {
   }
   
   for (let i = 0; i < pageState.listDoc.categories.length; i++) {
-    let validList = (categoryDocs as CategoryDoc[]).find((cat) => pageState.listDoc.categories[i] === cat._id);
+    const validList = (categoryDocs as CategoryDoc[]).find((cat) => pageState.listDoc.categories[i] === cat._id);
     if (validList !== undefined) {
       categoryLines.push(catItem(pageState.listDoc.categories[i],true));
     }  
@@ -308,16 +308,16 @@ function deletePrompt() {
     categoryElem.push(catItemDivider(false,categoryLines));
   } 
 
-  let selectOptionListElem=(
+  const selectOptionListElem=(
     listRows.map((list: ListRow) => (
       <IonSelectOption key={"list-"+list.listDoc._id} value={list.listDoc._id}>
         {list.listDoc.name}
       </IonSelectOption>
     )))
 
-  let selectElem=[];
+  const selectElem=[];
   if (pageState.changesMade) {
-    let alertOptions={
+    const alertOptions={
       header: t("general.changing_selected_list"),
       message: t("general.list_updated_not_saved_still_change")
     }
@@ -328,7 +328,7 @@ function deletePrompt() {
       </IonSelect>
     )  
   } else {
-    let iopts={};
+    const iopts={};
     selectElem.push(
       <IonSelect label={t("general.editing_list")+":"} key="list-notchanged" interface="popover" interfaceOptions={iopts} onIonChange={(ev) => changeListUpdateState(ev.detail.value)} value={pageState.selectedListID}>
         {selectOptionListElem}
@@ -336,7 +336,7 @@ function deletePrompt() {
     ) 
   }
   
-  let selectDropDown = [];
+  const selectDropDown = [];
     if (mode === "new") {
       selectDropDown.push(<IonTitle className="ion-no-padding" key="createnew">{t("general.creating_new_list")}</IonTitle>)
     } else {  
@@ -349,14 +349,14 @@ function deletePrompt() {
     )
   }
 
-  let updateButton=[];
+  const updateButton=[];
   if (mode === "new") {
     updateButton.push(<IonButton color="primary" className="primary-button" slot="end" fill="solid" key="add" onClick={() => updateThisItem()}>{t("general.add")}<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
   } else {
     updateButton.push(<IonButton color="primary" className="primary-button" slot="end" fill="solid" key="save" onClick={() => updateThisItem()}>{t("general.save")}<IonIcon slot="start" icon={saveOutline}></IonIcon></IonButton>)
   }
 
-  let deleteButton=[];
+  const deleteButton=[];
   if (pageState.listGroupOwner===remoteDBCreds.dbUsername) {
     deleteButton.push(<IonButton fill="outline" color="danger"  key="delete" onClick={() => deletePrompt()}>{t("general.delete")}<IonIcon slot="start" icon={trashOutline}></IonIcon></IonButton>)
   }
@@ -391,7 +391,7 @@ function deletePrompt() {
             </IonItemGroup>
           </IonList>
       </IonContent>
-      <IonFooter className="floating-error-footer">
+      <IonFooter className="floating-footer">
         {
           formErrors[ErrorLocation.General].hasError ? <IonItem className="shorter-item-some-padding" lines="none"><IonText color="danger">{formErrors[ErrorLocation.General].errorMessage}</IonText></IonItem> : <></>
         }  

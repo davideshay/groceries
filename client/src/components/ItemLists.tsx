@@ -24,7 +24,7 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
     const { t } = useTranslation()
     
     function selectList(listID: string, updateVal: boolean) {
-        let newItemDoc=cloneDeep(props.stateItemDoc) as ItemDoc;
+        const newItemDoc=cloneDeep(props.stateItemDoc) as ItemDoc;
         let listFound=false
         for (let i = 0; i < newItemDoc.lists.length; i++) {
             if (newItemDoc.lists[i].listID === listID) {
@@ -34,7 +34,7 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
             }    
         }
         if (!listFound) {
-            let listObj: ItemList = cloneDeep(ItemListInit) as ItemList;
+            const listObj: ItemList = cloneDeep(ItemListInit) as ItemList;
             listObj.listID = listID;
             listObj.boughtCount = 0;
             listObj.active = updateVal;
@@ -49,26 +49,26 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
         for (let i = 0; i < props.stateItemDoc.lists.length; i++) {
           if (props.stateItemDoc.lists[i].listID === listID) { listIdx=i; break;}
         }
-        let listFoundIdx=listDocs.findIndex((element: ListDoc) => (element._id === listID));
-        let listName = (listFoundIdx === -1) ? "" : listDocs[listFoundIdx].name
+        const listFoundIdx=listDocs.findIndex((element: ListDoc) => (element._id === listID));
+        const listName = (listFoundIdx === -1) ? "" : listDocs[listFoundIdx].name
         setModalState(prevState => ({...prevState,isOpen: true, selectedListId: listID, 
           selectedListName: listName, selectedListIdx: listIdx, itemList: cloneDeep(props.stateItemDoc.lists[listIdx])}));
     }
 
-    let listsElem=[];
-    let listsInnerElem=[];
+    const listsElem=[];
+    const listsInnerElem=[];
     listsInnerElem.push(<IonRow key="listlabelrow">
         <IonCol size="10"><IonLabel key="listlabel" position='stacked'>{t('itemtext.item_is_on_these_lists')}</IonLabel></IonCol>
         <IonCol size="2"><IonLabel key="resetlabel" position="stacked">{t('general.edit')}</IonLabel></IonCol></IonRow>
     )
-    let sortedLists = sortedItemLists(props.stateItemDoc.lists,listDocs);
+    const sortedLists = sortedItemLists(props.stateItemDoc.lists,listDocs);
     
     for (let i = 0; i < sortedLists.length; i++) {
-      let listID = sortedLists[i].listID;
-      let itemFoundIdx=listDocs.findIndex((element: ListDoc) => (element._id === listID));
+      const listID = sortedLists[i].listID;
+      const itemFoundIdx=listDocs.findIndex((element: ListDoc) => (element._id === listID));
       if (itemFoundIdx !== -1) {
-        let itemActive=(sortedLists[i].active);
-        let listName=listDocs[itemFoundIdx].name;
+        const itemActive=(sortedLists[i].active);
+        const listName=listDocs[itemFoundIdx].name;
         listsInnerElem.push(
           <IonRow key={listID} className={listIsDifferentThanCommon(sortedLists,i) ? "highlighted-row ion-no-padding" : "ion-no-padding"}>
             <IonCol className="ion-no-padding" size="1"><IonCheckbox aria-label="" onIonChange={(e: CheckboxCustomEvent) => selectList(listID,Boolean(e.detail.checked))} checked={itemActive}></IonCheckbox></IonCol>

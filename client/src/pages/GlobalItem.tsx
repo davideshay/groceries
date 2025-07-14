@@ -15,9 +15,8 @@ import { useTranslation } from 'react-i18next';
 import { translatedCategoryName, translatedItemName, translatedUOMName } from '../components/translationUtilities';
 import { useGlobalDataStore } from '../components/GlobalData';
 
-const GlobalItem: React.FC<HistoryProps> = (props: HistoryProps) => {
-  let { mode, id: routeID } = useParams<{mode: string, id: string}>();
-  if ( mode === "new" ) { routeID = "<new>"};
+const GlobalItem: React.FC<HistoryProps> = () => {
+  const { id: routeID } = useParams<{mode: string, id: string}>();
   const { doc: globalItemDoc, loading: globalItemLoading, dbError: globalItemError} = useGetOneDoc(routeID);
   const {goBack} = useContext(NavContext);
   const screenLoading = useRef(true);
@@ -37,10 +36,10 @@ const GlobalItem: React.FC<HistoryProps> = (props: HistoryProps) => {
 };
   
   screenLoading.current=false;
-  let curUOMItem : UomDoc | undefined = (uomDocs as UomDoc[]).find((uom) => (uom.listGroupID=== "system" && uom.name === globalItemDoc.defaultUOM));
-  let curUOM = (curUOMItem === undefined) ? t("general.undefined")  :  translatedUOMName(curUOMItem._id as string ,curUOMItem.description, curUOMItem.pluralDescription);
-  let curCategoryItem : CategoryDoc | undefined = (categoryDocs as CategoryDoc[]).find((cat) => (cat._id === globalItemDoc.defaultCategoryID));
-  let curCategory = (curCategoryItem === undefined) ? t("general.undefined") : translatedCategoryName(curCategoryItem._id,curCategoryItem.name)       ;
+  const curUOMItem : UomDoc | undefined = (uomDocs as UomDoc[]).find((uom) => (uom.listGroupID=== "system" && uom.name === globalItemDoc.defaultUOM));
+  const curUOM = (curUOMItem === undefined) ? t("general.undefined")  :  translatedUOMName(curUOMItem._id as string ,curUOMItem.description, curUOMItem.pluralDescription);
+  const curCategoryItem : CategoryDoc | undefined = (categoryDocs as CategoryDoc[]).find((cat) => (cat._id === globalItemDoc.defaultCategoryID));
+  const curCategory = (curCategoryItem === undefined) ? t("general.undefined") : translatedCategoryName(curCategoryItem._id,curCategoryItem.name)       ;
 
   return (
     <IonPage>

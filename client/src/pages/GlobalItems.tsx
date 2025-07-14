@@ -15,7 +15,7 @@ import { useGlobalDataStore } from '../components/GlobalData';
 // and status for active (on the list), and complete (on the list and checked off) )
 
 
-const GlobalItems: React.FC<HistoryProps> = (props: HistoryProps) => {
+const GlobalItems: React.FC<HistoryProps> = () => {
   const screenLoading = useRef(true);
   const error = useGlobalDataStore((state) => state.error)
   const loading = useGlobalDataStore((state) => state.isLoading);

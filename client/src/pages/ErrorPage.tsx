@@ -1,16 +1,12 @@
 import { IonHeader, IonPage, IonTitle, IonToolbar, IonContent,IonItem } from '@ionic/react';
 import { t } from 'i18next';
 
-interface ErrorRequiredProps {
-
-};
-
 interface ErrorOptionalProps  {
     errorTitle: string;
     errorText: string
 };
 
-interface ErrorProps extends ErrorRequiredProps, ErrorOptionalProps {};
+type ErrorProps  = ErrorOptionalProps;
 
 const defaultProps: ErrorOptionalProps = {
     errorTitle: t("error.error"),

@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { translatedCategoryName } from '../components/translationUtilities';
 import { useGlobalDataStore } from '../components/GlobalData';
 
-const Categories: React.FC<HistoryProps> = (props: HistoryProps) => {
+const Categories: React.FC<HistoryProps> = () => {
   const error = useGlobalDataStore((state) => state.error);
   const loading = useGlobalDataStore((state) => state.isLoading);
   const categoryDocs = useGlobalDataStore((state) => state.categoryDocs);

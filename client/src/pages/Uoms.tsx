@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { translatedUOMName } from '../components/translationUtilities';
 import { useGlobalDataStore } from '../components/GlobalData';
 
-const Uoms: React.FC<HistoryProps> = (props: HistoryProps) => {
+const Uoms: React.FC<HistoryProps> = () => {
   const error = useGlobalDataStore((state) => state.error);
   const isLoading = useGlobalDataStore((state) => state.isLoading);
   const uomDocs = useGlobalDataStore((state) => state.uomDocs);

@@ -40,7 +40,7 @@ const RecipeItemSearch: React.FC<RecipeItemSearchProps> = (props: RecipeItemSear
 
     useEffect( () => {
         if (listRowsLoaded) {
-            let newListGroups: Set<string> = new Set();
+            const newListGroups: Set<string> = new Set();
             listRows.forEach((lr) => {
                 newListGroups.add(String(lr.listDoc.listGroupID))
             })
@@ -51,7 +51,7 @@ const RecipeItemSearch: React.FC<RecipeItemSearchProps> = (props: RecipeItemSear
     useEffect( () => {
         if (pageState.itemsNeedLoaded && !loading ) {
             let searchIdx=0;
-            let newSearchRows: RecipeSearchRow[] = [];
+            const newSearchRows: RecipeSearchRow[] = [];
             globalItemDocs.forEach(idoc => {
                 newSearchRows.push({id: String(searchIdx++),display: translatedItemName(String(idoc._id),idoc.name,idoc.name), data: {name: idoc.name,globalItemID: String(idoc._id) }})
             });

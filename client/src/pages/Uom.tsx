@@ -32,9 +32,9 @@ const FormErrorInit = {
   [ErrorLocation.Alternate]: {errorMessage:"",hasError: false},
   [ErrorLocation.General]: {errorMessage:"", hasError: false} }
 
-const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
-  let { mode, id: routeID } = useParams<{mode: string, id: string}>();
-  let routeUomID : string|null = (mode === "new") ? null : routeID;
+const Uom: React.FC<HistoryProps> = () => {
+  const { mode, id: routeID } = useParams<{mode: string, id: string}>();
+  const routeUomID : string|null = (mode === "new") ? null : routeID;
   const [pageState,setPageState] = useState<PageState>({
     uomDoc: InitUomDoc, needInitUomDoc: true,
     deletingUom: false
@@ -83,7 +83,7 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
   screenLoading.current=false;
 
   async function updateThisUom() {
-    setFormErrors(prevState=>(FormErrorInit));
+    setFormErrors(FormErrorInit);
     if (isEmpty(pageState.uomDoc.name)) {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.must_enter_a_name"), hasError: true }}));
       return false;
@@ -126,10 +126,10 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
 
     // check alt dups
-    let upperAlternates = pageState.uomDoc.alternates!.map(el => (el.replace(/\W|_/g, '').toUpperCase()))
-    let upperCustomAlternates = pageState.uomDoc.customAlternates!.map(el => (el.replace(/\W|_/g, '').toUpperCase()))
-    let combinedAlts = upperAlternates.concat(upperCustomAlternates);
-    let combinedSet = new Set(combinedAlts);
+    const upperAlternates = pageState.uomDoc.alternates!.map(el => (el.replace(/\W|_/g, '').toUpperCase()))
+    const upperCustomAlternates = pageState.uomDoc.customAlternates!.map(el => (el.replace(/\W|_/g, '').toUpperCase()))
+    const combinedAlts = upperAlternates.concat(upperCustomAlternates);
+    const combinedSet = new Set(combinedAlts);
     if (combinedAlts.length !== combinedSet.size) {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.Alternate]: {errorMessage: t("error.duplicate_alt_uom"), hasError: true }}));
       return false;
@@ -185,21 +185,21 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   async function deleteUomFromDB() {
     presentDeleting(String(t("general.deleting_uom")));
-    let uomItemDelResponse = await deleteUomFromItems(String(pageState.uomDoc.name));
+    const uomItemDelResponse = await deleteUomFromItems(String(pageState.uomDoc.name));
     if (!uomItemDelResponse.successful) {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.unable_remove_uom_items"), hasError: true }}));
       setPageState(prevState=>({...prevState,deletingUom: false }))
       dismissDeleting()
       return false;
     }
-    let uomRecipeDelResponse = await deleteUomFromRecipes(String(pageState.uomDoc.name));
+    const uomRecipeDelResponse = await deleteUomFromRecipes(String(pageState.uomDoc.name));
     if (!uomRecipeDelResponse.successful) {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.unable_remove_uom_recipes"), hasError: true }}));
       setPageState(prevState=>({...prevState,deletingUom: false}))
       dismissDeleting();
       return false;
     }
-   let uomDelResponse = await deleteUom(pageState.uomDoc);
+   const uomDelResponse = await deleteUom(pageState.uomDoc);
    if (!uomDelResponse.successful) {
     setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.unable_delete_uom"), hasError: true }}));
     setPageState(prevState=>({...prevState,deletingUom: false }))
@@ -228,7 +228,7 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   
   function updateCustomAlternateUom(index: number, value: string) {
-    let newAlternates=cloneDeep(pageState.uomDoc.customAlternates) as (string[])
+    const newAlternates=cloneDeep(pageState.uomDoc.customAlternates) as (string[])
     newAlternates[index]=value;
     setPageState(prevState=>({...prevState,uomDoc: {...prevState.uomDoc,customAlternates: newAlternates}}))
   }
@@ -237,14 +237,14 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
       if (isEmpty(pageState.uomDoc.customAlternates)) {
         setPageState(prevState=>({...prevState,uomDoc:{...prevState.uomDoc,customAlternates: [""]}}));
       } else {
-        let newAlts = cloneDeep(pageState.uomDoc.customAlternates) as (string[]);
+        const newAlts = cloneDeep(pageState.uomDoc.customAlternates) as (string[]);
         newAlts.push("");
         setPageState(prevState=>({...prevState,uomDoc:{...prevState.uomDoc,customAlternates: newAlts}}))
       }
   }
 
   function deleteCustom(index: number) {
-    let newAlts = cloneDeep(pageState.uomDoc.customAlternates) as (string[]);
+    const newAlts = cloneDeep(pageState.uomDoc.customAlternates) as (string[]);
     newAlts.splice(index,1);
     setPageState(prevState=>({...prevState,uomDoc:{...prevState.uomDoc,customAlternates: newAlts}}))
   }
@@ -295,14 +295,14 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
               pageState.uomDoc._id?.startsWith("system:uom") ?
               pageState.uomDoc.alternates?.map((alt,index) => (
                 <IonItem key={"altuom"+(index)}>
-                  <IonInput aria-label="" disabled={pageState.uomDoc._id?.startsWith("system:uom")} type="text" placeholder={t("general.new_placeholder") as string} value={pageState.uomDoc.alternates![index]}></IonInput>
+                  <IonInput aria-label="" key={index+alt} disabled={pageState.uomDoc._id?.startsWith("system:uom")} type="text" placeholder={t("general.new_placeholder") as string} value={pageState.uomDoc.alternates![index]}></IonInput>
                 </IonItem>
               )) : <></>
             }
             <IonGrid>
             { 
               pageState.uomDoc.customAlternates?.map((alt,index) => (
-                <IonRow key={"custaltuom"+(index)}>
+                <IonRow key={"custaltuom"+(index)+alt}>
                   <IonCol size="10">
                     <IonInput aria-label="" type="text" placeholder={t("general.new_placeholder") as string} onIonInput={(e) => updateCustomAlternateUom(index,String(e.detail.value))}  value={pageState.uomDoc.customAlternates![index]}></IonInput>                  
                   </IonCol>
@@ -316,7 +316,7 @@ const Uom: React.FC<HistoryProps> = (props: HistoryProps) => {
               <IonButton onClick={() => addNewCustom()}><IonIcon icon={add}></IonIcon></IonButton>
             </IonItem>
           </IonList>
-          <IonFooter className="floating-error-footer">
+          <IonFooter className="floating-footer">
             {formErrors[ErrorLocation.General].hasError ? <IonItem className="shorter-item-some-padding" lines="none"><IonText color="danger">{formErrors[ErrorLocation.General].errorMessage}</IonText></IonItem> : <></>}         
           <IonToolbar>
             { pageState.uomDoc._id?.startsWith("system:uom") ? <></> :

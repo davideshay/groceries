@@ -35,7 +35,7 @@ const ErrorInfoInit: ErrorInfo = {
   formError: ""
 }
 
-const Status: React.FC<HistoryProps> = (props: HistoryProps) => {
+const Status: React.FC<HistoryProps> = () => {
   const db = useGlobalDataStore((state) => state.db)
   const [presentAlert] = useIonAlert();
   const {globalState, settingsLoading} = useContext(GlobalStateContext);
@@ -46,15 +46,15 @@ const Status: React.FC<HistoryProps> = (props: HistoryProps) => {
   const [errorInfo] = useState<ErrorInfo>(cloneDeep(ErrorInfoInit));
   const { t } = useTranslation();
   const screenLoading = useRef(false);
-  const [, forceUpdateState] = useState<{}>();
+  const [, forceUpdateState] = useState<object>();
   const forceUpdate = useCallback(() => forceUpdateState({}), []);
 
 
 
   useEffect( () => {
     async function checkAPIServerAvailable(apiServerURL: string|null) {
-      let apiServerAvailable = await isServerAvailable(apiServerURL);
-      let dbServerAvailable = await isDBServerAvailable(remoteDBCreds.refreshJWT,remoteDBCreds.couchBaseURL);
+      const apiServerAvailable = await isServerAvailable(apiServerURL);
+      const dbServerAvailable = await isDBServerAvailable(remoteDBCreds.refreshJWT,remoteDBCreds.couchBaseURL);
       log.debug("API Server Available response:",apiServerAvailable);
       log.debug("DB Server Available response:",dbServerAvailable);
       if (apiServerAvailable.apiServerAvailable) {
@@ -75,7 +75,7 @@ const Status: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   useEffect( () => {
     if (!localSettingsInitialized && globalState.settingsLoaded) {
-      setLocalSettings(prevState=>(globalState.settings));
+      setLocalSettings(globalState.settings);
       setUserInfo({name: String(remoteDBCreds.dbUsername), email: String(remoteDBCreds.email), fullname: String(remoteDBCreds.fullName)})
       setLocalSettingsInitialized(true);
     }
@@ -88,7 +88,7 @@ const Status: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   async function destroyDB() {
     if (db !== null) {await db.destroy()};
-    let credsStr=JSON.stringify({});
+    const credsStr=JSON.stringify({});
     await Preferences.set({key: 'dbcreds', value: credsStr})
     await Preferences.remove({key: PrefsLastUsernameKey});
     if (Capacitor.isNativePlatform()) {App.exitApp();}

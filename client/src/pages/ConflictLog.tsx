@@ -12,7 +12,7 @@ import { ConflictDocs } from '../components/DBSchema';
 import { useTranslation } from 'react-i18next';
 import log from "../components/logger";
 
-const ConflictLog: React.FC<HistoryProps> = (props: HistoryProps) => {
+const ConflictLog: React.FC<HistoryProps> = () => {
   const { setDBCredsValue } = useContext(RemoteDBStateContext);
   const { conflictsError, conflictDocs, conflictsLoading } = useConflicts();
   const screenLoading = useRef(true);

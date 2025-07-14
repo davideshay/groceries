@@ -11,21 +11,21 @@ import { useGlobalDataStore } from "./GlobalData";
 
 export async function isRecipeItemOnList({ recipeItem, listOrGroupID} : 
     {recipeItem: RecipeItem, listOrGroupID: string | null}): Promise<[boolean, string|null]> {
-    let itemDocs = useGlobalDataStore((state) => state.itemDocs);
-    let listCombinedRows = useGlobalDataStore((state) => state.listCombinedRows);
+    const itemDocs = useGlobalDataStore.getState().itemDocs;
+    const listCombinedRows = useGlobalDataStore.getState().listCombinedRows;
     let inList = false;
     let itemID: string|null = null
     const listGroupID = getListGroupIDFromListOrGroupID(listOrGroupID as string,listCombinedRows);
     if (listGroupID === null) {return [inList,itemID]}
     let itemExists=true;
-    let itemResults = itemDocs.filter((item) => item.listGroupID = listGroupID);
+    const itemResults = itemDocs.filter((item) => item.listGroupID = listGroupID);
     if (itemResults.length === 0) {itemExists=false;};
     if (itemExists && itemResults.length < 1) { itemExists = false};
     let foundItem: ItemDoc | null = null;
     if (itemExists) {
         for (let i = 0; i < itemResults.length; i++) {
             const item = cloneDeep(itemResults[i]) as ItemDoc;
-            if (item.hasOwnProperty("pluralName")) {
+            if (Object.prototype.hasOwnProperty.call(item, "pluralName")) {
                 item.pluralName = isEmpty(item.pluralName) ? "" : item.pluralName
             } else {
                 item.pluralName = item.name;
@@ -47,10 +47,10 @@ export async function isRecipeItemOnList({ recipeItem, listOrGroupID} :
 export async function updateItemFromRecipeItem({itemID,listOrGroupID,recipeItem,settings}:
     {itemID: string, listOrGroupID: string | null, recipeItem: RecipeItem, settings: GlobalSettings}) : Promise<string> {
     
-    const db = useGlobalDataStore((state) => state.db);
-    const listCombinedRows = useGlobalDataStore((state) => state.listCombinedRows);
-    const listDocs = useGlobalDataStore((state) => state.listDocs);
-    const uomDocs = useGlobalDataStore((state) => state.uomDocs);
+    const db = useGlobalDataStore.getState().db;
+    const listCombinedRows = useGlobalDataStore.getState().listCombinedRows;
+    const listDocs = useGlobalDataStore.getState().listDocs;
+    const uomDocs = useGlobalDataStore.getState().uomDocs;
 
     if (db === null) {return "No Database Available"};
     let status="";
@@ -65,9 +65,9 @@ export async function updateItemFromRecipeItem({itemID,listOrGroupID,recipeItem,
     catch(err) {log.error("Could not retrieve item",err);itemExists=false};
     if (itemExists && foundItem == null) {itemExists =false}
     if (!itemExists) {return t("error.no_item_found_update_recipe",{itemName: recipeItem.name}) as string};
-    let rowType: RowType | null = getRowTypeFromListOrGroupID(listOrGroupID as string,listCombinedRows)
-    let listGroupID = getListGroupIDFromListOrGroupID(String(listOrGroupID),listCombinedRows);
-    let updItem: ItemDoc = cloneDeep(foundItem) as ItemDoc;
+    const rowType: RowType | null = getRowTypeFromListOrGroupID(listOrGroupID as string,listCombinedRows)
+    const listGroupID = getListGroupIDFromListOrGroupID(String(listOrGroupID),listCombinedRows);
+    const updItem: ItemDoc = cloneDeep(foundItem) as ItemDoc;
     updItem.lists.forEach(itemList => {
         if (!itemList.stockedAt) {return}
         if (settings.addListOption === AddListOptions.dontAddAutomatically && 
@@ -113,23 +113,23 @@ export async function updateItemFromRecipeItem({itemID,listOrGroupID,recipeItem,
 
 export async function createNewItemFromRecipeItem({listOrGroupID,recipeItem,settings} : 
     {listOrGroupID: string | null, recipeItem: RecipeItem, settings: GlobalSettings}) : Promise<string> {
-    const db = useGlobalDataStore((state) => state.db);
-    const globalItemDocs = useGlobalDataStore((state) => state.globalItemDocs);
-    const listCombinedRows = useGlobalDataStore((state) => state.listCombinedRows);
-    const listRows = useGlobalDataStore((state) => state.listRows);
+    const db = useGlobalDataStore.getState().db;
+    const globalItemDocs = useGlobalDataStore.getState().globalItemDocs;
+    const listCombinedRows = useGlobalDataStore.getState().listCombinedRows;
+    const listRows = useGlobalDataStore.getInitialState().listRows;
     
     if (db === null) {return "DB is Not Available"};
     let status="";
     if (!recipeItem.addToList) {return (t("error.recipe_item_not_selected_to_add",{recipeName: recipeItem.name}) as string)};
     let addError = false;
-    let rowType: RowType | null = getRowTypeFromListOrGroupID(listOrGroupID as string,listCombinedRows)
-    let existingGlobalItem = globalItemDocs.find(gi => gi._id === recipeItem.globalItemID)
-    let newItem: ItemDoc = cloneDeep(ItemDocInit);
+    const rowType: RowType | null = getRowTypeFromListOrGroupID(listOrGroupID as string,listCombinedRows)
+    const existingGlobalItem = globalItemDocs.find(gi => gi._id === recipeItem.globalItemID)
+    const newItem: ItemDoc = cloneDeep(ItemDocInit);
     newItem.globalItemID = recipeItem.globalItemID;
     newItem.listGroupID = getListGroupIDFromListOrGroupID(listOrGroupID as string, listCombinedRows);
     newItem.name = recipeItem.name;
     listRows.filter(lr => lr.listGroupID === newItem.listGroupID).forEach(lr => {
-        let newItemList :ItemList = cloneDeep(ItemListInit);
+        const newItemList :ItemList = cloneDeep(ItemListInit);
         if (settings.addListOption === AddListOptions.dontAddAutomatically && 
             rowType === RowType.list &&
             lr.listDoc._id !== listOrGroupID) {

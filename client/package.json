@@ -55,7 +55,9 @@
     "build": "tsc && vite build",
     "sync": "npm run build && ionic cap sync --no-build",
     "test": "react-scripts test --transformIgnorePatterns 'node_modules/(?!(@ionic/react|@ionic/react-router|@ionic/core|@stencil/core|ionicons)/)'",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "lint": "eslint .",
+    "watchlint": "tsc --noEmit --watch"
   },
   "eslintConfig": {
     "extends": [
@@ -78,10 +80,10 @@
   "devDependencies": {
     "@capacitor/assets": "^3.0.4",
     "@capacitor/cli": "^7.4.2",
+    "@eslint/js": "^9.25.0",
     "@testing-library/jest-dom": "^6.1.5",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
-    "@eslint/js": "^9.25.0",
     "@types/jest": "^30.0.0",
     "@types/lodash": "^4.17.20",
     "@types/lodash-es": "^4.17.12",
@@ -92,8 +94,12 @@
     "@types/react-router": "^5.1.11",
     "@types/react-router-dom": "^5.1.7",
     "@types/uuid": "^10.0.0",
+    "eslint": "^9.31.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
     "pouchdb-browser": "^9.0.0",
-    "pouchdb-find": "^9.0.0"
+    "pouchdb-find": "^9.0.0",
+    "typescript-eslint": "^8.36.0"
   },
   "description": "An Ionic project"
 }

@@ -26,7 +26,7 @@ type ItemsSearchProps = {
     addItemWithoutRow: (name: string) => void,
 }
 
-const ItemsSearch: React.FC<ItemsSearchProps> = (props: ItemsSearchProps) => {
+const ItemsSearch: React.FC<ItemsSearchProps> = () => {
     const [pageState,setPageState] = useState<PageState>({
         itemsNeedLoaded: true,
         itemSearchRows: [],
@@ -40,7 +40,7 @@ const ItemsSearch: React.FC<ItemsSearchProps> = (props: ItemsSearchProps) => {
     useEffect( () => {
         if (pageState.itemsNeedLoaded && !loading) {
             let searchIdx=0;
-            let newSearchRows: RecipeSearchRow[] = [];
+            const newSearchRows: RecipeSearchRow[] = [];
             globalItemDocs.forEach(idoc => {
                 newSearchRows.push({id: String(searchIdx++),display: translatedItemName(String(idoc._id),idoc.name,idoc.name), data: {name: idoc.name,globalItemID: String(idoc._id) }})
             });

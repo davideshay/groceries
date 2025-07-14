@@ -32,7 +32,7 @@ const RecipeModal: React.FC<RecipeModalProps> = (props: RecipeModalProps) => {
     const { t } = useTranslation();
 
 return (
-    <IonModal id="recipe-item" isOpen={props.isOpen} onDidDismiss={(ev)=>{props.setIsOpenFalse()}}>
+    <IonModal id="recipe-item" isOpen={props.isOpen} onDidDismiss={()=>{props.setIsOpenFalse()}}>
         <IonTitle className="modal-title">{t('general.item_on_recipe') + translatedItemName(props.recipeItem.globalItemID,props.recipeItem.name, props.recipeItem.name)}</IonTitle>
         <IonList>
         <IonItem key="name">
@@ -46,7 +46,7 @@ return (
             <IonInput type="number" label={t("general.recipe_quantity") as string} labelPlacement="stacked"
             value={props.recipeItem.recipeQuantity}
             onIonInput={(ev) => {
-                let updRecipeDoc: RecipeDoc = cloneDeep(props.recipeDoc);
+                const updRecipeDoc: RecipeDoc = cloneDeep(props.recipeDoc);
                 updRecipeDoc.items[props.selectedItemIdx].recipeQuantity = Number(ev.detail.value);
                 props.updateRecipeDoc(updRecipeDoc);
             }} />
@@ -54,7 +54,7 @@ return (
         <IonItem key="r-uom">
             <IonSelect label={t("general.recipe_uom") as string} labelPlacement="stacked" interface="popover"
                 value={props.recipeItem.recipeUOMName} onIonChange={(ev) => {
-                    let updRecipeDoc: RecipeDoc=cloneDeep(props.recipeDoc);
+                    const updRecipeDoc: RecipeDoc=cloneDeep(props.recipeDoc);
                     updRecipeDoc.items[props.selectedItemIdx].recipeUOMName = ev.detail.value;
                     props.updateRecipeDoc(updRecipeDoc); }}>
                 <IonSelectOption key="uom-undefined" value={null}>{t('general.no_uom')}</IonSelectOption>
@@ -68,14 +68,14 @@ return (
         <IonItem key="s-qty">
             <IonInput type="number" label={t("general.shopping_quantity") as string} labelPlacement="stacked"
                 value={props.recipeItem.shoppingQuantity} onIonInput={(ev) => {
-                    let updRecipeDoc: RecipeDoc=cloneDeep(props.recipeDoc);
+                    const updRecipeDoc: RecipeDoc=cloneDeep(props.recipeDoc);
                     updRecipeDoc.items[props.selectedItemIdx].shoppingQuantity = Number(ev.detail.value);
                     props.updateRecipeDoc(updRecipeDoc);}} />
         </IonItem>  
         <IonItem key="s-uom">
             <IonSelect label={t("general.shopping_uom") as string} labelPlacement="stacked" interface="popover"
                 value={props.recipeItem.shoppingUOMName} onIonChange={(ev) => {
-                    let updRecipeDoc: RecipeDoc=cloneDeep(props.recipeDoc);
+                    const updRecipeDoc: RecipeDoc=cloneDeep(props.recipeDoc);
                     updRecipeDoc.items[props.selectedItemIdx].shoppingUOMName = ev.detail.value;
                     props.updateRecipeDoc(updRecipeDoc);}}>
                 <IonSelectOption key="uom-undefined" value={null}>{t('general.no_uom')}</IonSelectOption>
@@ -89,7 +89,7 @@ return (
         <IonItem key="note">
             <IonTextarea label={t("general.note") as string} labelPlacement="stacked"
                 value={props.recipeItem.note} onIonInput={(ev) => {
-                    let updRecipeDoc: RecipeDoc=cloneDeep(props.recipeDoc);
+                    const updRecipeDoc: RecipeDoc=cloneDeep(props.recipeDoc);
                     updRecipeDoc.items[props.selectedItemIdx].note = String(ev.detail.value);
                     props.updateRecipeDoc(updRecipeDoc);}} />
         </IonItem>

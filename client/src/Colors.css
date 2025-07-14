@@ -17,7 +17,9 @@ body::after {
 
 /* LIGHT MODE */
 
-body::before, ion-item, ion-list-header, ion-header, ion-toolbar, ion-list, ion-title.modal-title, #item-search-box-id, #items-page-header, #items-page-header > ion-item  {
+body::before, ion-item, ion-list-header, ion-header, ion-toolbar, ion-list,
+ion-title.modal-title, #item-search-box-id, #items-page-header,
+#items-page-header > ion-item, ion-select-popover {
     --background: #fafafa;
     background: #fafafa;
 }
@@ -41,7 +43,9 @@ ion-item-divider.category-divider {
 ion-content, ion-list.ion-items-list {
     background: #ffffff;
 }
-ion-item.itemrow-outer {
+ion-item.itemrow-outer, ion-item.app-menu-item, ion-item.menu-item-label,
+ion-list.menu-section ion-menu-toggle:first-of-type ion-item.app-menu-item,
+ion-menu ion-list ion-list:first-of-type ion-item-divider {
     border-color: #cacaca;
 }
 ion-item-divider.uncategorized-color {
@@ -51,7 +55,9 @@ ion-item-divider.uncategorized-color {
 /* DARK MODE */
 
 .ion-palette-dark {
-    body::before, ion-item, ion-list-header, ion-header, ion-toolbar, ion-list, ion-title.modal-title, #item-search-box-id, #items-page-header, #items-page-header > ion-item  {
+    body::before, ion-item, ion-list-header, ion-header, ion-toolbar, ion-list,
+    ion-title.modal-title, #item-search-box-id, #items-page-header,
+    #items-page-header > ion-item, ion-select-popover {
         --background: #202020;
         background: #202020;
     }
@@ -72,7 +78,9 @@ ion-item-divider.uncategorized-color {
     ion-content, ion-list.ion-items-list {
         background: #000000;
     }
-    ion-item.itemrow-outer {
+    ion-item.itemrow-outer, ion-item.app-menu-item, ion-item.menu-item-label,
+    ion-list.menu-section ion-menu-toggle:first-of-type ion-item.app-menu-item,
+    ion-menu ion-list ion-list:first-of-type ion-item-divider {
         border-color: #646464;
     }
     ion-item-divider.uncategorized-color {

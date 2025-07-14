@@ -48,10 +48,10 @@ const initialContext: GlobalStateContextType = {
     globalState: initialGlobalState,
     settingsLoading: false,
     setGlobalState: (prevState => (prevState) ),
-    setStateInfo: (key: string, value: string | null | RowType) => {},
-    updateSettingKey: async (key: string, value: AddListOptions | boolean | number| string | null) => {return false},
-    updateCategoryColor: async (catID: string, color: string) => {return false},
-    deleteCategoryColor: async (catID: string) => {return false}
+    setStateInfo: () => {},
+    updateSettingKey: async () => {return false},
+    updateCategoryColor: async () => {return false},
+    deleteCategoryColor: async () => {return false}
 }
 
 export const GlobalStateContext = createContext(initialContext)
@@ -76,15 +76,15 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
 
     async function updateSettingKey(key: string, value: AddListOptions | boolean | number | string | null): Promise<boolean> {
         setGlobalState(prevState => ({...prevState,settings: {...prevState.settings, [key]: value}}))
-        let dbSettingsDoc: SettingsDoc = settingsDoc as SettingsDoc;
-        let newSettingsDoc: SettingsDoc = {...dbSettingsDoc,settings: {...dbSettingsDoc.settings,[key]: value}};
+        const dbSettingsDoc: SettingsDoc = settingsDoc as SettingsDoc;
+        const newSettingsDoc: SettingsDoc = {...dbSettingsDoc,settings: {...dbSettingsDoc.settings,[key]: value}};
         await updateSettingDoc(newSettingsDoc);
         return true;
     }
 
     async function updateCategoryColor(catID: string, color: string): Promise<boolean> {
         if (isEmpty(color) || isEmpty(catID)) { return false;}
-        let curSettingsDoc: SettingsDoc = settingsDoc as SettingsDoc;
+        const curSettingsDoc: SettingsDoc = settingsDoc as SettingsDoc;
         let curCategoryColors: CategoryColors = {}
         if (curSettingsDoc.categoryColors) {
             curCategoryColors = curSettingsDoc.categoryColors;
@@ -97,12 +97,12 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
 
     async function deleteCategoryColor(catID: string): Promise<boolean> {
         if (isEmpty(catID)) { return false;}
-        let curSettingsDoc: SettingsDoc = settingsDoc as SettingsDoc;
+        const curSettingsDoc: SettingsDoc = settingsDoc as SettingsDoc;
         let curCategoryColors: CategoryColors = {}
         if (curSettingsDoc.categoryColors) {
             curCategoryColors = cloneDeep(curSettingsDoc.categoryColors);
         }
-        if (curCategoryColors.hasOwnProperty(catID)) {
+        if (Object.prototype.hasOwnProperty.call(curCategoryColors, catID)) {
             delete curCategoryColors[catID];
         }
         curSettingsDoc.categoryColors = curCategoryColors;
@@ -113,43 +113,43 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
     function validateSettings(settings: GlobalSettings) : [GlobalSettings, boolean] {
         let updated = false; let newSettings: GlobalSettings = cloneDeep(settings);
         if (newSettings == null) {newSettings = cloneDeep(InitSettings); updated = true;}
-        if (!newSettings.hasOwnProperty('addListOption')) {
+        if (!Object.prototype.hasOwnProperty.call(newSettings, 'addListOption')) {
             newSettings.addListOption = InitSettings.addListOption;
             updated = true;
         }
-        if (!newSettings.hasOwnProperty('removeFromAllLists')) {
+        if (!Object.prototype.hasOwnProperty.call(newSettings, 'removeFromAllLists')) {
             newSettings.removeFromAllLists = InitSettings.removeFromAllLists;
             updated = true;
         }
-        if (!newSettings.hasOwnProperty('completeFromAllLists')) {
+        if (!Object.prototype.hasOwnProperty.call(newSettings, 'completeFromAllLists')) {
             newSettings.completeFromAllLists = InitSettings.completeFromAllLists;
             updated = true;
         }
-        if (!newSettings.hasOwnProperty('includeGlobalInSearch')) {
+        if (!Object.prototype.hasOwnProperty.call(newSettings, 'includeGlobalInSearch')) {
             newSettings.includeGlobalInSearch = InitSettings.includeGlobalInSearch;
             updated = true;
         }
-        if (!newSettings.hasOwnProperty('daysOfConflictLog')) {
+        if (!Object.prototype.hasOwnProperty.call(newSettings, 'daysOfConflictLog')) {
             newSettings.daysOfConflictLog = InitSettings.daysOfConflictLog;
             updated = true;
         }
-        if (!newSettings.hasOwnProperty('savedListID')) {
+        if (!Object.prototype.hasOwnProperty.call(newSettings, 'savedListID')) {
             newSettings.savedListID = InitSettings.savedListID;
             updated = true;
         }
-        if (!newSettings.hasOwnProperty('alexaDefaultListGroup')) {
+        if (!Object.prototype.hasOwnProperty.call(newSettings, 'alexaDefaultListGroup')) {
             newSettings.alexaDefaultListGroup = InitSettings.alexaDefaultListGroup;
             updated = true;
         }
-        if (!newSettings.hasOwnProperty('theme')) {
+        if (!Object.prototype.hasOwnProperty.call(newSettings, 'theme')) {
             newSettings.theme = InitSettings.theme;
             updated = true;
         }
-        if (!newSettings.hasOwnProperty('loggingLevel')) {
+        if (!Object.prototype.hasOwnProperty.call(newSettings, 'loggingLevel')) {
             newSettings.loggingLevel = InitSettings.loggingLevel
             updated = true;
         }
-        if (!newSettings.hasOwnProperty('logToFile')) {
+        if (!Object.prototype.hasOwnProperty.call(newSettings, 'logToFile')) {
             newSettings.logToFile = InitSettings.logToFile
             updated = true;
         }
@@ -157,15 +157,15 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
     }
 
     const getSettings = useCallback( async () => {
-        let dbSettingsExist = (settingsDoc !== null);
-        let dbSettingsDoc: SettingsDoc = cloneDeep(settingsDoc) as SettingsDoc;
+        const dbSettingsExist = (settingsDoc !== null);
+        const dbSettingsDoc: SettingsDoc = cloneDeep(settingsDoc) as SettingsDoc;
         let dbCategoryColors: CategoryColors = {};
-        let { value: storageSettingsStr } = await Preferences.get({ key: 'settings'});
+        const { value: storageSettingsStr } = await Preferences.get({ key: 'settings'});
         let storageSettings: GlobalSettings = cloneDeep(InitSettings);
         let storageSettingsExist = false;
         if (storageSettingsStr != null && isJsonString(String(storageSettingsStr))) {
             storageSettings=JSON.parse(String(storageSettingsStr));
-            let settingsObjFiltered=pick(storageSettings,"addListOption","removeFromAllLists","completeFromAllLists","includeGlobalInSearch","daysOfConflictLog","savedListID","alexaDefaultListGroup");
+            const settingsObjFiltered=pick(storageSettings,"addListOption","removeFromAllLists","completeFromAllLists","includeGlobalInSearch","daysOfConflictLog","savedListID","alexaDefaultListGroup");
             storageSettings = settingsObjFiltered;
             storageSettingsExist = true;
         }
@@ -179,7 +179,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         }
         let finalSettings: GlobalSettings = cloneDeep(InitSettings);
         if (storageSettingsExist && !dbSettingsExist) {
-            let newSettingsDoc: SettingsDoc = cloneDeep(InitSettingsDoc);
+            const newSettingsDoc: SettingsDoc = cloneDeep(InitSettingsDoc);
             newSettingsDoc.username = String(remoteDBCreds.dbUsername);
             newSettingsDoc.settings = cloneDeep(storageSettings);
             log.debug("Created Settings Doc: settings exist in localstorage, not on DB")
@@ -187,7 +187,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
             await Preferences.remove({ key: "settings"});
             finalSettings = cloneDeep(newSettingsDoc.settings);
         } else if (!storageSettingsExist && !dbSettingsExist) {
-            let newSettingsDoc: SettingsDoc = cloneDeep(InitSettingsDoc);
+            const newSettingsDoc: SettingsDoc = cloneDeep(InitSettingsDoc);
             newSettingsDoc.username = String(remoteDBCreds.dbUsername);
             log.debug("Created Settings Doc: no settings exist at all");
             await createSettingDoc(newSettingsDoc)
@@ -195,7 +195,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         } else if (storageSettingsExist && dbSettingsExist) {
             await Preferences.remove({key : "settings"});
             if (dbUpdated) {
-                let newSettingsDoc:SettingsDoc = cloneDeep(settingsDoc) as SettingsDoc;
+                const newSettingsDoc:SettingsDoc = cloneDeep(settingsDoc) as SettingsDoc;
                 newSettingsDoc.settings = cloneDeep(dbSettingsDoc.settings);
                 log.debug("Updating settings on DB")
                 await updateSettingDoc(newSettingsDoc)
@@ -204,7 +204,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         } else if (!storageSettingsExist && dbSettingsExist) {
             finalSettings = dbSettingsDoc.settings;
             if (dbUpdated) {
-                let newSettingsDoc: SettingsDoc = cloneDeep(settingsDoc) as SettingsDoc;
+                const newSettingsDoc: SettingsDoc = cloneDeep(settingsDoc) as SettingsDoc;
                 newSettingsDoc.settings = dbSettingsDoc.settings;
                 await updateSettingDoc(newSettingsDoc)
             }
@@ -218,7 +218,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         if ((remoteDBState.initialSyncComplete || remoteDBState.workingOffline) && !loading && globalDataLoaded && (error === null)) {
             getSettings()
         }
-    },[remoteDBState.initialSyncComplete, remoteDBState.workingOffline, loading, error,getSettings, settingsDoc])
+    },[remoteDBState.initialSyncComplete, remoteDBState.workingOffline, loading, error,getSettings, settingsDoc,globalDataLoaded])
 
     useEffect( () => {
         console.log("setting log level to:",globalState.settings.loggingLevel);
@@ -226,7 +226,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
     },[globalState.settings.loggingLevel])
 
 
-    let value: GlobalStateContextType = {globalState, setGlobalState, setStateInfo, updateSettingKey, updateCategoryColor, deleteCategoryColor, settingsLoading: loading};
+    const value: GlobalStateContextType = {globalState, setGlobalState, setStateInfo, updateSettingKey, updateCategoryColor, deleteCategoryColor, settingsLoading: loading};
     return (
         <GlobalStateContext.Provider value={value}>{props.children}</GlobalStateContext.Provider>
       );

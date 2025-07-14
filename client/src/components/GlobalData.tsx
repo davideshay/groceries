@@ -5,6 +5,7 @@ import { ListCombinedRows, ListRow } from "./DataTypes";
 import { getListRows } from "./GlobalDataUtilities";
 import { translatedCategoryName, translatedItemName, translatedUOMName } from "./translationUtilities";
 import log from './logger';
+import { DBCreds, RemoteDBState } from './RemoteDBState';
 
 export enum DataReloadStatus {
     ReloadNeeded = "N",
@@ -33,14 +34,13 @@ export interface GlobalDataState {
     
     // Database reference
     db: PouchDB.Database | null;
-    remoteDBCreds: any;
-    remoteDBState: any;
-
+    remoteDBCreds: DBCreds | null;
+    remoteDBState: RemoteDBState | null;
 }
 
 export interface GlobalDataActions {
     // Initialize the store with database and credentials
-    initialize: (db: PouchDB.Database, remoteDBCreds: any, remoteDBState: any) => void;
+    initialize: (db: PouchDB.Database, remoteDBCreds: DBCreds, remoteDBState: RemoteDBState) => void;
     
     // Load all data from PouchDB
     loadAllData: () => Promise<void>;
@@ -49,6 +49,7 @@ export interface GlobalDataActions {
     waitForReload: () => void;
     
     // Parse all documents and organize by type
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     parseAllDocuments: (docs: any[]) => void;
     
     // Update list rows after data changes
@@ -256,7 +257,9 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
         },
         
         updateListRows: () => {
-            const { listDocs, listGroupDocs, remoteDBCreds, remoteDBState } = get();            
+            const { listDocs, listGroupDocs, remoteDBCreds, remoteDBState } = get();      
+            if (!remoteDBState) { log.error("No RemoteDB State yet..."); return;}      
+            if (!remoteDBCreds) { log.error("No Remote DB Creds yet..."); return;}
             if (!remoteDBState.initialSyncComplete && remoteDBState.dbServerAvailable) {
                 log.debug('Skipping list rows update - sync not complete');
                 return;
@@ -330,5 +333,5 @@ export function useSyncLocalPouchChangesToGlobalData() {
             changes.cancel();
             listenerStarted.current = false;
         };
-    },[db])
+    },[db,loadAllData])
 }

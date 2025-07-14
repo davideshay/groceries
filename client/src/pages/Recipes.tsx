@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router';
 import { useGlobalDataStore } from '../components/GlobalData';
 
-const Recipes: React.FC<HistoryProps> = (props: HistoryProps) => {
+const Recipes: React.FC<HistoryProps> = () => {
   const screenLoading=useRef(true);
   const { t } = useTranslation();
   const recipeDocs = useGlobalDataStore((state) => state.recipeDocs);

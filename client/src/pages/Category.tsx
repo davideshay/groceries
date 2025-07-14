@@ -25,10 +25,9 @@ const FormErrorInit = {  [ErrorLocation.Name]:       {errorMessage:"", hasError:
                       [ErrorLocation.General]:    {errorMessage:"", hasError: false}
                     }
 
-const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
-  let { mode, id: routeID } = useParams<{mode: string, id: string}>();
-  if ( mode === "new" ) { routeID = "<new>"};
-  let routeCategoryID: string|null = (mode === "new") ? null : routeID;
+const Category: React.FC<HistoryProps> = () => {
+  const { mode, id: routeID } = useParams<{mode: string, id: string}>();
+  const routeCategoryID: string|null = (mode === "new") ? null : routeID;
   const [needInitCategoryDoc,setNeedInitCategoryDoc] = useState(true);
   const [stateCategoryDoc,setStateCategoryDoc] = useState<CategoryDoc>(InitCategoryDoc);
   const [stateColor,setStateColor] = useState<string>(DefaultColor);
@@ -64,7 +63,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
         newCategoryDoc = cloneDeep(InitCategoryDoc);
       } else {
         newCategoryDoc = categoryDoc as CategoryDoc;
-        if (globalState.categoryColors.hasOwnProperty(String(newCategoryDoc._id))) {
+        if (Object.prototype.hasOwnProperty.call(globalState.categoryColors, String(newCategoryDoc._id))) {
           newColor =globalState.categoryColors[String(newCategoryDoc._id)];
         }
       }
@@ -96,7 +95,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   async function updateThisCategory() {
-    setFormErrors(prevState=>(FormErrorInit));
+    setFormErrors(FormErrorInit);
     if (stateCategoryDoc.name === undefined || stateCategoryDoc.name === "" || stateCategoryDoc.name === null) {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.must_enter_a_name"), hasError: true}}))
       return false;
@@ -123,7 +122,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
       result = await createCategory(stateCategoryDoc);
       if (result.successful) {
         catID = String(result.pouchData.id);
-        let catListAddResponse = await addCategoryToLists(catID,stateCategoryDoc.listGroupID,listCombinedRows);
+        const catListAddResponse = await addCategoryToLists(catID,stateCategoryDoc.listGroupID,listCombinedRows);
         if (!catListAddResponse.successful) {
           setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.error_adding_category"), hasError: true}}));
           return;
@@ -168,21 +167,21 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   async function deleteCategoryFromDB() {
     presentDeleting(String(t("general.deleting_category")));
-    let catItemDelResponse = await deleteCategoryFromItems(String(stateCategoryDoc._id));
+    const catItemDelResponse = await deleteCategoryFromItems(String(stateCategoryDoc._id));
     if (!catItemDelResponse.successful) {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.unable_remove_category_items"), hasError: true}}))
       setDeletingCategory(false);
       dismissDeleting();
       return;
     }
-    let catListDelResponse = await deleteCategoryFromLists(String(stateCategoryDoc._id));
+    const catListDelResponse = await deleteCategoryFromLists(String(stateCategoryDoc._id));
     if (!catListDelResponse.successful) {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.unable_remove_category_lists"), hasError: true}}))
       setDeletingCategory(false);
       dismissDeleting();
       return;
     }
-   let catDelResponse = await deleteCategory(stateCategoryDoc);
+   const catDelResponse = await deleteCategory(stateCategoryDoc);
    if (!catDelResponse.successful) {
      setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.unable_delete_category"), hasError: true}}))
      setDeletingCategory(false);
@@ -236,7 +235,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
             </IonItem>
             <IonItem key="color">
               <IonLabel position="stacked">{t("general.color")}</IonLabel>
-              <input type="color" value={stateColor} onChange={(e) => {setStateColor((prevState) => (e.target.value))}}></input>
+              <input type="color" value={stateColor} onChange={(e) => {setStateColor((e.target.value))}}></input>
             </IonItem>
           </IonList>
           <IonItem lines="none"  key="formerror">{formErrors[ErrorLocation.General].hasError ? <IonText color="danger">{formErrors[ErrorLocation.General].errorMessage}</IonText> : <></>}</IonItem>

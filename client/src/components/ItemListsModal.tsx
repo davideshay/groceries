@@ -25,7 +25,7 @@ const ItemListsModal: React.FC<ModalProps> = (props: ModalProps) => {
     const { t } = useTranslation()
     
     function saveModal() {
-      let newItemLists: ItemList[] = cloneDeep(props.stateItemDoc.lists);
+      const newItemLists: ItemList[] = cloneDeep(props.stateItemDoc.lists);
       for (let i = 0; i < newItemLists.length; i++) {
         if (newItemLists[i].listID === props.modalState.selectedListId) {
           newItemLists[i]=cloneDeep(props.modalState.itemList); break;
@@ -40,7 +40,7 @@ const ItemListsModal: React.FC<ModalProps> = (props: ModalProps) => {
     }
     
     function getActiveCategories(): CategoryDocs {
-      let catDocs: CategoryDocs = [];
+      const catDocs: CategoryDocs = [];
       const thisListDoc = listDocs.find(ld => ld._id === props.modalState.selectedListId);
       if (thisListDoc === undefined) {return catDocs;}
       for (const cat of thisListDoc.categories) {
@@ -98,7 +98,7 @@ const ItemListsModal: React.FC<ModalProps> = (props: ModalProps) => {
               </IonSelect>
             </IonCol>
             <IonCol size="2">
-              <IonButton fill="default" onClick={(e) => {props.addUOMPopup()}}><IonIcon icon={addCircleOutline}></IonIcon></IonButton>
+              <IonButton fill="default" onClick={() => {props.addUOMPopup()}}><IonIcon icon={addCircleOutline}></IonIcon></IonButton>
             </IonCol>
           </IonRow>
           <IonRow>

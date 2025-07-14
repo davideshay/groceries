@@ -18,7 +18,7 @@ type PageState = {
   formError: string,
 }
 
-const RecipeImport: React.FC<HistoryProps> = (props: HistoryProps) => {
+const RecipeImport: React.FC<HistoryProps> = () => {
   const [pageState, setPageState] = useState<PageState>({
       recipeFormat:"tandoor", formError: ""
   })
@@ -55,7 +55,7 @@ const RecipeImport: React.FC<HistoryProps> = (props: HistoryProps) => {
       limit: 1,
       readData: true
       }) }
-    catch(err) {pickSuccessful = false;}
+    catch {pickSuccessful = false;}
     if (!pickSuccessful || pickResults === undefined) {
       setPageState(prevState => ({...prevState,formError:t("error.picking_import_file")}))
       return;
@@ -70,7 +70,7 @@ const RecipeImport: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   }
 
-  let jsonFormatOptions: JSX.Element[] = [];
+  const jsonFormatOptions: JSX.Element[] = [];
   RecipeFileTypes.forEach((it) => {
     jsonFormatOptions.push(
       <IonSelectOption key={it.type} value={it.type}>{t("general.recipe_import_type_"+it.type)}</IonSelectOption>

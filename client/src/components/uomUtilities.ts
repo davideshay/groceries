@@ -10,8 +10,8 @@ export function useDeleteUomFromItems() {
   
     return useCallback(
       async (uomID: string) => {
-        let response: PouchResponse = cloneDeep(PouchResponseInit);
-        let itemResults: PouchDB.Find.FindResponse<{}>
+        const response: PouchResponse = cloneDeep(PouchResponseInit);
+        let itemResults: PouchDB.Find.FindResponse<object>
         if (db === null) {
           response.successful = false;
           response.errorText = "No database available";
@@ -46,8 +46,8 @@ export function useDeleteUomFromItems() {
   
     return useCallback(
       async (uomID: string) => {
-        let response: PouchResponse = cloneDeep(PouchResponseInit);
-        let recipeResults: PouchDB.Find.FindResponse<{}>
+        const response: PouchResponse = cloneDeep(PouchResponseInit);
+        let recipeResults: PouchDB.Find.FindResponse<object>
         if (db === null) {response.successful = false; response.errorText="No database available"; return response;}
         try { recipeResults = await db.find({
           use_index: "stdType",

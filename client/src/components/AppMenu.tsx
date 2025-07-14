@@ -40,18 +40,20 @@ const AppMenu: React.FC = () => {
   if (remoteDBState.loggedIn) {
     contentElem =
         <> 
-        <IonList className="ion-no-padding">
+        <IonList className="ion-no-padding menu-section">
           {listHeader(t('general.lists'))}
           <ListsAll separatePage={false}/>
         </IonList>
-        {listHeader(t('general.other_actions'))}
-        {listItem(t('general.recipes'),"/recipes")}
-        {friendItem()}
-        {listItem(t('general.manage_data'),"/managedata")}
-        {listItem(t('general.settings'),"/settings")}
-        {listItem(t('general.status'),"/status")}
-        {listItem(t('general.user_info'),"/userdata")}
-        {listItem(t('general.logout'),"/login")}
+        <IonList className="ion-no-padding menu-section">
+          {listHeader(t('general.other_actions'))}
+          {listItem(t('general.recipes'),"/recipes")}
+          {friendItem()}
+          {listItem(t('general.manage_data'),"/managedata")}
+          {listItem(t('general.settings'),"/settings")}
+          {listItem(t('general.status'),"/status")}
+          {listItem(t('general.user_info'),"/userdata")}
+          {listItem(t('general.logout'),"/login")}
+        </IonList>
       </>
   } else {
     contentElem = 

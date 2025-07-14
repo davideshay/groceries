@@ -1,7 +1,7 @@
 ion-modal#item-list {
   --height: fit-content;
   --border-radius: 6px;
-  --box-shadow: 0 0 48px rgba(0, 0, 0, 0.4);
+  /* --box-shadow: 0 0 48px rgba(0, 0, 0, 0.4); */
   padding: 10px;
 }
 

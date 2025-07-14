@@ -5,7 +5,7 @@ import PageHeader from "../components/PageHeader";
 import { useTranslation} from 'react-i18next';
 import { add } from "ionicons/icons";
 
-const Lists: React.FC<HistoryProps> = (props: HistoryProps) => {
+const Lists: React.FC<HistoryProps> = () => {
     const { t } = useTranslation();
 
 return (

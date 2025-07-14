@@ -24,8 +24,8 @@ import { Capacitor } from '@capacitor/core';
 import { translatedItemName } from '../components/translationUtilities';
 import { useGlobalDataStore } from '../components/GlobalData';
 
-const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
-  let { mode: routeMode, id: routeListID  } = useParams<{mode: string, id: string}>();
+const Items: React.FC<HistoryProps> = () => {
+  const { mode: routeMode, id: routeListID  } = useParams<{mode: string, id: string}>();
   const [searchRows,setSearchRows] = useState<ItemSearch[]>();
   const [searchState,setSearchState] = useState<SearchState>(SearchStateInit);
   const [pageState, setPageState] = useState<PageState>({selectedListOrGroupID: routeListID,
@@ -65,7 +65,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   const { globalState,setStateInfo: setGlobalStateInfo, updateSettingKey} = useContext(GlobalStateContext);
   const {t} = useTranslation();
-  const contentRef = useRef<any>(null);
+  const contentRef = useRef<HTMLIonContentElement>(null);
   const scrollTopRef = useRef(0);
   const shouldScroll = useRef(false);
   const history = useHistory();
@@ -116,7 +116,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   },[baseSearchItemRowsLoaded, isLoading, globalItemDocs, baseSearchItemDocs, pageState.selectedListOrGroupID, pageState.selectedListType, listDocs, globalState.settings])
 
   const filterAndCheckRows = useCallback((searchCriteria: string, setFocus : boolean) => {
-    let filterRows=filterSearchRows(searchRows, searchCriteria)
+    const filterRows=filterSearchRows(searchRows, searchCriteria)
     let toOpen=true;
     if (filterRows.length === 0 || !setFocus) {
       toOpen=false;
@@ -167,7 +167,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       }
       return allUncategorized;
     }
-    let matchingListRow = listRows.find((lr) => lr.listDoc._id === itemList.listID)
+    const matchingListRow = listRows.find((lr) => lr.listDoc._id === itemList.listID)
     if (matchingListRow === undefined) {return false}
     if (matchingListRow.listDoc.categories.includes(String(itemList.categoryID))) {
       return true;
@@ -192,7 +192,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
           * Add item, set to active based on listgroup mode/list selected -- data comes from global item if needed
  */
 
-    let response = { success: true, errorHeader: "", errorMessage: ""};
+    const response = { success: true, errorHeader: "", errorMessage: ""};
 
     let testItemDoc: ItemDoc | undefined = undefined;
     testItemDoc = cloneDeep(itemDocs.find((item) => ((item._id === itemSearch.itemID && item.listGroupID === pageState.groupIDforSelectedList) || 
@@ -208,7 +208,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         return response;
       }
     }
-    let newItem: ItemDoc = cloneDeep(ItemDocInit);
+    const newItem: ItemDoc = cloneDeep(ItemDocInit);
     if (addingNewItem) {
       let activeCount = 0;
       if (itemSearch.itemType === ItemSearchType.Global) {
@@ -218,7 +218,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         newItem.pluralName = translatedItemName(itemSearch.globalItemID,newItem.name,newItem.name,2);
         listRows.forEach((lr) => {
           if (lr.listGroupID === pageState.groupIDforSelectedList) {
-            let newItemList: ItemList = cloneDeep(ItemListInit); // sets to active true by default
+            const newItemList: ItemList = cloneDeep(ItemListInit); // sets to active true by default
             newItemList.listID = String(lr.listDoc._id);
             if (lr.listDoc.categories.includes(String(itemSearch.globalItemCategoryID))) {
               newItemList.categoryID = itemSearch.globalItemCategoryID
@@ -237,7 +237,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         newItem.name = itemSearch.itemName;
         listRows.forEach((lr) => {
           if (lr.listGroupID === pageState.groupIDforSelectedList) {
-            let newItemList: ItemList = cloneDeep(ItemListInit);
+            const newItemList: ItemList = cloneDeep(ItemListInit);
             newItemList.listID = String(lr.listDoc._id);
             newItemList.quantity = 1;
             newItemList.active = shouldBeActive(newItemList,true,[]);
@@ -249,7 +249,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       if (activeCount === 0) {
         await presentAlert({header: t("error.header_warning_adding_item"), message: t("error.warning_none_set_active"), buttons: [t("general.ok")]})
       }
-      let itemAdded = await addNewItem(newItem);
+      const itemAdded = await addNewItem(newItem);
       if (!itemAdded.successful) {
         response.success=false;
         response.errorHeader = t("error.header_adding_item");
@@ -259,14 +259,14 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
 // Finished adding new item where it didn't exist. Now update existing item, active on no or some lists
     let activeCount = 0;
-    let origLists = cloneDeep(testItemDoc!.lists);
+    const origLists = cloneDeep(testItemDoc!.lists);
     testItemDoc!.lists.forEach(il => {
       il.active = shouldBeActive(il,false,origLists);
       activeCount = il.active ? (activeCount + 1) : activeCount;
       if (il.active) { il.completed = false;}
     })
     if (!isEqual(origLists,testItemDoc!.lists)) {
-      let result = await updateItemInList(testItemDoc);
+      const result = await updateItemInList(testItemDoc);
       if (activeCount === 0) {
         await presentAlert({header: t("error.header_warning_adding_item"), message: t("error.warning_none_set_active"), buttons: [t("general.ok")]})
       }
@@ -282,7 +282,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   const isItemAlreadyInList = useCallback( (itemName: string,completedOnly: boolean): [boolean,ItemDoc|null] => {
     if (itemName === "") {return [false,null];}
-    let existingItem = (baseItemDocs as ItemDocs).find((el) => 
+    const existingItem = (baseItemDocs as ItemDocs).find((el) => 
       (itemName.toLocaleUpperCase() === translatedItemName(String(el._id),el.name,el.pluralName,1).toLocaleUpperCase() ||
        itemName.toLocaleUpperCase() === translatedItemName(String(el._id),el.name,el.pluralName,2).toLocaleUpperCase()
         )
@@ -291,7 +291,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     if (!completedOnly) {return [true,existingItem];}
     // Have an existing item... checking completed flag
     if (pageState.selectedListType === RowType.list) {
-      let itemList = existingItem.lists.find(il => il.listID === pageState.selectedListOrGroupID);
+      const itemList = existingItem.lists.find(il => il.listID === pageState.selectedListOrGroupID);
       if (itemList === undefined) {return [false,null];}
       return [itemList.active && itemList.completed,existingItem];
     }
@@ -304,9 +304,9 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   },[baseItemDocs,pageState.selectedListOrGroupID,pageState.selectedListType])
 
   const addNewItemToList = useCallback( async (itemName: string) => {
-      let [isItemAlreadyInListAsCompleted,compItem] = isItemAlreadyInList(itemName,true);
+      const [isItemAlreadyInListAsCompleted,compItem] = isItemAlreadyInList(itemName,true);
       if (isItemAlreadyInListAsCompleted && compItem !== null) {
-        let itemSearch: ItemSearch = {
+        const itemSearch: ItemSearch = {
           itemID: String(compItem?._id),
           itemName: translatedItemName(String(compItem._id),compItem.name,compItem.pluralName),
           itemType: compItem.globalItemID === null ? ItemSearchType.Local : ItemSearchType.Global,
@@ -323,7 +323,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         }      
         return;
       }
-      let [isItemAlreadyInListAtAll,] = isItemAlreadyInList(itemName,false); 
+      const [isItemAlreadyInListAtAll,] = isItemAlreadyInList(itemName,false); 
       if (isItemAlreadyInListAtAll) {
         setPageState(prevState => ({...prevState, showAlert: true, alertHeader: t("error.adding_to_list") , alertMessage: t("error.item_exists_current_list")}))
         setSearchState(prevState => ({...prevState, isOpen: false, searchCriteria: "", filteredSearchRows: [], isFocused: false}))
@@ -331,7 +331,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         setGlobalStateInfo("itemMode","new");
         setGlobalStateInfo("callingListID",pageState.selectedListOrGroupID);
         setGlobalStateInfo("callingListType",pageState.selectedListType);
-        let [,globalItemID] = checkNameInGlobalItems(globalItemDocs,itemName,itemName);
+        const [,globalItemID] = checkNameInGlobalItems(globalItemDocs,itemName,itemName);
         setGlobalStateInfo("newItemGlobalItemID",globalItemID)
         setGlobalStateInfo("newItemName",itemName);
         setSearchState(prevState => ({...prevState, isOpen: false,searchCriteria:"",filteredSearchRows: [],isFocused: false}))
@@ -341,14 +341,14 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   ,[history,isItemAlreadyInList,addExistingItemToList,pageState.selectedListOrGroupID,pageState.selectedListType,setGlobalStateInfo,t,globalItemDocs])
   
   useEffect( () => {
-    function beforeInputData(e:any) {
+    function beforeInputData(e:InputEvent) {
       if (e && e.data && e.data.includes("\n")) {
           enterKeyValueRef.current= e.data.trim().length > 1 ? e.data.trim() : "";
           addNewItemToList(searchState.searchCriteria);
       }
     }
     if (searchRef && searchRef.current && (Capacitor.getPlatform() === "android")) {
-      let localRef=searchRef.current;
+      const localRef=searchRef.current;
       localRef.addEventListener('beforeinput',beforeInputData,false)
       return () => {
           localRef.removeEventListener('beforeinput',beforeInputData,false)
@@ -357,7 +357,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   },[addNewItemToList,searchState.searchCriteria])
 
   const warnCheckingOffItemsInListGroup = useCallback( (): Promise<boolean> => {
-    return new Promise((resolve,reject) => {
+    return new Promise((resolve,) => {
       presentAlert({
         header: t("error.checking_items_list_group_header"),
         subHeader: t("error.checking_items_list_group_detail"),
@@ -369,18 +369,20 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       })
   },[dismissAlert,presentAlert,t])    
   
-  const completeItemRow = useCallback( async(id: String, index: number, event: CustomEvent<CheckboxChangeEventDetail>) => {
+  const completeItemRow = useCallback( async(id: string, event: CustomEvent<CheckboxChangeEventDetail>) => {
     if (pageState.selectedListType === RowType.listGroup && !pageState.ignoreCheckOffWarning) {
       if (! (await warnCheckingOffItemsInListGroup())) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (event.target as any).checked = false;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (event.target as any).disabled = false;
         doingUpdate.current = false;
         return;
       }
     }
-    let newStatus = event.detail.checked;
+    const newStatus = event.detail.checked;
     // make the update in the database, let the refresh of the view change state
-    let itemDoc: ItemDoc = cloneDeep(baseItemDocs.find(element => (element._id === id))) as ItemDoc;
+    const itemDoc: ItemDoc = cloneDeep(baseItemDocs.find(element => (element._id === id))) as ItemDoc;
     let listChanged=false;
     itemDoc.lists.forEach((list: ItemList) => {
       let updateThisList=false;
@@ -398,7 +400,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       }
     });
     if (listChanged) {
-      let response = await updateItemInList(itemDoc);
+      const response = await updateItemInList(itemDoc);
       if (!response.successful) {
         presentToast({message: t("error.updating_item_completed"), duration: 1500, position: "middle"})
       }
@@ -408,9 +410,9 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   },[baseItemDocs,globalState.settings.removeFromAllLists,pageState.ignoreCheckOffWarning,pageState.selectedListOrGroupID,
      pageState.selectedListType,presentToast,warnCheckingOffItemsInListGroup,t,updateItemInList])
 
-  const completeItemRowStub = useCallback( async (id: string, index: number, event: CustomEvent<CheckboxChangeEventDetail>) => {
-    const completeRowFunc = debounce((did: string,didx: number,devent: CustomEvent<CheckboxChangeEventDetail>) => completeItemRow(did,didx,devent),350,{leading: true, trailing: false})
-    completeRowFunc(id,index,event);
+  const completeItemRowStub = useCallback( async (id: string, event: CustomEvent<CheckboxChangeEventDetail>) => {
+    const completeRowFunc = debounce((did: string,devent: CustomEvent<CheckboxChangeEventDetail>) => completeItemRow(did,devent),350,{leading: true, trailing: false})
+    completeRowFunc(id,event);
   },[completeItemRow])
 
   if (baseItemError || baseSearchError || error ) {
@@ -474,9 +476,9 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   function selectList(listOrGroupID: string) {
     if (listOrGroupID === "null" ) { return }
-    let combinedRow: ListCombinedRow | undefined = listCombinedRows.find(lcr => lcr.listOrGroupID === listOrGroupID);
+    const combinedRow: ListCombinedRow | undefined = listCombinedRows.find(lcr => lcr.listOrGroupID === listOrGroupID);
     if (combinedRow === undefined) {return};
-    let newListType: RowType = combinedRow.rowType;
+    const newListType: RowType = combinedRow.rowType;
     const [newItemRows,newCategoryRows] = getItemRows(baseItemDocs as ItemDocs, listCombinedRows, categoryDocs as CategoryDoc[], uomDocs as UomDoc[], newListType, listOrGroupID, [], globalState.categoryColors)
     setPageState({...pageState, selectedListOrGroupID: listOrGroupID, selectedListType: newListType, itemRows: newItemRows, categoryRows: newCategoryRows });
     updateSettingKey("savedListID",listOrGroupID);
@@ -500,16 +502,16 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   async function deleteCompletedItems() {
     (baseItemDocs as ItemDocs).forEach(async (itemDoc) => {
-        let updatedItem: ItemDoc=cloneDeep(itemDoc);
+        const updatedItem: ItemDoc=cloneDeep(itemDoc);
         let itemUpdated = false;
         for (let i = 0; i < updatedItem.lists.length; i++) {
-          let willUpdate = (updatedItem.lists[i].listID === pageState.selectedListOrGroupID || globalState.settings.completeFromAllLists) && updatedItem.lists[i].completed;
+          const willUpdate = (updatedItem.lists[i].listID === pageState.selectedListOrGroupID || globalState.settings.completeFromAllLists) && updatedItem.lists[i].completed;
           if (!willUpdate) {continue}
           updatedItem.lists[i].active = false;
           itemUpdated = true;
         }
         if (itemUpdated) {
-          let result = await updateItemInList(updatedItem);
+          const result = await updateItemInList(updatedItem);
           if (!result.successful) {
             presentToast({message: t("error.deleting_items_list"),
               duration: 1500, position: "middle"})
@@ -519,7 +521,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function collapseExpandCategory(catID: string | null, completed: boolean) {
-    let newCatRows: CategoryRows = cloneDeep(pageState.categoryRows);
+    const newCatRows: CategoryRows = cloneDeep(pageState.categoryRows);
     const foundCat = newCatRows.find((catRow) => (catRow.id === catID && catRow.completed === completed))
     if (foundCat === undefined) {log.debug("No Matching Category to Collapse"); return};
     foundCat.collapsed = !foundCat.collapsed;
@@ -532,6 +534,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     return (!foundCat.collapsed)
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const popOverProps: any = {
     side: "bottom",
     isOpen: searchState.isOpen,
@@ -541,17 +544,17 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   if (listRows && listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length >0) {
     popOverProps.trigger = "item-search-box-id"
   }
-  let popOverElem = (
+  const popOverElem = (
     <IonPopover key="popoverseach" {...popOverProps}>
     <IonContent><IonList key="popoverItemList">
       {(searchState.filteredSearchRows).map((item: ItemSearch) => (
-        <IonItem button key={pageState.selectedListOrGroupID+"-poilist-"+item.itemID} onClick={(e) => {chooseSearchItem(item)}}>{item.itemName}</IonItem>
+        <IonItem button key={pageState.selectedListOrGroupID+"-poilist-"+item.itemID} onClick={() => {chooseSearchItem(item)}}>{item.itemName}</IonItem>
       ))}
     </IonList></IonContent>
     </IonPopover>
   )
 
-  let alertElem = (
+  const alertElem = (
     <IonAlert
       key="mainerroralert"
       isOpen={pageState.showAlert}
@@ -562,7 +565,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     />
   )
 
-  let headerElem=(
+  const headerElem=(
     <IonHeader key="pageheader"><IonToolbar key="pagetoolbar" id="items-page-header"><IonButtons key="headerbuttons" slot="start"><IonMenuButton key="headermenubutton" className={"ion-no-padding small-menu-button"} /></IonButtons>
     <IonTitle key="pagetitle" className="ion-no-padding item-outer"></IonTitle>
         <IonItem id="item-list-selector-id" className="item-list-selector" key="listselectoritem">
@@ -598,7 +601,7 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
         {alertElem}
     </IonToolbar></IonHeader>)
 
-  let fabContent =  (
+  const fabContent =  (
       <IonFab key="fab" slot="fixed" vertical="bottom" horizontal="end">
         <IonFabButton key="fabbutton" onClick={() => addNewItemToList("")}>
           <IonIcon icon={add}></IonIcon>
@@ -621,13 +624,13 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
     <IonPage>{headerElem}<IonContent><IonItem key="nonefound"><IonLabel key="nothinghere">{t("error.no_items_on_list")}</IonLabel></IonItem></IonContent>{fabContent}</IonPage>
   )};
 
-  let listContent=[];
+  const listContent=[];
 
   function addCurrentRows(listCont: JSX.Element[], curRows: JSX.Element[], catID: string | null, catName: string, catColor: string, completed: boolean | null) {
     if (catColor === "primary") {catColor = "#777777"}
-    let isExpanded = getCategoryExpanded(catID,Boolean(completed));
+    const isExpanded = getCategoryExpanded(catID,Boolean(completed));
     dividerCount++;
-    let dividerProps = {
+    const dividerProps = {
       className: "ion-justify-content-between category-divider item-category-divider " + 
           (dividerCount === 1 ? " first-category " : "") +
           (catID === null ? " uncategorized-color" : ""),
@@ -676,11 +679,12 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
       lastCategoryColor=item.categoryColor;
       lastCategoryFinished=item.completed;
     }
-    let rowVisible = getCategoryExpanded(item.categoryID,Boolean(item.completed));
+    const rowVisible = getCategoryExpanded(item.categoryID,Boolean(item.completed));
     currentRows.push(
       <IonItem className={"itemrow-outer "+(rowVisible ? "itemrow-display" : "itemrow-hidden")} key={"itemouter"+pageState.itemRows[i].itemID} >
         <IonCheckbox key={"itemcheckbox"+pageState.itemRows[i].itemID} aria-label=""
-          onIonChange={(e: CustomEvent<CheckboxChangeEventDetail>) => {if (!doingUpdate.current) { (e.target as any).disabled = true; doingUpdate.current=true; completeItemRowStub(item.itemID,i,e)}}}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          onIonChange={(e: CustomEvent<CheckboxChangeEventDetail>) => {if (!doingUpdate.current) { (e.target as any).disabled = true; doingUpdate.current=true; completeItemRowStub(item.itemID,e)}}}
           color={"medium"} disabled={doingUpdate.current}
           checked={Boolean(item.completed)} className={"item-on-list "+ (item.completed ? "item-completed" : "")}>
         </IonCheckbox>
@@ -698,13 +702,13 @@ const Items: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
   addCurrentRows(listContent,currentRows,lastCategoryID,lastCategoryName,lastCategoryColor,lastCategoryFinished);
   if (!createdFinished) {listContent.push(getCompletedDivider(dividerCount)); dividerCount++;};
-  let contentElem=(<IonList key="overallitemlist" className="ion-no-padding ion-items-list" lines="none">{listContent}</IonList>)
+  const contentElem=(<IonList key="overallitemlist" className="ion-no-padding ion-items-list" lines="none">{listContent}</IonList>)
 
   function resumeScroll() {
-    let content = contentRef.current;
+    const content = contentRef.current;
     if (content) {
       try {content!.scrollToPoint(0,scrollTopRef.current);}
-      catch(err) {log.debug("Error resuming scroll...")}
+      catch {log.debug("Error resuming scroll...")}
     }
   }
 

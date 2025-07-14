@@ -19,9 +19,9 @@ export function getGroupIDForList(listID: string, listDocs: ListDocs): string | 
 }
 
 export function getAllSearchRows(allItemDocs: ItemDocs, listID: string | null,listType: RowType ,listDocs: ListDocs, globalItemDocs: GlobalItemDocs, settings: GlobalSettings): ItemSearch[] {
-    let searchRows: ItemSearch[] = [];
+    const searchRows: ItemSearch[] = [];
     allItemDocs.forEach((itemDoc) => {
-      let searchRow: ItemSearch = {
+      const searchRow: ItemSearch = {
         itemID: String(itemDoc._id),
         itemName: translatedItemName(itemDoc.globalItemID,itemDoc.name,itemDoc.pluralName,2),
         itemType: ItemSearchType.Local,
@@ -33,7 +33,7 @@ export function getAllSearchRows(allItemDocs: ItemDocs, listID: string | null,li
       }
       let addRowToSearch=true;
       if (listType === RowType.list) {
-        let list = itemDoc.lists.find((el) => el.listID === listID);
+        const list = itemDoc.lists.find((el) => el.listID === listID);
         if (list !== undefined) {
             searchRow.boughtCount = list.boughtCount;
             if (list.active && !list.completed) {addRowToSearch=false}
@@ -53,10 +53,10 @@ export function getAllSearchRows(allItemDocs: ItemDocs, listID: string | null,li
     })
     if (!settings.includeGlobalInSearch) {return searchRows};
     globalItemDocs.forEach((globalItem) => {
-      let itemExistsInSearchIdx = searchRows.findIndex((sr) => (sr.globalItemID === globalItem._id || sr.itemName === globalItem.name));
+      const itemExistsInSearchIdx = searchRows.findIndex((sr) => (sr.globalItemID === globalItem._id || sr.itemName === globalItem.name));
       let itemExistsInItem = false;
       if (listType === RowType.list) {
-        let itemNameMatch = allItemDocs.find((item) => (item.name.toUpperCase() === globalItem.name.toUpperCase() || item.globalItemID === globalItem._id));
+        const itemNameMatch = allItemDocs.find((item) => (item.name.toUpperCase() === globalItem.name.toUpperCase() || item.globalItemID === globalItem._id));
         if (itemNameMatch !== undefined) {
             itemNameMatch.lists.forEach((list) => {
                 if (list.active && list.listID===listID) {
@@ -65,13 +65,13 @@ export function getAllSearchRows(allItemDocs: ItemDocs, listID: string | null,li
             })
         }
       } else {
-        let itemNameMatch = allItemDocs.find((item) => (item.name.toUpperCase() === globalItem.name.toUpperCase() && item.listGroupID === listID))
+        const itemNameMatch = allItemDocs.find((item) => (item.name.toUpperCase() === globalItem.name.toUpperCase() && item.listGroupID === listID))
         if (itemNameMatch !== undefined) {
             itemExistsInItem = true;
         }
       }
       if (itemExistsInSearchIdx === -1 && !itemExistsInItem) {
-        let searchRow: ItemSearch = {
+        const searchRow: ItemSearch = {
             itemID: String(globalItem._id),
             itemName: translatedItemName(globalItem._id!,globalItem.name, globalItem.name),
             itemType: ItemSearchType.Global,
@@ -87,7 +87,7 @@ export function getAllSearchRows(allItemDocs: ItemDocs, listID: string | null,li
   }
 
 export function filterSearchRows(searchRows: ItemSearch[] | undefined, searchCriteria: string) {
-    let filteredSearchRows: ItemSearch[] = [];
+    const filteredSearchRows: ItemSearch[] = [];
     if (searchRows !== undefined) {
         searchRows.forEach(searchRow => {
             if (searchRow.itemName.toLocaleUpperCase().includes(searchCriteria.toLocaleUpperCase())) {
@@ -105,7 +105,7 @@ export function filterSearchRows(searchRows: ItemSearch[] | undefined, searchCri
 
 function isListPartOfGroup(listID: string, listGroupID: string | null, listCombinedRows: ListCombinedRows): boolean {
     let isPart = false;
-    let lcr = listCombinedRows.find((el) => (el.rowType===RowType.list && el.listOrGroupID===listID))
+    const lcr = listCombinedRows.find((el) => (el.rowType===RowType.list && el.listOrGroupID===listID))
     if (lcr === undefined) return isPart;
     isPart = (lcr.listDoc.listGroupID === listGroupID)
     return isPart;
@@ -131,34 +131,34 @@ function findRightList(itemDoc: ItemDoc, listType: RowType, listOrGroupID: strin
 }
 
 export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRow[], categoryDocs: CategoryDoc[], uomDocs: UomDoc[], listType: RowType, listOrGroupID: string | null, curCategoryRows: CategoryRows, categoryColors: CategoryColors) : [ItemRows, CategoryRows] {
-    let itemRows: Array<ItemRow> =[];
-    let categoryRows: Array<CategoryRow> = [];
-    let listGroupID = getListGroupIDFromListOrGroupID(String(listOrGroupID), listCombinedRows);
-    let listRow=listCombinedRows.find((el: ListCombinedRow) => (el.rowType === listType && el.listOrGroupID === listOrGroupID));
+    const itemRows: Array<ItemRow> =[];
+    const categoryRows: Array<CategoryRow> = [];
+    const listGroupID = getListGroupIDFromListOrGroupID(String(listOrGroupID), listCombinedRows);
+    const listRow=listCombinedRows.find((el: ListCombinedRow) => (el.rowType === listType && el.listOrGroupID === listOrGroupID));
     if (listRow === undefined) {return [itemRows,categoryRows]};
-    let sortedItemDocs: ItemDocs = cloneDeep(itemDocs);
+    const sortedItemDocs: ItemDocs = cloneDeep(itemDocs);
     if (sortedItemDocs.length > 0) {
         sortedItemDocs.sort(function(a,b) {
             return a.name.toUpperCase().localeCompare(b.name.toUpperCase())
       })
     }  
     sortedItemDocs.forEach((itemDoc: ItemDoc) => {
-        let itemRow: ItemRow = cloneDeep(initItemRow);
+        const itemRow: ItemRow = cloneDeep(initItemRow);
         itemRow.itemID = String(itemDoc._id);
         itemRow.globalItemID = itemDoc.globalItemID;
-        let list = findRightList(itemDoc,listType,listOrGroupID,(listRow as ListCombinedRow), listCombinedRows);
+        const list = findRightList(itemDoc,listType,listOrGroupID,(listRow as ListCombinedRow), listCombinedRows);
         if (list === undefined) {return itemRows};
-        itemRow.itemName =  translatedItemNameWithUOM(itemDoc.globalItemID,itemDoc.name,itemDoc.pluralName,list.hasOwnProperty("quantity") ? list.quantity : 0,list.uomName);
+        itemRow.itemName =  translatedItemNameWithUOM(itemDoc.globalItemID,itemDoc.name,itemDoc.pluralName,Object.prototype.hasOwnProperty.call(list, "quantity") ? list.quantity : 0,list.uomName);
         itemRow.categoryID = list.categoryID;
         if (itemRow.categoryID === null) {
             itemRow.categoryName = t("general.uncategorized");
             itemRow.categorySeq = -1;
             itemRow.categoryColor = DefaultColor
         } else {
-            let thisCat = (categoryDocs.find((element: CategoryDoc) => (element._id === itemRow.categoryID)) as CategoryDoc);
+            const thisCat = (categoryDocs.find((element: CategoryDoc) => (element._id === itemRow.categoryID)) as CategoryDoc);
             if (thisCat !== undefined) {
                 itemRow.categoryName =  translatedCategoryName(itemRow.categoryID,thisCat.name);
-                if (categoryColors.hasOwnProperty(String(thisCat._id))) {
+                if (Object.prototype.hasOwnProperty.call(categoryColors, String(thisCat._id))) {
                   itemRow.categoryColor = categoryColors[String(thisCat._id)];
                 } else {
                   itemRow.categoryColor = DefaultColor;
@@ -174,10 +174,10 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
                 itemRow.categorySeq=0;
             }    
         }
-        itemRow.quantity =  list.hasOwnProperty("quantity") ? list.quantity : 0;
+        itemRow.quantity =  Object.prototype.hasOwnProperty.call(list, "quantity") ? list.quantity : 0;
         if (!isEmpty(list.note)) {itemRow.hasNote = true;}
-        const uomName = list.hasOwnProperty("uomName") ? list.uomName : null;
-        let uomDesc=translatedUOMShortName(uomName,uomDocs,String(listGroupID),itemRow.quantity)
+        const uomName = Object.prototype.hasOwnProperty.call(list, "uomName") ? list.uomName : null;
+        const uomDesc=translatedUOMShortName(uomName,uomDocs,String(listGroupID),itemRow.quantity)
         itemRow.uomDesc = uomDesc;
 
         let quantityUOMDesc = "";
@@ -205,10 +205,10 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
     (a.itemName.toLocaleUpperCase().localeCompare(b.itemName.toLocaleUpperCase()))
     ))
     itemRows.forEach((item) => {
-      let foundCat = categoryRows.find((catRow) => (item.categoryID === catRow.id && item.completed === catRow.completed))
-      let foundCurCat = curCategoryRows.find((catRow) => (item.categoryID === catRow.id && item.completed === catRow.completed))
+      const foundCat = categoryRows.find((catRow) => (item.categoryID === catRow.id && item.completed === catRow.completed))
+      const foundCurCat = curCategoryRows.find((catRow) => (item.categoryID === catRow.id && item.completed === catRow.completed))
       if (foundCat === undefined) {
-        let newCatRow: CategoryRow = cloneDeep(initCategoryRow);
+        const newCatRow: CategoryRow = cloneDeep(initCategoryRow);
         newCatRow.id = item.categoryID;
         newCatRow.name = item.categoryName;
         newCatRow.seq = item.categorySeq;
@@ -226,10 +226,10 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
 }
 
 export function sortedItemLists(itemList: ItemList[], listDocs: ListDocs) : ItemList[] {
-    let sortedLists = cloneDeep(itemList);
+    const sortedLists = cloneDeep(itemList);
     sortedLists.sort(function (a: ItemList, b: ItemList) {
-        let aList: ListDoc | undefined = listDocs.find((listDoc: ListDoc) => (listDoc._id === a.listID));
-        let bList: ListDoc | undefined = listDocs.find((listDoc: ListDoc) => (listDoc._id === b.listID));
+        const aList: ListDoc | undefined = listDocs.find((listDoc: ListDoc) => (listDoc._id === a.listID));
+        const bList: ListDoc | undefined = listDocs.find((listDoc: ListDoc) => (listDoc._id === b.listID));
         if (aList === undefined || bList === undefined) {return 0 }
         else { return aList.name.toUpperCase().localeCompare(bList.name.toUpperCase());
         }
@@ -238,45 +238,49 @@ export function sortedItemLists(itemList: ItemList[], listDocs: ListDocs) : Item
 }
 
 export function getCommonKey(stateItemDoc: ItemDoc, key: string, listDocs: ListDocs) {
-    let freqObj: any = {};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const freqObj: any = {};
     let maxKey = null; let maxCnt=0;
-    let sortedLists = sortedItemLists(stateItemDoc.lists,listDocs);
+    const sortedLists = sortedItemLists(stateItemDoc.lists,listDocs);
     sortedLists.forEach( (list: ItemList) => {
-      let value=(list as any)[key]
-      if (freqObj.hasOwnProperty(value)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const value=(list as any)[key]
+      if (Object.prototype.hasOwnProperty.call(freqObj, value)) {
         freqObj[value]=freqObj[value]+1;
         if (freqObj[value] > maxCnt) {maxCnt = freqObj[value]; maxKey=value;} 
       } else {
         freqObj[value]=1
       }
     });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (maxCnt === 0 && sortedLists.length > 0 ) {maxKey = (sortedLists[0] as any)[key]}
     return maxKey;
   }
 
   export function getMaxKey(stateItemDoc: ItemDoc, key: string, listDocs: ListDocs) {
     let maxKey=0;
-    let sortedLists = sortedItemLists(stateItemDoc.lists,listDocs);
+    const sortedLists = sortedItemLists(stateItemDoc.lists,listDocs);
     sortedLists.forEach( (list: ItemList) => {
-      let value=(list as any)[key];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const value=(list as any)[key];
       if (value > maxKey) {maxKey = value};
     });
     return maxKey;
   }
 
   export function createEmptyItemDoc(listRows:ListRow[], globalState: GlobalState, globalItems: GlobalItemDocs) {
-    let newItemLists: ItemList[] =[];
+    const newItemLists: ItemList[] =[];
     let listGroupID = "";
     if (globalState.callingListType === RowType.listGroup) {
       listGroupID = String(globalState.callingListID);
     } else {
-      let baseList=listRows.find((listRow:ListRow) => listRow.listDoc._id === globalState.callingListID);
+      const baseList=listRows.find((listRow:ListRow) => listRow.listDoc._id === globalState.callingListID);
       listGroupID = String(baseList?.listGroupID);  
     }
-    let foundGlobalItem = globalItems.find(gi => (gi._id === globalState.newItemGlobalItemID));
+    const foundGlobalItem = globalItems.find(gi => (gi._id === globalState.newItemGlobalItemID));
     listRows.forEach((listRow: ListRow) => {
       if (listRow.listGroupID === listGroupID) {
-        let newListDoc: ItemList ={
+        const newListDoc: ItemList ={
           listID: String(listRow.listDoc._id),
           quantity: 1,
           boughtCount: 0,
@@ -304,7 +308,7 @@ export function getCommonKey(stateItemDoc: ItemDoc, key: string, listDocs: ListD
       }
   
     });
-    let newItemDoc: ItemDoc ={
+    const newItemDoc: ItemDoc ={
       type: "item",
       name: (foundGlobalItem === undefined) ? String(globalState.newItemName) : translatedItemName(String(foundGlobalItem._id),foundGlobalItem.name,foundGlobalItem.name,1),
       pluralName: (foundGlobalItem === undefined) ? String(globalState.newItemName) : translatedItemName(String(foundGlobalItem._id),foundGlobalItem.name,foundGlobalItem.name,2),
@@ -317,7 +321,8 @@ export function getCommonKey(stateItemDoc: ItemDoc, key: string, listDocs: ListD
   }
 
 export function listIsDifferentThanCommon(sortedLists: ItemList[], listIdx: number): boolean {
-    let combinedKeys: any ={};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const combinedKeys: any ={};
 //    let maxKey="";
     let maxCnt=1;
     let thisKey="";
@@ -329,7 +334,7 @@ export function listIsDifferentThanCommon(sortedLists: ItemList[], listIdx: numb
             listKey=listKey+key+value;
         }
         }
-        if (combinedKeys.hasOwnProperty(listKey)) {
+        if (Object.prototype.hasOwnProperty.call(combinedKeys, listKey)) {
         combinedKeys[listKey] = combinedKeys[listKey] + 1;
         if (combinedKeys[listKey] > maxCnt) {
             maxCnt=combinedKeys[listKey];
@@ -391,7 +396,7 @@ function getListGroupHasUnchecked(listGroupID: string | null, currentListSelectR
 }
 
 function getListSelectRows(listCombinedRows: ListCombinedRows, itemDocs: ItemDocs): ListSelectRows {
-  let listSelectRows: ListSelectRows = [];
+  const listSelectRows: ListSelectRows = [];
   for (const listCombinedRow of listCombinedRows) {
     const newListSelectRow: ListSelectRow = Object.assign({hasUncheckedItems: false},listCombinedRow);
     if (listCombinedRow.rowType === RowType.list && !listCombinedRow.hidden) {

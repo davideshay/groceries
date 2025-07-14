@@ -49,7 +49,7 @@ const ListsAll: React.FC<ListsAllProps> = (props: ListsAllProps) => {
     }
   }
 
-  let listsElem: JSX.Element[] = [];
+  const listsElem: JSX.Element[] = [];
   
   listCombinedRows.forEach(combinedRow => {
     if (combinedRow.hidden) {return;}

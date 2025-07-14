@@ -42,9 +42,9 @@ const FormErrorInit = { [ErrorLocation.Name]:       {errorMessage:"", hasError: 
                         [ErrorLocation.General]:    {errorMessage:"", hasError: false}
                     }
 
-const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
-  let { mode, id: routeID } = useParams<{mode: string, id: string}>();
-  let routeRecipeID: string|null = (mode === "new") ? null : routeID;
+const Recipe: React.FC<HistoryProps> = () => {
+  const { mode, id: routeID } = useParams<{mode: string, id: string}>();
+  const routeRecipeID: string|null = (mode === "new") ? null : routeID;
   const [pageState, setPageState] = useState<PageState>({
       recipeDoc: cloneDeep(InitRecipeDoc),needInitDoc: true,
       deletingRecipe: false, selectedListOrGroupID: null, selectedItemIdx: 0,
@@ -104,7 +104,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
   screenLoading.current=false;
 
   async function updateThisRecipe() {
-    setFormErrors(prevState=>(FormErrorInit));
+    setFormErrors(FormErrorInit);
     if (pageState.recipeDoc.name === undefined || pageState.recipeDoc.name === "" || pageState.recipeDoc.name === null) {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.must_enter_a_name"), hasError: true }}));
       return false;
@@ -133,7 +133,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
   
   async function deleteRecipeFromDB() {
-   let recDelResponse = await deleteRecipe(pageState.recipeDoc);
+   const recDelResponse = await deleteRecipe(pageState.recipeDoc);
    if (!recDelResponse.successful) {
     setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.unable_delete_recipe"), hasError: true }}));
 
@@ -162,7 +162,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   function updateRecipeName(name: string) {
     log.debug("URN",name);
-    let updRecipeDoc: RecipeDoc = cloneDeep(pageState.recipeDoc);
+    const updRecipeDoc: RecipeDoc = cloneDeep(pageState.recipeDoc);
     let globalItemID: null | string = null;
     let newRecipeName: string = "";
     [globalItemID,newRecipeName] = findMatchingGlobalItem(name);  
@@ -175,26 +175,26 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function updateRecipeStep(index: number, step: string) {
-    let updRecipeSteps: RecipeInstruction[] = cloneDeep(pageState.recipeDoc.instructions);
+    const updRecipeSteps: RecipeInstruction[] = cloneDeep(pageState.recipeDoc.instructions);
     updRecipeSteps[index].stepText=step;
     setPageState(prevState=>({...prevState,recipeDoc: {...prevState.recipeDoc,instructions: updRecipeSteps}}))
   }
 
   function deleteRecipeStep(index: number) {
-    let updRecipeSteps: RecipeInstruction[] = cloneDeep(pageState.recipeDoc.instructions);
+    const updRecipeSteps: RecipeInstruction[] = cloneDeep(pageState.recipeDoc.instructions);
     updRecipeSteps.splice(index,1);
     setPageState(prevState=>({...prevState,recipeDoc:{...prevState.recipeDoc,instructions: updRecipeSteps}}));
   }
 
   function addRecipeStep() {
-    let updRecipeSteps: RecipeInstruction[] = cloneDeep(pageState.recipeDoc.instructions);
+    const updRecipeSteps: RecipeInstruction[] = cloneDeep(pageState.recipeDoc.instructions);
     updRecipeSteps.push({stepText: ""});
     setPageState(prevState=>({...prevState,recipeDoc:{...prevState.recipeDoc,instructions: updRecipeSteps}}));
   }
 
   function addExistingRecipeItem(id: string, data: RecipeSearchData) {
-    let updItems: RecipeItem[] = cloneDeep(pageState.recipeDoc.items);
-    let newItem:RecipeItem = cloneDeep(RecipeItemInit);
+    const updItems: RecipeItem[] = cloneDeep(pageState.recipeDoc.items);
+    const newItem:RecipeItem = cloneDeep(RecipeItemInit);
     newItem.addToList = true;
     newItem.globalItemID = data.globalItemID;
     newItem.name=translatedItemName(id,data.name,data.name);    
@@ -203,12 +203,12 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   function addNewRecipeItem(name: string) {
-    let updItems: RecipeItem[] = cloneDeep(pageState.recipeDoc.items);
-    let newItem:RecipeItem = cloneDeep(RecipeItemInit);
-    let [globalExists,globalID] = checkNameInGlobalItems(globalData.globalItemDocs,name,name);
+    const updItems: RecipeItem[] = cloneDeep(pageState.recipeDoc.items);
+    const newItem:RecipeItem = cloneDeep(RecipeItemInit);
+    const [globalExists,globalID] = checkNameInGlobalItems(globalData.globalItemDocs,name,name);
     let globalShoppingUOM = null;
     if (globalExists) {
-      let globalItem=globalData.globalItemDocs.find(gi => (gi._id === globalID));
+      const globalItem=globalData.globalItemDocs.find(gi => (gi._id === globalID));
       if (globalItem !== undefined) {globalShoppingUOM = globalItem.defaultUOM;}
     }
     newItem.addToList = true;
@@ -236,17 +236,17 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
     setPageState(prevState=>({...prevState,addingInProcess: true}));
     for (let i = 0; i < pageState.recipeDoc.items.length; i++) {
       const item = pageState.recipeDoc.items[i];
-      let newListItem: ItemDoc = cloneDeep(ItemDocInit);
+      const newListItem: ItemDoc = cloneDeep(ItemDocInit);
       newListItem.globalItemID = item.globalItemID;
       newListItem.name = item.name;
       if (db !== null) {
         const [inList, itemID] = await isRecipeItemOnList({recipeItem: item, listOrGroupID: pageState.selectedListOrGroupID});
         if (inList && itemID !== null && db !== null) {
-          let status=await updateItemFromRecipeItem({itemID: itemID, listOrGroupID: pageState.selectedListOrGroupID,
+          const status=await updateItemFromRecipeItem({itemID: itemID, listOrGroupID: pageState.selectedListOrGroupID,
                 recipeItem: item, settings: globalState.settings })
           if (status !== "") {statusComplete = statusComplete + "\n" + status};   
         } else {
-          let status=await createNewItemFromRecipeItem({listOrGroupID: pageState.selectedListOrGroupID,
+          const status=await createNewItemFromRecipeItem({listOrGroupID: pageState.selectedListOrGroupID,
                 recipeItem: item, settings: globalState.settings })
           if (status !== "") {statusComplete = statusComplete + "\n" + status};     
        }
@@ -264,7 +264,7 @@ const Recipe: React.FC<HistoryProps> = (props: HistoryProps) => {
     })
   }
 
-  let recipeItem = pageState.selectedItemIdx >= (pageState.recipeDoc.items.length) ? 
+  const recipeItem = pageState.selectedItemIdx >= (pageState.recipeDoc.items.length) ? 
       null : pageState.recipeDoc.items[pageState.selectedItemIdx];
 
   return (

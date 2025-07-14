@@ -5,7 +5,14 @@ import { en_translations } from './locales/en/translation';
 import { de_translations } from './locales/de/translation';
 import { es_translations } from './locales/es/translation';
 
-export const languageDescriptions =  [
+export type LanguageDescription = {
+  key: string,
+  name: string
+}
+
+export type LanguageDescriptions = LanguageDescription[];
+
+export const languageDescriptions: LanguageDescriptions =  [
   {key: "en", name: "English"},
   {key: "es", name: "Español"},
   {key: "de", name: "Deutsch"}
