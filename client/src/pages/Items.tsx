@@ -61,8 +61,6 @@ const Items: React.FC<HistoryProps> = () => {
   const categoryDocs = useGlobalDataStore((state) => state.categoryDocs);
   const itemDocs = useGlobalDataStore((state) => state.itemDocs);
   const globalItemDocs = useGlobalDataStore((state) => state.globalItemDocs);
-
-
   const { globalState,setStateInfo: setGlobalStateInfo, updateSettingKey} = useContext(GlobalStateContext);
   const {t} = useTranslation();
   const contentRef = useRef<HTMLIonContentElement>(null);
@@ -70,6 +68,36 @@ const Items: React.FC<HistoryProps> = () => {
   const shouldScroll = useRef(false);
   const history = useHistory();
   const listSelectRows = useListSelectRows();
+
+  log.debug("Items rendering...");
+
+
+  useEffect(() => {log.debug("searchRef changed")},[searchRef]);
+  useEffect(() => {log.debug("error changed")},[error]);
+  useEffect(() => {log.debug("isLoading changed")},[isLoading]);
+  useEffect(() => {log.debug("listDocs changed")},[listDocs]);
+  useEffect(() => {log.debug("listCombinedRows changed")},[listCombinedRows]);
+  useEffect(() => {log.debug("listRows changed")},[listRows]);
+  useEffect(() => {log.debug("listRowsLoaded changed")},[listRowsLoaded]);
+  useEffect(() => {log.debug("uomDocs changed")},[uomDocs]);
+  useEffect(() => {log.debug("categoryDocs changed")},[categoryDocs]);
+  useEffect(() => {log.debug("itemDocs changed")},[itemDocs]);
+  useEffect(() => {log.debug("globalItemDocs changed")},[globalItemDocs]);
+  useEffect(() => {log.debug("updateItemInList changed")},[updateItemInList]);
+  useEffect(() => {log.debug("addNewItem changed")},[addNewItem]);
+  useEffect(() => {log.debug("baseItemError changed")},[baseItemError]);
+  useEffect(() => {log.debug("baseItemRowsLoaded changed")},[baseItemRowsLoaded]);
+  useEffect(() => {log.debug("baseItemDocs changed")},[baseItemDocs]);
+  useEffect(() => {log.debug("baseSearchError changed")},[baseSearchError]);
+  useEffect(() => {log.debug("baseSearchItemRowsLoaded changed")},[baseSearchItemRowsLoaded]);
+  useEffect(() => {log.debug("baseSearchItemDocs changed")},[baseSearchItemDocs]);
+  useEffect(() => {log.debug("GlobalState changed")},[globalState]);
+  useEffect(() => {log.debug("setGlobalStateInfo changed")},[setGlobalStateInfo]);
+  useEffect(() => {log.debug("UpdateSettingKey changed")},[updateSettingKey]);
+  useEffect(() => {log.debug("t changed")},[t]);
+  useEffect(() => {log.debug("history changed")},[history]);
+  useEffect(() => {log.debug("listSelectRows changed")},[listSelectRows]);
+
 
   const getGroupIDForList = useCallback( (listID: string | null) => {
     if (routeMode === "group") { return pageState.selectedListOrGroupID};

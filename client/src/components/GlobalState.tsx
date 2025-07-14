@@ -70,17 +70,17 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
     const updateSettingDoc = useUpdateGenericDocument();
     const createSettingDoc = useCreateGenericDocument();
 
-    function setStateInfo(key: string,value: string | null | RowType) {
+    const setStateInfo = useCallback((key: string,value: string | null | RowType) => {
         setGlobalState(prevState => ({ ...prevState, [key]: value}))
-    }
+    },[])
 
-    async function updateSettingKey(key: string, value: AddListOptions | boolean | number | string | null): Promise<boolean> {
+    const updateSettingKey = useCallback(async (key: string, value: AddListOptions | boolean | number | string | null): Promise<boolean> => {
         setGlobalState(prevState => ({...prevState,settings: {...prevState.settings, [key]: value}}))
         const dbSettingsDoc: SettingsDoc = settingsDoc as SettingsDoc;
         const newSettingsDoc: SettingsDoc = {...dbSettingsDoc,settings: {...dbSettingsDoc.settings,[key]: value}};
         await updateSettingDoc(newSettingsDoc);
         return true;
-    }
+    },[settingsDoc])
 
     async function updateCategoryColor(catID: string, color: string): Promise<boolean> {
         if (isEmpty(color) || isEmpty(catID)) { return false;}
@@ -113,6 +113,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
     function validateSettings(settings: GlobalSettings) : [GlobalSettings, boolean] {
         let updated = false; let newSettings: GlobalSettings = cloneDeep(settings);
         if (newSettings == null) {newSettings = cloneDeep(InitSettings); updated = true;}
+        console.log("checking new settings:",newSettings);
         if (!Object.prototype.hasOwnProperty.call(newSettings, 'addListOption')) {
             newSettings.addListOption = InitSettings.addListOption;
             updated = true;
@@ -215,10 +216,10 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
     },[createSettingDoc,remoteDBCreds.dbUsername,settingsDoc,updateSettingDoc])
 
     useEffect( () => {
-        if ((remoteDBState.initialSyncComplete || remoteDBState.workingOffline) && !loading && globalDataLoaded && (error === null)) {
+        if ((remoteDBState.initialSyncComplete || remoteDBState.workingOffline) && globalDataLoaded && (error === null)) {
             getSettings()
         }
-    },[remoteDBState.initialSyncComplete, remoteDBState.workingOffline, loading, error,getSettings, settingsDoc,globalDataLoaded])
+    },[remoteDBState.initialSyncComplete, remoteDBState.workingOffline, error,getSettings, settingsDoc,globalDataLoaded])
 
     useEffect( () => {
         console.log("setting log level to:",globalState.settings.loggingLevel);

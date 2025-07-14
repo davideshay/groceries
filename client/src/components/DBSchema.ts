@@ -352,7 +352,7 @@ export const InitSettings: GlobalSettings = {
   savedListID: null,
   alexaDefaultListGroup: null,
   theme: ThemeType.auto,
-  loggingLevel: LogLevelNumber.INFO,
+  loggingLevel: LogLevelNumber.DEBUG,
   logToFile: false
 }
 
@@ -386,7 +386,6 @@ export type TriggerDoc = {
   triggerData: any,
   updatedAt: string
 }
-
 
 export type GenericBaseGroceryDoc = TriggerDoc | SettingsDoc | RecipeDoc | FriendDoc | UserDoc | ListGroupDoc | ListDoc | GlobalItemDoc | ImageDoc | ItemDoc | UomDoc | UUIDDoc | CategoryDoc | ConflictDoc
 export type GenericGroceryDoc = GenericBaseGroceryDoc & {

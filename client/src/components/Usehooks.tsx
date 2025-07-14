@@ -5,7 +5,7 @@ import { popoverController } from '@ionic/core';
 import { cloneDeep, pull } from 'lodash-es';
 import { RemoteDBStateContext } from './RemoteDBState';
 import { FriendRow,InitFriendRow, ResolvedFriendStatus, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType } from './DataTypes';
-import { FriendDocs,FriendStatus, ListDoc, ListDocs, ItemDocs, ItemDoc, ItemList, ItemListInit, ConflictDocs } from './DBSchema';
+import { FriendDocs,FriendStatus, ListDoc, ListDocs, ItemDocs, ItemDoc, ItemList, ItemListInit, ConflictDocs} from './DBSchema';
 import { GlobalStateContext } from './GlobalState';
 import { adaptResultToBase64, getUsersInfo} from './Utilities';
 import { getCommonKey } from './ItemUtilities';
@@ -63,6 +63,7 @@ export function useGetOneDoc(docID: string | null, attachments: boolean = false)
 
 export function useUpdateGenericDocument() {
   const db = useGlobalDataStore((state) => state.db);
+  const optimisticUpdate = useGlobalDataStore((state) => state.optimisticUpdate);
   return useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async (updatedDoc: any) => {
@@ -76,7 +77,9 @@ export function useUpdateGenericDocument() {
           }
           try { response.pouchData = await db.put(updatedDoc); }
           catch(err) { response.successful = false; response.fullError = err; log.error("updating doc, generic:",err);}
-          if (!response.pouchData.ok) { response.successful = false;}
+          if (response.pouchData.ok && response.pouchData.id !== undefined && response.pouchData.rev !== undefined) {
+            optimisticUpdate(response.pouchData.id, response.pouchData.rev,updatedDoc);
+          } else { response.successful = false;}
       return response
     },[db])
 }

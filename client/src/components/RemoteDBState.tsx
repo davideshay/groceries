@@ -240,6 +240,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     const appStatus = useRef<AppStatus>(AppStatus.resumed);
     const broadcastChannel = useRef<BroadcastChannel>(new BroadcastChannel("dupcheck"))
     const initializedGlobalData = useRef<boolean>(false);
+    const syncAlreadyStarted = useRef<boolean>(false);
 
     function setLoginType(lType: LoginType) {
         loginType.current = lType;
@@ -340,10 +341,13 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     },[])
 
     const liveSync = useCallback(() => {
+        if (syncAlreadyStarted.current) {log.error("Live sync already started... Not starting again..."); return;}
         log.debug("Starting live sync of database");
         if (appStatus.current === AppStatus.paused || appStatus.current === AppStatus.pausing) {
             log.debug("Not starting live sync... App being paused...");
+            return;
         }
+        syncAlreadyStarted.current=true;
         setRemoteDBState(prevState=>({...prevState,initialSyncComplete: true}));
         const queryParams = {username: remoteDBCreds.current.dbUsername, listgroups: syncListGroupIDs.current};
         try {globalSync = db.sync((globalRemoteDB as PouchDB.Database), {
@@ -372,15 +376,17 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
                                     if(info.direction === "push") {setSyncStatus(SyncStatus.up)} else {setSyncStatus(SyncStatus.down)};  
                                     checkTriggers(info.change.docs)})
             .on('denied', (err) => { setSyncStatus(SyncStatus.denied);
+                                     syncAlreadyStarted.current = false;
 //                                    setDBServerAvailable(false)
                                     log.debug("live sync denied: ",{err})})
             .on('error', (err) => { log.debug("live sync error state",{err}) ; 
                                 globalSync.cancel();
+                                syncAlreadyStarted.current = false;
                                 setSyncStatus(SyncStatus.error);
                                 setDBServerAvailable(false);
                                 })
             }
-        catch(err) {log.debug("Error in setting up live sync", err); setSyncStatus(SyncStatus.offline);}                         
+        catch(err) {log.debug("Error in setting up live sync", err); setSyncStatus(SyncStatus.offline); syncAlreadyStarted.current = false;}                         
     },[db,checkRetryNetworkIsUp,checkTriggers]);
 
     const beginLiveSync = useCallback( async () => {
@@ -389,10 +395,13 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     },[db,liveSync])
 
     const startSync = useCallback( () => {
+        if (syncAlreadyStarted.current) {log.error("Sync already started, could not do download sync"); return;}
         log.debug("Starting initial sync of database. List groups engaged:",syncListGroupIDs.current.length);
         if (appStatus.current === AppStatus.paused || appStatus.current === AppStatus.pausing) {
             log.debug("Not starting initial sync... App being paused...");
+            return;
         }
+        syncAlreadyStarted.current = true;
         const queryParams = {username: remoteDBCreds.current.dbUsername, listgroups: syncListGroupIDs.current};
         try { globalSync = db.sync((globalRemoteDB as PouchDB.Database), {
             filter: 'replfilter/by_user',
@@ -420,6 +429,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
                                     setSyncStatus(SyncStatus.down);})  
             .on('complete', () => {log.debug("Initial sync complete");
                                     globalSync.cancel();
+                                    syncAlreadyStarted.current = false;
                                     if (appStatus.current === AppStatus.paused || appStatus.current === AppStatus.pausing) {
                                         log.debug("Not proceeding to live sync, operations have been paused.")
                                     } else {
@@ -427,15 +437,17 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
                                     }
                                     })
             .on('denied', (err) => { setSyncStatus(SyncStatus.denied);
+                                     syncAlreadyStarted.current = false;
 //                                    setDBServerAvailable(false);
                                     log.debug("Initial sync denied: ",{err})})
             .on('error', (err) => { log.debug("initial error state",{err}) ; 
                                 globalSync.cancel();
+                                syncAlreadyStarted.current = false;
                                 setSyncStatus(SyncStatus.error);
                                 setDBServerAvailable(false);
                                 });
             }
-        catch(err) {log.debug("Error setting up initial sync",err); setSyncStatus(SyncStatus.error)}                    
+        catch(err) {log.debug("Error setting up initial sync",err); setSyncStatus(SyncStatus.error); syncAlreadyStarted.current = false;}                    
         setRemoteDBState(prevState=>({...prevState,initialSyncStarted: true}))
     },[db,beginLiveSync,checkRetryNetworkIsUp]);
     

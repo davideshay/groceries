@@ -1,11 +1,12 @@
 import { create } from 'zustand';
 import { useEffect, useRef } from 'react';
-import { CategoryDocs, ConflictDocs, FriendDocs, GlobalItemDocs, InitSettingsDoc, ItemDocs, ListDocs, ListGroupDocs, RecipeDoc, SettingsDoc, UomDoc } from "./DBSchema";
+import { CategoryDocs, ConflictDocs, FriendDocs, GenericBaseGroceryDoc, GlobalItemDocs, InitSettingsDoc, ItemDoc, ItemDocs, ListDoc, ListDocs, ListGroupDocs, RecipeDoc, SettingsDoc, UomDoc } from "./DBSchema";
 import { ListCombinedRows, ListRow } from "./DataTypes";
 import { getListRows } from "./GlobalDataUtilities";
 import { translatedCategoryName, translatedItemName, translatedUOMName } from "./translationUtilities";
 import log from './logger';
 import { DBCreds, RemoteDBState } from './RemoteDBState';
+import { isEqual } from 'lodash';
 
 export enum DataReloadStatus {
     ReloadNeeded = "N",
@@ -36,6 +37,9 @@ export interface GlobalDataState {
     db: PouchDB.Database | null;
     remoteDBCreds: DBCreds | null;
     remoteDBState: RemoteDBState | null;
+
+    // optimized updates
+    lastUpdatedDoc: GenericBaseGroceryDoc | null;
 }
 
 export interface GlobalDataActions {
@@ -57,6 +61,9 @@ export interface GlobalDataActions {
     
     // Cleanup function
     cleanup: () => void;
+
+    // optimistic update
+    optimisticUpdate: (id: string, rev: string, doc: GenericBaseGroceryDoc) => Promise<boolean>;
 }
 
 export type GlobalDataStore = GlobalDataState & GlobalDataActions;
@@ -82,6 +89,7 @@ const initialState: GlobalDataState = {
     db: null,
     remoteDBCreds: null,
     remoteDBState: null,
+    lastUpdatedDoc: null
 };
 
 export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
@@ -96,7 +104,7 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
         loadAllData: async () => {
             const { db } = get();
             if (!db) return;
-            
+            log.debug("Load All Data started...");
             set({ 
                 isLoading: true, 
                 error: null,
@@ -155,49 +163,38 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
                     case 'globalitem':
                         globalItems.push(doc);
                         break;
-                        
                     case 'listgroup':
                         // Filter by ownership and sharing
                         if (doc.listGroupOwner === remoteDBCreds.dbUsername ||
                             (doc.sharedWith && doc.sharedWith.includes(remoteDBCreds.dbUsername))) {
                             listGroups.push(doc);
                         }
-                        break;
-                        
+                        break;                     
                     case 'category':
                         categories.push(doc);
                         break;
-                        
                     case 'list':
                         lists.push(doc);
                         break;
-                        
                     case 'recipe':
                         recipes.push(doc);
                         break;
-                    
                     case 'settings':
                         settings=structuredClone(doc);
                         break;
-                        
                     case 'item':
                         items.push(doc);
                         break;
-                        
                     case 'uom':
                         uoms.push(doc);
                         break;
-
                     case "friend":
                         friends.push(doc);
                         break;
-
                     case "conflictlog":
                         conflicts.push(doc);
                         break;
-
                     default:
-                        
                 }
             });
 
@@ -241,22 +238,22 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
                         .localeCompare(translatedUOMName(b._id as string, b.description, b.pluralDescription).toUpperCase())
                 );
 
-            // Update the store with parsed and sorted data
-            set({
-                globalItemDocs: sortedGlobalItems as GlobalItemDocs,
-                listGroupDocs: sortedListGroups as ListGroupDocs,
-                categoryDocs: filteredAndSortedCategories as CategoryDocs,
-                listDocs: filteredLists as ListDocs,
-                recipeDocs: filteredAndSortedRecipes as RecipeDoc[],
-                settingsDoc: settings,
-                itemDocs: filteredItems as ItemDocs,
-                uomDocs: filteredAndSortedUoms as UomDoc[],
-                friendDocs: friends as FriendDocs,
-                conflictDocs: conflicts as ConflictDocs
-            });
+            if (!isEqual(sortedGlobalItems,get().globalItemDocs)) {log.debug("gidchg");set({globalItemDocs: sortedGlobalItems})};
+            if (!isEqual(sortedListGroups,get().listGroupDocs)) {log.debug("lgdchg");set({listGroupDocs: sortedListGroups})};
+            if (!isEqual(filteredAndSortedCategories,get().categoryDocs)) {log.debug("catchg");set({categoryDocs: filteredAndSortedCategories})};
+            if (!isEqual(filteredLists,get().listDocs)) {log.debug("ld_chg");set({listDocs: filteredLists})};
+            if (!isEqual(filteredAndSortedRecipes,get().recipeDocs)) {log.debug("rd_chg");set({recipeDocs: filteredAndSortedRecipes})};
+            if (!isEqual(settings,get().settingsDoc)) {log.debug("set_chg");set({settingsDoc: settings})};
+            if (!isEqual(filteredItems,get().itemDocs)) {log.debug("item_chg");set({itemDocs: filteredItems})};
+            if (!isEqual(filteredAndSortedUoms,get().uomDocs)) {log.debug("uom_chg");set({uomDocs: filteredAndSortedUoms})};
+            if (!isEqual(friends,get().friendDocs)) {log.debug("frd_chg");set({friendDocs: friends})};
+            if (!isEqual(conflicts,get().conflictDocs)) {log.debug("con_chg");set({conflictDocs: conflicts})};
+
+            log.debug("Data parsed and sorted");
         },
         
         updateListRows: () => {
+            log.debug("Starting update of list Rows...");
             const { listDocs, listGroupDocs, remoteDBCreds, remoteDBState } = get();      
             if (!remoteDBState) { log.error("No RemoteDB State yet..."); return;}      
             if (!remoteDBCreds) { log.error("No Remote DB Creds yet..."); return;}
@@ -270,12 +267,12 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
                 listGroupDocs, 
                 remoteDBCreds
             );
-            set({ 
-                listRows, 
-                listCombinedRows, 
-                recipeListGroup, 
-                listRowsLoaded: true 
-            });
+
+            if (!isEqual(listRows,get().listRows)) {set({listRows: listRows})};
+            if (!isEqual(listCombinedRows,get().listCombinedRows)) {set({listCombinedRows: listCombinedRows})};
+            if (!isEqual(recipeListGroup,get().recipeListGroup)) {set({recipeListGroup: recipeListGroup})};
+            set({listRowsLoaded: true});
+            log.debug("List Rows Set");
         },
         
         waitForReload: () => {
@@ -285,7 +282,32 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
         },
         
         cleanup: () => {
-        }
+        },
+
+// Perform an optimistic update from the database update results directly into the global data array store.
+// When the database change itself comes via the trigger, it can be ignored
+        optimisticUpdate: async (id, rev, doc: GenericBaseGroceryDoc) => {
+            log.debug("doc sent for update: with id: ",id," and rev ",rev, " doc:",doc);
+            if (doc.type === "item") {
+                const updDoc = doc as ItemDoc;
+                updDoc._rev = rev;
+                set({itemDocs: get().itemDocs.map( item => 
+                    item._id === id ? (updDoc) : item
+                )})
+                set({lastUpdatedDoc: updDoc});
+                log.debug("itemdocs update complete in store");
+            } else if (doc.type === "list") {
+                const updDoc = doc as ListDoc;
+                updDoc._rev = rev;
+                set({listDocs: get().listDocs.map( list =>
+                    list._id === id ? (updDoc) : list
+                )})
+                set({lastUpdatedDoc: updDoc});
+                get().updateListRows();
+                log.debug("listdoc update complete in store");
+            }
+            return true;
+        },
     }));
 
 // export type GroceryDocType = "trigger" | "settings" | "recipe" | "friend" | "user" | "listgroup" | "list" | "globalitem" | "image" | "item" | "uom" | "dbuuid" | "category" | "conflictlog"
@@ -322,7 +344,16 @@ export function useSyncLocalPouchChangesToGlobalData() {
             // Although processing a deletion can be done much faster, any change or add would require re-running sorting and other functions
             // It's also impossible to determine the difference between an add and a change in this change emitter, so you need to check
             // if a document exists first to determine whether to add or change. Ultimately not worth it.
-            loadAllData();
+            let loadDataNeeded = true;
+            if (change.doc) {
+                const chgDoc: GenericBaseGroceryDoc = change.doc as GenericBaseGroceryDoc;
+                if ((chgDoc.type === "item" || chgDoc.type === "list") && isEqual(chgDoc,useGlobalDataStore.getState().lastUpdatedDoc)) {
+                    console.log("Database change was same item as last optimistic update...");
+                    useGlobalDataStore.setState({lastUpdatedDoc: null});
+                    loadDataNeeded = false;
+                } 
+            }
+            if (loadDataNeeded) { loadAllData();};
         });
         changes.on('error', (error) => {
             log.error('Database changes error:', error);
