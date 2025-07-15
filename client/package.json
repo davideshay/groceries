@@ -99,7 +99,7 @@
     "eslint-plugin-react-refresh": "^0.4.20",
     "pouchdb-browser": "^9.0.0",
     "pouchdb-find": "^9.0.0",
-    "typescript-eslint": "^8.36.0"
+    "typescript-eslint": "^8.37.0"
   },
   "description": "An Ionic project"
 }

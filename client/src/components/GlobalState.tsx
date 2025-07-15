@@ -80,7 +80,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         const newSettingsDoc: SettingsDoc = {...dbSettingsDoc,settings: {...dbSettingsDoc.settings,[key]: value}};
         await updateSettingDoc(newSettingsDoc);
         return true;
-    },[settingsDoc])
+    },[settingsDoc,updateSettingDoc])
 
     async function updateCategoryColor(catID: string, color: string): Promise<boolean> {
         if (isEmpty(color) || isEmpty(catID)) { return false;}
@@ -113,7 +113,6 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
     function validateSettings(settings: GlobalSettings) : [GlobalSettings, boolean] {
         let updated = false; let newSettings: GlobalSettings = cloneDeep(settings);
         if (newSettings == null) {newSettings = cloneDeep(InitSettings); updated = true;}
-        console.log("checking new settings:",newSettings);
         if (!Object.prototype.hasOwnProperty.call(newSettings, 'addListOption')) {
             newSettings.addListOption = InitSettings.addListOption;
             updated = true;

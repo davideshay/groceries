@@ -238,16 +238,16 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
                         .localeCompare(translatedUOMName(b._id as string, b.description, b.pluralDescription).toUpperCase())
                 );
 
-            if (!isEqual(sortedGlobalItems,get().globalItemDocs)) {log.debug("gidchg");set({globalItemDocs: sortedGlobalItems})};
-            if (!isEqual(sortedListGroups,get().listGroupDocs)) {log.debug("lgdchg");set({listGroupDocs: sortedListGroups})};
-            if (!isEqual(filteredAndSortedCategories,get().categoryDocs)) {log.debug("catchg");set({categoryDocs: filteredAndSortedCategories})};
-            if (!isEqual(filteredLists,get().listDocs)) {log.debug("ld_chg");set({listDocs: filteredLists})};
-            if (!isEqual(filteredAndSortedRecipes,get().recipeDocs)) {log.debug("rd_chg");set({recipeDocs: filteredAndSortedRecipes})};
-            if (!isEqual(settings,get().settingsDoc)) {log.debug("set_chg");set({settingsDoc: settings})};
-            if (!isEqual(filteredItems,get().itemDocs)) {log.debug("item_chg");set({itemDocs: filteredItems})};
-            if (!isEqual(filteredAndSortedUoms,get().uomDocs)) {log.debug("uom_chg");set({uomDocs: filteredAndSortedUoms})};
-            if (!isEqual(friends,get().friendDocs)) {log.debug("frd_chg");set({friendDocs: friends})};
-            if (!isEqual(conflicts,get().conflictDocs)) {log.debug("con_chg");set({conflictDocs: conflicts})};
+            if (!isEqual(sortedGlobalItems,get().globalItemDocs)) {set({globalItemDocs: sortedGlobalItems})};
+            if (!isEqual(sortedListGroups,get().listGroupDocs)) {set({listGroupDocs: sortedListGroups})};
+            if (!isEqual(filteredAndSortedCategories,get().categoryDocs)) {set({categoryDocs: filteredAndSortedCategories})};
+            if (!isEqual(filteredLists,get().listDocs)) {set({listDocs: filteredLists})};
+            if (!isEqual(filteredAndSortedRecipes,get().recipeDocs)) {set({recipeDocs: filteredAndSortedRecipes})};
+            if (!isEqual(settings,get().settingsDoc)) {set({settingsDoc: settings})};
+            if (!isEqual(filteredItems,get().itemDocs)) {set({itemDocs: filteredItems})};
+            if (!isEqual(filteredAndSortedUoms,get().uomDocs)) {set({uomDocs: filteredAndSortedUoms})};
+            if (!isEqual(friends,get().friendDocs)) {set({friendDocs: friends})};
+            if (!isEqual(conflicts,get().conflictDocs)) {set({conflictDocs: conflicts})};
 
             log.debug("Data parsed and sorted");
         },
@@ -286,8 +286,9 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
 
 // Perform an optimistic update from the database update results directly into the global data array store.
 // When the database change itself comes via the trigger, it can be ignored
+// Right now, only enabled for item and list changes. Everything else will trigger a full data load, but item changes
+// alone account for probably 90% + of all updates
         optimisticUpdate: async (id, rev, doc: GenericBaseGroceryDoc) => {
-            log.debug("doc sent for update: with id: ",id," and rev ",rev, " doc:",doc);
             if (doc.type === "item") {
                 const updDoc = doc as ItemDoc;
                 updDoc._rev = rev;
@@ -295,7 +296,6 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
                     item._id === id ? (updDoc) : item
                 )})
                 set({lastUpdatedDoc: updDoc});
-                log.debug("itemdocs update complete in store");
             } else if (doc.type === "list") {
                 const updDoc = doc as ListDoc;
                 updDoc._rev = rev;
@@ -304,7 +304,6 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
                 )})
                 set({lastUpdatedDoc: updDoc});
                 get().updateListRows();
-                log.debug("listdoc update complete in store");
             }
             return true;
         },
@@ -348,7 +347,7 @@ export function useSyncLocalPouchChangesToGlobalData() {
             if (change.doc) {
                 const chgDoc: GenericBaseGroceryDoc = change.doc as GenericBaseGroceryDoc;
                 if ((chgDoc.type === "item" || chgDoc.type === "list") && isEqual(chgDoc,useGlobalDataStore.getState().lastUpdatedDoc)) {
-                    console.log("Database change was same item as last optimistic update...");
+                    log.debug("Database change was same item as last optimistic update...");
                     useGlobalDataStore.setState({lastUpdatedDoc: null});
                     loadDataNeeded = false;
                 } 

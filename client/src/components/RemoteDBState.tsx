@@ -459,6 +459,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
     const stopSyncAndCloseRemote = useCallback( async () => {
         const success=true;
         if (globalRemoteDB !== undefined && globalRemoteDB !== null) {
+            syncAlreadyStarted.current = false;
             if (globalSync !== undefined && globalSync !== null) {
                 globalSync.cancel();
             }

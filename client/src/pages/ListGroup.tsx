@@ -74,7 +74,7 @@ const ListGroup: React.FC<HistoryProps> = () => {
   const { t } = useTranslation();
   
 
-  console.log({useFriendState,friendRows});
+  // log.debug({useFriendState,friendRows});
 
   useEffect( () => {
     setPageState(prevState => ({...prevState,
