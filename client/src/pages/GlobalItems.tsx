@@ -3,7 +3,6 @@ import { useRef } from 'react';
 import { HistoryProps} from '../components/DataTypes';
 import { GlobalItemDocs } from '../components/DBSchema';
 import { useTranslation } from 'react-i18next';
-import './GlobalItems.css';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import PageHeader from '../components/PageHeader';

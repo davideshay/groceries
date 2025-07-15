@@ -11,7 +11,6 @@ import { initUserIDList, initUsersInfo, PouchResponse, ResolvedFriendStatus, Use
 import { ListGroupDoc, ListGroupDocInit } from '../components/DBSchema';
 import SyncIndicator from '../components/SyncIndicator';
 import { getUsersInfo } from '../components/Utilities';
-import './ListGroup.css';
 import { closeCircleOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';

@@ -2,7 +2,6 @@ import { IonContent,  IonPage, IonList, IonItem } from '@ionic/react';
 import { useRef } from 'react';
 import { useItems } from '../components/Usehooks';
 import { HistoryProps, RowType} from '../components/DataTypes';
-import './AllItems.css';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import PageHeader from '../components/PageHeader';

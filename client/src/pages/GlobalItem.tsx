@@ -4,7 +4,6 @@ import { IonContent, IonPage,IonButton, IonList, IonInput,
 import { useParams } from 'react-router-dom';
 import { useContext, useRef } from 'react';
 import { useGetOneDoc } from '../components/Usehooks';
-import './Category.css';
 import {  HistoryProps} from '../components/DataTypes';
 import { CategoryDoc, GlobalItemDoc, UomDoc } from '../components/DBSchema';
 import { closeCircleOutline} from 'ionicons/icons';

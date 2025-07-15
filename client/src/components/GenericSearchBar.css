@@ -2,7 +2,6 @@ ion-item.generic-search-item::part(native) {
     min-height: auto;
     padding-top: 0px;
     padding-bottom: 0px;
-    
 }
 
 .generic-search-item {

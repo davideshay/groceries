@@ -7,7 +7,6 @@ import { useState, useEffect, useContext, useRef, JSX } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useGetOneDoc,
    useDeleteGenericDocument, useDeleteListFromItems, useAddListToAllItems } from '../components/Usehooks';
 import { cloneDeep, isEmpty } from 'lodash-es';
-import './List.css';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
 import { PouchResponse, HistoryProps, ListRow, RowType, ListCombinedRows } from '../components/DataTypes';
 import { ListDocInit, ListDoc, CategoryDoc, ListDocs } from '../components/DBSchema'

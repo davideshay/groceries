@@ -1,66 +1,28 @@
-import { IonMenu, IonContent, IonMenuToggle, IonList, 
-     IonItem, IonItemDivider, IonListHeader, IonBadge } from '@ionic/react';
+import { IonMenu, IonContent, IonList, IonMenuToggle, IonItem,
+     IonItemDivider, IonListHeader, } from '@ionic/react';
 import { useContext } from 'react';    
-import { useFriends, UseFriendState } from './Usehooks';    
 import ListsAll from './ListsAll';
 import { RemoteDBStateContext } from './RemoteDBState';
-import { ResolvedFriendStatus } from './DataTypes';
 import { useTranslation } from 'react-i18next';
 import './AppMenu.css';
+import AppMenuFriendItem from './AppMenuFriendItem';
+
+type ListItemProps = {
+  listItem: string,
+  link: string
+}
+
+function AppMenuListItem ({listItem, link}: ListItemProps) {
+  return (
+      <IonMenuToggle key={listItem} autoHide={false}>
+            <IonItem className="app-menu-item" key={"item-"+listItem} routerLink={link}>{listItem}</IonItem>
+      </IonMenuToggle>
+  )
+}
 
 const AppMenu: React.FC = () => {
-  const { remoteDBCreds, remoteDBState } = useContext(RemoteDBStateContext);
-  const {useFriendState,friendRows} = useFriends(String(remoteDBCreds.dbUsername));
+  const { remoteDBState } = useContext(RemoteDBStateContext);
   const { t } = useTranslation();
-  const listHeader = (headerName: string) => {
-    return (<IonItemDivider className="category-divider">{headerName}</IonItemDivider>)
-  }
-
-  const listItem = (listItem: string,link: string) => {
-    return (<IonMenuToggle key={listItem} autoHide={false}>
-              <IonItem className="app-menu-item" key={"item-"+listItem} routerLink={link}>{listItem}</IonItem>
-          </IonMenuToggle>)
-  }
-
-  const friendItem = () => {
-    let pendingCount=0;
-    if (useFriendState === UseFriendState.rowsLoaded) {
-      friendRows.forEach(friend => {
-        if (friend.resolvedStatus === ResolvedFriendStatus.PendingConfirmation) {pendingCount++}
-      })
-    }  
-    return (<IonMenuToggle key="Friends" autoHide={false}>
-              <IonItem className="app-menu-item" key={"item-Friends"} routerLink="/friends">
-              {(pendingCount > 0) ? <IonBadge slot="end">{pendingCount}</IonBadge> : <></>}
-              {t('general.friends')}
-              </IonItem></IonMenuToggle>) 
-  }
- 
-  let contentElem;
-  if (remoteDBState.loggedIn) {
-    contentElem =
-        <> 
-        <IonList className="ion-no-padding menu-section">
-          {listHeader(t('general.lists'))}
-          <ListsAll separatePage={false}/>
-        </IonList>
-        <IonList className="ion-no-padding menu-section">
-          {listHeader(t('general.other_actions'))}
-          {listItem(t('general.recipes'),"/recipes")}
-          {friendItem()}
-          {listItem(t('general.manage_data'),"/managedata")}
-          {listItem(t('general.settings'),"/settings")}
-          {listItem(t('general.status'),"/status")}
-          {listItem(t('general.user_info'),"/userdata")}
-          {listItem(t('general.logout'),"/login")}
-        </IonList>
-      </>
-  } else {
-    contentElem = 
-      <>
-        {listItem(t('general.login'),"/login")}
-      </>  
-  }
 
   return (
   <IonMenu contentId="main" type="overlay">
@@ -70,7 +32,27 @@ const AppMenu: React.FC = () => {
           <img className="app-icon" src="assets/icon/favicon.svg" alt="Clementine" />
           {t('general.groceries_menu')}
         </IonListHeader>
-        {contentElem}
+        {remoteDBState.loggedIn ? (
+            <> 
+              <IonList className="ion-no-padding menu-section">
+                  <IonItemDivider className="category-divider">{t('general.lists')}</IonItemDivider>
+                  <ListsAll separatePage={false}/>
+              </IonList>
+              <IonList className="ion-no-padding menu-section">
+                  <IonItemDivider className="category-divider">{t('general.other_actions')}</IonItemDivider>
+                  <AppMenuListItem listItem={t('general.recipes')} link="/recipes" />
+                  <AppMenuFriendItem />
+                  <AppMenuListItem listItem={t('general.manage_data')} link="/managedata" />
+                  <AppMenuListItem listItem={t('general.settings')} link="/settings" />
+                  <AppMenuListItem listItem={t('general.status')} link="/status" />
+                  <AppMenuListItem listItem={t('general.user_info')} link="/userdata" />
+                  <AppMenuListItem listItem={t('general.logout')} link="/login" />
+              </IonList>
+            </>
+        ) :
+        (
+            <AppMenuListItem listItem={t('general.login')} link="/login" />
+        )}
       </IonList>
     </IonContent>
   </IonMenu>

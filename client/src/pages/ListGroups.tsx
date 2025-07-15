@@ -3,7 +3,6 @@ import { IonContent,  IonPage,  IonList, IonItem,
 import { useRef } from 'react';
 import { add } from 'ionicons/icons';
 import { ListCombinedRow, RowType } from '../components/DataTypes';
-import './ListGroups.css';
 import ErrorPage from './ErrorPage';
 import Loading  from '../components/Loading';
 import PageHeader from '../components/PageHeader';

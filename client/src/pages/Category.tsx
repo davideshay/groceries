@@ -4,7 +4,6 @@ import { useParams } from 'react-router-dom';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteCategoryFromItems, useDeleteGenericDocument,
    useDeleteCategoryFromLists, useAddCategoryToLists, useGetOneDoc, useItems } from '../components/Usehooks';
-import './Category.css';
 import { PouchResponse, HistoryProps, ListRow, RowType, ListCombinedRows} from '../components/DataTypes';
 import { ItemDoc, CategoryDoc, InitCategoryDoc, DefaultColor } from '../components/DBSchema';
 import { addCircleOutline, closeCircleOutline, saveOutline, trashOutline } from 'ionicons/icons';

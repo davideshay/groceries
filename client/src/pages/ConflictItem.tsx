@@ -6,7 +6,6 @@ import { useContext, useRef } from 'react';
 import { isEqual, pull } from 'lodash-es';
 import { HistoryProps } from '../components/DataTypes';
 import { ConflictDoc } from '../components/DBSchema';
-import './Category.css';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import PageHeader from '../components/PageHeader';

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {initItemRow, ItemRow, ItemSearch, ListCombinedRow, ListCombinedRows,
-     ListRow, RowType, ItemSearchType, CategoryRows, CategoryRow, ItemRows, initCategoryRow, ListSelectRow, ListSelectRows} from '../components/DataTypes';
+     ListRow, RowType, ItemSearchType, CategoryRows, CategoryRow, ItemRows, initCategoryRow, ListSelectRow, ListSelectRows} from './DataTypes';
 import { GlobalState } from "./GlobalState";
 import { AddListOptions, CategoryColors, DefaultColor, GlobalSettings } from './DBSchema';
 import { UomDoc, ItemDoc, ItemDocs, ItemList, ListDocs, ListDoc, CategoryDoc, GlobalItemDocs } from './DBSchema';

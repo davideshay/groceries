@@ -1,7 +1,6 @@
 import {  IonItem, IonButton, IonMenuToggle, IonIcon } from '@ionic/react';
 import { JSX } from 'react';
 import { pencilOutline } from 'ionicons/icons';
-import './ListsAll.css';
 import { RowType } from './DataTypes';
 import { useGlobalDataStore } from './GlobalData';
 

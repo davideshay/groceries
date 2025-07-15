@@ -120,15 +120,17 @@ export async function disableFileLogging() {
 }
 
 export async function clearLogFile() {
-    if (await checkAndRequestPermissions()) {
-        try {
-            await Filesystem.deleteFile({
-                path: AndroidLogFileName,
-                directory: Directory.Documents
-            })
-        }
-        catch(error) {
-            console.error("Could not delete/clear log file:",error);
+    if (Capacitor.getPlatform() === "android") {
+        if (await checkAndRequestPermissions()) {
+            try {
+                await Filesystem.deleteFile({
+                    path: AndroidLogFileName,
+                    directory: Directory.Documents
+                })
+            }
+            catch(error) {
+                console.error("Could not delete/clear log file:",error);
+            }
         }
     }
 }
@@ -169,6 +171,7 @@ function formatLogMessage(methodName: string, messages: any[]): string {
 }
 
 function setToFileLoggingFactory() {
+    console.log("Setting file logging factory (android)");
     log.methodFactory = function (methodName, logLevel, loggerName) {
         const rawMethod = originalFactory(methodName, logLevel, loggerName);
 

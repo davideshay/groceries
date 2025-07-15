@@ -4,7 +4,6 @@ import { useRef } from 'react';
 import { add } from 'ionicons/icons';
 import { HistoryProps } from '../components/DataTypes';
 import { CategoryDoc } from '../components/DBSchema';
-import './Categories.css';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import PageHeader from '../components/PageHeader';

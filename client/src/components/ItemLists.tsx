@@ -28,9 +28,9 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
         let listFound=false
         for (let i = 0; i < newItemDoc.lists.length; i++) {
             if (newItemDoc.lists[i].listID === listID) {
-            newItemDoc.lists[i].active = updateVal;
-            listFound=true;
-            if(updateVal) {newItemDoc.lists[i].boughtCount++}
+              newItemDoc.lists[i].active = updateVal;
+              listFound=true;
+              if(updateVal) {newItemDoc.lists[i].boughtCount++}
             }    
         }
         if (!listFound) {
@@ -55,41 +55,57 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
           selectedListName: listName, selectedListIdx: listIdx, itemList: cloneDeep(props.stateItemDoc.lists[listIdx])}));
     }
 
-    const listsElem=[];
-    const listsInnerElem=[];
-    listsInnerElem.push(<IonRow key="listlabelrow">
-        <IonCol size="10"><IonLabel key="listlabel" position='stacked'>{t('itemtext.item_is_on_these_lists')}</IonLabel></IonCol>
-        <IonCol size="2"><IonLabel key="resetlabel" position="stacked">{t('general.edit')}</IonLabel></IonCol></IonRow>
-    )
     const sortedLists = sortedItemLists(props.stateItemDoc.lists,listDocs);
-    
-    for (let i = 0; i < sortedLists.length; i++) {
-      const listID = sortedLists[i].listID;
-      const itemFoundIdx=listDocs.findIndex((element: ListDoc) => (element._id === listID));
-      if (itemFoundIdx !== -1) {
-        const itemActive=(sortedLists[i].active);
-        const listName=listDocs[itemFoundIdx].name;
-        listsInnerElem.push(
-          <IonRow key={listID} className={listIsDifferentThanCommon(sortedLists,i) ? "highlighted-row ion-no-padding" : "ion-no-padding"}>
-            <IonCol className="ion-no-padding" size="1"><IonCheckbox aria-label="" onIonChange={(e: CheckboxCustomEvent) => selectList(listID,Boolean(e.detail.checked))} checked={itemActive}></IonCheckbox></IonCol>
-            <IonCol className="ion-no-padding ion-align-self-center" size="9"><IonLabel>{listName}</IonLabel></IonCol>
-            <IonCol className="ion-no-padding" size="2"><IonButton onClick={() => {editListModal(listID)}} ><IonIcon icon={pencilOutline}></IonIcon></IonButton></IonCol>
-          </IonRow>
-        )
-      }
-    }
-    listsElem.push(<IonItem key="listlist"><IonGrid>{listsInnerElem}</IonGrid></IonItem>)
-    listsElem.push(<IonItem key="diffNote"><IonText className="small-note-text">{t('itemtext.highlighted_lists_diff_values')}</IonText></IonItem>)
-  
+      
     return (
         <Fragment key="itemlists">
-        {listsElem}
+        <IonItem key="listlist">
+            <IonGrid>
+                <IonRow key="listlabelrow">
+                    <IonCol size="10">
+                        <IonLabel key="listlabel" position='stacked'>{t('itemtext.item_is_on_these_lists')}</IonLabel>
+                    </IonCol>
+                    <IonCol size="2">
+                        <IonLabel key="resetlabel" position="stacked">{t('general.edit')}</IonLabel>
+                    </IonCol>
+                </IonRow>
+                {
+                  sortedLists.map((list,idx) => {
+                    const itemFoundIdx=listDocs.findIndex((element: ListDoc) => (element._id === list.listID));
+                    if (itemFoundIdx !== -1) {
+                      let rowClassName = "ion-no-padding";
+                      if (listIsDifferentThanCommon(sortedLists,idx)) {
+                        rowClassName += " highlighted-row";
+                      }
+                      return (
+                        <IonRow key={list.listID} className={rowClassName}>
+                            <IonCol className="ion-no-padding" size="1">
+                                <IonCheckbox aria-label="" onIonChange={(e: CheckboxCustomEvent) => selectList(list.listID,Boolean(e.detail.checked))}
+                                             checked={sortedLists[idx].active}>
+                                </IonCheckbox>
+                            </IonCol>
+                            <IonCol className="ion-no-padding ion-align-self-center" size="9">
+                                <IonLabel>{listDocs[idx].name}</IonLabel>
+                            </IonCol>
+                            <IonCol className="ion-no-padding" size="2">
+                                <IonButton onClick={() => {editListModal(list.listID)}}>
+                                    <IonIcon icon={pencilOutline}></IonIcon>
+                                </IonButton>
+                            </IonCol>
+                        </IonRow>
+                      )
+                    }
+                  })}
+            </IonGrid>
+        </IonItem>
+        <IonItem key="diffNote">
+            <IonText className="small-note-text">{t('itemtext.highlighted_lists_diff_values')}</IonText>
+        </IonItem>
         <ItemListsModal stateItemDoc={props.stateItemDoc} setStateItemDoc={props.setStateItemDoc} 
                         modalState={modalState} setModalState={setModalState}
                         addCategoryPopup={props.addCategoryPopup} addUOMPopup={props.addUOMPopup} />
         </Fragment>
     )
-
 }
 
 export default ItemLists;

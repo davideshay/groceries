@@ -85,7 +85,7 @@ return (
   <PageHeader title={t("general.user_info")} />
   <IonContent fullscreen>
     <IonList lines="none" className="ion-no-padding">
-\      <IonItem className="shorter-item-no-padding">
+      <IonItem className="shorter-item-no-padding">
         <IonInput className="shorter-input shorter-input2" type="text" disabled={true} labelPlacement="stacked" label={t("general.user_id") as string} value={userInfo.name} />
       </IonItem>
       <IonItem className="shorter-item-no-padding">

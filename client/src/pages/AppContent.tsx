@@ -68,7 +68,7 @@ const AppContent: React.FC = () => {
         const resetTheme = async () => {
             log.debug("Resetting theme to :", globalState.settings.theme, " with prefersDark.matches: ", systemDark)
             if (globalState.settings.theme == ThemeType.dark || (globalState.settings.theme == ThemeType.auto && systemDark)) {
-                log.debug("Setting them to dark mode in JS");
+                log.debug("Setting theme to dark mode in JS");
                 document.documentElement.classList.add('ion-palette-dark');
                 await SafeArea.initialize();
                 await SafeArea.changeSystemBarsIconsAppearance({isLight: false});
