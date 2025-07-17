@@ -343,6 +343,9 @@ export function useSyncLocalPouchChangesToGlobalData() {
             // Although processing a deletion can be done much faster, any change or add would require re-running sorting and other functions
             // It's also impossible to determine the difference between an add and a change in this change emitter, so you need to check
             // if a document exists first to determine whether to add or change. Ultimately not worth it.
+            //
+            // Certain high-volume updates, like item particularly, could use to be slightly faster, so item and list updates
+            // are processed in advance and directly update the arrays. Not true for adds, deletes, or other objects.
             let loadDataNeeded = true;
             if (change.doc) {
                 const chgDoc: GenericBaseGroceryDoc = change.doc as GenericBaseGroceryDoc;
