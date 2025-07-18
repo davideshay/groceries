@@ -13,6 +13,12 @@ ion-img.item-image {
   height: 200px;
 }
 
+.new-value-button {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+}
+
 #floating-error {
   border: none;
   outline: none;

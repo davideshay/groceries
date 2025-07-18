@@ -473,7 +473,7 @@ const Item: React.FC = () => {
                     </IonSelect>
                   </IonCol>
                   <IonCol className="ion-no-padding" size="1">
-                    <IonButton fill="default" onClick={() => {addUOMPopup()}}>
+                    <IonButton className="new-value-button" fill="default" onClick={() => {addUOMPopup()}}>
                       <IonIcon icon={addCircleOutline}></IonIcon>
                     </IonButton>
                   </IonCol>
@@ -494,7 +494,7 @@ const Item: React.FC = () => {
                       </IonSelect>
                     </IonCol>
                     <IonCol className="ion-no-padding" size="1">
-                      <IonButton fill="default" onClick={() => {addCategoryPopup()}}>
+                      <IonButton className="new-value-button" fill="default" onClick={() => {addCategoryPopup()}}>
                         <IonIcon icon={addCircleOutline} ></IonIcon>
                       </IonButton>
                     </IonCol>
