@@ -16,7 +16,7 @@ import { checkUserByEmailExists, emailPatternValidation, apiConnectTimeout } fro
 import { Loading } from '../components/Loading';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
-import { log } from "../components/Utilities";
+import log from "../components/logger";
 
 /* 
 
@@ -59,7 +59,7 @@ interface PageState {
   registrationAlertSubheader: string,
 }  
               
-const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
+const Friends: React.FC<HistoryProps> = () => {
   const { remoteDBCreds, remoteDB, setRemoteDBState, remoteDBState } = useContext(RemoteDBStateContext);
   const uname = remoteDBCreds.dbUsername;
   const {useFriendState,friendRows} = useFriends(String(uname));
@@ -93,16 +93,16 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
   screenLoading.current=false;
 
   async function confirmFriend(friendRow: FriendRow) {
-    let updatedDoc = cloneDeep(friendRow.friendDoc);
+    const updatedDoc = cloneDeep(friendRow.friendDoc);
     updatedDoc.friendStatus = FriendStatus.Confirmed;
-    let result = await updateDoc(updatedDoc);
+    const result = await updateDoc(updatedDoc);
     if (!result.successful) {
       presentToast({"message": t("error.confirming_friend")})
     }
   }
 
   function showURL(friendRow: FriendRow) {
-    let confURL = remoteDBCreds.apiServerURL + "/createaccountui?uuid="+friendRow.friendDoc.inviteUUID;
+    const confURL = remoteDBCreds.apiServerURL + "/createaccountui?uuid="+friendRow.friendDoc.inviteUUID;
     Clipboard.write({string: confURL});
     setPageState(prevState => ({...prevState,formError: "", inAddMode: false, newFriendEmail: "",
             showRegistrationURL: true,
@@ -122,12 +122,12 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   }
 
-  let friendsElem: JSX.Element[] = [];
+  const friendsElem: JSX.Element[] = [];
 
   function updateFriendsElem() {
-    let friendRowsElem: JSX.Element[] = [];
+    const friendRowsElem: JSX.Element[] = [];
     if (friendRows.length > 0) {
-      let elem=(<IonRow  className="ion-justify-content-center ion-align-items-center friend-row" key={"header"}>
+      const elem=(<IonRow  className="ion-justify-content-center ion-align-items-center friend-row" key={"header"}>
               <IonCol className="col-minimal-padding" size="6"><IonText className="bold-header">Friend Name/Email</IonText></IonCol>
               <IonCol className="col-minimal-padding" size="3"><IonText className="bold-header">Status</IonText></IonCol>
               <IonCol className="col-minimal-padding" size="3"><IonText className="bold-header">Action</IonText></IonCol>
@@ -135,7 +135,7 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
       friendRowsElem.push(elem);      
       friendRows.forEach((friendRow: FriendRow) => {
         const itemKey = (friendRow.targetUserName === "" || friendRow.targetUserName === null) ? friendRow.targetEmail : friendRow.targetUserName;
-        let elem=(<IonRow  className="ion-justify-content-center ion-align-items-center friend-row" key={itemKey}>
+        const elem=(<IonRow  className="ion-justify-content-center ion-align-items-center friend-row" key={itemKey}>
               <IonCol className="col-minimal-padding" size="6">{friendRow.targetFullName === "" ? friendRow.targetEmail : friendRow.targetFullName}</IonCol>
               <IonCol className="col-minimal-padding" size="3"><IonLabel className="friend-label">{friendRow.friendStatusText}</IonLabel></IonCol>
               <IonCol className="col-minimal-padding" size="3">{ButtonElem(friendRow)}</IonCol>
@@ -182,9 +182,9 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
       };
       
     try {await CapacitorHttp.post(options)}
-    catch(err) {log.error("sending friend email."); return false}
+    catch {log.error("sending friend email."); return false}
 
-    let confURL = remoteDBCreds.apiServerURL + "/createaccountui?uuid="+invuid;
+    const confURL = remoteDBCreds.apiServerURL + "/createaccountui?uuid="+invuid;
     Clipboard.write({string: confURL});
     setPageState(prevState => ({...prevState,formError: "", inAddMode: false, newFriendEmail: "",
             showRegistrationURL: true,
@@ -234,7 +234,7 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
         friendStatus: pendfrom1 ? FriendStatus.PendingFrom1 : FriendStatus.PendingFrom2
       }
       log.debug("new friend doc to create:",newFriendDoc);
-      let result = await createDoc(newFriendDoc);
+      const result = await createDoc(newFriendDoc);
       if (result.successful) {
           setPageState(prevState => ({...prevState,formError: "",inAddMode: false, newFriendEmail: ""}))
       } else {
@@ -249,7 +249,7 @@ const Friends: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   updateFriendsElem();
 
-  let formElem = [];
+  const formElem = [];
   if (pageState.inAddMode) {
     formElem.push(
      <Fragment key="addfriendform">

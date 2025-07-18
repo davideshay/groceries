@@ -6,19 +6,19 @@ import { HistoryProps, RowType, RecipeFileTypes } from '../components/DataTypes'
 import { returnDownBackOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
-import { GlobalDataContext } from '../components/GlobalDataProvider';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
 import { FilePicker, PickFilesResult } from '@capawesome/capacitor-file-picker';
 import { Filesystem } from '@capacitor/filesystem';
 import {useProcessInputFile } from '../components/importUtilities';
+import { useGlobalDataStore } from '../components/GlobalData';
 
 type PageState = {
   recipeFormat: string,
   formError: string,
 }
 
-const RecipeImport: React.FC<HistoryProps> = (props: HistoryProps) => {
+const RecipeImport: React.FC<HistoryProps> = () => {
   const [pageState, setPageState] = useState<PageState>({
       recipeFormat:"tandoor", formError: ""
   })
@@ -26,15 +26,17 @@ const RecipeImport: React.FC<HistoryProps> = (props: HistoryProps) => {
         needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const {goBack} = useContext(NavContext);
   const screenLoading = useRef(true);
-  const globalData = useContext(GlobalDataContext);
+  const error = useGlobalDataStore((state) => state.error);
+  const isLoading = useGlobalDataStore((state) => state.isLoading);
+  const listRowsLoaded = useGlobalDataStore((state) => state.listRowsLoaded);
   const { t } = useTranslation();
   const processInputFile = useProcessInputFile();
 
-  if ( globalData.listError || itemError ){ return (
+  if ( error || itemError ){ return (
     <ErrorPage errorText={t("error.loading_recipe_import") as string}></ErrorPage>
     )};
 
-  if (  globalData.categoryLoading || !globalData.listRowsLoaded || !itemRowsLoaded)  {
+  if (  isLoading || !listRowsLoaded || !itemRowsLoaded)  {
     return ( <Loading isOpen={screenLoading.current} message={t("general.loading_recipe_import")} />)
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   };
@@ -53,7 +55,7 @@ const RecipeImport: React.FC<HistoryProps> = (props: HistoryProps) => {
       limit: 1,
       readData: true
       }) }
-    catch(err) {pickSuccessful = false;}
+    catch {pickSuccessful = false;}
     if (!pickSuccessful || pickResults === undefined) {
       setPageState(prevState => ({...prevState,formError:t("error.picking_import_file")}))
       return;
@@ -68,7 +70,7 @@ const RecipeImport: React.FC<HistoryProps> = (props: HistoryProps) => {
     }
   }
 
-  let jsonFormatOptions: JSX.Element[] = [];
+  const jsonFormatOptions: JSX.Element[] = [];
   RecipeFileTypes.forEach((it) => {
     jsonFormatOptions.push(
       <IonSelectOption key={it.type} value={it.type}>{t("general.recipe_import_type_"+it.type)}</IonSelectOption>

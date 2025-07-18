@@ -16,8 +16,8 @@ const SyncIndicator: React.FC<SyncProps> = (props: SyncProps) => {
     const history = useHistory()
 
     const iconSize="medium";
-    let syncIconBaseClass = "ion-no-margin ion-margin-start sync-icon "+(props.addPadding ? "sync-icon-padding" : "")
-    let iconProps = {
+    const syncIconBaseClass = "ion-no-margin ion-margin-start sync-icon "+(props.addPadding ? "sync-icon-padding" : "")
+    const iconProps = {
         slot: "end",
         className: syncIconBaseClass,
         size: iconSize

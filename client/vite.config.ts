@@ -9,8 +9,12 @@ export default defineConfig({
     minify: true,
     outDir: "./build",
     rollupOptions: { treeshake: true , output : {
-      manualChunks: {
-          "env-config.js": ["env-config.js"]
+      manualChunks(id) {
+        if (id.includes("env-config.js")) {
+          return "env-config.js"
+        } else if (id.includes('node_modules')) {
+            return 'vendor';
+          }
       },
       chunkFileNames: (chunkInfo) => {
           if (chunkInfo.name === "env-config.js") {

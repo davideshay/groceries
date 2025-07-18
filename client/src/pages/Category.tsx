@@ -4,18 +4,17 @@ import { useParams } from 'react-router-dom';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteCategoryFromItems, useDeleteGenericDocument,
    useDeleteCategoryFromLists, useAddCategoryToLists, useGetOneDoc, useItems } from '../components/Usehooks';
-import './Category.css';
 import { PouchResponse, HistoryProps, ListRow, RowType, ListCombinedRows} from '../components/DataTypes';
 import { ItemDoc, CategoryDoc, InitCategoryDoc, DefaultColor } from '../components/DBSchema';
 import { addCircleOutline, closeCircleOutline, saveOutline, trashOutline } from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
-import { GlobalDataContext } from '../components/GlobalDataProvider';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
 import { translatedCategoryName } from '../components/translationUtilities';
 import { cloneDeep } from 'lodash-es';
 import { GlobalStateContext } from '../components/GlobalState';
+import { useGlobalDataStore } from '../components/GlobalData';
 
 enum ErrorLocation  {
    Name, General
@@ -25,9 +24,9 @@ const FormErrorInit = {  [ErrorLocation.Name]:       {errorMessage:"", hasError:
                       [ErrorLocation.General]:    {errorMessage:"", hasError: false}
                     }
 
-const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
-  let { mode, id: routeID } = useParams<{mode: string, id: string}>();
-  if ( mode === "new" ) { routeID = "<new>"};
+const Category: React.FC<HistoryProps> = () => {
+  const { mode, id: routeID } = useParams<{mode: string, id: string}>();
+  const routeCategoryID: string|null = (mode === "new") ? null : routeID;
   const [needInitCategoryDoc,setNeedInitCategoryDoc] = useState(true);
   const [stateCategoryDoc,setStateCategoryDoc] = useState<CategoryDoc>(InitCategoryDoc);
   const [stateColor,setStateColor] = useState<string>(DefaultColor);
@@ -40,14 +39,20 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   const deleteCategoryFromItems = useDeleteCategoryFromItems();
   const deleteCategoryFromLists = useDeleteCategoryFromLists();
   const addCategoryToLists = useAddCategoryToLists();
-  const { doc: categoryDoc, loading: categoryLoading} = useGetOneDoc(routeID);
-  const { dbError: itemError, itemRowsLoaded, itemRows } = useItems({selectedListGroupID: null, isReady: true, needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
+  const { doc: categoryDoc, loading: categoryLoading} = useGetOneDoc(routeCategoryID);
+  const { itemRowsLoaded, itemRows } = useItems({selectedListGroupID: null, isReady: true, needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const {goBack} = useContext(NavContext);
   const screenLoading = useRef(true);
-  const globalData = useContext(GlobalDataContext);
   const {globalState, updateCategoryColor, deleteCategoryColor} = useContext(GlobalStateContext)
   const [presentDeleting,dismissDeleting] = useIonLoading();
   const { t } = useTranslation();
+  const error = useGlobalDataStore((state) => state.error);
+  const loading = useGlobalDataStore((state) => state.isLoading);
+  const listRows = useGlobalDataStore((state) => state.listRows);
+  const listRowsLoaded = useGlobalDataStore((state) => state.listRowsLoaded);
+  const categoryDocs = useGlobalDataStore((state) => state.categoryDocs);
+  const listCombinedRows = useGlobalDataStore((state) => state.listCombinedRows);
+
 
   useEffect( () => {
     let newCategoryDoc: CategoryDoc;
@@ -57,7 +62,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
         newCategoryDoc = cloneDeep(InitCategoryDoc);
       } else {
         newCategoryDoc = categoryDoc as CategoryDoc;
-        if (globalState.categoryColors.hasOwnProperty(String(newCategoryDoc._id))) {
+        if (Object.prototype.hasOwnProperty.call(globalState.categoryColors, String(newCategoryDoc._id))) {
           newColor =globalState.categoryColors[String(newCategoryDoc._id)];
         }
       }
@@ -71,11 +76,11 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
     if (categoryDoc !== null) {setStateCategoryDoc(categoryDoc)}
   },[categoryDoc])
 
-  if ( globalData.listError || itemError || globalData.categoryError !== null) { return (
+  if (error) { return (
     <ErrorPage errorText={t("error.loading_category_info") as string}></ErrorPage>
     )};
 
-  if ( categoryLoading || globalData.categoryLoading || !stateCategoryDoc || deletingCategory || !globalData.listRowsLoaded || !itemRowsLoaded)  {
+  if ( categoryLoading || loading || !stateCategoryDoc || deletingCategory || !listRowsLoaded || !itemRowsLoaded)  {
     return ( <Loading isOpen={screenLoading.current} message={t("general.loading_category")} />)
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   };
@@ -89,13 +94,13 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
 
   async function updateThisCategory() {
-    setFormErrors(prevState=>(FormErrorInit));
+    setFormErrors(FormErrorInit);
     if (stateCategoryDoc.name === undefined || stateCategoryDoc.name === "" || stateCategoryDoc.name === null) {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.Name]: {errorMessage: t("error.must_enter_a_name"), hasError: true}}))
       return false;
     }
     let categoryDup=false;
-    (globalData.categoryDocs as CategoryDoc[]).forEach((doc) => {
+    (categoryDocs as CategoryDoc[]).forEach((doc) => {
       if ((["system",stateCategoryDoc.listGroupID].includes(String(doc.listGroupID))) && 
           (doc._id !== stateCategoryDoc._id) && 
           (doc.name.toUpperCase() === stateCategoryDoc.name.toUpperCase() || translatedCategoryName(doc._id,doc.name).toUpperCase() === stateCategoryDoc.name.toUpperCase())) {
@@ -116,7 +121,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
       result = await createCategory(stateCategoryDoc);
       if (result.successful) {
         catID = String(result.pouchData.id);
-        let catListAddResponse = await addCategoryToLists(catID,stateCategoryDoc.listGroupID,globalData.listCombinedRows);
+        const catListAddResponse = await addCategoryToLists(catID,stateCategoryDoc.listGroupID,listCombinedRows);
         if (!catListAddResponse.successful) {
           setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.error_adding_category"), hasError: true}}));
           return;
@@ -151,7 +156,7 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
   async function getNumberOfListsUsingCategory() {
     let numResults = 0;
     if (stateCategoryDoc === null) return numResults;
-    globalData.listRows.forEach( (lr: ListRow) => {
+    listRows.forEach( (lr: ListRow) => {
       if (lr.listDoc.categories.includes(String(stateCategoryDoc._id))) {
         numResults++;
       }
@@ -161,21 +166,21 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   async function deleteCategoryFromDB() {
     presentDeleting(String(t("general.deleting_category")));
-    let catItemDelResponse = await deleteCategoryFromItems(String(stateCategoryDoc._id));
+    const catItemDelResponse = await deleteCategoryFromItems(String(stateCategoryDoc._id));
     if (!catItemDelResponse.successful) {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.unable_remove_category_items"), hasError: true}}))
       setDeletingCategory(false);
       dismissDeleting();
       return;
     }
-    let catListDelResponse = await deleteCategoryFromLists(String(stateCategoryDoc._id));
+    const catListDelResponse = await deleteCategoryFromLists(String(stateCategoryDoc._id));
     if (!catListDelResponse.successful) {
       setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.unable_remove_category_lists"), hasError: true}}))
       setDeletingCategory(false);
       dismissDeleting();
       return;
     }
-   let catDelResponse = await deleteCategory(stateCategoryDoc);
+   const catDelResponse = await deleteCategory(stateCategoryDoc);
    if (!catDelResponse.successful) {
      setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.unable_delete_category"), hasError: true}}))
      setDeletingCategory(false);
@@ -222,14 +227,14 @@ const Category: React.FC<HistoryProps> = (props: HistoryProps) => {
             </IonItem>
             <IonItem key="listgroup">
               <IonSelect disabled={mode!=="new"} key="listgroupsel" label={t("general.list_group") as string} labelPlacement='stacked' interface="popover" onIonChange={(e) => updateListGroup(e.detail.value)} value={stateCategoryDoc.listGroupID}>
-                { (cloneDeep(globalData.listCombinedRows) as ListCombinedRows).filter(lr => (lr.rowType === RowType.listGroup)).map((lr) => 
+                { (cloneDeep(listCombinedRows) as ListCombinedRows).filter(lr => (lr.rowType === RowType.listGroup)).map((lr) => 
                   ( <IonSelectOption key={lr.rowKey} value={lr.listGroupID} disabled={lr.listGroupID === "system"}>{lr.listGroupName}</IonSelectOption> )
                 )}
               </IonSelect>
             </IonItem>
             <IonItem key="color">
               <IonLabel position="stacked">{t("general.color")}</IonLabel>
-              <input type="color" value={stateColor} onChange={(e) => {setStateColor((prevState) => (e.target.value))}}></input>
+              <input type="color" value={stateColor} onChange={(e) => {setStateColor((e.target.value))}}></input>
             </IonItem>
           </IonList>
           <IonItem lines="none"  key="formerror">{formErrors[ErrorLocation.General].hasError ? <IonText color="danger">{formErrors[ErrorLocation.General].errorMessage}</IonText> : <></>}</IonItem>

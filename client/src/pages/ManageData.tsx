@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 // Each item has a name, along with data about each list the item is on (list ID, quantity, count of number of times bought,
 // and status for active (on the list), and complete (on the list and checked off) )
 
-const ManageData: React.FC<HistoryProps> = (props: HistoryProps) => {
+const ManageData: React.FC<HistoryProps> = () => {
   const screenLoading = useRef(true);
   const { t } = useTranslation();
   

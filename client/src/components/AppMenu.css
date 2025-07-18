@@ -2,7 +2,6 @@ ion-menu ion-content {
     --padding-top: var(--ion-safe-area-top);
 }
 
-
 ion-item.app-menu-item, ion-item.menu-item-label {
     text-transform: none;
     font-size: 16px;
@@ -11,8 +10,22 @@ ion-item.app-menu-item, ion-item.menu-item-label {
     --min-height: 44px;
 }
 
+ion-item.app-menu-item, ion-item.menu-item-label {
+    --inner-border-width: 0;
+}
+
 ion-item.menu-item ion-button {
     height: 100%;
+}
+
+ion-list.menu-section ion-item.app-menu-item {
+    border-top: none;
+    border-bottom: none;
+}
+
+ion-menu ion-list ion-item-divider {
+    border-top: none;
+    border-bottom: none;
 }
 
 ion-item.menu-item ion-button::part(native) {

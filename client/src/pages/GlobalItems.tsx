@@ -1,31 +1,32 @@
 import { IonContent, IonPage, IonList, IonItem } from '@ionic/react';
-import { useContext, useRef } from 'react';
+import { useRef } from 'react';
 import { HistoryProps} from '../components/DataTypes';
 import { GlobalItemDocs } from '../components/DBSchema';
 import { useTranslation } from 'react-i18next';
-import './GlobalItems.css';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import PageHeader from '../components/PageHeader';
 import { translatedItemName } from '../components/translationUtilities';
-import { GlobalDataContext } from '../components/GlobalDataProvider';
+import { useGlobalDataStore } from '../components/GlobalData';
 
 // The AllItems component is a master editor of all of the known items in the database.
 // Each item has a name, along with data about each list the item is on (list ID, quantity, count of number of times bought,
 // and status for active (on the list), and complete (on the list and checked off) )
 
 
-const GlobalItems: React.FC<HistoryProps> = (props: HistoryProps) => {
+const GlobalItems: React.FC<HistoryProps> = () => {
   const screenLoading = useRef(true);
-  const {globalItemDocs, globalItemsLoading, globalItemError } = useContext(GlobalDataContext)
+  const error = useGlobalDataStore((state) => state.error)
+  const loading = useGlobalDataStore((state) => state.isLoading);
+  const globalItemDocs = useGlobalDataStore((state) => state.globalItemDocs);
   const { t } = useTranslation();
 
 
-  if (globalItemError ) { return (
+  if (error ) { return (
     <ErrorPage errorText={t("error.loading_global_item") as string}></ErrorPage>
     )}
 
-  if (globalItemsLoading) { 
+  if (loading) { 
     return ( <Loading isOpen={screenLoading.current} message={t("general.loading_global_items")}  /> )
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   }

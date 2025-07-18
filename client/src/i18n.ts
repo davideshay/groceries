@@ -4,11 +4,20 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 import { en_translations } from './locales/en/translation';
 import { de_translations } from './locales/de/translation';
 import { es_translations } from './locales/es/translation';
+import { it_translations } from './locales/it/translation';
 
-export const languageDescriptions =  [
+export type LanguageDescription = {
+  key: string,
+  name: string
+}
+
+export type LanguageDescriptions = LanguageDescription[];
+
+export const languageDescriptions: LanguageDescriptions =  [
   {key: "en", name: "English"},
   {key: "es", name: "Español"},
-  {key: "de", name: "Deutsch"}
+  {key: "de", name: "Deutsch"},
+  {key: "it", name: "Italiano"}
 ]
 
 i18n
@@ -20,9 +29,9 @@ i18n
   // init i18next
   // for all options read: https://www.i18next.com/overview/configuration-options
   .init({
-    debug: true,
+    debug: false,
     fallbackLng: 'en',
-    supportedLngs: ["en","de","es"],
+    supportedLngs: ["en","de","es","it"],
     interpolation: {
       escapeValue: false, // not needed for react as it escapes by default
     },
@@ -30,7 +39,8 @@ i18n
     resources: {
       en: { translation: en_translations },
       de: { translation: de_translations },
-      es: { translation: es_translations }
+      es: { translation: es_translations },
+      it: { translation: it_translations }
       }
     }
   );

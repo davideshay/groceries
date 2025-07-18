@@ -26,7 +26,7 @@ ion-item.itemrow-outer {
     max-height: 8rem;
     height: min-content;
     padding-inline: 1rem;
-    border-bottom: 1px solid #000000;
+    border-bottom: 1px solid;
     transition:max-height 200ms ease-in-out;
     transition:padding-block 200ms ease-in-out;
 }
@@ -97,7 +97,7 @@ ion-item-divider.item-category-divider.first-category {
 }
 
 ion-item-divider.uncategorized-color {
-    border-bottom: 4px solid #777777;
+    border-bottom: 4px solid;
 }
 
 ion-grid.grid-no-pad {

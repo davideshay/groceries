@@ -146,6 +146,7 @@ export enum ItemSearchType {
     successful: boolean,
     errorCode: number,
     errorText: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     fullError: any
   }
 
@@ -238,6 +239,7 @@ export type TandoorRecipe = {
   name: string,
   description: string,
   internal: boolean,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   nutrition: any,
   servings: number,
   servings_text: string,

@@ -23,13 +23,13 @@ const systemListCombinedRow : ListCombinedRow = {
 }
 
 export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, remoteDBCreds: DBCreds) : {listRows: ListRow[], listCombinedRows: ListCombinedRows, recipeListGroup: string | null} {
-    let curListDocs: ListDocs = cloneDeep(listDocs);
-    let newListRows: ListRow[] = [];
+    const curListDocs: ListDocs = cloneDeep(listDocs);
+    const newListRows: ListRow[] = [];
     curListDocs.forEach((listDoc) => {
         let listGroupID=null;
         let listGroupName="";
         let listGroupRecipe=false;
-        let listGroupAlexaDefault=false;
+        const listGroupAlexaDefault=false;
         let listGroupOwner = "";
         for (let i = 0; i < listGroupDocs.length; i++) {
             const lgd = (listGroupDocs[i] as ListGroupDoc);
@@ -41,7 +41,7 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
             }
         }
         if (listGroupID === null) { return };
-        let listRow: ListRow ={
+        const listRow: ListRow ={
             listGroupID: listGroupID,
             listGroupName: listGroupName,
             listGroupRecipe: listGroupRecipe,
@@ -65,9 +65,9 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
         return a.name.toUpperCase().localeCompare(b.name.toUpperCase());
     });
 
-    let newCombinedRows: ListCombinedRows = [];
+    const newCombinedRows: ListCombinedRows = [];
     sortedListGroups.forEach((listGroup: ListGroupDoc) => {
-    let groupRow: ListCombinedRow = {
+    const groupRow: ListCombinedRow = {
         rowType : RowType.listGroup,
         rowName : listGroup.name,
         rowKey: "G-"+listGroup._id,
@@ -83,7 +83,7 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
     for (let i = 0; i < newListRows.length; i++) {
         const listRow = newListRows[i];
         if (listGroup._id === listRow.listGroupID) {
-        let listListRow: ListCombinedRow = {
+        const listListRow: ListCombinedRow = {
             rowType: RowType.list,
             rowName: listRow.listDoc.name,
             rowKey: "L-"+listRow.listDoc._id,
@@ -100,9 +100,9 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
     }  
     });
     // now add any ungrouped (error) lists:
-    let testRow = newListRows.find(el => (el.listGroupID == null))
+    const testRow = newListRows.find(el => (el.listGroupID == null))
     if (testRow !== undefined) {
-    let groupRow: ListCombinedRow = {
+    const groupRow: ListCombinedRow = {
         rowType : RowType.listGroup, rowName : testRow.listGroupName,
         rowKey: "G-null", listOrGroupID: null, listGroupID : null,
         listGroupName : testRow.listGroupName, listGroupRecipe: false, 
@@ -113,7 +113,7 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
     newCombinedRows.push(groupRow);
     newListRows.forEach(newListRow => {
         if (newListRow.listGroupID === null) {
-        let listlistRow: ListCombinedRow = {
+        const listlistRow: ListCombinedRow = {
             rowType: RowType.list, rowName: newListRow.listDoc.name,
             rowKey: "L-"+newListRow.listDoc._id, listOrGroupID: String(newListRow.listDoc._id),listGroupID: null,
             listGroupName: newListRow.listGroupName, listGroupOwner: null,
@@ -126,7 +126,7 @@ export function getListRows(listDocs: ListDocs, listGroupDocs: ListGroupDocs, re
     })
     }
     newCombinedRows.push(systemListCombinedRow);
-    let recipeLG = newCombinedRows.find(lcr => (lcr.listGroupRecipe && lcr.listGroupOwner === remoteDBCreds.dbUsername));
+    const recipeLG = newCombinedRows.find(lcr => (lcr.listGroupRecipe && lcr.listGroupOwner === remoteDBCreds.dbUsername));
     return ({listRows: newListRows, listCombinedRows: newCombinedRows, recipeListGroup: (recipeLG === undefined ? null : recipeLG.listGroupID)});
   }
   

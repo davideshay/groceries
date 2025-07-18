@@ -1,19 +1,20 @@
 import { useCallback, useState, useEffect, useContext, useRef } from 'react'
 import { Camera, CameraResultType, CameraSource, Photo } from '@capacitor/camera';
-import { usePouch, useFind } from 'use-pouchdb'
+import { useLocation } from 'react-router-dom';
+import { popoverController } from '@ionic/core';
 import { cloneDeep, pull } from 'lodash-es';
 import { RemoteDBStateContext } from './RemoteDBState';
 import { FriendRow,InitFriendRow, ResolvedFriendStatus, PouchResponse, PouchResponseInit, initUserInfo, ListCombinedRow, RowType } from './DataTypes';
-import { FriendDocs,FriendStatus, ListDoc, ListDocs, ItemDocs, ItemDoc, ItemList, ItemListInit, ConflictDocs } from './DBSchema';
+import { FriendDocs,FriendStatus, ListDoc, ListDocs, ItemDocs, ItemDoc, ItemList, ItemListInit, ConflictDocs} from './DBSchema';
 import { GlobalStateContext } from './GlobalState';
 import { adaptResultToBase64, getUsersInfo} from './Utilities';
 import { getCommonKey } from './ItemUtilities';
-import { GlobalDataContext } from './GlobalDataProvider';
 import { isPlatform } from '@ionic/core';
 import { fromBlob } from 'image-resize-compress';
 import { useTranslation } from 'react-i18next';
 import { translatedItemName } from './translationUtilities';
-import {log} from './Utilities';
+import log from './logger';
+import { useGlobalDataStore } from './GlobalData';
 
 const imageQuality = 80;
 export const imageWidth = 200;
@@ -21,28 +22,31 @@ export const imageHeight = 200;
 export const pictureSrcPrefix = "data:image/jpeg;base64,"
 
 export function useGetOneDoc(docID: string | null, attachments: boolean = false) {
-  const db = usePouch();
+  const db = useGlobalDataStore((state) => state.db);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const changesRef = useRef<PouchDB.Core.Changes<any>>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [doc,setDoc] = useState<any>(null);
   const [attachBlob,setAttachBlob] = useState<Blob|null>(null);
   const [dbError, setDBError] = useState(false);
   const loadingRef = useRef(true);
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   const [, forceUpdateState] = useState<{}>();
   const forceUpdate = useCallback(() => forceUpdateState({}), []);
 
   const getDoc = useCallback(async (id: string | null) => {
-      if (id == null) { loadingRef.current = false; return};
+      if (id == null || db === null) { loadingRef.current = false; return};
       loadingRef.current = true;
       changesRef.current = db.changes({since: 'now', live: true, include_docs: true, attachments: attachments,doc_ids: [id]})
       .on('change', function(change) { setDoc(change.doc); })
       let success=true; setDBError(false);
       let docRet = null;
       try  {docRet = await db.get(id,{attachments: attachments});}
-      catch(err) {success=false; setDBError(true); log.error("Error retrieving doc:",err);}
+      catch(err) {success=false; setDBError(true); log.error("Error retrieving doc with id:",id,err);}
       let docAtt: Blob| null = null;
       let attSuccess=true;
       try {docAtt = (await db.getAttachment(id,"item.jpg") as Blob)}
-      catch(err) {attSuccess=false;}
+      catch {attSuccess=false;}
       loadingRef.current = false;
       if (success) {setDoc(docRet)};
       if (attSuccess) {setAttachBlob(docAtt as Blob);}
@@ -58,26 +62,41 @@ export function useGetOneDoc(docID: string | null, attachments: boolean = false)
 }
 
 export function useUpdateGenericDocument() {
-  const db = usePouch();
+  const db = useGlobalDataStore((state) => state.db);
+  const optimisticUpdate = useGlobalDataStore((state) => state.optimisticUpdate);
   return useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async (updatedDoc: any) => {
-          let curDateStr=(new Date()).toISOString()
+          const curDateStr=(new Date()).toISOString()
           updatedDoc.updatedAt = curDateStr;
-          let response: PouchResponse = cloneDeep(PouchResponseInit);
+          const response: PouchResponse = cloneDeep(PouchResponseInit);
+          if (db === null) {
+            response.successful = false;
+            response.errorText = "DB not available";
+            return response;
+          }
           try { response.pouchData = await db.put(updatedDoc); }
           catch(err) { response.successful = false; response.fullError = err; log.error("updating doc, generic:",err);}
-          if (!response.pouchData.ok) { response.successful = false;}
+          if (response.pouchData.ok && response.pouchData.id !== undefined && response.pouchData.rev !== undefined) {
+            optimisticUpdate(response.pouchData.id, response.pouchData.rev,updatedDoc);
+          } else { response.successful = false;}
       return response
     },[db])
 }
 
 export function useCreateGenericDocument() {
-  const db = usePouch();
+  const db = useGlobalDataStore((state) => state.db);
   return useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async (updatedDoc: any) => {
-          let curDateStr=(new Date()).toISOString()
+          const curDateStr=(new Date()).toISOString()
           updatedDoc.updatedAt = curDateStr;
-          let response: PouchResponse = cloneDeep(PouchResponseInit);
+          const response: PouchResponse = cloneDeep(PouchResponseInit);
+                    if (db === null) {
+            response.successful = false;
+            response.errorText = "DB not available";
+            return response;
+          }
           try { response.pouchData = await db.post(updatedDoc);}
           catch(err) { response.successful = false; response.fullError = err;}
           if (!response.pouchData.ok) { response.successful = false;}
@@ -86,12 +105,18 @@ export function useCreateGenericDocument() {
 }
 
 export function useDeleteGenericDocument() {
-  const db = usePouch();
+  const db = useGlobalDataStore((state) => state.db);
   return useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async (updatedDoc: any) => {
-          let response: PouchResponse = cloneDeep(PouchResponseInit);
+          const response: PouchResponse = cloneDeep(PouchResponseInit);
 //          try { response.pouchData = await db.remove(updatedDoc);}
           updatedDoc._deleted=true;
+          if (db === null) {
+            response.successful = false;
+            response.errorText = "DB not available";
+            return response;
+          }
           try { response.pouchData = await db.put(updatedDoc);}
           catch(err) { response.successful = false; response.fullError = err;}
           if (!response.pouchData.ok) { response.successful = false;}
@@ -100,12 +125,18 @@ export function useDeleteGenericDocument() {
 }
 
 export function useDeleteItemsInListGroup() {
-  const db=usePouch()
+  const db=useGlobalDataStore((state) => state.db);
 
   return useCallback(
     async (listGroupID: string) => {
-      let response: PouchResponse = cloneDeep(PouchResponseInit);
+      const response: PouchResponse = cloneDeep(PouchResponseInit);
+      // eslint-disable-next-line @typescript-eslint/no-empty-object-type
       let itemResults : PouchDB.Find.FindResponse<{}>;
+      if (db === null) {
+          response.successful = false;
+            response.errorText = "DB not available";
+            return response;
+      }
       try { itemResults = await db.find({
             use_index: "stdTypeListGroupID",
             selector: {
@@ -116,6 +147,7 @@ export function useDeleteItemsInListGroup() {
       for (let i = 0; i < itemResults.docs.length; i++) {
         const itemDoc: ItemDoc = (itemResults.docs[i] as ItemDoc); 
 //        try {await db.remove(itemDoc as PouchDB.Core.RemoveDocument)}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (itemDoc as any)._deleted = true;
         try {response.pouchData = await db.put(itemDoc)}
         catch(err) { response.successful= false; response.fullError = err; }
@@ -125,12 +157,18 @@ export function useDeleteItemsInListGroup() {
 }
 
 export function useDeleteListFromItems() {
-  const db=usePouch()
+  const db=useGlobalDataStore((state) => state.db);
 
   return useCallback(
     async (listID: string) => {
-      let response: PouchResponse = cloneDeep(PouchResponseInit);
+      const response: PouchResponse = cloneDeep(PouchResponseInit);
+      // eslint-disable-next-line @typescript-eslint/no-empty-object-type
       let itemResults: PouchDB.Find.FindResponse<{}>;
+      if (db === null) {
+        response.successful = false;
+        response.errorText = "DB not available";
+        return response;
+      }
       try {  itemResults = await db.find({
               use_index: "stdType",
               selector: {
@@ -155,12 +193,17 @@ export function useDeleteListFromItems() {
 }
 
 export function useDeleteCategoryFromItems() {
-  const db=usePouch()
+  const db=useGlobalDataStore((state) => state.db)
   const {t}=useTranslation();
   return useCallback(
     async (catID: string) => {
-      let response: PouchResponse = cloneDeep(PouchResponseInit);
+      const response: PouchResponse = cloneDeep(PouchResponseInit);
       let itemResults;
+      if (db === null) {
+        response.successful = false;
+        response.errorText = "DB not available";
+        return response;
+      }
       try {
           itemResults = await db.find({
           use_index: "stdType",
@@ -169,8 +212,8 @@ export function useDeleteCategoryFromItems() {
             lists: { $elemMatch : { categoryID: catID}}
           }
           })
-      } catch(err) {response.successful=false; response.fullError=t("error.could_not_find_items"); return response}
-      if (itemResults !== undefined && itemResults.hasOwnProperty('docs')) {
+      } catch {response.successful=false; response.fullError=t("error.could_not_find_items"); return response}
+      if (itemResults !== undefined && Object.prototype.hasOwnProperty.call(itemResults, 'docs')) {
         for (let i = 0; i < itemResults.docs.length; i++) {
           const itemDoc: ItemDoc = cloneDeep(itemResults.docs[i]) as ItemDoc;
           itemDoc.lists.forEach(list => {
@@ -185,11 +228,16 @@ export function useDeleteCategoryFromItems() {
 }
 
 export function useDeleteCategoryFromLists() {
-  const db=usePouch()
+  const db=useGlobalDataStore((state) => state.db);
   const {t}=useTranslation();
   return useCallback(
     async (catID: string) => {
-      let response: PouchResponse = cloneDeep(PouchResponseInit);
+      const response: PouchResponse = cloneDeep(PouchResponseInit);
+      if (db === null) {
+        response.successful = false;
+        response.errorText = "DB not available";
+        return response;
+      }
       let listResults;
       try {
           listResults = await db.find({
@@ -199,11 +247,11 @@ export function useDeleteCategoryFromLists() {
             categories: { $elemMatch : { $eq: catID} }
           }
           })
-      } catch(err) {response.successful=false; response.fullError=t("error.could_not_find_items"); return response}
-      if (listResults !== undefined && listResults.hasOwnProperty('docs')) {
+      } catch {response.successful=false; response.fullError=t("error.could_not_find_items"); return response}
+      if (listResults !== undefined && Object.prototype.hasOwnProperty.call(listResults, 'docs')) {
         for (let i = 0; i < listResults.docs.length; i++) {
           const listDoc: ListDoc = cloneDeep(listResults.docs[i]) as ListDoc;
-          let newCats = cloneDeep(listDoc.categories);
+          const newCats = cloneDeep(listDoc.categories);
           pull(newCats,catID);
           listDoc.categories = newCats;
           try {await db.put(listDoc)}
@@ -215,12 +263,11 @@ export function useDeleteCategoryFromLists() {
 }
 
 export function useAddCategoryToLists() {
-  const db=usePouch()
-  const {t}=useTranslation();
+  const db=useGlobalDataStore((state) => state.db);
   return useCallback(
     async (catID: string, listGroupID: string, listCombinedRows: ListCombinedRow[]) => {
-      let response: PouchResponse = cloneDeep(PouchResponseInit);
-      let listIDs: string[] = [];
+      const response: PouchResponse = cloneDeep(PouchResponseInit);
+      const listIDs: string[] = [];
       for (const lcr of listCombinedRows) {
         if (lcr.rowType === RowType.list && lcr.listGroupID === listGroupID) {
           listIDs.push(String(lcr.listOrGroupID));
@@ -229,6 +276,11 @@ export function useAddCategoryToLists() {
       for (const listID of listIDs) {
         let listDoc: ListDoc | null = null;
         let readSuccess: boolean = true;
+        if (db === null) {
+          response.successful = false;
+          response.errorText = "DB not available";
+          return response;
+        }
         try {listDoc = await db.get(listID);}
         catch(err) {log.error("Error reading list record:",listID, "error:",err); readSuccess = false};
         if (!readSuccess || listDoc === null) {response.successful = false; break;}
@@ -239,7 +291,7 @@ export function useAddCategoryToLists() {
           }
       }
       return response;
-    },[db,t]) 
+    },[db]) 
 }
 
 export function useItems({selectedListGroupID,isReady, needListGroupID, activeOnly = false, selectedListID = null, selectedListType = RowType.list,} :
@@ -249,15 +301,19 @@ export function useItems({selectedListGroupID,isReady, needListGroupID, activeOn
   const [itemRowsLoaded, setItemRowsLoaded] = useState(false);
   const [itemRowsLoading, setItemRowsLoading] = useState(false);
   const [dbError, setDBError] = useState(false);
-  const { listError: listDBError, listCombinedRows, listRowsLoaded, listDocs, itemsLoading, itemDocs, itemError } = useContext(GlobalDataContext)
+  const error = useGlobalDataStore((state) => state.error);
+  const isLoading = useGlobalDataStore((state) => state.isLoading);
+  const listCombinedRows = useGlobalDataStore((state) => state.listCombinedRows);
+  const listRowsLoaded = useGlobalDataStore((state) => state.listRowsLoaded);
+  const itemDocs = useGlobalDataStore((state) => state.itemDocs);
   
 
   const buildItemRows = useCallback( () => {
-    let curItemDocs: ItemDocs = cloneDeep(itemDocs);
-    let newItemRows: ItemDocs = [];
+    const curItemDocs: ItemDocs = cloneDeep(itemDocs);
+    const newItemRows: ItemDocs = [];
     curItemDocs.forEach((itemDoc: ItemDoc) => {
       if (selectedListGroupID === null || itemDoc.listGroupID === selectedListGroupID) {
-        let listGroupIdx=listCombinedRows.findIndex((lr: ListCombinedRow) => (itemDoc.listGroupID === lr.listGroupID && lr.rowType === RowType.listGroup))
+        const listGroupIdx=listCombinedRows.findIndex((lr: ListCombinedRow) => (itemDoc.listGroupID === lr.listGroupID && lr.rowType === RowType.listGroup))
         if (listGroupIdx !== -1) {
           let addToList = true;
           if (activeOnly) {
@@ -271,7 +327,7 @@ export function useItems({selectedListGroupID,isReady, needListGroupID, activeOn
               itemDoc.lists.forEach((il) => {
                 if (il.active) {activeCommon = true}
               })
-              if (!Boolean(activeCommon)) {
+              if (!activeCommon) {
                 addToList = false;
               }
             }
@@ -288,31 +344,30 @@ export function useItems({selectedListGroupID,isReady, needListGroupID, activeOn
     });
     setItemRows(newItemRows);
 
-  },[activeOnly,itemDocs,listCombinedRows,listDocs,selectedListGroupID,selectedListID,selectedListType])
+  },[activeOnly,itemDocs,listCombinedRows,selectedListGroupID,selectedListID,selectedListType])
 
   const checkAndBuild = useCallback( () => {
-  if (itemsLoading || !listRowsLoaded || !isReady || (isReady && selectedListGroupID === null && needListGroupID)) { setItemRowsLoaded(false); return };
-    if (itemError !== null || listDBError) { log.error("Error on item/list:",cloneDeep({itemError,listDBError})); setDBError(true); return;}
+  if (isLoading || !listRowsLoaded || !isReady || (isReady && selectedListGroupID === null && needListGroupID)) { setItemRowsLoaded(false); return };
+    if (error !== null || error) { log.error("Error on item/list:",cloneDeep({error})); setDBError(true); return;}
     setDBError(false);
-    if ( !itemsLoading && listRowsLoaded)  {
+    if ( !isLoading && listRowsLoaded)  {
       setItemRowsLoading(true);
       setItemRowsLoaded(false);
       buildItemRows();
       setItemRowsLoading(false)
       setItemRowsLoaded(true);
     }
-  },[isReady,itemError, listDBError,itemsLoading,listRowsLoaded, selectedListGroupID, needListGroupID,buildItemRows])
+  },[isReady,error, isLoading,listRowsLoaded, selectedListGroupID, needListGroupID,buildItemRows])
 
   useEffect( () => {
     checkAndBuild();
   },[checkAndBuild])
 
-  return ({dbError, itemsLoading, itemRowsLoading, itemRowsLoaded, itemRows});
+  return ({dbError, itemsLoading: isLoading, itemRowsLoading, itemRowsLoaded, itemRows});
 }
 
 export enum UseFriendState {
-  init = 0,
-  baseFriendsChanged = 0,
+  friendsInit = 0,
   baseFriendsLoading = 1,
   baseFriendsLoaded = 2,
   rowsLoading = 3,
@@ -323,23 +378,15 @@ export enum UseFriendState {
 export function useFriends(username: string) : { useFriendState: UseFriendState, friendRows: FriendRow[]} {
   const [friendRows,setFriendRows] = useState<FriendRow[]>([]);
   const { remoteDBState, remoteDBCreds, setRemoteDBState } = useContext(RemoteDBStateContext);
-  const [useFriendState,setUseFriendState] = useState(UseFriendState.init);
+  const [useFriendState,setUseFriendState] = useState(UseFriendState.friendsInit);
   const { t }= useTranslation();
-  const { docs: friendDocs, state: friendState } = useFind({
-    index: "stdFriend",
-    selector: { "$and": [ {
-        "type": "friend",
-        "friendID1": { "$exists": true },
-        "friendID2": { "$exists" : true} }, 
-        { "$or" : [{"friendID1": username},{"friendID2": username}]}
-    ]  
-    },
-    sort: [ "type", "friendID1", "friendID2" ],
-//    fields: [ "type", "friendID1", "friendID2", "friendStatus"]
-    })
-
+  const friendDocs = useGlobalDataStore((state) => state.friendDocs);
+  const isLoading = useGlobalDataStore((state) => state.isLoading);
+  const friendsLoaded = useGlobalDataStore((state) => state.listRowsLoaded);
+  const error = useGlobalDataStore((state) => state.error);
+  
     const loadFriendRows = useCallback( async () => {
-      let userIDList : { userIDs: string[]} = { userIDs: []};
+      const userIDList : { userIDs: string[]} = { userIDs: []};
       (friendDocs as FriendDocs).forEach((element) => {
         if (element.friendStatus !== FriendStatus.Deleted) {
           if(username === element.friendID1) {userIDList.userIDs.push(element.friendID2)}
@@ -352,10 +399,10 @@ export function useFriends(username: string) : { useFriendState: UseFriendState,
         setUseFriendState(UseFriendState.error);
         return;
       }
-      setFriendRows(prevState => ([]));
+      setFriendRows([]);
       if (usersInfo.length > 0) {
         (friendDocs as FriendDocs).forEach((friendDoc) => {
-          let friendRow : FriendRow = cloneDeep(InitFriendRow);
+          const friendRow : FriendRow = cloneDeep(InitFriendRow);
           friendRow.friendDoc=cloneDeep(friendDoc);
           if (friendRow.friendDoc.friendID1 === remoteDBCreds.dbUsername)
             { friendRow.targetUserName = friendRow.friendDoc.friendID2}
@@ -388,28 +435,26 @@ export function useFriends(username: string) : { useFriendState: UseFriendState,
           setFriendRows(prevArray => [...prevArray, friendRow])
         })
       }
-      setUseFriendState((prevState) => UseFriendState.rowsLoaded);
+      setUseFriendState(UseFriendState.rowsLoaded);
     },[friendDocs,remoteDBCreds.apiServerURL,remoteDBCreds.dbUsername,remoteDBState.accessJWT,setRemoteDBState,t,username])
 
 
     useEffect( () => {
       if (useFriendState === UseFriendState.baseFriendsLoaded) {
         if ( remoteDBState.initialSyncComplete ) {
-          setUseFriendState((prevState) => UseFriendState.rowsLoading);
+          setUseFriendState(UseFriendState.rowsLoading);
           loadFriendRows();
         }  
       }
     },[useFriendState,remoteDBState.initialSyncComplete,loadFriendRows])
 
     useEffect( () => {
-      if (friendState === "error") {setUseFriendState((prevState) => UseFriendState.error); return};
-      if (friendState === "loading") {setUseFriendState((prevState) => UseFriendState.baseFriendsLoading)};
-      if (friendState === "done" && useFriendState === UseFriendState.baseFriendsLoading) {
-        setUseFriendState((prevState) => UseFriendState.baseFriendsLoaded);
-      } 
-    },[friendState,useFriendState] )
-
-
+        if (error) {setUseFriendState(UseFriendState.error); return};
+        if (isLoading) {setUseFriendState(UseFriendState.baseFriendsLoading); return;};
+        if (useFriendState === UseFriendState.baseFriendsLoading || (friendsLoaded && useFriendState === UseFriendState.friendsInit)) {
+          setUseFriendState(UseFriendState.baseFriendsLoaded);
+        }
+    },[useFriendState,friendsLoaded, error, isLoading] )
     return({useFriendState: useFriendState, friendRows});
 }
 
@@ -417,31 +462,36 @@ export function useConflicts() : { conflictsError: boolean, conflictDocs: Confli
   const { remoteDBCreds } = useContext(RemoteDBStateContext);
   const { globalState, settingsLoading } = useContext(GlobalStateContext);
   const [mostRecentDate,setMostRecentDate] = useState<Date>(new Date());
+  const conflictDocsAll = useGlobalDataStore((state) => state.conflictDocs);
+  const isLoading = useGlobalDataStore((state) => state.isLoading);
+  const error = useGlobalDataStore((state) => state.error);
 
-  const { docs: conflictDocs, loading: conflictsLoading, error: dbError } = useFind({
-    index: "stdConflict",
-    selector: { type: "conflictlog", docType: { $exists: true }, updatedAt: { $gt: mostRecentDate.toISOString()} },
-    sort: [ "type", "docType","updatedAt" ]
-  })
+
+  const conflictDocs: ConflictDocs = conflictDocsAll.filter(conflict => (
+    conflict.updatedAt > mostRecentDate.toISOString()
+  ));
 
   useEffect( () => {
     if (globalState.settingsLoaded && !settingsLoading) {
-      let oneDayOldDate=new Date();
+      const oneDayOldDate=new Date();
       oneDayOldDate.setDate(oneDayOldDate.getDate()-Number(globalState.settings.daysOfConflictLog));
       const lastConflictsViewed = new Date(String(remoteDBCreds.lastConflictsViewed))
       setMostRecentDate((lastConflictsViewed > oneDayOldDate) ? lastConflictsViewed : oneDayOldDate);  
     }
   },[remoteDBCreds.lastConflictsViewed,globalState.settings.daysOfConflictLog, globalState.settingsLoaded, settingsLoading])
 
-  return({conflictsError: dbError !== null, conflictDocs: (conflictDocs as ConflictDocs), conflictsLoading});
+  return({conflictsError: error !== null, conflictDocs: (conflictDocs as ConflictDocs), conflictsLoading: isLoading});
 }
 
 export function useAddListToAllItems() {
-  const db = usePouch();
+  const db = useGlobalDataStore((state) => state.db);
   return useCallback(
     async ({listGroupID, listID, listDocs} : {listGroupID: string, listID: string, listDocs: ListDocs}) => {
           let updateSuccess=true;
           let itemRecords: PouchDB.Find.FindResponse<ItemDoc>
+          if (db === null) {
+            return false;
+          }
           try {itemRecords = await db.find({
                 use_index: "stdTypeListGroupID",
                 selector: { type: "item", 
@@ -451,9 +501,9 @@ export function useAddListToAllItems() {
           for (let i = 0; i < itemRecords.docs.length; i++) {
             const item = itemRecords.docs[i];
             let itemUpdated=false;
-            let listIdx = item.lists.findIndex((l: ItemList) => l.listID === listID)
+            const listIdx = item.lists.findIndex((l: ItemList) => l.listID === listID)
             if (listIdx === -1) {
-              let newList = cloneDeep(ItemListInit);
+              const newList = cloneDeep(ItemListInit);
               newList.listID = listID;
               newList.active = getCommonKey(item,"active",listDocs);
               newList.categoryID = getCommonKey(item,"categoryID",listDocs);
@@ -466,7 +516,7 @@ export function useAddListToAllItems() {
               itemUpdated=true;
             }
             if (itemUpdated) {
-              let curDateStr=(new Date()).toISOString()
+              const curDateStr=(new Date()).toISOString()
               item.updatedAt = curDateStr;
               let updateResponse;
               try {updateResponse = await db.put(item);}
@@ -477,7 +527,6 @@ export function useAddListToAllItems() {
       return updateSuccess;
     },[db])
 }
-
 
 export function usePhotoGallery() {
   const { t } = useTranslation();
@@ -493,14 +542,14 @@ export function usePhotoGallery() {
       saveToGallery: false,
       promptLabelHeader: t("general.take_picture_for_item") as string
     });}
-    catch(err) {log.error("Photo could not be saved")}
+    catch {log.error("Photo could not be saved")}
     if (rPhoto === null) {return null;}
     let photoString = rPhoto.base64String;
     if (photoString !== undefined && (isPlatform("desktop") || isPlatform("electron"))) {
       //image needs resizing -- desktop doesn't obey size constraints
-      let base64Resp = await fetch(pictureSrcPrefix+photoString);
+      const base64Resp = await fetch(pictureSrcPrefix+photoString);
       const blob = await base64Resp.blob();
-      let newBlob = await fromBlob(blob,imageQuality,imageWidth,"auto");
+      const newBlob = await fromBlob(blob,imageQuality,imageWidth,"auto");
       photoString = await adaptResultToBase64(newBlob);
       photoString = (photoString as string).substring(pictureSrcPrefix.length);
     }
@@ -511,3 +560,18 @@ export function usePhotoGallery() {
     takePhoto,
   };
 }
+
+export const useClosePopoversOnNavigation = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    const closePopovers = async () => {
+      const popover = await popoverController.getTop();
+      if (popover) {
+        await popover.dismiss();
+      }
+    };
+
+    closePopovers();
+  }, [location.pathname]);
+};

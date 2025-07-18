@@ -9,6 +9,7 @@ export class SafeAreaWeb extends WebPlugin implements SafeAreaPlugin {
       return;
   }
   async changeSystemBarsIconsAppearance(options: {isLight: boolean}): Promise<void> {
+      console.debug("Changing system bars appearance on web:",options);
       return;
   }
 

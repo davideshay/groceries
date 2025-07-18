@@ -3,20 +3,20 @@ import { IonContent, IonPage, IonButton, IonList, IonInput, IonItem,
 import { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { eye, eyeOff } from 'ionicons/icons';
 import { Capacitor, CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
-import { usePouch} from 'use-pouchdb';
 import { ConnectionStatus, DBCreds, DBUUIDAction, LoginType } from '../components/RemoteDBState';
 import { App } from '@capacitor/app';
 import { createNewUser, getTokenInfo, navigateToFirstListID, errorCheckCreds, isServerAvailable, JWTMatchesUser, CreateResponse, createResponseInit, isDBServerAvailable, getDeviceID } from '../components/RemoteUtilities';
 import { cloneDeep } from 'lodash-es';
 import { RemoteDBStateContext, SyncStatus, initialRemoteDBState } from '../components/RemoteDBState';
 import { HistoryProps} from '../components/DataTypes';
-import { apiConnectTimeout } from '../components/Utilities';
+import { apiConnectTimeout, PrefsLastUsernameKey } from '../components/Utilities';
 import { useTranslation } from 'react-i18next';
 import PageHeader from '../components/PageHeader';
-import { DataReloadStatus, GlobalDataContext } from '../components/GlobalDataProvider';
-import { log } from "../components/Utilities";
+import log from "../components/logger";
 import { GlobalStateContext, initialGlobalState } from '../components/GlobalState';
 import { useHistory } from 'react-router';
+import { DataReloadStatus, useGlobalDataStore } from '../components/GlobalData';
+import { Preferences } from '@capacitor/preferences';
 
 enum LoginOptions {
   Unknown = "U",
@@ -97,20 +97,25 @@ states to support:
           if successful, populate and store creds and then await assigndb / sync
  */
 
-const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
-    const db=usePouch();
+const RemoteDBLogin: React.FC<HistoryProps> = () => {
     const [remoteState,setRemoteState]=useState<RemoteState>(initRemoteState);
     const [formState,setFormState]=useState<FormState>(initFormState);
     const showingVersionAlert = useRef(false);
     const [presentAlert, dismissAlert] = useIonAlert();
     const { remoteDBState, remoteDBCreds, setRemoteDBState, setRemoteDBCreds, removeUserInfoDBCreds, stopSyncAndCloseRemote,
       assignDB, setDBCredsValue, setLoginType, attemptFullLogin} = useContext(RemoteDBStateContext);
-    const { dataReloadStatus, waitForReload, listRows, listRowsLoaded, listsLoading, listCombinedRows } = useContext(GlobalDataContext);
+    const db = useGlobalDataStore((state) => state.db);
+    const dataReloadStatus = useGlobalDataStore((state) => state.dataReloadStatus);
+    const waitForReload = useGlobalDataStore((state) => state.waitForReload);
+    const listRows = useGlobalDataStore((state) => state.listRows);
+    const listRowsLoaded = useGlobalDataStore((state) => state.listRowsLoaded);
+    const isLoading = useGlobalDataStore((state) => state.isLoading);
+    const listCombinedRows = useGlobalDataStore((state) => state.listCombinedRows);
     const { globalState, setGlobalState} = useContext(GlobalStateContext);
     const [ present, dismiss ]= useIonLoading();
     const { t } = useTranslation();
     const history = useHistory();
-
+    const lastDbUsernameFromPrefs = useRef<string>("");
     const exitApp = useCallback( async () => {
       if (Capacitor.isNativePlatform()) {
         App.exitApp()
@@ -121,24 +126,33 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     },[setRemoteDBState])
 
     const destroyAndExit = useCallback(async () => {
-      await db.destroy();
+      if (db !== null) await db.destroy();
+      log.debug("PouchDB destroyed...");
       await removeUserInfoDBCreds(true);
+      await Preferences.remove({key: PrefsLastUsernameKey});
       exitApp();
     },[db,exitApp,removeUserInfoDBCreds])  
 
     // useEffect for initial page launch
     useEffect( () => {
+      async function loadNameFromPrefs() {
+        const {value} = await Preferences.get({key: PrefsLastUsernameKey});
+        if (value !== null && value !== "") {
+          lastDbUsernameFromPrefs.current = value;
+        }
+      }
       if (remoteDBState.credsError) {
         setRemoteState(prevState => ({...prevState,formError: remoteDBState.credsErrorText}))
       }
       setFormState(prevState=> ({...prevState,apiServerURL: remoteDBCreds.apiServerURL, dbUsername: remoteDBCreds.dbUsername}))
       setLoginType(LoginType.loginFromLoginPage);
+      loadNameFromPrefs();
 // eslint-disable-next-line react-hooks/exhaustive-deps 
     },[])
 
     useEffect( () => {
       async function checkAPIServerAvailable(apiServerURL: string|null) {
-          let apiServerAvailable = await isServerAvailable(apiServerURL);
+          const apiServerAvailable = await isServerAvailable(apiServerURL);
           let dbServerAvailable = true;
           if (apiServerAvailable && remoteDBState.loggedIn) {
             dbServerAvailable = await isDBServerAvailable(remoteDBCreds.refreshJWT,remoteDBCreds.couchBaseURL);
@@ -147,7 +161,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
           }
           log.debug("API Server Available: ",apiServerAvailable);
           log.debug("dbServer Available:", dbServerAvailable);
-          let validJWTMatch = JWTMatchesUser(remoteDBCreds.refreshJWT,remoteDBCreds.dbUsername);
+          const validJWTMatch = JWTMatchesUser(remoteDBCreds.refreshJWT,remoteDBCreds.dbUsername);
           if (apiServerAvailable.apiServerAvailable) {
             setRemoteDBState(prevState =>({...prevState,apiServerAvailable: apiServerAvailable.apiServerAvailable, apiServerVersion: apiServerAvailable.apiServerAppVersion,dbServerAvailable: apiServerAvailable.dbServerAvailable, offlineJWTMatch: validJWTMatch}))
           } else {
@@ -224,7 +238,8 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
                 {text: t("general.ok"),handler: () => exitApp()}]
             });
             return;
-          } else if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_different_uuids) {
+          }
+          if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_different_uuids) {
             presentAlert( {
               header: t("error.warning"),
               message: t("error.different_database_unique_id"),
@@ -233,7 +248,19 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
                 {text: t("general.cancel_exit"),handler: () => exitApp()}
                 ]
             })
-          }  
+            return;
+          }
+          if (remoteDBState.dbUUIDAction === DBUUIDAction.exit_different_username) {
+            presentAlert( {
+              header: t("error.warning"),
+              message: t("error.different_database_username"),
+              buttons: [
+                {text: t("general.delete_exit"),handler: () => destroyAndExit()},
+                {text: t("general.cancel_exit"),handler: () => exitApp()}
+                ]
+            })
+            return;            
+          }
         }
       };
       if (remoteDBState.dbUUIDAction !== DBUUIDAction.none && remoteDBState.dbUUIDAction !== DBUUIDAction.warning_app_version_mismatch) {
@@ -255,7 +282,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
         navigateToFirstListID(history,listRows,listCombinedRows , globalState.settings.savedListID);
         setRemoteDBState(prevState =>({...prevState,initialNavComplete: true}));
       }
-      if (listRowsLoaded && !listsLoading) {
+      if (listRowsLoaded && !isLoading) {
         if (remoteDBState.connectionStatus === ConnectionStatus.cannotStart) {
           log.error("Detected cannot start, setting initRemoteState");
           setRemoteState(initRemoteState);
@@ -265,10 +292,10 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
           doNav();
         }
       }
-    },[remoteDBState.initialNavComplete, remoteDBState.initialSyncComplete ,remoteDBState.loggedIn, remoteDBState.workingOffline, remoteDBState.connectionStatus, db, listRows, listCombinedRows, listRowsLoaded, listsLoading, dataReloadStatus,dismiss, setRemoteDBState, globalState.settings, globalState.settingsLoaded, history]);
+    },[remoteDBState.initialNavComplete, remoteDBState.initialSyncComplete ,remoteDBState.loggedIn, remoteDBState.workingOffline, remoteDBState.connectionStatus, db, listRows, listCombinedRows, listRowsLoaded, isLoading, dataReloadStatus,dismiss, setRemoteDBState, globalState.settings, globalState.settingsLoaded, history]);
 
     function updateDBCredsFromResponse(response: CreateResponse): DBCreds {
-      let newDBCreds=cloneDeep(remoteDBCreds);
+      const newDBCreds=cloneDeep(remoteDBCreds);
       newDBCreds.couchBaseURL  = response.couchdbUrl;
       newDBCreds.database = response.couchdbDatabase;
       newDBCreds.email = response.email;
@@ -276,14 +303,14 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       newDBCreds.refreshJWT = response.refreshJWT;
       return newDBCreds;
     }
-    
+
   async function submitForm() {
     await showLoading();
     setRemoteState(prevState => ({...prevState,formError: ""}));
     setRemoteDBState(prevState =>({...prevState,credsError: false, credsErrorText: ""}));
     setDBCredsValue("apiServerURL",formState.apiServerURL);
     setDBCredsValue("dbUsername",formState.dbUsername);    
-    let credsCheck = errorCheckCreds({credsObj: remoteDBCreds,background:false,creatingNewUser:false,password: remoteState.password});
+    const credsCheck = errorCheckCreds({credsObj: remoteDBCreds,background:false,creatingNewUser:false,password: remoteState.password});
     if (credsCheck.credsError ) {
       setRemoteState(prevState => ({...prevState,formError: String(credsCheck.errorText)}))
       await dismiss();
@@ -318,10 +345,25 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
         await dismiss();
         return
     }
+    if (formState.dbUsername !== lastDbUsernameFromPrefs.current && lastDbUsernameFromPrefs.current !== "") {
+//      setRemoteState(prevState => ({...prevState, formError: t("error.username_changed_must_refresh")}));
+      await dismiss();
+      presentAlert( {
+          header: t("error.warning"),
+          message: t("error.different_database_username"),
+          buttons: [
+            {text: t("general.delete_exit"),handler: () => destroyAndExit()},
+            {text: t("general.cancel_exit"),handler: () => exitApp()}
+            ]
+      });
+      return;
+    } else {
+      await Preferences.set({key: PrefsLastUsernameKey,value: String(formState.dbUsername)})
+    }
     let newResponse = cloneDeep(createResponseInit);
     newResponse = Object.assign(newResponse,response.data);
-    let newCreds=updateDBCredsFromResponse(newResponse);
-    let tokenInfo = getTokenInfo(response.data.accessJWT, true);
+    const newCreds=updateDBCredsFromResponse(newResponse);
+    const tokenInfo = getTokenInfo(response.data.accessJWT, true);
     setRemoteDBCreds(newCreds);
     setRemoteDBState(prevState=>({...prevState, accessJWT: response.data.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate, loggedIn: true, forceShowLoginScreen: false , credsError: false, credsErrorText: ""}));
     await assignDB(response.data.accessJWT);
@@ -336,7 +378,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     setDBCredsValue("email",formState.email);
     setDBCredsValue("fullName",formState.fullName);
     let createResponse: CreateResponse;
-    let credsCheck = errorCheckCreds({credsObj: remoteDBCreds,background: false,creatingNewUser: true,password: remoteState.password,verifyPassword: remoteState.verifyPassword});
+    const credsCheck = errorCheckCreds({credsObj: remoteDBCreds,background: false,creatingNewUser: true,password: remoteState.password,verifyPassword: remoteState.verifyPassword});
     if (!credsCheck.credsError) {
       createResponse = await createNewUser(remoteDBState,remoteDBCreds,String(remoteState.password));
       if (createResponse.apiError) { 
@@ -364,9 +406,24 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       await dismiss();
       return;
     }
-    let newCreds=updateDBCredsFromResponse(createResponse);
+    if (formState.dbUsername !== lastDbUsernameFromPrefs.current && lastDbUsernameFromPrefs.current !== "") {
+//      setRemoteState(prevState => ({...prevState, formError: t("error.username_changed_must_refresh")}));
+      await dismiss();
+      presentAlert( {
+          header: t("error.warning"),
+          message: t("error.different_database_username"),
+          buttons: [
+            {text: t("general.delete_exit"),handler: () => destroyAndExit()},
+            {text: t("general.cancel_exit"),handler: () => exitApp()}
+            ]
+      });
+      return;
+    } else {
+      await Preferences.set({key: PrefsLastUsernameKey,value: String(formState.dbUsername)})
+    }
+    const newCreds=updateDBCredsFromResponse(createResponse);
     setRemoteDBCreds(newCreds);
-    let tokenInfo = getTokenInfo(createResponse.accessJWT,true);
+    const tokenInfo = getTokenInfo(createResponse.accessJWT,true);
     setRemoteDBState(prevState=>({...prevState,accessJWT: createResponse.accessJWT, accessJWTExpirationTime: tokenInfo.expireDate, loggedIn: true, forceShowLoginScreen: false}));
     await assignDB(createResponse.accessJWT);
     await dismiss();
@@ -382,7 +439,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
         connectTimeout: apiConnectTimeout        
     };
     try {
-      let resp=await CapacitorHttp.post(options);
+      const resp=await CapacitorHttp.post(options);
       if (resp.status !== 200) {
         setRemoteState(prevState=>({...prevState,formError: t("error.api_server_error_resetting_password")}))
       } else {
@@ -483,7 +540,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
   }
   
   function switchToCreateMode() {
-    let curCreds=remoteDBCreds;
+    const curCreds=remoteDBCreds;
     curCreds.dbUsername = "";
     curCreds.email = "";
     curCreds.fullName = "";
@@ -495,7 +552,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   async function forceLogin() {
     setRemoteDBState(initialRemoteDBState);
-    let devID = await getDeviceID();
+    const devID = await getDeviceID();
     setRemoteDBState(prevState => ({...prevState,forceShowLoginScreen: true, deviceUUID: devID}));
     setGlobalState(initialGlobalState);
   }
@@ -505,7 +562,8 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
       return LoginOptions.Login;
     }
     let lo : LoginOptions = LoginOptions.Login
-    let decTbl: any =[]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const decTbl: any =[]
     for (let a = 0; a < 2; a++) {
       decTbl[a] = []
       for (let b = 0; b<2; b++) {
@@ -554,7 +612,7 @@ const RemoteDBLogin: React.FC<HistoryProps> = (props: HistoryProps) => {
     return lo;
   }
 
-  let loginOption: LoginOptions = getLoginOption();
+  const loginOption: LoginOptions = getLoginOption();
   
   let formElem;
   switch (loginOption) {

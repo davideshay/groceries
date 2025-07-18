@@ -3,7 +3,6 @@ import { IonContent, IonPage, IonList, IonItem,
         IonItemDivider, IonButtons, IonToolbar, IonText, IonIcon, IonGrid, IonRow, IonCol, IonPopover, IonTitle } from '@ionic/react';
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';        
 import { closeCircle, checkmarkCircle, helpCircleOutline } from 'ionicons/icons';
-import { usePouch } from 'use-pouchdb';
 import { Preferences } from '@capacitor/preferences';
 import { App } from '@capacitor/app';
 import './Settings.css';
@@ -14,12 +13,13 @@ import { HistoryProps, UserInfo, initUserInfo } from '../components/DataTypes';
 import { maxAppSupportedSchemaVersion, appVersion , GlobalSettings } from '../components/DBSchema';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
-import { secondsToDHMS } from '../components/Utilities';
+import { secondsToDHMS, PrefsLastUsernameKey } from '../components/Utilities';
 import { cloneDeep } from 'lodash-es';
 import Loading from '../components/Loading';
 import { getTokenInfo, isDBServerAvailable, isServerAvailable } from '../components/RemoteUtilities';
-import { log } from "../components/Utilities";
+import log from "../components/logger";
 import { Capacitor } from '@capacitor/core';
+import { useGlobalDataStore } from '../components/GlobalData';
 
 type ErrorInfo = {
   isError: boolean,
@@ -35,8 +35,8 @@ const ErrorInfoInit: ErrorInfo = {
   formError: ""
 }
 
-const Status: React.FC<HistoryProps> = (props: HistoryProps) => {
-  const db = usePouch();
+const Status: React.FC<HistoryProps> = () => {
+  const db = useGlobalDataStore((state) => state.db)
   const [presentAlert] = useIonAlert();
   const {globalState, settingsLoading} = useContext(GlobalStateContext);
   const { remoteDBCreds, remoteDBState, setRemoteDBState } = useContext(RemoteDBStateContext);
@@ -46,15 +46,15 @@ const Status: React.FC<HistoryProps> = (props: HistoryProps) => {
   const [errorInfo] = useState<ErrorInfo>(cloneDeep(ErrorInfoInit));
   const { t } = useTranslation();
   const screenLoading = useRef(false);
-  const [, forceUpdateState] = useState<{}>();
+  const [, forceUpdateState] = useState<object>();
   const forceUpdate = useCallback(() => forceUpdateState({}), []);
 
 
 
   useEffect( () => {
     async function checkAPIServerAvailable(apiServerURL: string|null) {
-      let apiServerAvailable = await isServerAvailable(apiServerURL);
-      let dbServerAvailable = await isDBServerAvailable(remoteDBCreds.refreshJWT,remoteDBCreds.couchBaseURL);
+      const apiServerAvailable = await isServerAvailable(apiServerURL);
+      const dbServerAvailable = await isDBServerAvailable(remoteDBCreds.refreshJWT,remoteDBCreds.couchBaseURL);
       log.debug("API Server Available response:",apiServerAvailable);
       log.debug("DB Server Available response:",dbServerAvailable);
       if (apiServerAvailable.apiServerAvailable) {
@@ -75,7 +75,7 @@ const Status: React.FC<HistoryProps> = (props: HistoryProps) => {
 
   useEffect( () => {
     if (!localSettingsInitialized && globalState.settingsLoaded) {
-      setLocalSettings(prevState=>(globalState.settings));
+      setLocalSettings(globalState.settings);
       setUserInfo({name: String(remoteDBCreds.dbUsername), email: String(remoteDBCreds.email), fullname: String(remoteDBCreds.fullName)})
       setLocalSettingsInitialized(true);
     }
@@ -87,9 +87,10 @@ const Status: React.FC<HistoryProps> = (props: HistoryProps) => {
   };
 
   async function destroyDB() {
-    await db.destroy();
-    let credsStr=JSON.stringify({});
+    if (db !== null) {await db.destroy()};
+    const credsStr=JSON.stringify({});
     await Preferences.set({key: 'dbcreds', value: credsStr})
+    await Preferences.remove({key: PrefsLastUsernameKey});
     if (Capacitor.isNativePlatform()) {App.exitApp();}
     setRemoteDBState(initialRemoteDBState);
     window.location.replace('/');

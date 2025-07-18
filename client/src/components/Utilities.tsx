@@ -4,15 +4,16 @@ import { ListGroupDoc, ListGroupDocInit } from './DBSchema';
 import { cloneDeep } from 'lodash-es';
 import { DBCreds} from './RemoteDBState';
 import { PouchResponse, PouchResponseInit } from './DataTypes';
-import loglevelnext from 'loglevelnext';
+import log from './logger';
 import { t } from "i18next"
 
 export const apiConnectTimeout = 500;
+export const PrefsLastUsernameKey = "lastuser";
 
 export function isJsonString(str: string): boolean {
     try {
         JSON.parse(str);
-    } catch (e) {
+    } catch {
         return false;
     }
     return true;
@@ -20,7 +21,7 @@ export function isJsonString(str: string): boolean {
 
 export function urlPatternValidation(url: string) {
     try { new URL(url);return true; }
-    catch(err) {return false;}
+    catch {return false;}
   };
 
 export function emailPatternValidation(email: string) {
@@ -39,7 +40,7 @@ export function fullnamePatternValidation(fullname: string) {
 }
 
 export async function checkUserByEmailExists(email: string, remoteDBCreds: DBCreds) {
-    let checkResponse = {
+    const checkResponse = {
         userExists : false,
         fullname: "",
         username: "",
@@ -87,7 +88,7 @@ export async function getUsersInfo(userIDList: UserIDList,apiServerURL: string, 
     try { response = await CapacitorHttp.post(options); }
     catch(err) {log.error("GetUsersInfo HTTP Error",err); return [false,usersInfo]}
     if (response && response.data) {
-        if (response.data.hasOwnProperty("users")) {
+        if (Object.prototype.hasOwnProperty.call(response.data, "users")) {
             usersInfo = response.data.users
         }
     }
@@ -96,7 +97,7 @@ export async function getUsersInfo(userIDList: UserIDList,apiServerURL: string, 
 
 export async function updateUserInfo(apiServerURL: string, accessJWT: string, userInfo: UserInfo) : Promise<boolean> {
     let result=false;
-    let updateUrl=apiServerURL+"/updateuserinfo";
+    const updateUrl=apiServerURL+"/updateuserinfo";
     const options: HttpOptions = {
         url: String(updateUrl),
         data: userInfo,
@@ -110,7 +111,7 @@ export async function updateUserInfo(apiServerURL: string, accessJWT: string, us
     try { response = await CapacitorHttp.post(options)}
     catch(err) {log.error("UpdateUserInfo HTTP Error: ",err); return result}
     if (response && response.data) {
-        if (response.data.hasOwnProperty("success")) {
+        if (Object.prototype.hasOwnProperty.call(response.data, "success")) {
             result=response.data.success
         }
     }
@@ -122,11 +123,11 @@ export async function initialSetupActivities(db: PouchDB.Database, username: str
     log.debug("SETUP: Running Initial Setup Activities for :",username);
     let totalDocs: number = 0;
     try {totalDocs = (await db.info()).doc_count}
-    catch(err) {log.error("Cannot retrieve doc count from local database"); return false;}
-    let listGroupDocs: PouchDB.Find.FindResponse<{}>
+    catch {log.error("Cannot retrieve doc count from local database"); return false;}
+    let listGroupDocs: PouchDB.Find.FindResponse<object>
     try {listGroupDocs = await db.find({ use_index:"stdTypeOwnerDefault",selector: { type: "listgroup", listGroupOwner: username},
          limit: totalDocs});}
-    catch(err) {log.error("Cannot retrieve list groups from local database"); return false;}
+    catch {log.error("Cannot retrieve list groups from local database"); return false;}
     let recipeGroupFound = false;
     let nonRecipeGroupFound = false;
     if (listGroupDocs.docs.length !== 0) {
@@ -140,9 +141,9 @@ export async function initialSetupActivities(db: PouchDB.Database, username: str
         defaultListGroupDoc.recipe = false;
         defaultListGroupDoc.name = username+" "+t("general.list_group");
         defaultListGroupDoc.listGroupOwner = username;
-        let curDateStr=(new Date()).toISOString()
+        const curDateStr=(new Date()).toISOString()
         defaultListGroupDoc.updatedAt = curDateStr;
-        let response: PouchResponse = cloneDeep(PouchResponseInit);
+        const response: PouchResponse = cloneDeep(PouchResponseInit);
         try { response.pouchData = await db.post(defaultListGroupDoc);}
         catch(err) { response.successful = false; response.fullError = err;}
         if (!response.pouchData.ok) { response.successful = false;}
@@ -154,9 +155,9 @@ export async function initialSetupActivities(db: PouchDB.Database, username: str
         recipeListGroupDoc.recipe = true;
         recipeListGroupDoc.name = username+" (Recipes)";
         recipeListGroupDoc.listGroupOwner = username;
-        let curDateStr=(new Date()).toISOString()
+        const curDateStr=(new Date()).toISOString()
         recipeListGroupDoc.updatedAt = curDateStr;
-        let response: PouchResponse = cloneDeep(PouchResponseInit);
+        const response: PouchResponse = cloneDeep(PouchResponseInit);
         try { response.pouchData = await db.post(recipeListGroupDoc);}
         catch(err) { response.successful = false; response.fullError = err;}
         if (!response.pouchData.ok) { response.successful = false;}
@@ -166,7 +167,7 @@ export async function initialSetupActivities(db: PouchDB.Database, username: str
 }
 
 export async function adaptResultToBase64(res: Blob): Promise<string> {
-    let reader: FileReader = new FileReader();
+    const reader: FileReader = new FileReader();
 
     return new Promise((resolve, reject) => {
         reader.onloadend = () => {
@@ -180,34 +181,15 @@ export async function adaptResultToBase64(res: Blob): Promise<string> {
 }
 
 export function getListGroupIDFromListOrGroupID(listOrGroupID: string, listCombinedRows: ListCombinedRows) : string | null {
-    let newListRow = listCombinedRows.find(lcr => lcr.listOrGroupID === listOrGroupID);
+    const newListRow = listCombinedRows.find(lcr => lcr.listOrGroupID === listOrGroupID);
     if (newListRow === undefined) {return null}
     else { return newListRow.listGroupID}
 }
 
 export function getRowTypeFromListOrGroupID(listOrGroupID: string, listCombinedRows: ListCombinedRows) : RowType | null {
-    let newListRow = listCombinedRows.find(lcr => lcr.listOrGroupID === listOrGroupID);
+    const newListRow = listCombinedRows.find(lcr => lcr.listOrGroupID === listOrGroupID);
     if (newListRow === undefined) {return null}
     else { return newListRow.rowType}
-}
-
-function getLoggingLevel(level: string) : number {
-    let uLevel=level.toUpperCase();
-    let retLevel: number = 3;
-    if (["0","TRACE","T"].includes(uLevel)) {
-        retLevel = 0 
-    } else if (["1","DEBUG","D"].includes(uLevel)) {
-        retLevel = 1
-    } else if (["2","INFO","INFORMATION","I"].includes(uLevel)) {
-        retLevel = 2
-    } else if (["3","WARN","WARNING","W"].includes(uLevel)) {
-        retLevel = 3
-    } else if (["4","ERROR","E"].includes(uLevel)) {
-        retLevel = 4
-    } else if (["5","SILENT","S","NONE","N"].includes(uLevel)) {
-        retLevel = 5
-    } else {retLevel = 2}
-    return retLevel;
 }
 
 export function secondsToDHMS(seconds: number) : string {
@@ -222,8 +204,5 @@ export function secondsToDHMS(seconds: number) : string {
     return outStr;
 }
 
-export const DEFAULT_API_URL=(window as any)._env_.DEFAULT_API_URL === undefined ? "https://groceries.mydomain.com/api" : (window as any)._env_.DEFAULT_API_URL
-export const LOG_LEVEL= (window as any)._env_.LOG_LEVEL === undefined ? "INFO" : (window as any)._env_.LOG_LEVEL
-export const log = loglevelnext.create({name: "applogger", level: getLoggingLevel(LOG_LEVEL)})
-
-console.log("Environment: ", {DEFAULT_API_URL,LOG_LEVEL});
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const DEFAULT_API_URL=(window as any)._env_.DEFAULT_API_URL === undefined ? "https://groceries.mydomain.com/api" : (window as any)._env_.DEFAULT_API_URL;

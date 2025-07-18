@@ -4,40 +4,41 @@ import { IonContent, IonPage,IonButton, IonList, IonInput,
 import { useParams } from 'react-router-dom';
 import { useContext, useRef } from 'react';
 import { useGetOneDoc } from '../components/Usehooks';
-import './Category.css';
 import {  HistoryProps} from '../components/DataTypes';
 import { CategoryDoc, GlobalItemDoc, UomDoc } from '../components/DBSchema';
 import { closeCircleOutline} from 'ionicons/icons';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
-import { GlobalDataContext } from '../components/GlobalDataProvider';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
 import { translatedCategoryName, translatedItemName, translatedUOMName } from '../components/translationUtilities';
+import { useGlobalDataStore } from '../components/GlobalData';
 
-const GlobalItem: React.FC<HistoryProps> = (props: HistoryProps) => {
-  let { mode, id: routeID } = useParams<{mode: string, id: string}>();
-  if ( mode === "new" ) { routeID = "<new>"};
+const GlobalItem: React.FC<HistoryProps> = () => {
+  const { id: routeID } = useParams<{mode: string, id: string}>();
   const { doc: globalItemDoc, loading: globalItemLoading, dbError: globalItemError} = useGetOneDoc(routeID);
-  const globalData = useContext(GlobalDataContext);
   const {goBack} = useContext(NavContext);
   const screenLoading = useRef(true);
   const { t } = useTranslation();
+  const error = useGlobalDataStore((state) => state.error);
+  const isLoading = useGlobalDataStore((state) => state.isLoading);
+  const uomDocs = useGlobalDataStore((state) => state.uomDocs);
+  const categoryDocs = useGlobalDataStore((state) => state.categoryDocs);
 
-  if ( globalItemError || globalData.uomError || globalData.categoryError) { return (
+  if ( globalItemError || error) { return (
     <ErrorPage errorText={t("error.loading_global_item") as string}></ErrorPage>
     )};
 
-  if ( globalItemLoading || globalData.uomLoading || globalData.categoryLoading)  {
+  if ( globalItemLoading || isLoading)  {
     return ( <Loading isOpen={screenLoading.current} message={t("general.loading_global_item")}    /> )
 //    setIsOpen={() => {screenLoading.current = false}} /> )
 };
   
   screenLoading.current=false;
-  let curUOMItem : UomDoc | undefined = (globalData.uomDocs as UomDoc[]).find((uom) => (uom.listGroupID=== "system" && uom.name === globalItemDoc.defaultUOM));
-  let curUOM = (curUOMItem === undefined) ? t("general.undefined")  :  translatedUOMName(curUOMItem._id as string ,curUOMItem.description, curUOMItem.pluralDescription);
-  let curCategoryItem : CategoryDoc | undefined = (globalData.categoryDocs as CategoryDoc[]).find((cat) => (cat._id === globalItemDoc.defaultCategoryID));
-  let curCategory = (curCategoryItem === undefined) ? t("general.undefined") : translatedCategoryName(curCategoryItem._id,curCategoryItem.name)       ;
+  const curUOMItem : UomDoc | undefined = (uomDocs as UomDoc[]).find((uom) => (uom.listGroupID=== "system" && uom.name === globalItemDoc.defaultUOM));
+  const curUOM = (curUOMItem === undefined) ? t("general.undefined")  :  translatedUOMName(curUOMItem._id as string ,curUOMItem.description, curUOMItem.pluralDescription);
+  const curCategoryItem : CategoryDoc | undefined = (categoryDocs as CategoryDoc[]).find((cat) => (cat._id === globalItemDoc.defaultCategoryID));
+  const curCategory = (curCategoryItem === undefined) ? t("general.undefined") : translatedCategoryName(curCategoryItem._id,curCategoryItem.name)       ;
 
   return (
     <IonPage>

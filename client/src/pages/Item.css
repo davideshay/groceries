@@ -1,7 +1,7 @@
 ion-modal#item-list {
   --height: fit-content;
   --border-radius: 6px;
-  --box-shadow: 0 0 48px rgba(0, 0, 0, 0.4);
+  /* --box-shadow: 0 0 48px rgba(0, 0, 0, 0.4); */
   padding: 10px;
 }
 
@@ -11,6 +11,12 @@ ion-title.modal-title {
 
 ion-img.item-image {
   height: 200px;
+}
+
+.new-value-button {
+  height: 100%;
+  width: 100%;
+  margin: 0;
 }
 
 #floating-error {

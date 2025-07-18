@@ -1,14 +1,11 @@
-import { useContext, useEffect, useState } from "react";
-import { useFind } from "use-pouchdb";
-import { GlobalDataContext } from "./GlobalDataProvider";
+import { useEffect, useState } from "react";
 import { translatedItemName } from "./translationUtilities";
 import { ItemDoc, ItemDocs } from "./DBSchema";
 // import { SearchRefType } from "./GenericSearchBar";
 import { ItemSearch } from "./DataTypes";
+import { useGlobalDataStore } from "./GlobalData";
 
 type PageState = {
-    allListGroups: Set<string>,
-    listGroupsNeedInit: boolean,
     itemsNeedLoaded: boolean,
     itemSearchRows: ItemSearch[],
 }
@@ -29,36 +26,22 @@ type ItemsSearchProps = {
     addItemWithoutRow: (name: string) => void,
 }
 
-
-const ItemsSearch: React.FC<ItemsSearchProps> = (props: ItemsSearchProps) => {
+const ItemsSearch: React.FC<ItemsSearchProps> = () => {
     const [pageState,setPageState] = useState<PageState>({
-        allListGroups: new Set(""),
-        listGroupsNeedInit: true,
         itemsNeedLoaded: true,
         itemSearchRows: [],
     });
-    const {docs: itemDocs, loading: itemsLoading } = useFind({
-        index: "stdTypeListGroupID",
-        selector: { type: "item", "listGroupID": { "$in": Array.from(pageState.allListGroups)} } 
-    });
-    const globalData = useContext(GlobalDataContext); 
+    const itemDocs = useGlobalDataStore((state) => state.itemDocs);
+    const loading = useGlobalDataStore((state) => state.isLoading);
+    const globalItemDocs = useGlobalDataStore((state) => state.globalItemDocs);
+    
 //    const searchRef = useRef<SearchRefType>(null);
 
     useEffect( () => {
-        if (globalData.listRowsLoaded) {
-            let newListGroups: Set<string> = new Set();
-            globalData.listRows.forEach((lr) => {
-                newListGroups.add(String(lr.listDoc.listGroupID))
-            })
-            setPageState(prevState=>({...prevState,allListGroups: newListGroups,listGroupsNeedInit: false}))
-        }
-    },[globalData.listRows, globalData.listRowsLoaded])
-
-    useEffect( () => {
-        if (!pageState.listGroupsNeedInit && pageState.itemsNeedLoaded && !itemsLoading && !globalData.globalItemsLoading) {
+        if (pageState.itemsNeedLoaded && !loading) {
             let searchIdx=0;
-            let newSearchRows: RecipeSearchRow[] = [];
-            globalData.globalItemDocs.forEach(idoc => {
+            const newSearchRows: RecipeSearchRow[] = [];
+            globalItemDocs.forEach(idoc => {
                 newSearchRows.push({id: String(searchIdx++),display: translatedItemName(String(idoc._id),idoc.name,idoc.name), data: {name: idoc.name,globalItemID: String(idoc._id) }})
             });
             (itemDocs as ItemDocs).forEach((idoc: ItemDoc) => {
@@ -71,7 +54,7 @@ const ItemsSearch: React.FC<ItemsSearchProps> = (props: ItemsSearchProps) => {
             })
             setPageState(prevState=>({...prevState,itemsNeedLoaded: false,recipeSearchRows: newSearchRows}))
         }
-    },[pageState.listGroupsNeedInit,itemsLoading,globalData.globalItemsLoading,globalData.globalItemDocs, itemDocs,pageState.itemsNeedLoaded])
+    },[pageState,loading,globalItemDocs, itemDocs,pageState.itemsNeedLoaded])
 
     // function selectRow(id: string, data: ItemSearchData) {
     //     props.rowSelected(id,data);

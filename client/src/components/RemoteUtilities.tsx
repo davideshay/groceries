@@ -1,7 +1,7 @@
 import { DBCreds, DBCredsInit, RemoteDBState } from "./RemoteDBState";
 import { CapacitorHttp, HttpOptions, HttpResponse } from '@capacitor/core';
 import { Preferences } from '@capacitor/preferences';
-import { jwtDecode }  from 'jwt-decode';
+import { jwtDecode, JwtPayload }  from 'jwt-decode';
 import { ListCombinedRows, ListRow, RowType } from "./DataTypes";
 import { ListGroupDocs, TriggerDoc, UUIDDoc, appVersion, maxAppSupportedSchemaVersion } from "./DBSchema";
 import { DBUUIDAction, DBUUIDCheck } from "./RemoteDBState";
@@ -11,13 +11,13 @@ import { urlPatternValidation, usernamePatternValidation, emailPatternValidation
 import { cloneDeep, pick, keys, isEqual } from 'lodash-es';
 import { Device } from '@capacitor/device';
 import { t } from "i18next";
-import { log } from "./Utilities";
+import log from "./logger";
 
 export async function getDeviceID() : Promise<string> {
     const devIDInfo = await Device.getId();
     log.debug("Getting device ID...", cloneDeep(devIDInfo));
     let devID = "";
-    if (devIDInfo.hasOwnProperty('identifier')) {
+    if (Object.prototype.hasOwnProperty.call(devIDInfo, 'identifier')) {
         devID = devIDInfo.identifier;
     }
     return devID;
@@ -38,7 +38,7 @@ export async function navigateToFirstListID(phistory: History, listRows: ListRow
         navType = RowType.list;
     } else {
         navToID = savedListID;
-        let savedType = getRowTypeFromListOrGroupID(savedListID,listCombinedRows);
+        const savedType = getRowTypeFromListOrGroupID(savedListID,listCombinedRows);
         if (savedType === null) {
             navToID = firstListID;
             navType = RowType.list
@@ -58,7 +58,7 @@ export async function navigateToFirstListID(phistory: History, listRows: ListRow
   }
 
 export async function isServerAvailable(apiServerURL: string|null) {
-    let respObj = {
+    const respObj = {
         apiServerAvailable: false,
         dbServerAvailable: false,
         apiServerAppVersion: ""     
@@ -87,12 +87,12 @@ export async function isServerAvailable(apiServerURL: string|null) {
 }
 
 export async function isDBServerAvailable(refreshJWT: string | null, couchBaseURL: string | null) {
-    let response = false;
+    const response = false;
     if (refreshJWT === null || refreshJWT === undefined || refreshJWT === "" ||
         couchBaseURL === null || couchBaseURL === undefined || couchBaseURL === "" ) {
         return response;
     }
-    let checkResponse = await checkJWT(refreshJWT,couchBaseURL);
+    const checkResponse = await checkJWT(refreshJWT,couchBaseURL);
     return  (checkResponse.DBServerAvailable);
 }
 
@@ -100,7 +100,7 @@ export async function isDBServerAvailable(refreshJWT: string | null, couchBaseUR
 export function JWTMatchesUser(refreshJWT: string | null, username: string | null) {
     let validJWTMatch = false;
     if (refreshJWT !== null) {
-        let JWTResponse = getTokenInfo(refreshJWT,true);
+        const JWTResponse = getTokenInfo(refreshJWT,true);
         if (JWTResponse.valid && username === JWTResponse.username) {
             validJWTMatch = true;
         }
@@ -171,7 +171,7 @@ export async function createNewUser(remoteDBState: RemoteDBState,remoteDBCreds: 
 }
 
 export function getTokenInfo(JWT: string, logIt: boolean) {
-    let tokenResponse = {
+    const tokenResponse = {
         valid : false,
         expireDate: 0,
         expiresInSeconds: 0,
@@ -179,26 +179,30 @@ export function getTokenInfo(JWT: string, logIt: boolean) {
         username: ""
     }
     if (JWT === "" || JWT === undefined || JWT === null) { return tokenResponse}
-    let JWTDecode;
-    let JWTDecodeValid = true;
+    let JWTDecode: JwtPayload;
     try { JWTDecode = jwtDecode(JWT);}
-    catch(err) {log.error("INVALID access token:",err); JWTDecodeValid= false}
-    if (JWTDecodeValid) {
-        tokenResponse.valid = true;
-        tokenResponse.expireDate = (JWTDecode as any).exp
-        tokenResponse.expiresInSeconds = (JWTDecode as any).exp - (new Date().getTime() / 1000); 
-        tokenResponse.username = (JWTDecode as any).sub
-        if (tokenResponse.expireDate >= (new Date().getTime() / 1000)) {
-            tokenResponse.expired = false;
-        }
+    catch(err) {
+        log.error("INVALID access token:",err);
+        return tokenResponse;
     }
+    if (JWTDecode.exp === undefined || JWTDecode.sub === undefined) {
+        log.error("Expiration Date or Subject on Token invalid/undefined");
+        return tokenResponse;
+    }
+    tokenResponse.valid = true;
+    tokenResponse.expireDate = JWTDecode.exp
+    tokenResponse.expiresInSeconds = JWTDecode.exp - (new Date().getTime() / 1000); 
+    tokenResponse.username = JWTDecode.sub
+    if (tokenResponse.expireDate >= (new Date().getTime() / 1000)) {
+        tokenResponse.expired = false;
+    }    
     if (logIt ) {log.debug("Got token info:",tokenResponse);}
     return(tokenResponse);
 }
 
 export async function refreshToken(remoteDBCreds: DBCreds, devID: string) {
     log.info("Refreshing token, device id: ", devID);
-    let tokenResponse = {
+    const tokenResponse = {
         valid : false,
         dbError: false,
         apiError: false,
@@ -231,7 +235,7 @@ export async function refreshToken(remoteDBCreds: DBCreds, devID: string) {
 
 export function errorCheckCreds({credsObj,background, creatingNewUser = false, password = "", verifyPassword = ""} :
     { credsObj: DBCreds, background: boolean, creatingNewUser?: boolean, password?: string, verifyPassword?: string}) {
-    let credsCheck={
+    const credsCheck={
         credsError: false,
         errorText: ""
     }
@@ -278,7 +282,7 @@ export function errorCheckCreds({credsObj,background, creatingNewUser = false, p
 }
 
 export async function checkJWT(accessJWT: string, couchBaseURL: string | null) {
-    let checkResponse = {
+    const checkResponse = {
         JWTValid: false,
         DBServerAvailable: true,
         JWTExpireDate: 0
@@ -298,7 +302,7 @@ export async function checkJWT(accessJWT: string, couchBaseURL: string | null) {
     catch(err) {log.error("http error getting session error:",err); checkResponse.DBServerAvailable=false}
     if (checkResponse.DBServerAvailable) {
         if ((response?.status === 200) && (response.data?.userCtx?.name !== null)) {
-            let tokenInfo = getTokenInfo(accessJWT,true);
+            const tokenInfo = getTokenInfo(accessJWT,true);
             if (tokenInfo.valid) {
                 checkResponse.JWTValid = true;
                 checkResponse.JWTExpireDate = tokenInfo.expireDate;
@@ -310,7 +314,7 @@ export async function checkJWT(accessJWT: string, couchBaseURL: string | null) {
 
 async function getListGroupIDs(db: PouchDB.Database,username: string): Promise<string[]> {
     let listGroupIDs: string[] = [];
-    let listGroupResults: PouchDB.Find.FindResponse<{}>
+    let listGroupResults: PouchDB.Find.FindResponse<object>
     try { listGroupResults = await db.find({
         use_index: "stdType",
         selector: {
@@ -321,7 +325,7 @@ async function getListGroupIDs(db: PouchDB.Database,username: string): Promise<s
             ] 
         }
       }) }
-    catch(err) {log.debug("Could not list group IDs for user:",username); return listGroupIDs}
+    catch {log.debug("Could not list group IDs for user:",username); return listGroupIDs}
     if (listGroupResults.docs && listGroupResults.docs.length > 0) {
         listGroupIDs = (listGroupResults.docs as ListGroupDocs).map(lg => (String(lg._id)));
     }
@@ -329,7 +333,7 @@ async function getListGroupIDs(db: PouchDB.Database,username: string): Promise<s
 }
 
 export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Database, username: string, remoteAppVersion: string, ignoreAppVersionWarning: boolean) {
-    let UUIDCheck: DBUUIDCheck = {
+    const UUIDCheck: DBUUIDCheck = {
         checkOK: true,
         dbAvailable: true,
         schemaVersion: 0,
@@ -338,18 +342,18 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
         errorText: ""
     }
     async function getData() {
-        let results = await remoteDB.find({
+        const results = await remoteDB.find({
             use_index: "stdType",
             selector: { "type": "dbuuid" } })
         return results;
     }
-    let UUIDResults : PouchDB.Find.FindResponse<{}>
+    let UUIDResults : PouchDB.Find.FindResponse<object>
     try { UUIDResults = await getData() }
-    catch(err) {
+    catch {
                 log.error("Error getting remote DB UUID"); 
                 await new Promise(r => setTimeout(r,1000));
                 try { UUIDResults = await getData()}
-                catch(err) {log.error("Retry of DBUUID from remote also failed");
+                catch {log.error("Retry of DBUUID from remote also failed");
                             UUIDCheck.dbAvailable = false;
                             UUIDCheck.checkOK = false;
                             UUIDCheck.dbUUIDAction = DBUUIDAction.exit_no_uuid_on_server;
@@ -366,12 +370,12 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
       return UUIDCheck;
     }
     UUIDCheck.schemaVersion = (UUIDResults.docs[0] as UUIDDoc).schemaVersion;
-    let remoteSchemaVersion = Number(UUIDCheck.schemaVersion);
+    const remoteSchemaVersion = Number(UUIDCheck.schemaVersion);
     let localDBInfo = null;
     let localHasRecords = false;
     let localDBUUID = null;
     let localSchemaVersion = 0;
-    try { localDBInfo = await db.info();} catch(e) {localHasRecords=false};
+    try { localDBInfo = await db.info();} catch {localHasRecords=false};
     if (localDBInfo != null && localDBInfo.doc_count > 0) { localHasRecords = true}
     if (localHasRecords) {
       let localDBAllDocs = null;
@@ -379,9 +383,18 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
       localHasRecords = false;
       if (localDBAllDocs != null) {
         for (const row of localDBAllDocs.rows) {
-          if ((row.doc as any).language !== "query") {
-                localHasRecords=true; break;
+          if (row.doc) {
+            if (Object.prototype.hasOwnProperty.call(row.doc,"language"))  {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                if ((row.doc as any).language !== "query") {
+                    localHasRecords = true;
+                    break;
+                }
+            } else {
+                localHasRecords=true;
+                break;
             }
+          }
         };
       }
     }
@@ -437,8 +450,8 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
         return UUIDCheck;
     }
 
-    let remoteListGroupIDs = await getListGroupIDs(remoteDB,username);
-    let localListGroupIDs = await getListGroupIDs(db,username);
+    const remoteListGroupIDs = await getListGroupIDs(remoteDB,username);
+    const localListGroupIDs = await getListGroupIDs(db,username);
     UUIDCheck.syncListGroupIDs = Array.from(new Set(remoteListGroupIDs.concat(localListGroupIDs)));
 
       // if current DBCreds doesn't have one, set it to the remote one.
@@ -448,43 +461,43 @@ export async function checkDBUUID(db: PouchDB.Database, remoteDB: PouchDB.Databa
     return UUIDCheck;
   }
 
-  export async function updateTriggerDoc(remoteDB: PouchDB.Database,data: {}) {
+  export async function updateTriggerDoc(remoteDB: PouchDB.Database,data: object) {
     log.debug("updating trigger doc...");
-    let results: PouchDB.Find.FindResponse<{}> | null = null;
+    let results: PouchDB.Find.FindResponse<object> | null = null;
     try { results = await remoteDB.find({
         use_index: "stdType",
         selector: { "type": "trigger" } })}
-    catch(err) {log.error("Could not find trigger doc, DB error"); return false;}
+    catch {log.error("Could not find trigger doc, DB error"); return false;}
     let triggerExists = false;
     if (results !== null  && results.docs && results.docs.length > 0) {triggerExists = true};
     if (triggerExists) {
-        let triggerDoc: TriggerDoc = results.docs[0] as TriggerDoc;
+        const triggerDoc: TriggerDoc = results.docs[0] as TriggerDoc;
         triggerDoc.triggerData = data;
         triggerDoc.updatedAt = new Date().toISOString();
         try { await remoteDB.put(triggerDoc)}
-        catch(err) {log.error("Could not update trigger doc, DB error"); return false;}
+        catch {log.error("Could not update trigger doc, DB error"); return false;}
         log.debug("Trigger Doc updated with new data");
     } else {
-        let triggerDoc: TriggerDoc = {
+        const triggerDoc: TriggerDoc = {
             type: "trigger",
             triggerData: data,
             updatedAt: new Date().toISOString()
         }
         try {await remoteDB.post(triggerDoc)}
-        catch(err) {log.error("Could not create trigger doc, DB Error"); return false;}
+        catch {log.error("Could not create trigger doc, DB Error"); return false;}
         log.debug("Trigger doc created with new data");
     }
     return true;
   }
 
-  export async function  getPrefsDBCreds(curCreds: DBCreds): Promise<[boolean,DBCreds]>  {
-    let { value: credsStr } = await Preferences.get({ key: 'dbcreds'});
+  export async function  getPrefsDBCreds(): Promise<[boolean,DBCreds]>  {
+    const { value: credsStr } = await Preferences.get({ key: 'dbcreds'});
     let initial : boolean = false;
     let credsObj: DBCreds = cloneDeep(DBCredsInit);
     const credsOrigKeys = keys(credsObj);
     if (isJsonString(String(credsStr))) {
       credsObj=JSON.parse(String(credsStr));
-      let credsObjFiltered=pick(credsObj,['apiServerURL','couchBaseURL','database','dbUsername','email','fullName','refreshJWT','lastConflictsViewed'])
+      const credsObjFiltered=pick(credsObj,['apiServerURL','couchBaseURL','database','dbUsername','email','fullName','refreshJWT','lastConflictsViewed'])
       credsObj = credsObjFiltered;
     }
     const credKeys = keys(credsObj);

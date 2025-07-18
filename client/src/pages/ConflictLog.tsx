@@ -4,15 +4,14 @@ import { useContext, useRef } from 'react';
 import SyncIndicator from '../components/SyncIndicator';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
 import { HistoryProps } from '../components/DataTypes';
-import './Categories.css';
 import { useConflicts } from '../components/Usehooks';
 import ErrorPage from './ErrorPage';
 import { Loading } from '../components/Loading';
 import { ConflictDocs } from '../components/DBSchema';
 import { useTranslation } from 'react-i18next';
-import { log } from "../components/Utilities";
+import log from "../components/logger";
 
-const ConflictLog: React.FC<HistoryProps> = (props: HistoryProps) => {
+const ConflictLog: React.FC<HistoryProps> = () => {
   const { setDBCredsValue } = useContext(RemoteDBStateContext);
   const { conflictsError, conflictDocs, conflictsLoading } = useConflicts();
   const screenLoading = useRef(true);

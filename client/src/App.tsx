@@ -29,10 +29,10 @@ import "./Colors.css"
 /* Theme variables */
 // import './theme/variables.css';
 
-import { Provider } from 'use-pouchdb';
 import PouchDB from 'pouchdb';
 import find from 'pouchdb-find';
-import { GlobalDataProvider } from './components/GlobalDataProvider';
+import { useSyncLocalPouchChangesToGlobalData } from './components/GlobalData';
+
 // import log from 'loglevel';
 
 setupIonicReact({
@@ -44,6 +44,7 @@ const App: React.FC = () => {
 
   PouchDB.plugin(find);
   const [db, ] = useState(() => new PouchDB('local', {revs_limit: 10, auto_compaction: true, size: 250}))
+  useSyncLocalPouchChangesToGlobalData();
 
 
   // Back button listener functionality now in RemoteDBState
@@ -55,17 +56,13 @@ const App: React.FC = () => {
   return (
   <IonApp>
     <ErrorBoundary>
-    <IonReactRouter>
-    <Provider pouchdb={db}>
-    <RemoteDBStateProvider>
-    <GlobalStateProvider>
-    <GlobalDataProvider>
-    <AppContent />
-    </GlobalDataProvider>
-    </GlobalStateProvider>
-    </RemoteDBStateProvider>
-    </Provider>
-    </IonReactRouter>
+      <IonReactRouter>
+          <RemoteDBStateProvider pouchDB={db}>
+            <GlobalStateProvider>
+                <AppContent />
+            </GlobalStateProvider>
+          </RemoteDBStateProvider>
+      </IonReactRouter>
     </ErrorBoundary>
   </IonApp>
   )

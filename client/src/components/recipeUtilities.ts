@@ -1,37 +1,31 @@
 import { cloneDeep, isEmpty } from "lodash-es";
 import { ItemDoc, ItemDocInit, ItemList, ItemListInit, RecipeItem } from "./DBSchema";
-import { GlobalDataState } from "./GlobalDataProvider";
 import { AddListOptions, GlobalSettings } from "./DBSchema";
 import { getListGroupIDFromListOrGroupID, getRowTypeFromListOrGroupID} from "./Utilities";
 import { translatedItemName, translatedUOMShortName } from "./translationUtilities";
 import { RowType } from "./DataTypes";
 import { getCommonKey } from "./ItemUtilities";
 import { t } from 'i18next';
-import { log } from './Utilities';
+import log from './logger';
+import { useGlobalDataStore } from "./GlobalData";
 
-export async function isRecipeItemOnList({ recipeItem, listOrGroupID,globalData, db} : 
-    {recipeItem: RecipeItem, listOrGroupID: string | null,
-    globalData : GlobalDataState, db: PouchDB.Database}): Promise<[boolean, string|null]> {
-
+export async function isRecipeItemOnList({ recipeItem, listOrGroupID} : 
+    {recipeItem: RecipeItem, listOrGroupID: string | null}): Promise<[boolean, string|null]> {
+    const itemDocs = useGlobalDataStore.getState().itemDocs;
+    const listCombinedRows = useGlobalDataStore.getState().listCombinedRows;
     let inList = false;
     let itemID: string|null = null
-    const listGroupID = getListGroupIDFromListOrGroupID(listOrGroupID as string,globalData.listCombinedRows);
+    const listGroupID = getListGroupIDFromListOrGroupID(listOrGroupID as string,listCombinedRows);
     if (listGroupID === null) {return [inList,itemID]}
     let itemExists=true;
-    let itemResults: PouchDB.Find.FindResponse<{}> = {docs: []}
-    try {itemResults = await db.find({
-        use_index: "stdTypeListGroupID",
-        selector: {
-            type: "item",
-            listGroupID: listGroupID }
-    })}
-    catch(err) {itemExists=false;};
-    if (itemExists && itemResults.docs.length < 1) { itemExists = false};
+    const itemResults = itemDocs.filter((item) => item.listGroupID = listGroupID);
+    if (itemResults.length === 0) {itemExists=false;};
+    if (itemExists && itemResults.length < 1) { itemExists = false};
     let foundItem: ItemDoc | null = null;
     if (itemExists) {
-        for (let i = 0; i < itemResults.docs.length; i++) {
-            const item = cloneDeep(itemResults.docs[i]) as ItemDoc;
-            if (item.hasOwnProperty("pluralName")) {
+        for (let i = 0; i < itemResults.length; i++) {
+            const item = cloneDeep(itemResults[i]) as ItemDoc;
+            if (Object.prototype.hasOwnProperty.call(item, "pluralName")) {
                 item.pluralName = isEmpty(item.pluralName) ? "" : item.pluralName
             } else {
                 item.pluralName = item.name;
@@ -50,10 +44,15 @@ export async function isRecipeItemOnList({ recipeItem, listOrGroupID,globalData,
     return [inList,itemID]
 }
 
-export async function updateItemFromRecipeItem({itemID,listOrGroupID,recipeItem,globalData, settings, db}:
-    {itemID: string, listOrGroupID: string | null, recipeItem: RecipeItem, globalData: GlobalDataState, 
-        settings: GlobalSettings, db: PouchDB.Database}) : Promise<string> {
+export async function updateItemFromRecipeItem({itemID,listOrGroupID,recipeItem,settings}:
+    {itemID: string, listOrGroupID: string | null, recipeItem: RecipeItem, settings: GlobalSettings}) : Promise<string> {
     
+    const db = useGlobalDataStore.getState().db;
+    const listCombinedRows = useGlobalDataStore.getState().listCombinedRows;
+    const listDocs = useGlobalDataStore.getState().listDocs;
+    const uomDocs = useGlobalDataStore.getState().uomDocs;
+
+    if (db === null) {return "No Database Available"};
     let status="";
     if (!recipeItem.addToList) {return (t("error.recipe_item_not_selected_to_add",{recipeName: recipeItem.name}) as string) }
     let uomMismatch = false;
@@ -66,9 +65,9 @@ export async function updateItemFromRecipeItem({itemID,listOrGroupID,recipeItem,
     catch(err) {log.error("Could not retrieve item",err);itemExists=false};
     if (itemExists && foundItem == null) {itemExists =false}
     if (!itemExists) {return t("error.no_item_found_update_recipe",{itemName: recipeItem.name}) as string};
-    let rowType: RowType | null = getRowTypeFromListOrGroupID(listOrGroupID as string,globalData.listCombinedRows)
-    let listGroupID = getListGroupIDFromListOrGroupID(String(listOrGroupID),globalData.listCombinedRows);
-    let updItem: ItemDoc = cloneDeep(foundItem) as ItemDoc;
+    const rowType: RowType | null = getRowTypeFromListOrGroupID(listOrGroupID as string,listCombinedRows)
+    const listGroupID = getListGroupIDFromListOrGroupID(String(listOrGroupID),listCombinedRows);
+    const updItem: ItemDoc = cloneDeep(foundItem) as ItemDoc;
     updItem.lists.forEach(itemList => {
         if (!itemList.stockedAt) {return}
         if (settings.addListOption === AddListOptions.dontAddAutomatically && 
@@ -84,14 +83,14 @@ export async function updateItemFromRecipeItem({itemID,listOrGroupID,recipeItem,
                 itemList.note = recipeItem.note;
             }
         }
-        existingUOM = getCommonKey(updItem,"uomName",globalData.listDocs)
+        existingUOM = getCommonKey(updItem,"uomName",listDocs)
         if ( existingUOM === recipeItem.shoppingUOMName) {
             itemList.quantity = recipeItem.shoppingQuantity
         } else {
             uomMismatch = true;
 //            itemList.quantity = recipeItem.shoppingQuantity  -- May not want to update if different
             if (itemList.note === "") {
-                itemList.note = t("error.uom_mismatch_recipe_import_note",{quantity: recipeItem.shoppingQuantity, uom: translatedUOMShortName(recipeItem.shoppingUOMName,globalData.uomDocs,String(listGroupID),recipeItem.shoppingQuantity) });
+                itemList.note = t("error.uom_mismatch_recipe_import_note",{quantity: recipeItem.shoppingQuantity, uom: translatedUOMShortName(recipeItem.shoppingUOMName,uomDocs,String(listGroupID),recipeItem.shoppingQuantity) });
             }
         }
     })
@@ -102,7 +101,7 @@ export async function updateItemFromRecipeItem({itemID,listOrGroupID,recipeItem,
     } else {
         status = t("general.updated_item_successfully",{name: updItem.name});
         if (uomMismatch && (!isEmpty(recipeItem.shoppingUOMName) || !isEmpty(existingUOM))) {
-            status=status+ "\n"+t("error.uom_mismatch_recipe_import_status",{name: updItem.name, shoppingUom: translatedUOMShortName(recipeItem.shoppingUOMName,globalData.uomDocs,String(listGroupID)), listUom: translatedUOMShortName(String(existingUOM),globalData.uomDocs,String(listGroupID))});
+            status=status+ "\n"+t("error.uom_mismatch_recipe_import_status",{name: updItem.name, shoppingUom: translatedUOMShortName(recipeItem.shoppingUOMName,uomDocs,String(listGroupID)), listUom: translatedUOMShortName(String(existingUOM),uomDocs,String(listGroupID))});
         }
         if (overwroteNote) {
             status=status+"\n"+t("error.recipe_note_overwritten")
@@ -112,20 +111,25 @@ export async function updateItemFromRecipeItem({itemID,listOrGroupID,recipeItem,
 
 }
 
-export async function createNewItemFromRecipeItem({listOrGroupID,recipeItem,globalData,settings, db} : 
-    {listOrGroupID: string | null, recipeItem: RecipeItem, globalData: GlobalDataState, settings: GlobalSettings, db: PouchDB.Database}) : Promise<string> {
-
+export async function createNewItemFromRecipeItem({listOrGroupID,recipeItem,settings} : 
+    {listOrGroupID: string | null, recipeItem: RecipeItem, settings: GlobalSettings}) : Promise<string> {
+    const db = useGlobalDataStore.getState().db;
+    const globalItemDocs = useGlobalDataStore.getState().globalItemDocs;
+    const listCombinedRows = useGlobalDataStore.getState().listCombinedRows;
+    const listRows = useGlobalDataStore.getInitialState().listRows;
+    
+    if (db === null) {return "DB is Not Available"};
     let status="";
     if (!recipeItem.addToList) {return (t("error.recipe_item_not_selected_to_add",{recipeName: recipeItem.name}) as string)};
     let addError = false;
-    let rowType: RowType | null = getRowTypeFromListOrGroupID(listOrGroupID as string,globalData.listCombinedRows)
-    let existingGlobalItem = globalData.globalItemDocs.find(gi => gi._id === recipeItem.globalItemID)
-    let newItem: ItemDoc = cloneDeep(ItemDocInit);
+    const rowType: RowType | null = getRowTypeFromListOrGroupID(listOrGroupID as string,listCombinedRows)
+    const existingGlobalItem = globalItemDocs.find(gi => gi._id === recipeItem.globalItemID)
+    const newItem: ItemDoc = cloneDeep(ItemDocInit);
     newItem.globalItemID = recipeItem.globalItemID;
-    newItem.listGroupID = getListGroupIDFromListOrGroupID(listOrGroupID as string, globalData.listCombinedRows);
+    newItem.listGroupID = getListGroupIDFromListOrGroupID(listOrGroupID as string, listCombinedRows);
     newItem.name = recipeItem.name;
-    globalData.listRows.filter(lr => lr.listGroupID === newItem.listGroupID).forEach(lr => {
-        let newItemList :ItemList = cloneDeep(ItemListInit);
+    listRows.filter(lr => lr.listGroupID === newItem.listGroupID).forEach(lr => {
+        const newItemList :ItemList = cloneDeep(ItemListInit);
         if (settings.addListOption === AddListOptions.dontAddAutomatically && 
             rowType === RowType.list &&
             lr.listDoc._id !== listOrGroupID) {

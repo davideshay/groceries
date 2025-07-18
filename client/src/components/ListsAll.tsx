@@ -1,19 +1,19 @@
 import {  IonItem, IonButton, IonMenuToggle, IonIcon } from '@ionic/react';
-import { JSX, useContext } from 'react';
+import { JSX } from 'react';
 import { pencilOutline } from 'ionicons/icons';
-import './ListsAll.css';
 import { RowType } from './DataTypes';
-import { GlobalDataContext } from './GlobalDataProvider';
+import { useGlobalDataStore } from './GlobalData';
 
 interface ListsAllProps {
   separatePage: boolean
 }
 
 const ListsAll: React.FC<ListsAllProps> = (props: ListsAllProps) => {
-  const { listRowsLoaded, listCombinedRows} = useContext(GlobalDataContext)
+  const listRowsLoaded = useGlobalDataStore((state) => state.listRowsLoaded);
+  const listCombinedRows = useGlobalDataStore((state) => state.listCombinedRows);
 
   if (!listRowsLoaded) { return (<></>) }
-  
+
   function addRow({separatePage, showLinkID, editLinkID, rowKey, rowName, extraClass }: 
       { separatePage: boolean, showLinkID?: string, editLinkID: string, rowKey: string, rowName: string, extraClass: string}) {
     const isUngroupedHeader = (rowKey.startsWith("G-null"));
@@ -42,13 +42,13 @@ const ListsAll: React.FC<ListsAllProps> = (props: ListsAllProps) => {
     }
     if (separatePage) {return baseRow}
     else {
-      return (<IonMenuToggle className="menu-list-item-toggle" key={rowKey} auto-hide={false}>
+      return (<IonMenuToggle className="menu-list-item-toggle" key={rowKey} autoHide={false}>
         {baseRow}
       </IonMenuToggle>)
     }
   }
 
-  let listsElem: JSX.Element[] = [];
+  const listsElem: JSX.Element[] = [];
   
   listCombinedRows.forEach(combinedRow => {
     if (combinedRow.hidden) {return;}
@@ -83,7 +83,7 @@ const ListsAll: React.FC<ListsAllProps> = (props: ListsAllProps) => {
       )      
     }   
   })
-  
+
   return (
       <>
         {listsElem}

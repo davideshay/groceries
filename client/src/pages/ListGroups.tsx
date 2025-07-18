@@ -1,21 +1,22 @@
 import { IonContent,  IonPage,  IonList, IonItem,  
    IonFab, IonFabButton, IonIcon} from '@ionic/react';
-import { useContext, useRef } from 'react';
+import { useRef } from 'react';
 import { add } from 'ionicons/icons';
 import { ListCombinedRow, RowType } from '../components/DataTypes';
-import './ListGroups.css';
 import ErrorPage from './ErrorPage';
 import Loading  from '../components/Loading';
 import PageHeader from '../components/PageHeader';
-import { GlobalDataContext } from '../components/GlobalDataProvider';
 import { useTranslation } from 'react-i18next';
+import { useGlobalDataStore } from '../components/GlobalData';
 
 const ListGroups: React.FC = () => {
-  const { listRowsLoaded, listCombinedRows, listError} = useContext(GlobalDataContext);
+  const listRowsLoaded = useGlobalDataStore((state) => state.listRowsLoaded);
+  const listCombinedRows = useGlobalDataStore((state) => state.listCombinedRows);
+  const error = useGlobalDataStore((state)=>state.error);
   const screenLoading = useRef(false);
   const { t } = useTranslation();
 
-  if (listError) { return(
+  if (error) { return(
     <ErrorPage errorText={t("error.loading_listgroups") as string}></ErrorPage>
   )}
 

@@ -1,5 +1,3 @@
-import { useContext } from "react";
-import { GlobalDataContext } from "./GlobalDataProvider";
 import { translatedItemName, translatedUOMShortName } from "./translationUtilities";
 import { RecipeDoc, UomDoc } from "./DBSchema";
 import { IonButton, IonCheckbox, IonCol, IonGrid, IonIcon, IonItem, IonRow } from "@ionic/react";
@@ -7,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { cloneDeep } from "lodash-es";
 import { pencilOutline, trashOutline } from "ionicons/icons";
 import Fraction from 'fraction.js';
+import { useGlobalDataStore } from "./GlobalData";
 
 type RecipeItemRowProps = {
     recipeDoc: RecipeDoc,
@@ -15,17 +14,18 @@ type RecipeItemRowProps = {
 }
 
 const RecipeItemRows: React.FC<RecipeItemRowProps> = (props: RecipeItemRowProps) => {
-    const globalData = useContext(GlobalDataContext); 
+    const uomDocs = useGlobalDataStore((state) => state.uomDocs);
+    const recipeListGroup = useGlobalDataStore((state) => state.recipeListGroup);
     const { t } = useTranslation();
 
     function checkItemOnList(checked: boolean,index: number) {
-        let updRecipeDoc : RecipeDoc= cloneDeep(props.recipeDoc);
+        const updRecipeDoc : RecipeDoc= cloneDeep(props.recipeDoc);
         updRecipeDoc.items[index].addToList = checked;
         props.updateRecipeDoc(updRecipeDoc);
       }
     
     function deleteItemFromList(index: number) {
-        let updRecipeDoc: RecipeDoc = cloneDeep(props.recipeDoc);
+        const updRecipeDoc: RecipeDoc = cloneDeep(props.recipeDoc);
         updRecipeDoc.items.splice(index,1);
         props.updateRecipeDoc(updRecipeDoc);
       }
@@ -36,22 +36,22 @@ const RecipeItemRows: React.FC<RecipeItemRowProps> = (props: RecipeItemRowProps)
         name: string,
     }
 
-    let recipeItemRows: RecipeItemRow[] = [];
+    const recipeItemRows: RecipeItemRow[] = [];
 
     props.recipeDoc.items.forEach((item,index) => {
-      let recipeItemRow: RecipeItemRow = {
+      const recipeItemRow: RecipeItemRow = {
             index: index, checked: item.addToList, name: ""};
-      let itemName = translatedItemName(item.globalItemID,item.name,item.name,item.recipeQuantity)
+      const itemName = translatedItemName(item.globalItemID,item.name,item.name,item.recipeQuantity)
       let uomDesc = "";
       if (item.recipeUOMName !== null && item.recipeUOMName !== "") {
-          const uomDoc = globalData.uomDocs.find((el: UomDoc) => (el.name === item.recipeUOMName && ["system",globalData.recipeListGroup].includes(String(el.listGroupID))));
+          const uomDoc = uomDocs.find((el: UomDoc) => (el.name === item.recipeUOMName && ["system",recipeListGroup].includes(String(el.listGroupID))));
           if (uomDoc !== undefined) {
-              uomDesc = translatedUOMShortName(item.recipeUOMName,globalData.uomDocs,props.recipeDoc.listGroupID,item.recipeQuantity)
+              uomDesc = translatedUOMShortName(item.recipeUOMName,uomDocs,props.recipeDoc.listGroupID,item.recipeQuantity)
           }
       }
       let quantityUOMDesc = "";
       if ((item.recipeQuantity !== 0) && ((item.recipeQuantity > 1) || uomDesc !== "")) {
-          let rq = new Fraction(item.recipeQuantity);
+          const rq = new Fraction(item.recipeQuantity);
           quantityUOMDesc = rq.toFraction(true).toString() + ((uomDesc === "" ? "" : " " + uomDesc));
       }
       let fullItemName = itemName;

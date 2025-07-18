@@ -1,5 +1,5 @@
 export const maxAppSupportedSchemaVersion = 7;
-export const appVersion = "1.1.7";
+export const appVersion = "1.1.8";
 export const minimumAccessRefreshSeconds = 300;
 export const DefaultColor = "#ffffff";
 
@@ -41,7 +41,9 @@ export interface ConflictDoc {
   type: string,
   docType: string,
   impactedUsers: string[],
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   winner: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   losers: any[],
   updatedAt: string
 }
@@ -236,10 +238,10 @@ export type UserDoc = {
   reset_password_expire_date?: string,
   password_scheme: string,
   password? : string,
-  iterations: Number,
+  iterations: number,
   derived_key: string,
   salt: string,
-  refreshJWTs: {}
+  refreshJWTs: object
 }
 
 export type FriendDoc = {
@@ -333,7 +335,7 @@ export type GlobalSettings = {
   removeFromAllLists: boolean,
   completeFromAllLists: boolean,
   includeGlobalInSearch: boolean,
-  daysOfConflictLog: Number,
+  daysOfConflictLog: number,
   savedListID?: string | undefined | null,
   alexaDefaultListGroup?: string | undefined | null,
   theme?: ThemeType,
@@ -350,7 +352,7 @@ export const InitSettings: GlobalSettings = {
   savedListID: null,
   alexaDefaultListGroup: null,
   theme: ThemeType.auto,
-  loggingLevel: LogLevelNumber.INFO,
+  loggingLevel: LogLevelNumber.DEBUG,
   logToFile: false
 }
 
@@ -380,6 +382,14 @@ export type TriggerDoc = {
   _id?: string,
   _rev?: string,
   type: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   triggerData: any,
   updatedAt: string
 }
+
+export type GenericBaseGroceryDoc = TriggerDoc | SettingsDoc | RecipeDoc | FriendDoc | UserDoc | ListGroupDoc | ListDoc | GlobalItemDoc | ImageDoc | ItemDoc | UomDoc | UUIDDoc | CategoryDoc | ConflictDoc
+export type GenericGroceryDoc = GenericBaseGroceryDoc & {
+    _deleted: boolean
+  }
+
+export type GroceryDocType = "trigger" | "settings" | "recipe" | "friend" | "user" | "listgroup" | "list" | "globalitem" | "image" | "item" | "uom" | "dbuuid" | "category" | "conflictlog"
