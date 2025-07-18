@@ -1,0 +1,200 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: groceries
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: groceries-web-conf
+  namespace: groceries
+data:
+  default.conf: |
+     server {
+         listen       80;
+         listen  [::]:80;
+         server_name  localhost;
+
+         location / {
+             root   /usr/share/nginx/html;
+             index  index.html index.htm;
+             try_files $uri $uri/ /index.html;
+         }
+
+         location = /50x.html {
+             root   /usr/share/nginx/html;
+         }
+
+     }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: groceries
+  namespace: groceries
+spec:
+  selector:
+    matchLabels:
+      app: groceries
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: groceries
+    spec:
+      containers:
+      - name: groceries
+        image: your-registry/groceries:latest
+        env:
+         - name: DEFAULT_API_URL
+           value: "https://groceries.mydomain.com/api"
+        ports:
+        - containerPort: 80
+        volumeMounts:
+          - mountPath: /etc/nginx/conf.d
+            name: webconfig
+      volumes:
+        - name: webconfig
+          configMap:
+            name: groceries-web-conf
+            items:
+              - key: default.conf
+                path: default.conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: groceries
+  namespace: groceries
+spec:
+  ports:
+    - port: 80
+      targetPort: 80
+  selector:
+    app: groceries
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: groceriesauth
+  namespace: groceries
+spec:
+  selector:
+    matchLabels:
+      app: groceriesauth
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: groceriesauth
+    spec:
+      containers:
+      - name: groceriesauth
+        image: your-registry/groceriesauth:latest
+        env:
+         - name: COUCHDB_URL
+           value: "https://couchdb.mydomain.com/"
+         - name: COUCHDB_INTERNAL_URL  
+           value: "http://couchdb-service.couchdb:5984/"
+         - name: COUCHDB_DATABASE
+           value: "groceries"
+         - name: COUCHDB_HMAC_KEY
+           value: "clear-text-hmac-key"
+         - name: COUCHDB_ADMIN_USER
+           value: "couch-admin-user"
+         - name: COUCHDB_ADMIN_PASSWORD
+           value: "couch-admin-password"
+         - name: GROCERY_URL
+           value: "https://groceries.mydomain.com"
+         - name: GROCERY_API_URL
+           value: "https://groceries.mydomain.com/api"  
+         - name: GROCERY_API_PORT
+           value: "3333"
+         - name: SMTP_HOST
+           value: "smtp.sendgrid.net"
+         - name: SMTP_FROM
+           value: "admin@mydomain.com"
+         - name: SMTP_PORT
+           value: "587"
+         - name: SMTP_USER
+           value: "apikey"
+         - name: SMTP_PASSWORD
+           value: "my-sendgrid-password"
+         - name: ENABLE_SCHEDULING
+           value: "true"
+         - name: RESOLVE_CONFLICTS_FREQUENCY_MINUTES
+           value: "3"
+         - name: EXPIRE_JWT_FREQUENCY_MINUTES
+           value: "60"  
+         - name: ACCESS_TOKEN_EXPIRES
+           value: "12h"
+         - name: REFRESH_TOKEN_EXPIRES
+           value: "30d"
+         - name: DISABLE_ACCOUNT_CREATION
+           value: "false"
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: groceriesauth
+  namespace: groceries
+spec:
+  ports:
+    - port: 3333
+      targetPort: 3333
+  selector:
+    app: groceriesauth
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+   namespace: groceries
+   name: groceries-ingress
+   annotations:
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/enable-cors: "true"
+spec:
+   ingressClassName: "nginx"
+   tls:
+     - hosts:
+       - groceries.mydomain.com
+   rules:
+   - host: groceries.mydomain.com
+     http:
+       paths:
+         - path: /
+           pathType: Prefix
+           backend:
+             service:
+                name: groceries
+                port:
+                   number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+   namespace: groceries
+   name: groceriesauth-ingress
+   annotations:
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/enable-cors: "true"
+      nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+   ingressClassName: "nginx"
+   tls:
+     - hosts:
+       - groceries.mydomain.com
+   rules:
+   - host: groceries.mydomain.com
+     http:
+       paths:
+         - path: /api(/|$)(.*)
+           pathType: Prefix
+           backend:
+             service:
+                name: groceriesauth
+                port:
+                   number: 3333
+---
