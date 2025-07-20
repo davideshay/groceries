@@ -1,0 +1,82 @@
+services:
+  couchdb:
+    container_name: couchdb
+    image: couchdb
+    restart: always
+    ports:
+      - "5984:5984"
+    networks:
+      - clementines
+    healthcheck:
+      test: curl --fail http://localhost:5984 || exit 1
+      interval: 30s
+      retries: 5
+      start_period: 15s
+      timeout: 10s  
+#    I recommend you use the user id / password in admin.ini rather than here
+#    it is more secure. You shouldn't user both or you could end up with duplicates and issues    
+#    environment:
+#      - COUCHDB_USER="admin"
+#      - COUCHDB_PASSWORD="password"
+#    The default in admin.ini is "admin" / "password", and should be changed after setup
+    volumes:
+      - ./data/dbdata:/opt/couchdb/data
+      - ./data/dbetclocal:/opt/couchdb/etc/local.d
+  frontend-groceries-client:
+    container_name: frontend-groceries-client
+    environment:
+#     CHANGEME: Change the DEFAULT_API_URL to be the fqdn/port externally accessible URL to your API server
+      DEFAULT_API_URL: https://groceries.mytld.com/api
+#    Although "latest" will always point to the most current production-ready release, you may want
+#    to point to a specific release like 1.1.3. If the server and client end up out of sync, warning
+#    messages will appear.         
+    image: ghcr.io/davideshay/groceries-client:latest
+    ports:
+      - "8100:8100"
+    networks:
+      - clementines    
+    volumes:
+    - type: bind
+      source: ./data/config/groceries-web.conf
+      target: /etc/nginx/conf.d/default.conf
+  backend-groceries-server:
+    depends_on:
+      - couchdb
+    restart: unless-stopped  
+    container_name: backend-groceries-server
+    environment:
+#   CHANGEME: COUCHDB_URL should point to a URL which is externally resolvable/routable from the clients to the
+#             couchDB instance.  Ideally, if externally accessible, should also be routed through an https proxy
+#             such as caddy.  As given below, the example will only work on the same host that is running the docker
+#             stack
+      COUCHDB_URL: http://localhost:5984
+      COUCHDB_INTERNAL_URL:  http://couchdb:5984
+      COUCHDB_DATABASE: groceries
+#   CHANGEME: Change HMAC_KEY and admin user and password to your local desired values
+      COUCHDB_HMAC_KEY: overeager-freedom-wispy-predefine-slug
+      COUCHDB_ADMIN_USER: admin
+      COUCHDB_ADMIN_PASSWORD: password
+#   CHANGEME: The GROCERY_URL and GROCERY_API_URL are only used for emails, but should be updated if using 
+#             the email functionality so that externally accessible links it sends are correct.
+      GROCERY_URL: https://groceries.mytld.com
+      GROCERY_API_URL: https://groceries.mytld.com/api
+      GROCERY_API_PORT: 3333
+#   CHANGEME:  Change the SMTP variables to values that work for you to send outbound mail, if desired.
+      SMTP_HOST: smtp.sendgrid.net
+      SMTP_FROM: admin@mytld.com
+      SMTP_PORT: 587
+      SMTP_USER: apikey
+      SMTP_PASSWORD:  my-sendgrid-apikey
+      ENABLE_SCHEDULING: 1
+      RESOLVE_CONFLICTS_FREQUENCY_MINUTES: 3
+      EXPIRE_JWT_FREQUENCY_MINUTES: 60  
+      ACCESS_TOKEN_EXPIRES: 12h
+      REFRESH_TOKEN_EXPIRES: 30d
+      DISABLE_ACCOUNT_CREATION: 0
+    image: ghcr.io/davideshay/groceries-server:latest
+    ports:
+      - "3333:3333"
+    networks:
+      - clementines
+networks:
+  clementines:
