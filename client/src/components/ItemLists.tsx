@@ -17,12 +17,12 @@ export type ItemListsProps = {
     addCategoryPopup: () => void,
     addUOMPopup: () => void
 }
-    
+
 const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
     const [modalState, setModalState] = useState<ModalState>(ModalStateInit)
     const listDocs = useGlobalDataStore((state) => state.listDocs);
     const { t } = useTranslation()
-    
+
     function selectList(listID: string, updateVal: boolean) {
         const newItemDoc=cloneDeep(props.stateItemDoc) as ItemDoc;
         let listFound=false
@@ -85,7 +85,7 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
                                 </IonCheckbox>
                             </IonCol>
                             <IonCol className="ion-no-padding ion-align-self-center" size="9">
-                                <IonLabel>{listDocs[idx].name}</IonLabel>
+                                <IonLabel>{listDocs[itemFoundIdx].name}</IonLabel>
                             </IonCol>
                             <IonCol className="ion-no-padding" size="2">
                                 <IonButton onClick={() => {editListModal(list.listID)}}>
