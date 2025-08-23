@@ -1,3 +1,35 @@
+
+<div align="right">
+  <details>
+    <summary >🌐 Language</summary>
+    <div>
+      <div align="center">
+        <a href="https://openaitx.github.io/view.html?user=davideshay&project=groceries&lang=en">English</a>
+        | <a href="https://openaitx.github.io/view.html?user=davideshay&project=groceries&lang=zh-CN">简体中文</a>
+        | <a href="https://openaitx.github.io/view.html?user=davideshay&project=groceries&lang=zh-TW">繁體中文</a>
+        | <a href="https://openaitx.github.io/view.html?user=davideshay&project=groceries&lang=ja">日本語</a>
+        | <a href="https://openaitx.github.io/view.html?user=davideshay&project=groceries&lang=ko">한국어</a>
+        | <a href="https://openaitx.github.io/view.html?user=davideshay&project=groceries&lang=hi">हिन्दी</a>
+        | <a href="https://openaitx.github.io/view.html?user=davideshay&project=groceries&lang=th">ไทย</a>
+        | <a href="https://openaitx.github.io/view.html?user=davideshay&project=groceries&lang=fr">Français</a>
+        | <a href="https://openaitx.github.io/view.html?user=davideshay&project=groceries&lang=de">Deutsch</a>
+        | <a href="https://openaitx.github.io/view.html?user=davideshay&project=groceries&lang=es">Español</a>
+        | <a href="https://openaitx.github.io/view.html?user=davideshay&project=groceries&lang=it">Italiano</a>
+        | <a href="https://openaitx.github.io/view.html?user=davideshay&project=groceries&lang=ru">Русский</a>
+        | <a href="https://openaitx.github.io/view.html?user=davideshay&project=groceries&lang=pt">Português</a>
+        | <a href="https://openaitx.github.io/view.html?user=davideshay&project=groceries&lang=nl">Nederlands</a>
+        | <a href="https://openaitx.github.io/view.html?user=davideshay&project=groceries&lang=pl">Polski</a>
+        | <a href="https://openaitx.github.io/view.html?user=davideshay&project=groceries&lang=ar">العربية</a>
+        | <a href="https://openaitx.github.io/view.html?user=davideshay&project=groceries&lang=fa">فارسی</a>
+        | <a href="https://openaitx.github.io/view.html?user=davideshay&project=groceries&lang=tr">Türkçe</a>
+        | <a href="https://openaitx.github.io/view.html?user=davideshay&project=groceries&lang=vi">Tiếng Việt</a>
+        | <a href="https://openaitx.github.io/view.html?user=davideshay&project=groceries&lang=id">Bahasa Indonesia</a>
+        | <a href="https://openaitx.github.io/view.html?user=davideshay&project=groceries&lang=as">অসমীয়া</
+      </div>
+    </div>
+  </details>
+</div>
+
 # Specifically Clementines App
 # Open Source / Self Hosted Grocery List (Formerly "Groceries")
 
