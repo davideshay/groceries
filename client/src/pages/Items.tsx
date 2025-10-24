@@ -443,7 +443,7 @@ const Items: React.FC<HistoryProps> = () => {
     }
   }
 
-  function searchKeyPress(event: KeyboardEvent<HTMLElement>) {
+  function searchKeyPress(event: KeyboardEvent<HTMLIonInputElement>) {
     if (event.key === "Enter") {
       addNewItemToList(searchState.searchCriteria.trim());
       enterKeyValueRef.current= searchState.searchCriteria.trim().length > 1 ? searchState.searchCriteria.trim() : "";

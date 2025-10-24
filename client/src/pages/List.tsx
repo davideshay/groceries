@@ -26,7 +26,8 @@ interface PageState {
   listGroupID: string | null,
   listGroupOwner: string | null,
   changesMade: boolean,
-  deletingDoc: boolean
+  deletingDoc: boolean,
+  reordering: boolean
 }
 
 enum ErrorLocation  {
@@ -46,7 +47,8 @@ const List: React.FC<HistoryProps> = () => {
     listGroupID: null,
     listGroupOwner: null,
     changesMade: false,
-    deletingDoc: false
+    deletingDoc: false,
+    reordering: false
   })
   const [formErrors,setFormErrors] = useState(FormErrorInit);
   const updateListWhole  = useUpdateGenericDocument();
@@ -156,6 +158,11 @@ const List: React.FC<HistoryProps> = () => {
     }
   }
 
+  function reorderStart() {
+    log.debug("setting reordering to true...")
+    setPageState(prevState => ({...prevState,reordering: true}))
+  }
+
   function handleReorder(event: CustomEvent<ItemReorderEventDetail>) {
     // The `from` and `to` properties contain the index of the item
     // when the drag started and ended, respectively
@@ -165,6 +172,7 @@ const List: React.FC<HistoryProps> = () => {
     newPageState.listDoc.categories.splice(event.detail.to,0,newPageState.listDoc.categories.splice(event.detail.from,1)[0]);
     log.debug("updated state categories",cloneDeep(newPageState.listDoc.categories));
     newPageState.changesMade=true;
+    newPageState.reordering = false;
     setPageState(newPageState);
 
     // Finish the reorder and position the item in the DOM based on
@@ -263,7 +271,7 @@ function deletePrompt() {
       const name = translatedCategoryName((catDoc as CategoryDoc)._id,(catDoc as CategoryDoc).name);
       return (
         <IonItem key={pageState.selectedListID+"-"+actname+"-"+id} slot="start">
-            <IonCheckbox justify="start" key={pageState.selectedListID+"-"+actname+"-"+id} onIonChange={(e) => updateCat(id,Boolean(e.detail.checked))} checked={active}></IonCheckbox>
+            <IonCheckbox justify="start" disabled={pageState.reordering} key={pageState.selectedListID+"-"+actname+"-"+id} onIonChange={(e) => updateCat(id,Boolean(e.detail.checked))} checked={active}></IonCheckbox>
             {name}
             <IonReorder slot="end"></IonReorder>
         </IonItem>)    
@@ -282,7 +290,8 @@ function deletePrompt() {
     return (
       <div key={actname+"-div"}>
       <IonItemDivider key={actname} className="category-divider"><IonLabel>{actname}</IonLabel></IonItemDivider>
-      <IonReorderGroup key={actname+"-reorder-group"} disabled={false} onIonItemReorder={handleReorder}>
+      <IonReorderGroup key={actname+"-reorder-group"} disabled={false} 
+          onIonReorderStart={reorderStart} onIonReorderEnd={handleReorder}>
           {lines}
       </IonReorderGroup>
       </div>  

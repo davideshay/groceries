@@ -76,7 +76,7 @@ function  GenericSearchBar({searchRows, rowSelected, addItemWithoutRow}: SearchB
         setSearchState(prevState=>({...prevState,filteredRows: newFilteredRows, isOpen: toOpen}))   
     },[searchRows,searchState.searchCriteria,searchState.isFocused])
 
-    function searchKeyPress(event: KeyboardEvent<HTMLElement>) {
+    function searchKeyPress(event: KeyboardEvent<HTMLIonSearchbarElement>) {
         if (event.key === "Enter") {
           addItemWithoutRow(searchState.searchCriteria)
           enterKeyValueRef.current= searchState.searchCriteria.length > 1 ? searchState.searchCriteria.slice(0,-1) : "";

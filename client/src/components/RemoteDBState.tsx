@@ -406,6 +406,7 @@ export const RemoteDBStateProvider: React.FC<RemoteDBStateProviderProps> = (prop
         try { globalSync = db.sync((globalRemoteDB as PouchDB.Database), {
             filter: 'replfilter/by_user',
             query_params: queryParams,
+            timeout: 30,
             back_off_function: function(delay) {
                 async function takeAction () {
                     log.debug("initial sync going offline, delay is:",delay);
