@@ -1,10 +1,11 @@
 import * as jose from 'jose'
 import { JWTPayload } from 'jose';
-import { usersDBAsAdmin } from './dbstartup';
-import { couchKey, couchStandardRole } from './apicalls';
-import { getUserDoc } from './utilities';
-import { isEqual, isEmpty } from 'lodash';
-import {UserDoc} from './schema/DBSchema'
+import { usersDBAsAdmin } from './dbstartup.js';
+import { couchKey } from './config.js';
+import { couchStandardRole } from './apicalls.js';
+import { getUserDoc } from './utilities.js';
+import { isEqual, isEmpty } from 'lodash-es';
+import {UserDoc} from './schema/DBSchema.js'
 import { DocumentListResponse } from 'nano';
 import log from 'loglevel';
 

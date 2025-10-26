@@ -19,7 +19,7 @@ export interface UUIDDoc {
   alexaDefaultFixed?: boolean
 }
 
-export interface CategoryDoc {
+export type CategoryDoc  = {
     _id?: string,
     _rev?: string,
     type: string,
@@ -28,6 +28,10 @@ export interface CategoryDoc {
     color?: string,
     updatedAt?: string
   }
+
+export type CategoryDocFile = Partial<Pick<CategoryDoc, 'listGroupID' | 'type'>> & 
+  Omit<CategoryDoc, 'listGroupID' | 'type' >;
+
   
 export const InitCategoryDoc: CategoryDoc = {
    type: "category", listGroupID: null, name: "", color: DefaultColor, updatedAt: ""
@@ -50,7 +54,7 @@ export interface ConflictDoc {
 
 export type ConflictDocs = ConflictDoc[];
   
-export interface UomDoc {
+export type UomDoc = {
     _id?: string,
     _rev?: string,
     type: string,
@@ -62,6 +66,9 @@ export interface UomDoc {
     customAlternates?: string[],
     updatedAt: string
   }
+
+export type UomDocFile = Partial<Pick<UomDoc, 'listGroupID' | 'updatedAt'>> & 
+  Omit<UomDoc, 'listGroupID' | 'updatedAt'>;
 
  export const InitUomDoc: UomDoc = {
   type: "uom",
@@ -153,7 +160,7 @@ export const ImageDocInit: ImageDoc = {
   updatedAt: ""
 }
 
-export interface GlobalItemDoc {
+export type GlobalItemDoc  = {
   _id?: string,
   _rev?: string,
   type: string,
@@ -162,6 +169,10 @@ export interface GlobalItemDoc {
   defaultCategoryID: string | null,
   updatedAt?: string
 }
+
+export type GlobalItemDocFile = Partial<Pick<GlobalItemDoc, 'type'>> & 
+  Omit<GlobalItemDoc, 'type'>;
+
 
 export type GlobalItemDocs = GlobalItemDoc[];
 

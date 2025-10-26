@@ -1,24 +1,29 @@
-import { groceriesNanoAsAdmin, usersNanoAsAdmin, couchDatabase, couchAdminPassword, couchAdminUser, couchdbUrl, couchdbInternalUrl, couchStandardRole,
-couchAdminRole, conflictsViewID, conflictsViewName, refreshTokenExpires, accessTokenExpires,
-enableScheduling, resolveConflictsFrequencyMinutes,expireJWTFrequencyMinutes, disableAccountCreation, logLevel, couchKey, 
+import { couchdbUrl,couchdbInternalUrl,couchDatabase,couchKey,couchAdminUser,couchAdminPassword,
+    refreshTokenExpires,accessTokenExpires,enableScheduling,resolveConflictsFrequencyMinutes,
+    expireJWTFrequencyMinutes,disableAccountCreation,
+    logLevel
+ } from './config.js';
+
+import { groceriesNanoAsAdmin, usersNanoAsAdmin, couchStandardRole,
+couchAdminRole, conflictsViewID, conflictsViewName, 
 passwordResetExpireSeconds,
-expirePasswordResetUserRecords} from "./apicalls";
-import { resolveConflicts } from "./apicalls";
-import { expireJWTs, generateJWT } from './jwt'
+expirePasswordResetUserRecords} from "./apicalls.js";
+import { resolveConflicts } from "./apicalls.js";
+import { expireJWTs, generateJWT } from './jwt.js'
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
-import { cloneDeep, isEmpty, isEqual, omit } from "lodash";
+import { cloneDeep, isEmpty, isEqual, omit } from "lodash-es";
 import { v4 as uuidv4} from 'uuid';
-import { uomContent, categories, globalItems, totalDocCount, getImpactedUsers } from "./utilities";
+import { uomContent, categories, globalItems, totalDocCount, getImpactedUsers } from "./utilities.js";
 import { DocumentScope, MangoResponse, MangoQuery, DocumentGetResponse, MaybeDocument, DocumentInsertResponse } from "nano";
-import { CategoryDoc, CategoryDocs, ConflictDoc, GlobalItemDoc, ImageDoc, ImageDocInit, InitSettingsDoc, ItemDoc, ItemDocs, ListDoc, ListDocs, ListGroupDoc, ListGroupDocInit, ListGroupDocs, RecipeDoc, SettingsDoc, ThemeType, UUIDDoc, UomDoc, UserDoc, appVersion, maxAppSupportedSchemaVersion, minimumAccessRefreshSeconds } from "./schema/DBSchema";
+import { CategoryDoc, CategoryDocFile, CategoryDocs, ConflictDoc, GlobalItemDoc, GlobalItemDocFile, ImageDoc, ImageDocInit, InitSettingsDoc, ItemDoc, ItemDocs, ListDoc, ListDocs, ListGroupDoc, ListGroupDocInit, ListGroupDocs, RecipeDoc, SettingsDoc, ThemeType, UUIDDoc, UomDoc, UomDocFile, UserDoc, appVersion, maxAppSupportedSchemaVersion, minimumAccessRefreshSeconds } from "./schema/DBSchema.js";
 import log, { LogLevelDesc } from "loglevel";
 import prefix from "loglevel-plugin-prefix";
-import { timeSpan } from "./timeutils";
+import { timeSpan } from "./timeutils.js";
 import i18next from 'i18next';
-import { en_translations } from './locales/en/translation';
-import { de_translations } from './locales/de/translation';
-import { es_translations } from './locales/es/translation';
-import { RowType } from "./datatypes";
+import { en_translations } from './locales/en/translation.js';
+import { de_translations } from './locales/de/translation.js';
+import { es_translations } from './locales/es/translation.js';
+import { RowType } from "./datatypes.js";
 
 let uomContentVersion = 0;
 const targetUomContentVersion = 5;
@@ -263,7 +268,7 @@ async function createUOMContent(): Promise<boolean> {
     }
     let foundUOMDocs: MangoResponse<UomDoc> =  (await groceriesDBAsAdmin.find(dbuomq) as MangoResponse<UomDoc>);
     for (let i = 0; i < uomContent.length; i++) {
-        let uom: UomDoc = uomContent[i];
+        let uom: UomDocFile = uomContent[i];
         const docIdx=foundUOMDocs.docs.findIndex((el) => (el.name.toUpperCase() === uom.name.toUpperCase() || el._id === uom._id));
         let needsAdded=true; let needsUpdated=false;
         if (docIdx !== -1) {
@@ -325,7 +330,7 @@ async function createCategoriesContent(): Promise<boolean> {
     }
     let foundCategoryDocs: MangoResponse<CategoryDoc> =  (await groceriesDBAsAdmin.find(dbcatq) as MangoResponse<CategoryDoc>);
     for (let i = 0; i < categories.length; i++) {
-        let category: CategoryDoc = categories[i];
+        let category: CategoryDocFile = categories[i];
         category.type = "category";
         category.listGroupID = "system";
         const docIdx=foundCategoryDocs.docs.findIndex((el) => (el.name.toUpperCase() === category.name.toUpperCase() || el._id === category._id));
@@ -375,7 +380,7 @@ async function createGlobalItemContent(): Promise<boolean> {
     try { foundGlobalItemDocs = (await groceriesDBAsAdmin.find(dbglobalq) as MangoResponse<GlobalItemDoc>) }
     catch(err) {log.error("Finding current global item docs"); return false;}
     for (let i = 0; i < globalItems.length; i++) {
-        let globalItem: GlobalItemDoc = globalItems[i];
+        let globalItem: GlobalItemDocFile = globalItems[i];
         globalItem.type = "globalitem";
         const docIdx=foundGlobalItemDocs.docs.findIndex((el) => el.name === globalItem.name );
         if (docIdx == -1) {
