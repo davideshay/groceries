@@ -80,12 +80,12 @@ const ItemLists: React.FC<ItemListsProps> = (props: ItemListsProps) => {
                       return (
                         <IonRow key={list.listID} className={rowClassName}>
                             <IonCol className="ion-no-padding" size="1">
-                                <IonCheckbox aria-label="" onIonChange={(e: CheckboxCustomEvent) => selectList(list.listID,Boolean(e.detail.checked))}
+                                <IonCheckbox aria-labelledby={"item-label-" + list.listID} onIonChange={(e: CheckboxCustomEvent) => selectList(list.listID,Boolean(e.detail.checked))}
                                              checked={sortedLists[idx].active}>
                                 </IonCheckbox>
                             </IonCol>
                             <IonCol className="ion-no-padding ion-align-self-center" size="9">
-                                <IonLabel>{listDocs[itemFoundIdx].name}</IonLabel>
+                                <IonLabel id={"item-label-" + list.listID}>{listDocs[itemFoundIdx].name}</IonLabel>
                             </IonCol>
                             <IonCol className="ion-no-padding" size="2">
                                 <IonButton onClick={() => {editListModal(list.listID)}}>

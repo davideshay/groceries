@@ -18,7 +18,7 @@ body::after {
 /* LIGHT MODE */
 
 body::before, ion-item, ion-list-header, ion-header, ion-toolbar, ion-list,
-ion-title.modal-title, #item-search-box-id, #items-page-header,
+ion-title.modal-title, #item-search-box, #items-page-header, .autocomplete-list,
 #items-page-header > ion-item, ion-select-popover, ion-menu ion-content {
     --background: #fafafa;
     background: #fafafa;
@@ -43,6 +43,9 @@ ion-item-divider.category-divider {
 ion-list.ion-items-list {
     background: #ffffff;
 }
+ion-item, #item-search-box {
+    --border-color: #cacaca;
+}
 ion-item.itemrow-outer, ion-item.app-menu-item, ion-item.menu-item-label,
 ion-list.menu-section ion-menu-toggle:first-of-type ion-item.app-menu-item,
 ion-menu ion-list ion-list:first-of-type ion-item-divider {
@@ -56,7 +59,7 @@ ion-item-divider.uncategorized-color {
 
 .ion-palette-dark {
     body::before, ion-item, ion-list-header, ion-header, ion-toolbar, ion-list,
-    ion-title.modal-title, #item-search-box-id, #items-page-header,
+    ion-title.modal-title, #item-search-box, #items-page-header,
     #items-page-header > ion-item, ion-select-popover, ion-menu ion-content {
         --background: #202020;
         background: #202020;
@@ -77,6 +80,9 @@ ion-item-divider.uncategorized-color {
     }
     ion-list.ion-items-list {
         background: #000000;
+    }
+    ion-item, #item-search-box {
+        --border-color: #646464;
     }
     ion-item.itemrow-outer, ion-item.app-menu-item, ion-item.menu-item-label,
     ion-list.menu-section ion-menu-toggle:first-of-type ion-item.app-menu-item,

@@ -112,7 +112,7 @@ function  GenericSearchBar({searchRows, rowSelected, addItemWithoutRow}: SearchB
                 </IonList>
             </IonContent>
         </IonPopover>
-        <IonSearchbar id={componentID} aria-label="" className="ion-no-padding generic-input-search generic-input-search-class"
+        <IonSearchbar id={componentID} className="ion-no-padding generic-input-search generic-input-search-class"
                     debounce={5} value={searchState.searchCriteria} inputmode="search" enterkeyhint="enter" ref={localSearchRef}
                     onIonInput={(e: CustomEvent) => {updateSearchCriteria(e)}}
 //                    onInput={(e: any) => {console.log("oninput",e.nativeEvent.data)}}

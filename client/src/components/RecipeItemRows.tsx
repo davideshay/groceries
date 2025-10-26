@@ -68,18 +68,18 @@ return (
         <IonCol size="10">{t('general.item')}</IonCol>
       </IonRow>
       {recipeItemRows.map(itemRow => (
-            <IonRow key={"item-"+itemRow.index} class="ion-align-items-center">
-            <IonCol size="2"><IonCheckbox aria-label="" checked={itemRow.checked}
+          <IonRow key={"item-"+itemRow.index} class="ion-align-items-center">
+            <IonCol size="2"><IonCheckbox aria-label={"recipie-item-" + itemRow.index} checked={itemRow.checked}
                 onIonChange={(ev) => checkItemOnList(ev.detail.checked,itemRow.index)}></IonCheckbox></IonCol>
-            <IonCol  size="8">{itemRow.name}</IonCol>
+            <IonCol size="8" id={"recipie-item-" + itemRow.index}>{itemRow.name}</IonCol>
             <IonCol size="1"><IonButton fill="clear" onClick={() => props.editItemModal(itemRow.index)}>
                 <IonIcon icon={pencilOutline}/></IonButton></IonCol>
             <IonCol size="1"><IonButton fill="clear" onClick={() => deleteItemFromList(itemRow.index)}>
               <IonIcon icon={trashOutline} /></IonButton>
             </IonCol>
-          </IonRow>
+        </IonRow>
       ))
-        }
+      }
     </IonGrid>
   </IonItem>
     )

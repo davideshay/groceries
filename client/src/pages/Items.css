@@ -1,3 +1,46 @@
+/* search */
+
+/* ion-item.item-search::part(native) {
+    min-height: auto;
+    padding-top: 4px;
+    padding-bottom: 4px;
+} */
+#item-search-autocomplete {
+    position: relative;
+}
+#item-search-autocomplete ion-item {
+    --inner-border-width: 0px;
+}
+#item-search-autocomplete > ion-item > ion-icon {
+    margin-inline-end: 16px;
+}
+#item-search-box {
+    min-height: auto;
+    --padding-start: none;
+    --padding-end: none;
+}
+#item-autocomplete-list {
+    display: none;
+    position: absolute;
+    margin-inline: 40px 16px;
+    left: 0;
+    /* top: 0; */
+    box-shadow: 0 0 10px 10px #00000022;
+    /* z-index: 999; */
+    height: 500px;
+    width: calc(100% - 56px);
+    overflow-y: scroll;
+}
+#item-search-autocomplete:focus-within #item-autocomplete-list {
+    display: block;
+}
+
+ion-item.item-search ion-icon {
+    margin-inline-end: 5px;
+}
+
+/* other */
+
 ion-item.item-list-selector {
     --padding-top: 8px;
     --padding-bottom: 8px;
@@ -5,21 +48,6 @@ ion-item.item-list-selector {
     background: none;
     border: none;
     --background-hover: none;
-}
-
-ion-item.item-search::part(native) {
-    min-height: auto;
-    padding-top: 4px;
-    padding-bottom: 4px;   
-}
-
-#item-search-box-id {
-    min-height: auto;
-}
-
-
-ion-item.item-search ion-icon {
-    margin-inline-end: 5px;
 }
 
 ion-item.itemrow-outer {

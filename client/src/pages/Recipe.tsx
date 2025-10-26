@@ -293,17 +293,17 @@ const Recipe: React.FC<HistoryProps> = () => {
               </IonInput>
             </IonItem>
             <IonItem key="recipelistgroup">
-            <IonSelect label="Recipe list group:" className="select-list-selector" aria-label=""
+            <IonSelect label="Recipe list group:" className="select-list-selector"
                         interface="popover" disabled={mode !== "new"}
                         onIonChange={(ev) => (setPageState(prevState=>({...prevState,recipeDoc: {...prevState.recipeDoc, listGroupID: ev.detail.value}})))}
                         value={pageState.recipeDoc.listGroupID}>              
-                  { globalData.listCombinedRows.filter(lcr => (!lcr.hidden && lcr.listGroupRecipe)).map(lcr => (
-                  <IonSelectOption disabled={lcr.rowKey==="G-null"} className={lcr.rowType === RowType.list ? "indented" : ""} key={lcr.listOrGroupID} value={lcr.listOrGroupID}>
-                    {lcr.rowName}
-                  </IonSelectOption>
-                  ))
-                  }
-                </IonSelect>
+              {globalData.listCombinedRows.filter(lcr => (!lcr.hidden && lcr.listGroupRecipe)).map(lcr => (
+                <IonSelectOption disabled={lcr.rowKey==="G-null"} className={lcr.rowType === RowType.list ? "indented" : ""} key={lcr.listOrGroupID} value={lcr.listOrGroupID}>
+                  {lcr.rowName}
+                </IonSelectOption>
+                ))
+              }
+            </IonSelect>
             </IonItem>
             <IonItemDivider className="category-divider">{t("general.items_in_recipe")}</IonItemDivider>
             <RecipeItemRows 
@@ -315,9 +315,9 @@ const Recipe: React.FC<HistoryProps> = () => {
             <IonItemDivider className="category-divider">{t("general.recipe_steps")}</IonItemDivider>
             <IonItem key="recipesteps">
               <IonGrid>
-                { pageState.recipeDoc.instructions.map((step,index) => (
+                {pageState.recipeDoc.instructions.map((step,index) => (
                   <IonRow key={"step-"+index}>
-                    <IonCol size="11"><IonTextarea autoGrow={true} aria-label="" className="recipe-step" value={step.stepText} onIonInput={(ev) => updateRecipeStep(index,String(ev.detail.value))}></IonTextarea></IonCol>
+                    <IonCol size="11"><IonTextarea autoGrow={true} aria-label="recipe step" className="recipe-step" value={step.stepText} onIonInput={(ev) => updateRecipeStep(index,String(ev.detail.value))}></IonTextarea></IonCol>
                     <IonCol size="1"><IonButton onClick={() => deleteRecipeStep(index)} fill="clear"><IonIcon icon={trashOutline}/></IonButton></IonCol>
                   </IonRow>
                   ))
@@ -337,7 +337,7 @@ const Recipe: React.FC<HistoryProps> = () => {
                   <IonButton size="small" className='extra-small-button'  onClick={() => addItemsToList()}>{t("general.add_items_to")}</IonButton>
                 </IonCol>
                 <IonCol size="7">
-                <IonSelect className="select-list-selector" aria-label="" interface="popover" onIonChange={(ev) => (setPageState(prevState=>({...prevState,selectedListOrGroupID: ev.detail.value})))} value={pageState.selectedListOrGroupID}>
+                <IonSelect className="select-list-selector" aria-label="select list" interface="popover" onIonChange={(ev) => (setPageState(prevState=>({...prevState,selectedListOrGroupID: ev.detail.value})))} value={pageState.selectedListOrGroupID}>
                   { globalData.listCombinedRows.filter(lcr => (!lcr.hidden && !lcr.listGroupRecipe)).map(lcr => (
                   <IonSelectOption disabled={lcr.rowKey==="G-null"} className={lcr.rowType === RowType.list ? "indented" : ""} key={lcr.listOrGroupID} value={lcr.listOrGroupID}>
                     {lcr.rowName}

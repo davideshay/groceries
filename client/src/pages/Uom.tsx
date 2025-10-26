@@ -295,7 +295,7 @@ const Uom: React.FC<HistoryProps> = () => {
               pageState.uomDoc._id?.startsWith("system:uom") ?
               pageState.uomDoc.alternates?.map((alt,index) => (
                 <IonItem key={"altuom"+(index)}>
-                  <IonInput aria-label="" key={index+alt} disabled={pageState.uomDoc._id?.startsWith("system:uom")} type="text" placeholder={t("general.new_placeholder") as string} value={pageState.uomDoc.alternates![index]}></IonInput>
+                  <IonInput aria-label="new UoM abbreviation" key={index+alt} disabled={pageState.uomDoc._id?.startsWith("system:uom")} type="text" placeholder={t("general.new_placeholder") as string} value={pageState.uomDoc.alternates![index]}></IonInput>
                 </IonItem>
               )) : <></>
             }
@@ -304,7 +304,7 @@ const Uom: React.FC<HistoryProps> = () => {
               pageState.uomDoc.customAlternates?.map((alt,index) => (
                 <IonRow key={"custaltuom"+(index)+alt}>
                   <IonCol size="10">
-                    <IonInput aria-label="" type="text" placeholder={t("general.new_placeholder") as string} onIonInput={(e) => updateCustomAlternateUom(index,String(e.detail.value))}  value={pageState.uomDoc.customAlternates![index]}></IonInput>                  
+                    <IonInput aria-label="new UoM abbreviation" type="text" placeholder={t("general.new_placeholder") as string} onIonInput={(e) => updateCustomAlternateUom(index,String(e.detail.value))}  value={pageState.uomDoc.customAlternates![index]}></IonInput>                  
                   </IonCol>
                   <IonCol size="2">
                     <IonButton onClick={() => deleteCustom(index)}><IonIcon icon={trashOutline}></IonIcon></IonButton>

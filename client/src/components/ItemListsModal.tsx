@@ -57,14 +57,14 @@ const ItemListsModal: React.FC<ModalProps> = (props: ModalProps) => {
      <IonList>
         <IonGrid>
           <IonRow>
-            <IonCol size="4">{t('general.active')}</IonCol>
-            <IonCol size="4">{t('general.completed')}</IonCol>
-            <IonCol size="4">{t('general.stocked_here')}</IonCol>
+            <IonCol id="item-modal-checkbox-label-active" size="4">{t('general.active')}</IonCol>
+            <IonCol id="item-modal-checkbox-label-completed" size="4">{t('general.completed')}</IonCol>
+            <IonCol id="item-modal-checkbox-label-stocked" size="4">{t('general.stocked_here')}</IonCol>
           </IonRow>
           <IonRow>
-            <IonCol size="4"><IonCheckbox aria-label="" labelPlacement="end" checked={props.modalState.itemList.active} onIonChange={(e) => props.setModalState(prevState =>({...prevState,itemList: {...prevState.itemList, active: e.detail.checked}}) )}></IonCheckbox></IonCol>
-            <IonCol size="4"><IonCheckbox aria-label="" labelPlacement="end" checked={props.modalState.itemList.completed} onIonChange={(e) => props.setModalState(prevState =>({...prevState,itemList: {...prevState.itemList,completed: e.detail.checked}}) )}></IonCheckbox></IonCol>
-            <IonCol size="4"><IonCheckbox aria-label="" labelPlacement="end" checked={props.modalState.itemList.stockedAt} onIonChange={(e) => props.setModalState(prevState =>({...prevState,itemList: {...prevState.itemList,stockedAt: e.detail.checked}}) )}></IonCheckbox></IonCol>
+            <IonCol size="4"><IonCheckbox aria-labelledby="item-modal-checkbox-label-active" labelPlacement="end" checked={props.modalState.itemList.active} onIonChange={(e) => props.setModalState(prevState =>({...prevState,itemList: {...prevState.itemList, active: e.detail.checked}}) )}></IonCheckbox></IonCol>
+            <IonCol size="4"><IonCheckbox aria-labelledby="item-modal-checkbox-label-completed" labelPlacement="end" checked={props.modalState.itemList.completed} onIonChange={(e) => props.setModalState(prevState =>({...prevState,itemList: {...prevState.itemList,completed: e.detail.checked}}) )}></IonCheckbox></IonCol>
+            <IonCol size="4"><IonCheckbox aria-labelledby="item-modal-checkbox-label-stocked" labelPlacement="end" checked={props.modalState.itemList.stockedAt} onIonChange={(e) => props.setModalState(prevState =>({...prevState,itemList: {...prevState.itemList,stockedAt: e.detail.checked}}) )}></IonCheckbox></IonCol>
           </IonRow>
           <IonRow>
             <IonCol size="10">

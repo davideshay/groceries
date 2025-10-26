@@ -96,7 +96,7 @@ export const it_translations =
         "list_group": "Gruppo di liste",
         "loading_items": "Caricamento articoli",
         "continue_ignore": "Continua/Ignora",
-        "items_on": "Articoli Attivi :",
+        "items_on": "Articoli Attivi:",
         "search": "Cerca",
         "delete_completed_items": "RIMUOVI COMPLETATI",
         "loading_list": "Caricamento lista...",

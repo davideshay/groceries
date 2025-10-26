@@ -1,6 +1,6 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonItemGroup,
   IonItemDivider, IonButton, IonButtons, IonFab, IonFabButton, IonIcon, IonCheckbox, IonLabel, IonSelect,
-  IonSelectOption, IonInput, IonPopover, IonAlert,IonMenuButton, useIonToast, 
+  IonSelectOption, IonInput, IonAlert,IonMenuButton, useIonToast, 
   useIonAlert, 
   CheckboxChangeEventDetail} from '@ionic/react';
 import { add,chevronUp,documentTextOutline,searchOutline } from 'ionicons/icons';
@@ -536,26 +536,6 @@ const Items: React.FC<HistoryProps> = () => {
     return (!foundCat.collapsed)
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const popOverProps: any = {
-    side: "bottom",
-    isOpen: searchState.isOpen,
-    keyboardClose: false,
-    onDidDismiss: () => {leaveSearchBox()},
-  }
-  if (listRows && listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length >0) {
-    popOverProps.trigger = "item-search-box-id"
-  }
-  const popOverElem = (
-    <IonPopover key="popoverseach" {...popOverProps}>
-    <IonContent><IonList key="popoverItemList">
-      {(searchState.filteredSearchRows).map((item: ItemSearch) => (
-        <IonItem button key={pageState.selectedListOrGroupID+"-poilist-"+item.itemID} onClick={() => {chooseSearchItem(item)}}>{item.itemName}</IonItem>
-      ))}
-    </IonList></IonContent>
-    </IonPopover>
-  )
-
   const alertElem = (
     <IonAlert
       key="mainerroralert"
@@ -568,41 +548,45 @@ const Items: React.FC<HistoryProps> = () => {
   )
 
   const headerElem=(
-    <IonHeader key="pageheader"><IonToolbar key="pagetoolbar" id="items-page-header"><IonButtons key="headerbuttons" slot="start"><IonMenuButton key="headermenubutton" className={"ion-no-padding small-menu-button"} /></IonButtons>
-    <IonTitle key="pagetitle" className="ion-no-padding item-outer"></IonTitle>
+    <IonHeader key="pageheader">
+      <IonToolbar key="pagetoolbar" id="items-page-header">
+        <IonButtons key="headerbuttons" slot="start">
+          <IonMenuButton key="headermenubutton" className={"ion-no-padding small-menu-button"} />
+        </IonButtons>
+        <IonTitle key="pagetitle" className="ion-no-padding item-outer"></IonTitle>
         <IonItem id="item-list-selector-id" className="item-list-selector" key="listselectoritem">
-        <IonSelect key="listselectorselect" id="select-list-selector-id" className="select-list-selector" label={t("general.items_on") as string} aria-label={t("general.items_on") as string} interface="popover"
-              onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListOrGroupID} >
-            {listSelectRows !== undefined ? listSelectRows.filter(lcr => (!lcr.hidden && !lcr.listGroupRecipe)).map((listSelectRow: ListSelectRow) => (
-                <IonSelectOption disabled={listSelectRow.rowKey==="G-null"}
-                    className={" "+ (listSelectRow.rowType === RowType.list ? "indented " : "listgroup ") + (listSelectRow.hasUncheckedItems ? "has-unchecked" : "no-unchecked" )}
-                    key={listSelectRow.listOrGroupID} value={listSelectRow.listOrGroupID}>
-                  {listSelectRow.rowName}
-                </IonSelectOption>
-            )) : <></>}
+          <IonSelect key="listselectorselect" id="select-list-selector-id" className="select-list-selector" label={t("general.items_on") as string} aria-label={t("general.items_on") as string} interface="popover"
+                onIonChange={(ev) => selectList(ev.detail.value)} value={pageState.selectedListOrGroupID} >
+              {listSelectRows !== undefined ? listSelectRows.filter(lcr => (!lcr.hidden && !lcr.listGroupRecipe)).map((listSelectRow: ListSelectRow) => (
+                  <IonSelectOption disabled={listSelectRow.rowKey==="G-null"}
+                      className={" "+ (listSelectRow.rowType === RowType.list ? "indented " : "listgroup ") + (listSelectRow.hasUncheckedItems ? "has-unchecked" : "no-unchecked" )}
+                      key={listSelectRow.listOrGroupID} value={listSelectRow.listOrGroupID}>
+                    {listSelectRow.rowName}
+                  </IonSelectOption>
+              )) : <></>}
           </IonSelect>
-         <SyncIndicator addPadding={false}/>
-         </IonItem>
-         {/* <IonItem>
-          <ItemsSearch rowSelected={chooseSearchItem} addItemWithoutRow={addNewItemToList}/>
-         </IonItem> */}
-        <IonItem key="searchbar" className="item-search">
-           <IonIcon icon={searchOutline}  slot="start"/>
-           <IonInput key="itemsearchbox" id="item-search-box-id" aria-label="" className="ion-no-padding input-search" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="text" enterkeyhint="enter"
-              disabled={listRows !== undefined ? listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length <=0 : true}
-              clearInput={true}  placeholder={t("general.search") as string} fill="solid"
-              onKeyDown= {(e) => searchKeyPress(e)}
-              onIonInput={(e) => updateSearchCriteria(e)}
-              onClick={(e) => enterSearchBox(e)}
-              // Not sure why, but when you have this specific setsearchstate, it captures the click on the item in the popover and nothing works 
-              // </IonItem>onIonBlur={(e) => { setSearchState(prevState => ({...prevState,isFocused: false}))}}
-              > 
-           </IonInput>
-          {/* <IonButton onClick={()=> clickedSearchCheck()}><IonIcon icon={checkmark} /></IonButton> */}
+          <SyncIndicator addPadding={false}/>
         </IonItem>
-        {popOverElem}
-        {alertElem}
-    </IonToolbar></IonHeader>)
+      </IonToolbar>
+      <div id="item-search-autocomplete">
+        <IonItem>
+          <IonIcon icon={searchOutline} slot="start"/>
+          <IonInput id="item-search-box" className="ion-no-padding" aria-label="item search" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="text" enterkeyhint="enter"
+            disabled={listRows !== undefined ? listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length <=0 : true}
+            clearInput={true}  placeholder={t("general.search") as string} fill="solid"
+            onKeyDown= {(e) => searchKeyPress(e)}
+            onIonInput={(e) => updateSearchCriteria(e)}
+            onClick={(e) => enterSearchBox(e)}
+            />
+        </IonItem>
+        <IonList id="item-autocomplete-list" className={searchState.isOpen ? " autocomplete-list-open" : ""}>
+          {(searchState.filteredSearchRows).map((item: ItemSearch) => (
+            <IonItem button key={pageState.selectedListOrGroupID+"-poilist-"+item.itemID} onClick={() => {chooseSearchItem(item)}}>{item.itemName}</IonItem>
+          ))}
+        </IonList>
+      </div>
+      {alertElem}
+    </IonHeader>)
 
   const fabContent =  (
       <IonFab key="fab" slot="fixed" vertical="bottom" horizontal="end">
@@ -685,16 +669,15 @@ const Items: React.FC<HistoryProps> = () => {
     const rowVisible = getCategoryExpanded(item.categoryID,Boolean(item.completed));
     currentRows.push(
       <IonItem className={"itemrow-outer "+(rowVisible ? "itemrow-display" : "itemrow-hidden")} key={"itemouter"+pageState.itemRows[i].itemID} >
-        <IonCheckbox key={"itemcheckbox"+pageState.itemRows[i].itemID} aria-label=""
+        <IonCheckbox key={"item-checkbox" + pageState.itemRows[i].itemID} aria-labelledby={"item-name-" + pageState.itemRows[i].itemID}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           onIonChange={(e: CustomEvent<CheckboxChangeEventDetail>) => {if (!doingUpdate.current) { (e.target as any).disabled = true; doingUpdate.current=true; completeItemRowStub(item.itemID,e)}}}
           color={"medium"} disabled={doingUpdate.current}
-          checked={Boolean(item.completed)} className={"item-on-list "+ (item.completed ? "item-completed" : "")}>
+          checked={Boolean(item.completed)} className={"item-on-list"+ (item.completed ? " item-completed" : "")}>
         </IonCheckbox>
-        <IonItem className={"itemrow-inner"+(item.completed ? " item-completed": "")} routerLink={"/item/edit/"+item.itemID}
-          key={"iteminner"+pageState.itemRows[i].itemID}>
-            {item.itemName + (item.quantityUOMDesc === "" ? "" : " ("+ item.quantityUOMDesc+")")}
-            {item.hasNote ? <IonIcon key={"itemnoteicon"+pageState.itemRows[i].itemID} className="note-icon" icon={documentTextOutline}></IonIcon> : <></>}
+        <IonItem id={"item-name-" + pageState.itemRows[i].itemID} className={"itemrow-inner" + (item.completed ? " item-completed": "")} routerLink={"/item/edit/"+item.itemID} key={"iteminner"+pageState.itemRows[i].itemID}>
+          {item.itemName + (item.quantityUOMDesc === "" ? "" : " ("+ item.quantityUOMDesc+")")}
+          {item.hasNote ? <IonIcon key={"itemnoteicon"+pageState.itemRows[i].itemID} className="note-icon" icon={documentTextOutline}></IonIcon> : <></>}
         </IonItem>
       </IonItem>);
     if (lastCategoryFinished && !createdFinished) {

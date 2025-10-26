@@ -356,7 +356,7 @@ function deletePrompt() {
   } else {
     const iopts={};
     selectElem.push(
-      <IonSelect label={t("general.editing_listgroup")+":"} aria-label={t("general.editing_listgroup")+":"} key="list-notchanged" interface="popover" interfaceOptions={iopts} onIonChange={(ev) => changeListUpdateState(ev.detail.value)} value={pageState.selectedListGroupID}>
+      <IonSelect label={t("general.editing_listgroup")} aria-label={t("general.editing_listgroup")} key="list-notchanged" interface="popover" interfaceOptions={iopts} onIonChange={(ev) => changeListUpdateState(ev.detail.value)} value={pageState.selectedListGroupID}>
         {selectOptionListElem}
       </IonSelect>
     ) 
