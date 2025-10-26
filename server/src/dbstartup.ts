@@ -3,19 +3,21 @@ import { couchdbUrl,couchdbInternalUrl,couchDatabase,couchKey,couchAdminUser,cou
     expireJWTFrequencyMinutes,disableAccountCreation,
     logLevel
  } from './config.js';
+import { isInteger } from './utilityfunctions.js'
+import { groceriesNanoAsAdmin, usersNanoAsAdmin, groceriesDBAsAdmin, usersDBAsAdmin, setGroceriesDBAsAdmin, setUsersDBAsAdmin } from './dbconfig.js';
+import { couchStandardRole, couchAdminRole, conflictsViewID, conflictsViewName } from "./config.js";
 
-import { groceriesNanoAsAdmin, usersNanoAsAdmin, couchStandardRole,
-couchAdminRole, conflictsViewID, conflictsViewName, 
-passwordResetExpireSeconds,
-expirePasswordResetUserRecords} from "./apicalls.js";
+import { passwordResetExpireSeconds,expirePasswordResetUserRecords} from "./apicalls.js";
 import { resolveConflicts } from "./apicalls.js";
-import { expireJWTs, generateJWT } from './jwt.js'
+import { expireJWTs } from './jwt.js'
+import { generateJWT } from './utilities.js';
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { cloneDeep, isEmpty, isEqual, omit } from "lodash-es";
 import { v4 as uuidv4} from 'uuid';
 import { uomContent, categories, globalItems, totalDocCount, getImpactedUsers } from "./utilities.js";
-import { DocumentScope, MangoResponse, MangoQuery, DocumentGetResponse, MaybeDocument, DocumentInsertResponse } from "nano";
-import { CategoryDoc, CategoryDocFile, CategoryDocs, ConflictDoc, GlobalItemDoc, GlobalItemDocFile, ImageDoc, ImageDocInit, InitSettingsDoc, ItemDoc, ItemDocs, ListDoc, ListDocs, ListGroupDoc, ListGroupDocInit, ListGroupDocs, RecipeDoc, SettingsDoc, ThemeType, UUIDDoc, UomDoc, UomDocFile, UserDoc, appVersion, maxAppSupportedSchemaVersion, minimumAccessRefreshSeconds } from "./schema/DBSchema.js";
+import { MangoResponse, MangoQuery, DocumentGetResponse, MaybeDocument, DocumentInsertResponse } from "nano";
+import { CategoryDoc, CategoryDocFile, CategoryDocs, ConflictDoc, GlobalItemDoc, GlobalItemDocFile, ImageDoc, InitSettingsDoc, ItemDoc, ItemDocs, ListDoc, ListDocs, ListGroupDoc, ListGroupDocInit, ListGroupDocs, RecipeDoc, SettingsDoc, ThemeType, UUIDDoc, UomDoc, UomDocFile, UserDoc, appVersion, maxAppSupportedSchemaVersion, minimumAccessRefreshSeconds } from "./schema/DBSchema.js";
+import { ImageDocInit } from "./schema/DBSchema.js"
 import log, { LogLevelDesc } from "loglevel";
 import prefix from "loglevel-plugin-prefix";
 import { timeSpan } from "./timeutils.js";
@@ -34,50 +36,6 @@ const targetGlobalItemVersion = 2;
 let schemaVersion = 0;
 const targetSchemaVersion = 7;
 
-
-export let groceriesDBAsAdmin: DocumentScope<unknown>;
-export let usersDBAsAdmin: DocumentScope<unknown>;
-
-export async function couchLogin(username: string, password: string) {
-    const loginResponse = {
-        dbServerAvailable: true,
-        loginSuccessful: true,
-        loginRoles: []
-    }
-    const config: AxiosRequestConfig = {
-        method: 'get',
-        url: couchdbInternalUrl+"/_session",
-        auth: { username: username, password: password},
-        responseType: 'json'
-    }
-    let res: AxiosResponse| null;
-    try  {res = await axios(config)}
-    catch(err: any) { log.debug("auth error for _session:",err.response.status);
-                loginResponse.loginSuccessful = false;
-                let httpResponseExists = (err && err.response && err.response.status && isInteger(err.response.status));
-                if (!httpResponseExists) {
-                    loginResponse.dbServerAvailable = false
-                } else {
-                    let httpResponse = Number(err.response.status);
-                    if (httpResponse >= 500 && httpResponse <= 599) {
-                        loginResponse.dbServerAvailable = false
-                    }
-                }
-                return loginResponse};
-    if (res == null) {loginResponse.loginSuccessful = false; return loginResponse}
-    if (loginResponse.loginSuccessful) {
-        if (res.status != 200) {
-            loginResponse.loginSuccessful = false;
-        }
-        if (loginResponse.loginSuccessful && (res.data.ok != true)) {
-            loginResponse.loginSuccessful = false;
-        }
-    }
-    if (loginResponse.loginSuccessful) {
-        loginResponse.loginRoles = res.data.userCtx.roles;
-    }
-    return(loginResponse);
-}
 
 export async function doesDBExist() {
     let retrieveError = false;
@@ -1808,10 +1766,6 @@ function encodedHMAC() {
     return base64HMAC;
 }
 
-function isInteger(str: string) {
-    return /^\+?(0|[1-9]\d*)$/.test(str);
-}
-
 function convertLogLevel(level: string) : LogLevelDesc {
     let uLevel=level.toUpperCase();
     if (["0","TRACE","T"].includes(level)) {
@@ -1882,10 +1836,8 @@ export async function dbStartup() {
     if (!createSuccess) {return false;}
     let securitySuccess = await setDBSecurity();
     if (!securitySuccess) {return false}
-    try {groceriesDBAsAdmin = groceriesNanoAsAdmin.use(couchDatabase);}
-    catch(err) {log.error("Could not open grocery database:",err); return false;}
-    try {usersDBAsAdmin = usersNanoAsAdmin.use("_users");}
-    catch(err) {log.error("Could not open users database:", err); return false;}
+    if (!setGroceriesDBAsAdmin()) {return false};
+    if (!setUsersDBAsAdmin()) {return false};
     let keysOK = await checkJWTKeys();
     log.debug("JWT Encoded HMAC:",encodedHMAC());
     if (!keysOK) {

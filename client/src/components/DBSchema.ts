@@ -158,7 +158,7 @@ export const ImageDocInit: ImageDoc = {
   listGroupID: null,
   imageBase64: null,
   updatedAt: ""
-}
+} as const satisfies ImageDoc;
 
 export type GlobalItemDoc  = {
   _id?: string,

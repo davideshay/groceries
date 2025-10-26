@@ -21,6 +21,13 @@ export const smtpUser = process.env.SMTP_USER;
 export const smtpPassword = process.env.SMTP_PASSWORD;
 export const smtpFrom = process.env.SMTP_FROM;
 
+export const couchStandardRole = "crud";
+export const couchAdminRole = "dbadmin";
+export const couchUserPrefix = "org.couchdb.user";
+export const conflictsViewID = "_conflicts_only_view_id";
+export const conflictsViewName = "conflicts_view";
+export const utilitiesViewID = "_utilities";
+
 export function getBooleanFromText(val: string | boolean) {
     if (val === true) {return true}; if (val === false) {return false};
     let trueStrings=["TRUE","YES","1"];                                 

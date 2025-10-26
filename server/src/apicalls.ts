@@ -4,34 +4,27 @@ import { couchdbUrl,couchdbInternalUrl,couchDatabase,couchKey,couchAdminUser,cou
     logLevel,smtpHost,smtpPort,smtpSecure,smtpUser,smtpPassword,smtpFrom
  } from './config.js';
 
-export const couchStandardRole = "crud";
-export const couchAdminRole = "dbadmin";
-export const couchUserPrefix = "org.couchdb.user";
-export const conflictsViewID = "_conflicts_only_view_id";
-export const conflictsViewName = "conflicts_view";
-export const utilitiesViewID = "_utilities";
+import { DocumentListResponse, MangoResponse, MaybeDocument, MangoQuery } from 'nano';
+
+import  { couchStandardRole, couchAdminRole, couchUserPrefix, conflictsViewID, conflictsViewName, utilitiesViewID } from './config.js'
+
 const smtpOptions: SMTPTransport.Options= {
     host: smtpHost, port: smtpPort, 
     auth: { user: smtpUser, pass: smtpPassword}
 };
 
 import nodemailer from 'nodemailer';
-import nanoAdmin, { DocumentListResponse,  MangoQuery,  MangoResponse, MaybeDocument } from 'nano';
-const nanoAdminOpts = {
-    url: couchdbInternalUrl,
-    headers: { Authorization: "Basic "+ Buffer.from(couchAdminUser+":"+couchAdminPassword).toString('base64') }
-}
+import { groceriesDBAsAdmin, groceriesNanoAsAdmin, usersDBAsAdmin, couchLogin } from './dbconfig.js';
 
-export let groceriesNanoAsAdmin = nanoAdmin(nanoAdminOpts);
-export let usersNanoAsAdmin = nanoAdmin(nanoAdminOpts);
-import { groceriesDBAsAdmin, usersDBAsAdmin, couchLogin } from './dbstartup.js';
 import { omit,cloneDeep, isEmpty } from 'lodash-es';
-import { usernamePatternValidation, fullnamePatternValidation, getUserDoc, getUserByEmailDoc,
-    totalDocCount, isNothing, createNewUser, updateUnregisteredFriends, getFriendDocByUUID,
+import { usernamePatternValidation, fullnamePatternValidation, isNothing } from './utilityfunctions.js';
+import { getUserDoc, getUserByEmailDoc,
+    totalDocCount, createNewUser, updateUnregisteredFriends, getFriendDocByUUID,
     UserResponse, CreateResponseType, checkDBAvailable, getImpactedUsers, 
     updateUserDoc,
     getUserByResetUUIDDoc} from './utilities.js';
-import { generateJWT, isValidToken, invalidateToken, JWTMatchesUserDB, TokenReturnType } from './jwt.js'     
+import { isValidToken, invalidateToken, JWTMatchesUserDB, TokenReturnType } from './jwt.js'   
+import { generateJWT } from './utilities.js';  
 import type { NextFunction, Request as ExpressRequest, Response as ExpressResponse, RequestHandler } from 'express';
 import { CheckUseEmailReqBody, CheckUserByEmailExistsResponse, CheckUserExistsReqBody, CheckUserExistsResponse, CreateAccountParams, CreateAccountResponse, GetUsersInfoRequestBody, GetUsersInfoResponse, IsAvailableResponse, IssueTokenBody, IssueTokenResponse, LogoutBody, NewUserReponse, NewUserReqBody, RefreshTokenBody, RefreshTokenResponse, ResetPasswordBody, ResetPasswordFormResponse, ResetPasswordParams, ResetPasswordResponse, TriggerRegEmailBody, UpdateUserInfoResponse, UserInfo } from './datatypes.js';
 import { ConflictDoc, FriendDoc, UserDoc, appVersion } from './schema/DBSchema.js';

@@ -1,32 +1,17 @@
-import { accessTokenExpires, refreshTokenExpires } from "./config.js";
-import { couchUserPrefix, couchStandardRole } from "./apicalls.js";
-import { usersDBAsAdmin, groceriesDBAsAdmin } from './dbstartup.js';
-import { generateJWT } from "./jwt.js";
+import { accessTokenExpires, refreshTokenExpires, couchUserPrefix, couchStandardRole, couchKey  } from "./config.js";
+import { usersDBAsAdmin, groceriesDBAsAdmin } from './dbconfig.js';
 import { UserDoc, FriendDoc, FriendDocs, ListGroupDoc} from './schema/DBSchema.js'
 import nano, { DatabaseGetResponse, DocumentScope, MangoQuery, MangoResponse, MaybeDocument } from "nano";
 import { cloneDeep } from "lodash-es";
 import { NewUserReponse, NewUserReqBody, UserObj } from "./datatypes.js";
 import log from 'loglevel';
 import type { Request as ExpressRequest } from 'express';
+import * as jose from 'jose';
+import { JWTPayload } from 'jose';
 
 export { default as  uomContent } from "../data/uomContent.json" with { type: "json"};
 export { default as globalItems } from "../data/globalItems.json" with { type: "json"};
 export { default as categories } from "../data/categories.json" with { type: "json"};
-
-export function emailPatternValidation(email: string) {
-    const emailRegex=/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-    return emailRegex.test(email);
-};
-
-export function usernamePatternValidation(username: string) {
-    const usernameRegex=/^[a-zA-Z0-9]*$/
-    return usernameRegex.test(username);
-}
-
-export function fullnamePatternValidation(fullname: string) {
-    const usernameRegex=/^[a-zA-Z0-9 ]*$/
-    return usernameRegex.test(fullname);
-}
 
 export async function totalDocCount(db: DocumentScope<unknown>) {
     let info: DatabaseGetResponse;
@@ -212,11 +197,6 @@ export async function getFriendDocByUUID(uuid: string): Promise<FriendDoc|null> 
     return(foundFriendDoc);
 }
 
-export function isNothing(obj: any) {
-    if (obj == "" || obj == null || obj == undefined) {return (true)}
-    else {return (false)};
-}
-
 export async function getUsersFromListGroup(listGroupID:string): Promise<Set<string>> {
     let users: Set<string> =  new Set();
     let foundListGroupDoc: ListGroupDoc;
@@ -226,7 +206,6 @@ export async function getUsersFromListGroup(listGroupID:string): Promise<Set<str
     foundListGroupDoc.sharedWith.forEach( sharedUser => users.add(sharedUser))
     return users;
 }
-
 
 export async function getImpactedUsers(doc: any): Promise<Set<string>> {
     let impactedUsers = new Set<string>()
@@ -255,4 +234,22 @@ export async function getImpactedUsers(doc: any): Promise<Set<string>> {
         return new Set(await getUsersFromListGroup(doc.listGroupID));
     }
     return impactedUsers;
+}
+
+export async function generateJWT ({ username, deviceUUID, timeString, includeRoles}: {username: string, deviceUUID: string, timeString: string, includeRoles: boolean}) {
+    const alg = "HS256";
+    const secret = new TextEncoder().encode(couchKey);
+    const payload: JWTPayload = {'sub': username, 'deviceUUID': deviceUUID};
+    if (includeRoles) { 
+        payload["_couchdb.roles"] =  [couchStandardRole];
+        payload["tokenType"] = "access"
+    } else {
+        payload["tokenType"] = "refresh"
+    }
+    const jwt = await new jose.SignJWT(payload)
+        .setProtectedHeader({ alg })
+        .setIssuedAt()
+        .setExpirationTime(timeString)
+        .sign(secret);  
+    return (jwt);
 }

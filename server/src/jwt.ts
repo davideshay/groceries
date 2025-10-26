@@ -1,9 +1,8 @@
-import * as jose from 'jose'
+import * as jose from 'jose';
 import { JWTPayload } from 'jose';
-import { usersDBAsAdmin } from './dbstartup.js';
-import { couchKey } from './config.js';
-import { couchStandardRole } from './apicalls.js';
-import { getUserDoc } from './utilities.js';
+import { usersDBAsAdmin } from './dbconfig.js';
+import { couchKey, couchStandardRole } from './config.js';
+import { getUserDoc, generateJWT } from './utilities.js';
 import { isEqual, isEmpty } from 'lodash-es';
 import {UserDoc} from './schema/DBSchema.js'
 import { DocumentListResponse } from 'nano';
@@ -51,24 +50,6 @@ export async function isValidToken(refreshJWT: string) {
     }
 //    log.debug("Returning JWT data:",returnValue);
     return returnValue;
-}
-
-export async function generateJWT ({ username, deviceUUID, timeString, includeRoles}: {username: string, deviceUUID: string, timeString: string, includeRoles: boolean}) {
-    const alg = "HS256";
-    const secret = new TextEncoder().encode(couchKey);
-    const payload: JWTPayload = {'sub': username, 'deviceUUID': deviceUUID};
-    if (includeRoles) { 
-        payload["_couchdb.roles"] =  [couchStandardRole];
-        payload["tokenType"] = "access"
-    } else {
-        payload["tokenType"] = "refresh"
-    }
-    const jwt = await new jose.SignJWT(payload)
-        .setProtectedHeader({ alg })
-        .setIssuedAt()
-        .setExpirationTime(timeString)
-        .sign(secret);  
-    return (jwt);
 }
 
 export async function JWTMatchesUserDB(refreshJWT: string, deviceUUID: string, username: string) {
