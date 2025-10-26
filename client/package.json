@@ -4,15 +4,15 @@
   "private": true,
   "dependencies": {
     "@awesome-cordova-plugins/chooser-simple-file": "^8.1.0",
-    "@capacitor/android": "^7.4.3",
+    "@capacitor/android": "^7.4.4",
     "@capacitor/app": "^7.1.0",
     "@capacitor/camera": "^7.0.2",
     "@capacitor/clipboard": "^7.0.2",
-    "@capacitor/core": "^7.4.3",
+    "@capacitor/core": "^7.4.4",
     "@capacitor/device": "^7.0.2",
     "@capacitor/filesystem": "^7.1.4",
     "@capacitor/haptics": "^7.0.2",
-    "@capacitor/ios": "^7.4.3",
+    "@capacitor/ios": "^7.4.4",
     "@capacitor/keyboard": "^7.0.3",
     "@capacitor/network": "^7.0.2",
     "@capacitor/preferences": "^7.0.2",
@@ -38,7 +38,7 @@
     "pouchdb-selector-core": "^9.0.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-i18next": "^15.7.4",
+    "react-i18next": "^16.2.0",
     "react-router": "^5.3.4",
     "react-router-dom": "^5.3.4",
     "typescript": "^5.9.3",
@@ -78,7 +78,7 @@
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.4",
-    "@capacitor/cli": "^7.4.3",
+    "@capacitor/cli": "^7.4.4",
     "@eslint/js": "^9.38.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
@@ -94,13 +94,13 @@
     "@types/react-router-dom": "^5.1.7",
     "@types/uuid": "^10.0.0",
     "eslint": "^9.38.0",
-    "eslint-plugin-react-hooks": "^7.0.0",
+    "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "pouchdb-browser": "^9.0.0",
     "pouchdb-find": "^9.0.0",
     "typescript-eslint": "^8.46.2",
-    "@vitejs/plugin-react": "^5.0.4",
-    "vite": "^7.1.1"
+    "@vitejs/plugin-react": "^5.1.0",
+    "vite": "^7.1.12"
   },
   "description": "An Ionic project"
 }

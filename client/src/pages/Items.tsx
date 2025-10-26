@@ -434,6 +434,7 @@ const Items: React.FC<HistoryProps> = () => {
   screenLoading.current=false;
 
   function updateSearchCriteria(event: CustomEvent) {
+    log.debug("UpdateSearchCriteria",event)
     if (event.detail.value !== enterKeyValueRef.current) {
         setSearchState(prevState => ({...prevState, searchCriteria: event.detail.value, isFocused:true}));
         filterAndCheckRows(event.detail.value,true)
@@ -444,6 +445,7 @@ const Items: React.FC<HistoryProps> = () => {
   }
 
   function searchKeyPress(event: KeyboardEvent<HTMLIonInputElement>) {
+    log.debug("SearchKeyPress:",event);
     if (event.key === "Enter") {
       addNewItemToList(searchState.searchCriteria.trim());
       enterKeyValueRef.current= searchState.searchCriteria.trim().length > 1 ? searchState.searchCriteria.trim() : "";
@@ -454,7 +456,9 @@ const Items: React.FC<HistoryProps> = () => {
     setSearchState(prevState => ({...prevState, isOpen: false, isFocused: false}));
   }
 
-  function enterSearchBox() {
+  function enterSearchBox(event: React.MouseEvent<HTMLIonInputElement, MouseEvent>) {
+    log.debug(event);
+    log.debug("EnterSearchBox");
     if (listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length <=0) {
       return;
     }
@@ -589,9 +593,10 @@ const Items: React.FC<HistoryProps> = () => {
               clearInput={true}  placeholder={t("general.search") as string} fill="solid"
               onKeyDown= {(e) => searchKeyPress(e)}
               onIonInput={(e) => updateSearchCriteria(e)}
-              onClick={() => enterSearchBox()}
-/*                Not sure why, but when you have this specific setsearchstate, it captures the click on the item in the popover and nothing works /*
-/*               onIonBlur={(e) => { setSearchState(prevState => ({...prevState,isFocused: false}))}} */           >   
+              onClick={(e) => enterSearchBox(e)}
+              // Not sure why, but when you have this specific setsearchstate, it captures the click on the item in the popover and nothing works 
+              // </IonItem>onIonBlur={(e) => { setSearchState(prevState => ({...prevState,isFocused: false}))}}
+              > 
            </IonInput>
           {/* <IonButton onClick={()=> clickedSearchCheck()}><IonIcon icon={checkmark} /></IonButton> */}
         </IonItem>
