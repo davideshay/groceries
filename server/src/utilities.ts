@@ -1,16 +1,17 @@
-import { couchUserPrefix, couchStandardRole, accessTokenExpires, refreshTokenExpires } from "./apicalls";
-import { usersDBAsAdmin, groceriesDBAsAdmin } from './dbstartup';
-import { generateJWT } from "./jwt";
-import { UserDoc, FriendDoc, FriendDocs, ListGroupDocs, ListGroupDoc} from './schema/DBSchema'
+import { accessTokenExpires, refreshTokenExpires } from "./config.js";
+import { couchUserPrefix, couchStandardRole } from "./apicalls.js";
+import { usersDBAsAdmin, groceriesDBAsAdmin } from './dbstartup.js';
+import { generateJWT } from "./jwt.js";
+import { UserDoc, FriendDoc, FriendDocs, ListGroupDoc} from './schema/DBSchema.js'
 import nano, { DatabaseGetResponse, DocumentScope, MangoQuery, MangoResponse, MaybeDocument } from "nano";
-import { cloneDeep } from "lodash";
-import { NewUserReponse, NewUserReqBody, UserObj } from "./datatypes";
+import { cloneDeep } from "lodash-es";
+import { NewUserReponse, NewUserReqBody, UserObj } from "./datatypes.js";
 import log from 'loglevel';
 import type { Request as ExpressRequest } from 'express';
 
-export const uomContent = require("../data/uomContent.json")
-export const globalItems = require("../data/globalItems.json");
-export const categories = require("../data/categories.json");
+export { default as  uomContent } from "../data/uomContent.json" with { type: "json"};
+export { default as globalItems } from "../data/globalItems.json" with { type: "json"};
+export { default as categories } from "../data/categories.json" with { type: "json"};
 
 export function emailPatternValidation(email: string) {
     const emailRegex=/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/

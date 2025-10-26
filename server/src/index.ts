@@ -8,16 +8,18 @@ import {
         checkUserByEmailExists, createAccountUIGet, createAccountUIPost,
         triggerRegEmail, resetPassword, resetPasswordUIGet, resetPasswordUIPost,
         triggerResolveConflicts, triggerDBCompact, authenticateJWT,
-        updateUserInfo, logout, groceryAPIPort, isAvailable } from './apicalls';
+        updateUserInfo, logout, isAvailable } from './apicalls.js';
 
-import { dbStartup } from './dbstartup'
+import { groceryAPIPort } from './config.js';
+
+import { dbStartup } from './dbstartup.js'
 import { CheckUserExistsReqBody, NewUserReqBody, NewUserReponse, CheckUseEmailReqBody, IssueTokenBody, 
         RefreshTokenBody, RefreshTokenResponse, IssueTokenResponse, CheckUserExistsResponse,
         CheckUserByEmailExistsResponse, GetUsersInfoResponse, GetUsersInfoRequestBody,
         UpdateUserInfoResponse, UserInfo, CreateAccountResponse, CreateAccountParams,
         TriggerRegEmailBody, ResetPasswordBody, ResetPasswordResponse, ResetPasswordFormResponse,
         TriggerResponse, IsAvailableResponse, 
-        ResetPasswordParams} from './datatypes';
+        ResetPasswordParams} from './datatypes.js';
 import path from 'path';
 import log from 'loglevel';
 
@@ -27,11 +29,12 @@ async function startup() {
         app.use(express.json());
         app.use(express.urlencoded({extended: true}));
         
-        let viewPath = path.join(__dirname,"../views");
+        let viewPath = path.join(import.meta.dirname, "../views");
+//        let viewPath = path.join(__dirname,"../views");
         let eta = new Eta({ views: viewPath, cache: true });
 
 //        app.engine("eta", eta.render);
-        app.set("view engine","eta");
+//        app.set("view engine","eta");
 
         app.use("/public",express.static("public"));
 

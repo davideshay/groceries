@@ -1,25 +1,9 @@
-export const couchdbUrl = (process.env.COUCHDB_URL == undefined) ? "" : process.env.COUCHDB_URL.endsWith("/") ? process.env.COUCHDB_URL.slice(0,-1): process.env.COUCHDB_URL;
-export const couchdbInternalUrl = (process.env.COUCHDB_INTERNAL_URL == undefined) ? couchdbUrl : process.env.COUCHDB_INTERAL_URL?.endsWith("/") ? process.env.COUCHDB_INTERNAL_URL.slice(0,-1): process.env.COUCHDB_INTERNAL_URL;
-export const couchDatabase = (process.env.COUCHDB_DATABASE == undefined) ? "" : process.env.COUCHDB_DATABASE;
-export const couchKey = process.env.COUCHDB_HMAC_KEY;
-export const couchAdminUser = process.env.COUCHDB_ADMIN_USER;
-export const couchAdminPassword = process.env.COUCHDB_ADMIN_PASSWORD;
-export const refreshTokenExpires = (process.env.REFRESH_TOKEN_EXPIRES == undefined) ? "30d" : process.env.REFRESH_TOKEN_EXPIRES;
-export const accessTokenExpires = (process.env.ACCESS_TOKEN_EXPIRES == undefined) ? "1d" : process.env.ACCESS_TOKEN_EXPIRES;
-export const enableScheduling = (process.env.ENABLE_SCHEDULING == undefined) ? true : getBooleanFromText(process.env.ENABLE_SCHEDULING);
-export const resolveConflictsFrequencyMinutes = (process.env.RESOLVE_CONFLICTS_FREQUENCY_MINUTES == undefined) ? 15 : process.env.RESOLVE_CONFLICTS_FREQUENCY_MINUTES;
-export const expireJWTFrequencyMinutes = (process.env.EXPIRE_JWT_FREQUENCY_MINUTES == undefined) ? 10 : process.env.EXPIRE_JWT_FREQUENCY_MINUTES;
-export const groceryUrl = (process.env.GROCERY_URL == undefined) ? "" : process.env.GROCERY_URL.endsWith("/") ? process.env.GROCERY_URL.slice(0,-1): process.env.GROCERY_URL;
-export const groceryAPIUrl = (process.env.GROCERY_API_URL == undefined) ? "" : process.env.GROCERY_API_URL.endsWith("/") ? process.env.GROCERY_API_URL.slice(0,-1): process.env.GROCERY_API_URL;
-export const groceryAPIPort = (process.env.GROCERY_API_PORT == undefined) ? "3333" : process.env.GROCERY_API_PORT;
-export const disableAccountCreation = (process.env.DISABLE_ACCOUNT_CREATION == undefined) ? false : getBooleanFromText(process.env.DISABLE_ACCOUNT_CREATION);
-export const logLevel = (process.env.LOG_LEVEL == undefined) ? "INFO" : process.env.LOG_LEVEL.toUpperCase();
-const smtpHost = process.env.SMTP_HOST;
-const smtpPort = Number(process.env.SMTP_PORT);
-const smtpSecure = Boolean(process.env.SMTP_SECURE);
-const smtpUser = process.env.SMTP_USER;
-const smtpPassword = process.env.SMTP_PASSWORD;
-const smtpFrom = process.env.SMTP_FROM;
+import { couchdbUrl,couchdbInternalUrl,couchDatabase,couchKey,couchAdminUser,couchAdminPassword,
+    refreshTokenExpires,accessTokenExpires,enableScheduling,resolveConflictsFrequencyMinutes,
+    expireJWTFrequencyMinutes,groceryUrl,groceryAPIUrl,groceryAPIPort,disableAccountCreation,
+    logLevel,smtpHost,smtpPort,smtpSecure,smtpUser,smtpPassword,smtpFrom
+ } from './config.js';
+
 export const couchStandardRole = "crud";
 export const couchAdminRole = "dbadmin";
 export const couchUserPrefix = "org.couchdb.user";
@@ -35,35 +19,28 @@ import nodemailer from 'nodemailer';
 import nanoAdmin, { DocumentListResponse,  MangoQuery,  MangoResponse, MaybeDocument } from 'nano';
 const nanoAdminOpts = {
     url: couchdbInternalUrl,
-    requestDefaults: {
-        headers: { Authorization: "Basic "+ Buffer.from(couchAdminUser+":"+couchAdminPassword).toString('base64') }
-    }
+    headers: { Authorization: "Basic "+ Buffer.from(couchAdminUser+":"+couchAdminPassword).toString('base64') }
 }
+
 export let groceriesNanoAsAdmin = nanoAdmin(nanoAdminOpts);
 export let usersNanoAsAdmin = nanoAdmin(nanoAdminOpts);
-import { groceriesDBAsAdmin, usersDBAsAdmin, couchLogin } from './dbstartup';
-import _ from 'lodash';
-import { cloneDeep, isEmpty } from 'lodash';
+import { groceriesDBAsAdmin, usersDBAsAdmin, couchLogin } from './dbstartup.js';
+import { omit,cloneDeep, isEmpty } from 'lodash-es';
 import { usernamePatternValidation, fullnamePatternValidation, getUserDoc, getUserByEmailDoc,
     totalDocCount, isNothing, createNewUser, updateUnregisteredFriends, getFriendDocByUUID,
     UserResponse, CreateResponseType, checkDBAvailable, getImpactedUsers, 
     updateUserDoc,
-    getUserByResetUUIDDoc} from './utilities';
-import { generateJWT, isValidToken, invalidateToken, JWTMatchesUserDB, TokenReturnType } from './jwt'     
+    getUserByResetUUIDDoc} from './utilities.js';
+import { generateJWT, isValidToken, invalidateToken, JWTMatchesUserDB, TokenReturnType } from './jwt.js'     
 import type { NextFunction, Request as ExpressRequest, Response as ExpressResponse, RequestHandler } from 'express';
-import { CheckUseEmailReqBody, CheckUserByEmailExistsResponse, CheckUserExistsReqBody, CheckUserExistsResponse, CreateAccountParams, CreateAccountResponse, GetUsersInfoRequestBody, GetUsersInfoResponse, IsAvailableResponse, IssueTokenBody, IssueTokenResponse, LogoutBody, NewUserReponse, NewUserReqBody, RefreshTokenBody, RefreshTokenResponse, ResetPasswordBody, ResetPasswordFormResponse, ResetPasswordParams, ResetPasswordResponse, TriggerRegEmailBody, UpdateUserInfoResponse, UserInfo } from './datatypes';
-import { ConflictDoc, FriendDoc, UserDoc, appVersion } from './schema/DBSchema';
-import SMTPTransport from 'nodemailer/lib/smtp-transport';
+import { CheckUseEmailReqBody, CheckUserByEmailExistsResponse, CheckUserExistsReqBody, CheckUserExistsResponse, CreateAccountParams, CreateAccountResponse, GetUsersInfoRequestBody, GetUsersInfoResponse, IsAvailableResponse, IssueTokenBody, IssueTokenResponse, LogoutBody, NewUserReponse, NewUserReqBody, RefreshTokenBody, RefreshTokenResponse, ResetPasswordBody, ResetPasswordFormResponse, ResetPasswordParams, ResetPasswordResponse, TriggerRegEmailBody, UpdateUserInfoResponse, UserInfo } from './datatypes.js';
+import { ConflictDoc, FriendDoc, UserDoc, appVersion } from './schema/DBSchema.js';
+import SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
 import log from 'loglevel';
 import crypto from "crypto";
 export const passwordResetExpireSeconds = 3600;
 
 
-export function getBooleanFromText(val: string | boolean) {
-    if (val === true) {return true}; if (val === false) {return false};
-    let trueStrings=["TRUE","YES","1"];                                 
-    return trueStrings.includes(String(val).toUpperCase());
-}
 
 export async function checkUserExists(req: ExpressRequest<{},CheckUserExistsResponse,CheckUserExistsReqBody>, res: ExpressResponse<CheckUserExistsResponse>) {
     const { username } = req.body;
@@ -656,7 +633,7 @@ export async function resetPasswordUIPost(req: ExpressRequest<{},{},ResetPasswor
     newDoc.password=req.body.password;
     newDoc.reset_password_uuid="";
     newDoc.reset_password_expire_date="";
-    let newDocFiltered = _.omit(newDoc,["password_scheme","iterations","derived_key","salt","pbkdf2_prf"])
+    let newDocFiltered = omit(newDoc,["password_scheme","iterations","derived_key","salt","pbkdf2_prf"])
 //        let newDocFiltered = _.pick(newDoc,['_id','_rev','name','email','fullname','roles','type','reset_password','reset_password_expire_date','password','refreshJWTs']);
     try {let docupdate = await usersDBAsAdmin.insert(newDocFiltered);}
     catch(err) {log.error("Couldn't update user/reset password:",err);
