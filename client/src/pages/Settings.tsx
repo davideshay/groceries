@@ -2,7 +2,7 @@ import { IonContent, IonPage, IonItem,
          IonInput,
         IonRadioGroup, IonRadio, IonCheckbox, IonItemDivider, IonSelect, IonSelectOption, 
         IonButton} from '@ionic/react';
-import {  useContext, useEffect, useRef, useState } from 'react';        
+import {  useContext, useEffect, useState } from 'react';        
 import './Settings.css';
 import { InitSettings, ThemeType } from '../components/DBSchema';
 import { GlobalStateContext } from '../components/GlobalState';
@@ -23,7 +23,6 @@ const Settings: React.FC<HistoryProps> = () => {
   const [localSettingsInitialized,setLocalSettingsInitialized] = useState(false);
   const [, setUserInfo] = useState<UserInfo>(initUserInfo);
   const { t, i18n } = useTranslation();
-  const screenLoading = useRef(false);
 
   useEffect( () => {
     if (!localSettingsInitialized && globalState.settingsLoaded) {
@@ -35,7 +34,7 @@ const Settings: React.FC<HistoryProps> = () => {
   },[globalState.settings,localSettingsInitialized,globalState.settingsLoaded, remoteDBCreds.fullName, remoteDBCreds.email, remoteDBCreds.dbUsername])
 
   if ( settingsLoading || !globalState.settingsLoaded || !localSettingsInitialized)  {
-    return ( <Loading isOpen={screenLoading.current} message={t("general.loading")} />)
+    return ( <Loading isOpen={true} message={t("general.loading")} />)
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   };
 

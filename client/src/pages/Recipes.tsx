@@ -1,6 +1,5 @@
 import { IonContent, IonPage, IonList, IonItem, IonFab,
      IonFabButton, IonIcon, IonFooter, IonButton } from '@ionic/react';
-import { useRef } from 'react';
 import { add } from 'ionicons/icons';
 import { HistoryProps } from '../components/DataTypes';
 import ErrorPage from './ErrorPage';
@@ -11,7 +10,6 @@ import { useHistory } from 'react-router';
 import { useGlobalDataStore } from '../components/GlobalData';
 
 const Recipes: React.FC<HistoryProps> = () => {
-  const screenLoading=useRef(true);
   const { t } = useTranslation();
   const recipeDocs = useGlobalDataStore((state) => state.recipeDocs);
   const isLoading = useGlobalDataStore((state) => state.isLoading);
@@ -23,11 +21,9 @@ const Recipes: React.FC<HistoryProps> = () => {
   )}
 
   if (isLoading) { 
-    return ( <Loading isOpen={screenLoading.current} message={t("general.loading_recipes")}  /> )
+    return ( <Loading isOpen={isLoading} message={t("general.loading_recipes")}  /> )
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   }
-
-  screenLoading.current=false;
 
   return (
     <IonPage>
