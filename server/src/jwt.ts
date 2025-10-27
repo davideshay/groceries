@@ -1,8 +1,8 @@
 import * as jose from 'jose';
 import { JWTPayload } from 'jose';
 import { usersDBAsAdmin } from './dbconfig.js';
-import { couchKey, couchStandardRole } from './config.js';
-import { getUserDoc, generateJWT } from './utilities.js';
+import { couchKey } from './config.js';
+import { getUserDoc } from './utilities.js';
 import { isEqual, isEmpty } from 'lodash-es';
 import {UserDoc} from './schema/DBSchema.js'
 import { DocumentListResponse } from 'nano';
@@ -77,7 +77,7 @@ export async function invalidateToken(username: string, deviceUUID: string, inva
     } else {
         userDoc.fullDoc.refreshJWTs[deviceUUID] = {};
     }    
-    try { let res = await usersDBAsAdmin.insert(userDoc.fullDoc); }
+    try { await usersDBAsAdmin.insert(userDoc.fullDoc); }
     catch(err) { log.error("Problem invalidating token: ",err); return false; }
     log.info("Token now invalidated");
     return true;
@@ -104,7 +104,7 @@ export async function expireJWTs(): Promise<boolean> {
             }
             if (!isEqual(updateJWTs,userDoc.refreshJWTs)) {
                 userDoc.refreshJWTs=updateJWTs;
-                try { let response=usersDBAsAdmin.insert(userDoc); }
+                try { usersDBAsAdmin.insert(userDoc); }
                 catch(err) {log.error("Updating JWTs for user ", userDoc._id, err); return false;}
                 log.info("Expired JWTs for user ",userDoc._id);
             } 

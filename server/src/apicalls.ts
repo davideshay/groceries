@@ -1,12 +1,11 @@
-import { couchdbUrl,couchdbInternalUrl,couchDatabase,couchKey,couchAdminUser,couchAdminPassword,
-    refreshTokenExpires,accessTokenExpires,enableScheduling,resolveConflictsFrequencyMinutes,
-    expireJWTFrequencyMinutes,groceryUrl,groceryAPIUrl,groceryAPIPort,disableAccountCreation,
-    logLevel,smtpHost,smtpPort,smtpSecure,smtpUser,smtpPassword,smtpFrom
+import { couchdbUrl,couchDatabase,refreshTokenExpires,accessTokenExpires,
+    groceryUrl,groceryAPIUrl,disableAccountCreation,
+    smtpHost,smtpPort,smtpUser,smtpPassword,smtpFrom
  } from './config.js';
 
 import { DocumentListResponse, MangoResponse, MaybeDocument, MangoQuery } from 'nano';
 
-import  { couchStandardRole, couchAdminRole, couchUserPrefix, conflictsViewID, conflictsViewName, utilitiesViewID } from './config.js'
+import  { couchUserPrefix, conflictsViewID, conflictsViewName } from './config.js'
 
 const smtpOptions: SMTPTransport.Options= {
     host: smtpHost, port: smtpPort, 
@@ -35,7 +34,7 @@ export const passwordResetExpireSeconds = 3600;
 
 
 
-export async function checkUserExists(req: ExpressRequest<{},CheckUserExistsResponse,CheckUserExistsReqBody>, res: ExpressResponse<CheckUserExistsResponse>) {
+export async function checkUserExists(req: ExpressRequest<{},CheckUserExistsResponse,CheckUserExistsReqBody>) {
     const { username } = req.body;
     let response: CheckUserExistsResponse = {
         username: username,
@@ -47,7 +46,7 @@ export async function checkUserExists(req: ExpressRequest<{},CheckUserExistsResp
     return (response);
 }
 
-export async function checkUserByEmailExists(req: ExpressRequest<{},CheckUserByEmailExistsResponse,CheckUseEmailReqBody>, res: ExpressResponse<CheckUserByEmailExistsResponse>) {
+export async function checkUserByEmailExists(req: ExpressRequest<{},CheckUserByEmailExistsResponse,CheckUseEmailReqBody>) {
     const { email} = req.body;
     let response: CheckUserByEmailExistsResponse = {
         username: "",
@@ -82,7 +81,7 @@ export const authenticateJWT: RequestHandler = async (req: ExpressRequest,res: E
     }
 }
 
-export async function issueToken(req: ExpressRequest<{},IssueTokenResponse,IssueTokenBody>, res: ExpressResponse<IssueTokenResponse>) {
+export async function issueToken(req: ExpressRequest<{},IssueTokenResponse,IssueTokenBody>) {
     const { username, password, deviceUUID } = req.body;
     log.info("issuing token for device ID:", JSON.stringify(deviceUUID));
     let response: IssueTokenResponse = {
@@ -120,12 +119,12 @@ export async function issueToken(req: ExpressRequest<{},IssueTokenResponse,Issue
         userDoc.fullDoc.refreshJWTs = {};
      }
      (userDoc.fullDoc.refreshJWTs as any)[deviceUUID] = response.refreshJWT;
-     try {let userUpd = usersDBAsAdmin.insert(userDoc.fullDoc);}
+     try {usersDBAsAdmin.insert(userDoc.fullDoc);}
      catch(err) {log.error("Could not update user: ",username,":",err); response.loginSuccessful=false;}
     return(response);
 }
 
-export async function refreshToken(req: ExpressRequest<{},RefreshTokenResponse,RefreshTokenBody>, res: ExpressResponse<RefreshTokenResponse>) : Promise<{status: number, response: RefreshTokenResponse}> {
+export async function refreshToken(req: ExpressRequest<{},RefreshTokenResponse,RefreshTokenBody>) : Promise<{status: number, response: RefreshTokenResponse}> {
     const { refreshJWT, deviceUUID } = req.body;
     log.info("Refreshing token for deviceUUID:",deviceUUID);
     // validate incoming refresh token
@@ -170,13 +169,13 @@ export async function refreshToken(req: ExpressRequest<{},RefreshTokenResponse,R
         response.valid = false; return {status, response};
     }
     (userResponse.fullDoc.refreshJWTs as any)[deviceUUID] = response.refreshJWT;
-    try {let update = await usersDBAsAdmin.insert(userResponse.fullDoc);}
+    try {await usersDBAsAdmin.insert(userResponse.fullDoc);}
     catch(err) {log.error("ERROR: Could not update user(refresh token):",err); response.dbError = true; response.valid=false;}
     return ({status, response});
 }
 
 export async function logout(req: ExpressRequest<{},{},LogoutBody>, res: ExpressResponse) {
-    const { refreshJWT, deviceUUID, username } = req.body;
+    const { deviceUUID, username } = req.body;
     log.info("Logging out user: ", username, " for device: ",deviceUUID);
     let userResponse: UserResponse = await getUserDoc(username);
     if (userResponse == null || userResponse.fullDoc == null) {
@@ -184,12 +183,11 @@ export async function logout(req: ExpressRequest<{},{},LogoutBody>, res: Express
         return;
     }
     (userResponse.fullDoc.refreshJWTs as any)[deviceUUID] = ""; 
-    let update = null;
-    try { update = await usersDBAsAdmin.insert(userResponse.fullDoc); res.sendStatus(200);}
+    try { await usersDBAsAdmin.insert(userResponse.fullDoc); res.sendStatus(200);}
     catch(err) { log.error("Problem logging out user: ",err); res.sendStatus(404); }
 }
 
-export async function registerNewUser(req: ExpressRequest<{},NewUserReponse,NewUserReqBody>, res: ExpressResponse) {
+export async function registerNewUser(req: ExpressRequest<{},NewUserReponse,NewUserReqBody>) {
     const {username, password, email, fullname, deviceUUID} = req.body;
     log.info("Registering New User: ",username);
     const registerResponse: NewUserReponse = {
@@ -226,12 +224,12 @@ export async function registerNewUser(req: ExpressRequest<{},NewUserReponse,NewU
         registerResponse.idCreated = createResponse.idCreated;
         registerResponse.refreshJWT = String(createResponse.refreshJWT);
         registerResponse.accessJWT = String(createResponse.accessJWT);
-        let updateFriendResponse = await updateUnregisteredFriends(req,email)
+        await updateUnregisteredFriends(req,email)
     }
     return (registerResponse);
 }
 
-export async function getUsersInfo (req: ExpressRequest<{},GetUsersInfoResponse,GetUsersInfoRequestBody>, res: ExpressResponse<GetUsersInfoResponse>) : Promise<GetUsersInfoResponse>  {
+export async function getUsersInfo (req: ExpressRequest<{},GetUsersInfoResponse,GetUsersInfoRequestBody>) : Promise<GetUsersInfoResponse>  {
     // input - json list of userIDs : userIDs: ["username1","username2"] -- should be _users ids 
     //        without the org.couchdb.user prefix
     // return - json array of objects:
@@ -256,7 +254,7 @@ export async function getUsersInfo (req: ExpressRequest<{},GetUsersInfoResponse,
     return(getResponse);
 }
 
-export async function updateUserInfo(req: ExpressRequest<{},UpdateUserInfoResponse,UserInfo>,res: ExpressResponse<UpdateUserInfoResponse>): Promise<UpdateUserInfoResponse> {
+export async function updateUserInfo(req: ExpressRequest<{},UpdateUserInfoResponse,UserInfo>): Promise<UpdateUserInfoResponse> {
     let userResp: UpdateUserInfoResponse = {success: false};
     if (isEmpty(req.body.name) || isEmpty(req.body.fullname) || isEmpty(req.body.email)) {
         return userResp;
@@ -363,9 +361,9 @@ export async function createAccountUIPost(req: ExpressRequest<{},{},CreateAccoun
     if (req.body.password != req.body.passwordVerify) {
         respObj.formError = "Passwords do not match";
         return (respObj);}
-    let foundUserDoc; let userAlreadyExists=true;
+    let userAlreadyExists=true;
     try {
-        foundUserDoc =  await usersDBAsAdmin.get(couchUserPrefix+":"+req.body.username);}
+        await usersDBAsAdmin.get(couchUserPrefix+":"+req.body.username);}
     catch(e) { userAlreadyExists=false;}    
     if (userAlreadyExists) {
         respObj.formError = "Username already exists, plase choose a new one";
@@ -390,9 +388,8 @@ export async function createAccountUIPost(req: ExpressRequest<{},{},CreateAccoun
         foundFriendDoc.friendID2 = req.body.username;
         foundFriendDoc.friendStatus = "PENDFROM1";
         foundFriendDoc.updatedAt = (new Date()).toISOString();
-        let updateSuccessful = true;
         try { await groceriesDBAsAdmin.insert(foundFriendDoc); }
-        catch(e) {updateSuccessful = false;}
+        catch(e) {log.error("Error inserting/updating friend")}
     }
 
     const emailq = {
@@ -411,9 +408,8 @@ export async function createAccountUIPost(req: ExpressRequest<{},{},CreateAccoun
             doc.friendID2 = req.body.username;
             doc.friendStatus = "PENDFROM1";
             doc.updatedAt = (new Date()).toISOString();
-            let update2Success=true;
             try { await groceriesDBAsAdmin.insert(doc);} 
-            catch(e) {update2Success = false;}
+            catch(e) {log.error("Could not insert/update friend document")}
         }
     });
 
@@ -433,7 +429,7 @@ export async function triggerRegEmail(req: ExpressRequest<{},{},TriggerRegEmailB
     if (userDoc.error) {return triggerResponse};
     
     let transport = nodemailer.createTransport(smtpOptions);
-    transport.verify(function (error,success) {
+    transport.verify(function (error,) {
         if (error) {return triggerResponse}
     })
 
@@ -446,7 +442,7 @@ export async function triggerRegEmail(req: ExpressRequest<{},{},TriggerRegEmailB
         text: userDoc.fullname+" has requested to share lists with you on the Groceries App. Please use the link to register for an account: "+confURL+ " . Once registered, visit "+groceryUrl+" to use the app."
     }
 
-    transport.sendMail(message, function (error, success) {
+    transport.sendMail(message, function (error,) {
         if (!error) {return triggerResponse}
     });
     triggerResponse.emailSent = true;
@@ -486,7 +482,7 @@ export async function resetPassword(req: ExpressRequest<{},ResetPasswordResponse
     }
 
     let transport = nodemailer.createTransport(smtpOptions);
-    transport.verify(function (error,success) {
+    transport.verify(function (error,) {
         if (error) {return resetResponse}
     })
 
@@ -498,7 +494,7 @@ export async function resetPassword(req: ExpressRequest<{},ResetPasswordResponse
         text: userDoc.fullname+" has requested to reset their password. If you did not request this reset, please validate the security of this account. Please use the link to reset your password: "+resetURL+ " . Once reset, visit "+groceryUrl+" to use the app or login on your mobile device.."
     }
 
-    transport.sendMail(message, function (error, success) {
+    transport.sendMail(message, function (error,) {
         if (!error) {return resetResponse}
     });
     resetResponse.emailSent = true;
@@ -628,7 +624,7 @@ export async function resetPasswordUIPost(req: ExpressRequest<{},{},ResetPasswor
     newDoc.reset_password_expire_date="";
     let newDocFiltered = omit(newDoc,["password_scheme","iterations","derived_key","salt","pbkdf2_prf"])
 //        let newDocFiltered = _.pick(newDoc,['_id','_rev','name','email','fullname','roles','type','reset_password','reset_password_expire_date','password','refreshJWTs']);
-    try {let docupdate = await usersDBAsAdmin.insert(newDocFiltered);}
+    try {await usersDBAsAdmin.insert(newDocFiltered);}
     catch(err) {log.error("Couldn't update user/reset password:",err);
                 respObj.formError="Database error resetting password";
                 respObj.resetSuccessfully=false;
@@ -693,8 +689,7 @@ export async function resolveConflicts(): Promise<boolean> {
             bulkObj.docs.push({_id: curWinner._id, _rev: curWinner._rev, _deleted: true});
             logObj.losers.push(curWinner);
         }
-        let bulkResult;
-        try { bulkResult = await groceriesDBAsAdmin.bulk(bulkObj) }
+        try { await groceriesDBAsAdmin.bulk(bulkObj) }
         catch(err) {log.error("Error updating bulk docs on conflict resolve"); resolveFailure=true; return false;}
         log.info("Bulk Update to resolve doc id : ",conflict.id, " succeeded");
         let impactedUsersSet = await getImpactedUsers(logObj.winner);
@@ -703,8 +698,7 @@ export async function resolveConflicts(): Promise<boolean> {
             impactedUsersSet = new Set([...impactedUsersSet,...loserUsers])
         }
         logObj.impactedUsers = Array.from(impactedUsersSet);
-        let logResult;
-        try { logResult = await groceriesDBAsAdmin.insert(logObj as MaybeDocument)}
+        try { await groceriesDBAsAdmin.insert(logObj as MaybeDocument)}
         catch(err) { log.error("ERROR: creating conflict log document failed: ",err); return false;};        
     }
     return true;

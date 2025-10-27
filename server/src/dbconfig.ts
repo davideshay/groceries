@@ -1,5 +1,5 @@
-import { couchdbInternalUrl, couchAdminPassword, couchAdminUser, couchDatabase, logLevel } from './config.js';
-import nanoAdmin, { DocumentScope,  MangoQuery,  MangoResponse, MaybeDocument } from 'nano';
+import { couchdbInternalUrl, couchAdminPassword, couchAdminUser, couchDatabase } from './config.js';
+import nanoAdmin, { DocumentScope } from 'nano';
 import { isInteger } from './utilityfunctions.js';
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import log from "loglevel"

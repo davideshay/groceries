@@ -4,7 +4,7 @@ import { couchdbUrl,couchdbInternalUrl,couchDatabase,couchKey,couchAdminUser,cou
     logLevel
  } from './config.js';
 import { isInteger } from './utilityfunctions.js'
-import { groceriesNanoAsAdmin, usersNanoAsAdmin, groceriesDBAsAdmin, usersDBAsAdmin, setGroceriesDBAsAdmin, setUsersDBAsAdmin } from './dbconfig.js';
+import { groceriesNanoAsAdmin, groceriesDBAsAdmin, usersDBAsAdmin, setGroceriesDBAsAdmin, setUsersDBAsAdmin } from './dbconfig.js';
 import { couchStandardRole, couchAdminRole, conflictsViewID, conflictsViewName } from "./config.js";
 
 import { passwordResetExpireSeconds,expirePasswordResetUserRecords} from "./apicalls.js";
@@ -246,13 +246,11 @@ async function createUOMContent(): Promise<boolean> {
                         thisDoc.alternates = cloneDeep(uom.alternates)
                     }
                     log.info("UOM ",uom.name," exists but needs updating...");
-                    let dbResp = null;
-                    try { dbResp = await groceriesDBAsAdmin.insert(thisDoc)}
+                    try { await groceriesDBAsAdmin.insert(thisDoc)}
                     catch(err) {log.error("updating existing UOM", err); return false;}
                 }
             } else {
-                let dbResp = null;
-                try { dbResp = await groceriesDBAsAdmin.destroy(thisDoc._id!,thisDoc._rev!)}
+                try { await groceriesDBAsAdmin.destroy(thisDoc._id!,thisDoc._rev!)}
                 catch(err) {log.error("Deleting / replacing existing UOM: ", err); return false;}
             }
         }
@@ -260,8 +258,7 @@ async function createUOMContent(): Promise<boolean> {
             log.info("Adding uom ",uom.name, " ", uom.description);
             uom.listGroupID = "system";
             uom.updatedAt = (new Date().toISOString());
-            let dbResp = null;
-            try { dbResp = await groceriesDBAsAdmin.insert(uom);}
+            try { await groceriesDBAsAdmin.insert(uom);}
             catch(err) { log.error("Adding uom ",uom.name, " error: ",err); return false;}
         } else if (needsUpdated) {
             log.info("UOM ",uom.name," already exists...updated with new content");
@@ -299,8 +296,7 @@ async function createCategoriesContent(): Promise<boolean> {
                 log.info("Category ",category.name," already exists...skipping");
                 needsAdded=false;
             } else {
-                let dbResp = null;
-                try { dbResp = await groceriesDBAsAdmin.destroy(thisDoc._id,thisDoc._rev)}
+                try { await groceriesDBAsAdmin.destroy(thisDoc._id,thisDoc._rev)}
                 catch(err) { log.error("Deleting category for replacement:", err); return false;}
             }
         }
@@ -308,8 +304,7 @@ async function createCategoriesContent(): Promise<boolean> {
             log.info("Adding category ",category.name);
             category.listGroupID = "system",
             category.updatedAt = (new Date().toISOString());
-            let dbResp = null;
-            try { dbResp = await groceriesDBAsAdmin.insert(category);}
+            try { await groceriesDBAsAdmin.insert(category);}
             catch(err) { log.error("Adding category ",category.name, " error: ",err); return false;}
         } 
     };
@@ -320,8 +315,7 @@ async function createCategoriesContent(): Promise<boolean> {
     } else {
         foundIDDoc.categoriesVersion = targetCategoriesVersion;
         foundIDDoc.updatedAt = (new Date().toISOString());
-        let dbResp = null;
-        try { dbResp = await groceriesDBAsAdmin.insert(foundIDDoc)}
+        try { await groceriesDBAsAdmin.insert(foundIDDoc)}
         catch(err) { log.error("Couldn't update Categories target version."); return false;};
         log.info("Updated Categories Target Version successfully.");
     }
@@ -344,8 +338,7 @@ async function createGlobalItemContent(): Promise<boolean> {
         if (docIdx == -1) {
             log.info("Adding global item ",globalItem.name);
             globalItem.updatedAt = (new Date().toISOString());
-            let dbResp = null;
-            try { dbResp = await groceriesDBAsAdmin.insert(globalItem);}
+            try { await groceriesDBAsAdmin.insert(globalItem);}
             catch(err) { log.error("Adding global item ",globalItem.name, " error: ",err); return false;}
         } else {
             log.info("Global Item ",globalItem.name," already exists...comparing values...");
@@ -366,8 +359,7 @@ async function createGlobalItemContent(): Promise<boolean> {
             if (needsChanged) {
                 log.info("Item "+globalItem.name+ " had changed values. Reverting to original...");
                 globalItem.updatedAt = (new Date().toISOString());
-                let dbResp = null;
-                try {dbResp = await groceriesDBAsAdmin.insert(compareDoc)}
+                try { await groceriesDBAsAdmin.insert(compareDoc)}
                 catch(err) {log.error("Error reverting values on doc "+globalItem.name,"error:",err); return false;}
             }
         }
@@ -437,8 +429,7 @@ async function addStockedAtIndicatorToSchema() {
             }
         }
         if (docChanged) {
-            let dbResp = null;
-            try { dbResp = await groceriesDBAsAdmin.insert(foundItemDoc)}
+            try { await groceriesDBAsAdmin.insert(foundItemDoc)}
             catch(err) { log.error("Couldn't update item with stocked indicator.");
                          updateSuccess = false;}
         }
@@ -457,8 +448,7 @@ async function restructureListGroupSchema() {
     catch(err) { log.error("Could not find items/lists/categories to delete:",err); return false;}
     log.debug("Found items/lists/categories to delete:",foundDelDocs.docs.length);
     for (let i = 0; i < foundDelDocs.docs.length; i++) {
-        let dbResp=null;
-        try { dbResp=await groceriesDBAsAdmin.destroy(foundDelDocs.docs[i]._id,foundDelDocs.docs[i]._rev)}
+        try { await groceriesDBAsAdmin.destroy(foundDelDocs.docs[i]._id,foundDelDocs.docs[i]._rev)}
         catch(err) {log.error("ERROR deleting list/item:",err);}        
     }
     log.info("Finished deleting lists, items, and categories.");
@@ -480,8 +470,7 @@ async function restructureListGroupSchema() {
                 type: "listgroup", name: (foundUserDoc.name + " (default)"),
                 default: true, recipe: false, alexaDefault: false, listGroupOwner: foundUserDoc.name, sharedWith: [], updatedAt: newCurDateStr
             }
-            let dbResp = null;
-            try { dbResp = await groceriesDBAsAdmin.insert(newListGroupDoc)}
+            try { await groceriesDBAsAdmin.insert(newListGroupDoc)}
             catch(err) { log.error("Couldn't create new list group:",newListGroupDoc.name, "err:",JSON.stringify(err))
                          updateSuccess = false;}
         } else {
@@ -495,8 +484,7 @@ async function updateSystemCategory(catDoc: CategoryDoc): Promise<boolean> {
     let success = true;
     catDoc.listGroupID = "system";
     catDoc.updatedAt = (new Date().toISOString());
-    let dbResp = null;
-    try { dbResp = await groceriesDBAsAdmin.insert(catDoc)}
+    try { await groceriesDBAsAdmin.insert(catDoc)}
     catch(err) { log.error("Couldn't update system category with list group system.");
                  success = false;}
     if (success) { log.info("Updated category ",catDoc.name," to system list group.");}
@@ -517,8 +505,7 @@ async function updateCustomCategory(catDoc: CategoryDoc, itemDocs: ItemDocs): Pr
         let newCatDoc: CategoryDoc = cloneDeep(catDoc);
         newCatDoc.listGroupID = null;
         newCatDoc.updatedAt = (new Date().toISOString());
-        let dbResp = null;
-        try { dbResp = await groceriesDBAsAdmin.insert(newCatDoc)}
+        try { await groceriesDBAsAdmin.insert(newCatDoc)}
         catch(err) { log.error("Couldn't set category ",catDoc.name," to an unused list group");
             success = false;}
         if (success) { log.info("Assigned unused by item category ",catDoc.name, " to the unused list group ");}   
@@ -532,8 +519,7 @@ async function updateCustomCategory(catDoc: CategoryDoc, itemDocs: ItemDocs): Pr
                 newCatDoc._rev = undefined;
                 newCatDoc.listGroupID = lg;
                 newCatDoc.updatedAt = (new Date().toISOString());
-                let dbResp = null;
-                try { dbResp = await groceriesDBAsAdmin.insert(newCatDoc)}
+                try { await groceriesDBAsAdmin.insert(newCatDoc)}
                 catch(err) { log.error("Couldn't add category ",catDoc.name," with list group ",lg);
                     success = false;}
                 if (success) { log.info("Created new category ",catDoc.name, " in list group ",lg)}   
@@ -541,8 +527,7 @@ async function updateCustomCategory(catDoc: CategoryDoc, itemDocs: ItemDocs): Pr
                 let newCatDoc = cloneDeep(catDoc);
                 newCatDoc.listGroupID = lg;
                 newCatDoc.updatedAt = (new Date().toISOString());
-                let dbResp = null;
-                try { dbResp = await groceriesDBAsAdmin.insert(newCatDoc)}
+                try { await groceriesDBAsAdmin.insert(newCatDoc)}
                 catch(err) { log.error("Couldn't update category ",catDoc.name," with list group ",lg);
                     success = false;}
                 if (success) { log.info("Updated category ",catDoc.name," with list group ",lg)}
@@ -559,8 +544,7 @@ async function updateSystemUOM(uomDoc: UomDoc): Promise<boolean> {
     let updatedUOMDoc = cloneDeep(uomDoc);
     updatedUOMDoc.listGroupID = "system";
     updatedUOMDoc.updatedAt = (new Date().toISOString());
-    let dbResp = null;
-    try { dbResp = await groceriesDBAsAdmin.insert(updatedUOMDoc)}
+    try { await groceriesDBAsAdmin.insert(updatedUOMDoc)}
     catch(err) { log.error("Couldn't update system UOM with list group system.");
                  success = false;}
     if (success) { log.info("Updated UOM ",uomDoc.description," to system list group.");}
@@ -587,8 +571,7 @@ async function updateCustomUOM(uomDoc: UomDoc, itemDocs: ItemDocs, recipeDocs: R
             let newUOMDoc: UomDoc = cloneDeep(uomDoc);
             newUOMDoc.listGroupID = null;
             newUOMDoc.updatedAt = (new Date().toISOString());
-            let dbResp = null;
-            try { dbResp = await groceriesDBAsAdmin.insert(newUOMDoc)}
+            try { await groceriesDBAsAdmin.insert(newUOMDoc)}
             catch(err) { log.error("Couldn't set UOM ",uomDoc.description," to an unused list group");
                 success = false;}
             if (success) { log.info("Assigned unused by item UOM",uomDoc.description, " to the unused list group ");}   
@@ -600,8 +583,7 @@ async function updateCustomUOM(uomDoc: UomDoc, itemDocs: ItemDocs, recipeDocs: R
                 delete newUOMDoc._rev;
                 newUOMDoc.listGroupID = String(recipeLG._id);
                 newUOMDoc.updatedAt = (new Date().toISOString());
-                let dbResp = null;
-                try { dbResp = await groceriesDBAsAdmin.insert(newUOMDoc)}
+                try { await groceriesDBAsAdmin.insert(newUOMDoc)}
                 catch(err) { log.error("Couldn't set UOM ",uomDoc.description," to recipe list group ",recipeLG.name, err);
                     success = false;}
                 if (success) { log.info("Assigned UOM used in ",usedRecipeCount," recipes:",uomDoc.description, " to the recipe list group ",recipeLG.name);}       
@@ -617,8 +599,7 @@ async function updateCustomUOM(uomDoc: UomDoc, itemDocs: ItemDocs, recipeDocs: R
                 newUomDoc._rev = undefined;
                 newUomDoc.listGroupID = lg;
                 newUomDoc.updatedAt = (new Date().toISOString());
-                let dbResp = null;
-                try { dbResp = await groceriesDBAsAdmin.insert(newUomDoc)}
+                try { await groceriesDBAsAdmin.insert(newUomDoc)}
                 catch(err) { log.error("Couldn't add UOM ",uomDoc.description," with list group ",lg);
                     success = false;}
                 if (success) { log.info("Created new UOM ",uomDoc.description, " in list group ",lg)}   
@@ -626,8 +607,7 @@ async function updateCustomUOM(uomDoc: UomDoc, itemDocs: ItemDocs, recipeDocs: R
                 let newUomDoc = cloneDeep(uomDoc);
                 newUomDoc.listGroupID = lg;
                 newUomDoc.updatedAt = (new Date().toISOString());
-                let dbResp = null;
-                try { dbResp = await groceriesDBAsAdmin.insert(newUomDoc)}
+                try { await groceriesDBAsAdmin.insert(newUomDoc)}
                 catch(err) { log.error("Couldn't update UOM ",uomDoc.description," with list group ",lg);
                     success = false;}
                 if (success) { log.info("Updated UOM ",uomDoc.description," with list group ",lg)}
@@ -678,8 +658,7 @@ async function generateUserColors(catDocs: CategoryDocs, userDocs: UserDoc[], se
             newSettingDoc.username = user.name;
             newSettingDoc.categoryColors = newCategoryColors;
             newSettingDoc.updatedAt = (new Date().toISOString());
-            let dbResp = null;
-            try { dbResp = await groceriesDBAsAdmin.insert(newSettingDoc)}
+            try { await groceriesDBAsAdmin.insert(newSettingDoc)}
             catch(err) { log.error("Couldn't create user setting ",user.name," with category colors ");
                 success = false;}
             if (success) {log.info("User setting doc created for ",user.name," didn't previously exist")};    
@@ -687,8 +666,7 @@ async function generateUserColors(catDocs: CategoryDocs, userDocs: UserDoc[], se
             // update setting doc for user, add key
             foundSetting.categoryColors = newCategoryColors;
             foundSetting.updatedAt = (new Date().toISOString());
-            let dbResp = null;
-            try { dbResp = await groceriesDBAsAdmin.insert(foundSetting)}
+            try { await groceriesDBAsAdmin.insert(foundSetting)}
             catch(err) { log.error("Couldn't update user setting ",user.name," with category colors ");
                 success = false;}
             if (success) {log.info("User setting doc updated for user ",user.name)}    
@@ -761,60 +739,59 @@ async function getLatestSettingsDocs(): Promise<[boolean,SettingsDoc[]]> {
     return [true,foundSettingsDocs.docs];
 }
 
-async function checkAndCreateNewUOMForRecipeItem(uomName: string): Promise<boolean> {
-    let success = true;
-    let [getSuccess,curUOMDocs] = await getLatestUOMDocs();
-    if (!getSuccess) {return false};
-    let alreadyInRecipeUOMs = (curUOMDocs.filter(uom => (uom.name === uomName && uom.listGroupID === "recipe")).length > 0);
-    if (!alreadyInRecipeUOMs) {
-        let uomDoc = curUOMDocs.find(uom => (uom.name === uomName));
-        if (uomDoc === undefined) {
-            log.error("Could not find UOM to update for recipe:",uomName);
-            success = false;
-        } else {
-            let newUOMDoc = cloneDeep(uomDoc);
-            newUOMDoc._id = undefined;
-            newUOMDoc._rev = undefined;
-            newUOMDoc.listGroupID = "recipe";
-            newUOMDoc.updatedAt = (new Date().toISOString());
-            let dbResp = null;
-            try { dbResp = await groceriesDBAsAdmin.insert(newUOMDoc)}
-            catch(err) { log.error("Couldn't create new UOM for recipe:",uomName);
-                success = false;}
-            if (success) {log.info("Created new UOM ",uomName, " and assigned to recipe group");}    
-        }
-    }
-    return success;
-}
+// async function checkAndCreateNewUOMForRecipeItem(uomName: string): Promise<boolean> {
+//     let success = true;
+//     let [getSuccess,curUOMDocs] = await getLatestUOMDocs();
+//     if (!getSuccess) {return false};
+//     let alreadyInRecipeUOMs = (curUOMDocs.filter(uom => (uom.name === uomName && uom.listGroupID === "recipe")).length > 0);
+//     if (!alreadyInRecipeUOMs) {
+//         let uomDoc = curUOMDocs.find(uom => (uom.name === uomName));
+//         if (uomDoc === undefined) {
+//             log.error("Could not find UOM to update for recipe:",uomName);
+//             success = false;
+//         } else {
+//             let newUOMDoc = cloneDeep(uomDoc);
+//             newUOMDoc._id = undefined;
+//             newUOMDoc._rev = undefined;
+//             newUOMDoc.listGroupID = "recipe";
+//             newUOMDoc.updatedAt = (new Date().toISOString());
+//             try { await groceriesDBAsAdmin.insert(newUOMDoc)}
+//             catch(err) { log.error("Couldn't create new UOM for recipe:",uomName);
+//                 success = false;}
+//             if (success) {log.info("Created new UOM ",uomName, " and assigned to recipe group");}    
+//         }
+//     }
+//     return success;
+// }
 
-async function generateRecipeUOMs(recipeDocs: RecipeDoc[]): Promise<boolean> {
-    let success = true;
-    let [getSuccess,baseUOMDocs] = await getLatestUOMDocs();
-    if (!getSuccess) {return false;}
-    for (let i = 0; i < recipeDocs.length; i++) {
-        const recipe = recipeDocs[i];
-        for (let j = 0; j < recipe.items.length; j++) {
-            const item = recipe.items[j];
-            log.debug("Processing recipe ",recipe.name, " item: ",item.name);
-            if (item.recipeUOMName !== undefined && item.recipeUOMName !== null && item.recipeUOMName !== "") {
-                let foundUOM = baseUOMDocs.findIndex(uom => (uom._id?.startsWith("system:uom:") && uom.name === item.recipeUOMName))
-                if (foundUOM === -1) {
-                    let ok = await checkAndCreateNewUOMForRecipeItem(item.recipeUOMName);
-                    if (!ok) {success=false;break};
-                }
-            }
-            if (item.shoppingUOMName !== undefined && item.shoppingUOMName !== null && item.shoppingUOMName !== "") {
-                let foundUOM = baseUOMDocs.findIndex(uom => (uom._id?.startsWith("system:uom:") && uom.name === item.shoppingUOMName))
-                if (foundUOM === -1) {
-                    let ok = await checkAndCreateNewUOMForRecipeItem(item.shoppingUOMName);
-                    if (!ok) {success=false;break};
-                }
-            }
-        }
-        if (!success) {break};
-    }
-    return success;
-}
+// async function generateRecipeUOMs(recipeDocs: RecipeDoc[]): Promise<boolean> {
+//     let success = true;
+//     let [getSuccess,baseUOMDocs] = await getLatestUOMDocs();
+//     if (!getSuccess) {return false;}
+//     for (let i = 0; i < recipeDocs.length; i++) {
+//         const recipe = recipeDocs[i];
+//         for (let j = 0; j < recipe.items.length; j++) {
+//             const item = recipe.items[j];
+//             log.debug("Processing recipe ",recipe.name, " item: ",item.name);
+//             if (item.recipeUOMName !== undefined && item.recipeUOMName !== null && item.recipeUOMName !== "") {
+//                 let foundUOM = baseUOMDocs.findIndex(uom => (uom._id?.startsWith("system:uom:") && uom.name === item.recipeUOMName))
+//                 if (foundUOM === -1) {
+//                     let ok = await checkAndCreateNewUOMForRecipeItem(item.recipeUOMName);
+//                     if (!ok) {success=false;break};
+//                 }
+//             }
+//             if (item.shoppingUOMName !== undefined && item.shoppingUOMName !== null && item.shoppingUOMName !== "") {
+//                 let foundUOM = baseUOMDocs.findIndex(uom => (uom._id?.startsWith("system:uom:") && uom.name === item.shoppingUOMName))
+//                 if (foundUOM === -1) {
+//                     let ok = await checkAndCreateNewUOMForRecipeItem(item.shoppingUOMName);
+//                     if (!ok) {success=false;break};
+//                 }
+//             }
+//         }
+//         if (!success) {break};
+//     }
+//     return success;
+// }
 
 async function deleteColorFieldFromCategories(): Promise<boolean> {
     let success = true;
@@ -824,8 +801,7 @@ async function deleteColorFieldFromCategories(): Promise<boolean> {
         let newCatDoc = cloneDeep(cat);
         delete newCatDoc.color;
         newCatDoc.updatedAt = (new Date().toISOString());
-        let dbResp = null;
-        try { dbResp = await groceriesDBAsAdmin.insert(newCatDoc)}
+        try { await groceriesDBAsAdmin.insert(newCatDoc)}
         catch(err) { log.error("Couldn't delete color from category:",newCatDoc.name);
             success = false;}
         if (success) {log.info("Deleted color field from category ",newCatDoc.name);}    
@@ -842,9 +818,8 @@ async function removeDefaultFieldFromListgroups() {
         let newListGroupDoc = cloneDeep(lgd);
         delete newListGroupDoc.default;
         newListGroupDoc.updatedAt = (new Date().toISOString());
-        let dbResp = null;
         let changeSuccess = true;
-        try { dbResp = await groceriesDBAsAdmin.insert(newListGroupDoc)}
+        try { await groceriesDBAsAdmin.insert(newListGroupDoc)}
         catch(err) { log.error("Couldn't delete default flag from list group:",newListGroupDoc.name);
             changeSuccess = false; success=false;}
         if (changeSuccess) {log.info("Deleted default flag from list group ",newListGroupDoc.name);}    
@@ -865,9 +840,8 @@ async function addRecipeListGroupsForUsers(userDocs: UserDoc[]) {
             newRecipeLG.name = user.name + " (Recipes)";
             newRecipeLG.recipe = true;
             newRecipeLG.updatedAt = new Date().toISOString();
-            let dbResp = null;
             let addSuccess = true;
-            try { dbResp = await groceriesDBAsAdmin.insert(newRecipeLG)}
+            try { await groceriesDBAsAdmin.insert(newRecipeLG)}
             catch(err) { log.error("Couldn't add recipe list group for user:",user.name); success = false; addSuccess = false;}
             if (addSuccess) {log.info("Created recipe list group for user:",user.name)}
         }
@@ -890,9 +864,8 @@ async function copyRecipesToListGroups() {
             delete newRecipeDoc._rev
             newRecipeDoc.listGroupID = String(lg._id);
             newRecipeDoc.updatedAt = new Date().toISOString();
-            let dbResp = null;
             let addSuccess = true;
-            try { dbResp = await groceriesDBAsAdmin.insert(newRecipeDoc)}
+            try { await groceriesDBAsAdmin.insert(newRecipeDoc)}
             catch(err) { log.error("Couldn't add new recipe in list group:",lg.name); success=false; addSuccess=false}
             if (addSuccess) {log.info("Copied recipe ",recipe.name," to list group ",lg.name)}
         }
@@ -1023,7 +996,7 @@ async function restructureConflictLog() {
             impactedUsersSet = new Set([...impactedUsersSet,...loserUsers])
         }
         conflictLog.impactedUsers = Array.from(impactedUsersSet);
-        try {let dbResp = await groceriesDBAsAdmin.insert(conflictLog)}
+        try { await groceriesDBAsAdmin.insert(conflictLog)}
         catch(err) {log.error("Could not update conflict log record.",err)}
     }
     log.info("Conflict Log records updated with impacted users.");
@@ -1039,7 +1012,7 @@ async function addThemeToSettings() {
     catch(err) {log.error("Could not find settings items during schema update:",err); return false;}
     for (const settingsDoc of foundSettingDocs.docs) {
         settingsDoc.settings.theme = ThemeType.auto;
-        try {let dbResp = await groceriesDBAsAdmin.insert(settingsDoc)}
+        try {await groceriesDBAsAdmin.insert(settingsDoc)}
         catch(err) {log.error("Could not update settings record.",err); updateSuccess=false;}
     }
     log.info("Settings docs updated with theme setting.");
@@ -1047,7 +1020,7 @@ async function addThemeToSettings() {
 }
 
 async function fixDuplicateCategories() {
-    let [listSuccess,currentLists] = await getLatestListDocs();
+    let [listSuccess,] = await getLatestListDocs();
     if (!listSuccess) {
         log.error("Could not retrieve lists...");
         return false;
@@ -1057,7 +1030,7 @@ async function fixDuplicateCategories() {
         log.error("Could not retrieve categories...");
         return false;
     }
-    let [itemSuccess,currentItems] = await getLatestItemDocs();
+    let [itemSuccess,] = await getLatestItemDocs();
     if (!itemSuccess) {
         log.error("Could not retrieve items...");
         return false;
@@ -1070,7 +1043,7 @@ async function fixDuplicateCategories() {
         if (catDupCheck.hasOwnProperty(concatIdx)) {
             log.info("Duplicate category name detected... ",cat.listGroupID,cat.name," cleaning...");
             changeCategoryOnItems(cat.listGroupID,String(cat._id),catDupCheck[concatIdx]);
-            try {let dbResp = await groceriesDBAsAdmin.destroy(String(cat._id),String(cat._rev))}
+            try { await groceriesDBAsAdmin.destroy(String(cat._id),String(cat._rev))}
             catch(err) {log.error("Could not delete category ",cat.name); return false;}
         } else {
             catDupCheck[concatIdx] = cat._id;
@@ -1097,7 +1070,6 @@ async function fixDuplicateCategoriesInAList() {
     if (!listSuccess) {return false;}
     let [categorySuccess,currentCategories] = await getLatestCategoryDocs();
     if (!categorySuccess) {return false;}
-    let catDupCheck: any = {};
     let catDupCheckGoodBad : DupCheckCat[] = [];
     for (const list of currentLists) {
         for (const cat of list.categories) {
@@ -1197,7 +1169,7 @@ async function changeCategoryOnItems(chgListGroup: string, oldCat: string, newCa
             itemChanged = true;
         }
         if (itemChanged) {
-            try {let dbResp = await groceriesDBAsAdmin.insert(itemFix)}
+            try { await groceriesDBAsAdmin.insert(itemFix)}
             catch(err) {log.error("Could not update item ",itemFix.name, err); return false}
         }
     }
@@ -1227,7 +1199,7 @@ async function fixItemCategories() {
             }
         }
         if (itemChanged) {
-            try {let dbResp = await groceriesDBAsAdmin.insert(item)}
+            try { await groceriesDBAsAdmin.insert(item)}
             catch(err) {log.error("Could not update item to remove bad category."); return false;}
         }
     }
@@ -1241,7 +1213,7 @@ async function updateListRecord(updList: ListDoc) {
     let updDoc: ListDoc = cloneDeep(dbDoc) as ListDoc;
     updDoc.categories = updList.categories;
     updDoc.updatedAt = (new Date()).toISOString();
-    try {let dbResp = await groceriesDBAsAdmin.insert(updDoc);}
+    try { await groceriesDBAsAdmin.insert(updDoc);}
     catch(err) {log.error("Could not update List Record...",updList.name); return false;}
     return true;
 }
@@ -1352,7 +1324,7 @@ async function fixCategories() {
     foundIDDoc = await getLatestDBUUIDDoc();
     if (!isEmpty(foundIDDoc)) {
         foundIDDoc.categoriesFixed = true;
-        try { let dbResp = await groceriesDBAsAdmin.insert(foundIDDoc) }
+        try { await groceriesDBAsAdmin.insert(foundIDDoc) }
         catch(err) {log.error("Error updating DBUUID for fixing of categories:",err); return false;}
         return true;    
     }
@@ -1399,14 +1371,14 @@ async function fixItemNames(): Promise<boolean> {
             }
         }
         if (itemUpdated) {
-            try {let dbResp = await groceriesDBAsAdmin.insert(item)}
+            try { await groceriesDBAsAdmin.insert(item)}
             catch(err){ log.error("Could not update item",err); return false;}
         }
     }
     foundIDDoc = await getLatestDBUUIDDoc();
     if (!isEmpty(foundIDDoc)) {
         foundIDDoc.itemNamesFixed = true;
-        try { let dbResp = await groceriesDBAsAdmin.insert(foundIDDoc) }
+        try { await groceriesDBAsAdmin.insert(foundIDDoc) }
         catch(err) {log.error("Error updating DBUUID for fixing of item names:",err); return false;}
         return true;    
     }
@@ -1448,7 +1420,7 @@ async function fixAlexaDefault(): Promise<boolean> {
     for (const listGroup of listGroups) {
         if (listGroup.hasOwnProperty("alexaDefault")) {
             delete listGroup.alexaDefault;
-            try {let dbResp = await groceriesDBAsAdmin.insert(listGroup)}
+            try { await groceriesDBAsAdmin.insert(listGroup)}
             catch(err){ log.error("Could not update listgroup",err); return false;}
         }
     }
@@ -1485,14 +1457,14 @@ async function fixAlexaDefault(): Promise<boolean> {
         }
         if (foundListGroupID) {
             setting.settings.alexaDefaultListGroup = alexaDefaultListGroupID;
-            try {let dbResp = await groceriesDBAsAdmin.insert(setting)}
+            try { await groceriesDBAsAdmin.insert(setting)}
             catch(err){ log.error("Could not update setting",err); return false;}
         }
     }
     foundIDDoc = await getLatestDBUUIDDoc();
     if (!isEmpty(foundIDDoc)) {
         foundIDDoc.alexaDefaultFixed = true;
-        try { let dbResp = await groceriesDBAsAdmin.insert(foundIDDoc) }
+        try { await groceriesDBAsAdmin.insert(foundIDDoc) }
         catch(err) {log.error("Error updating DBUUID for fixing of Alexa defaults:",err); return false;}
         log.info("Alexa default records fixed");
         return true;    
@@ -1652,7 +1624,6 @@ async function createStandardIndexes(): Promise<boolean> {
 
 async function createReplicationFilter(): Promise<boolean> {
     let success=true;
-    let dbresp = null;
     let filterFunc = "function(doc,req) {"+
         "if (doc._id.startsWith('_design')) {return true;};" +
          "if (!doc.hasOwnProperty('type')) {return false;};" +
@@ -1721,7 +1692,7 @@ async function createReplicationFilter(): Promise<boolean> {
         else {log.info("Replication filter exists and has correct content.")}
     }
     if (!filterExists || filterNeedsUpdate) {
-        try {dbresp = await groceriesDBAsAdmin.insert(dbRecord);}
+        try { await groceriesDBAsAdmin.insert(dbRecord);}
         catch(err) {log.debug("Could not create replication filter:",err); success=false;}
         if (success) {log.info("Replication filter created/updated successfully.")}
     }
@@ -1768,17 +1739,17 @@ function encodedHMAC() {
 
 function convertLogLevel(level: string) : LogLevelDesc {
     let uLevel=level.toUpperCase();
-    if (["0","TRACE","T"].includes(level)) {
+    if (["0","TRACE","T"].includes(uLevel)) {
         return "TRACE" 
-    } else if (["1","DEBUG","D"].includes(level)) {
+    } else if (["1","DEBUG","D"].includes(uLevel)) {
         return "DEBUG"
-    } else if (["2","INFO","INFORMATION","I"].includes(level)) {
+    } else if (["2","INFO","INFORMATION","I"].includes(uLevel)) {
         return "INFO"
-    } else if (["3","WARN","WARNING","W"].includes(level)) {
+    } else if (["3","WARN","WARNING","W"].includes(uLevel)) {
         return "WARN"
-    } else if (["4","ERROR","E"].includes(level)) {
+    } else if (["4","ERROR","E"].includes(uLevel)) {
         return "ERROR"
-    } else if (["5","SILENT","S","NONE","N"].includes(level)) {
+    } else if (["5","SILENT","S","NONE","N"].includes(uLevel)) {
         return "SILENT"
     }
     return "INFO"    
