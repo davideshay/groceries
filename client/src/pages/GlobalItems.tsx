@@ -1,5 +1,4 @@
 import { IonContent, IonPage, IonList, IonItem } from '@ionic/react';
-import { useRef } from 'react';
 import { HistoryProps} from '../components/DataTypes';
 import { GlobalItemDocs } from '../components/DBSchema';
 import { useTranslation } from 'react-i18next';
@@ -15,7 +14,6 @@ import { useGlobalDataStore } from '../components/GlobalData';
 
 
 const GlobalItems: React.FC<HistoryProps> = () => {
-  const screenLoading = useRef(true);
   const error = useGlobalDataStore((state) => state.error)
   const loading = useGlobalDataStore((state) => state.isLoading);
   const globalItemDocs = useGlobalDataStore((state) => state.globalItemDocs);
@@ -27,11 +25,8 @@ const GlobalItems: React.FC<HistoryProps> = () => {
     )}
 
   if (loading) { 
-    return ( <Loading isOpen={screenLoading.current} message={t("general.loading_global_items")}  /> )
-//    setIsOpen={() => {screenLoading.current = false}} /> )
+    return ( <Loading isOpen={loading} message={t("general.loading_global_items")}  /> )
   }
-  
-  screenLoading.current = false;
 
   (globalItemDocs as GlobalItemDocs).sort((a,b) => (
     translatedItemName(a._id!,a.name,a.name,2).toLocaleUpperCase().localeCompare(translatedItemName(b._id!,b.name,b.name,2).toLocaleUpperCase())

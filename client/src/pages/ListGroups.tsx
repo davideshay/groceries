@@ -1,6 +1,5 @@
 import { IonContent,  IonPage,  IonList, IonItem,  
    IonFab, IonFabButton, IonIcon} from '@ionic/react';
-import { useRef } from 'react';
 import { add } from 'ionicons/icons';
 import { ListCombinedRow, RowType } from '../components/DataTypes';
 import ErrorPage from './ErrorPage';
@@ -13,7 +12,6 @@ const ListGroups: React.FC = () => {
   const listRowsLoaded = useGlobalDataStore((state) => state.listRowsLoaded);
   const listCombinedRows = useGlobalDataStore((state) => state.listCombinedRows);
   const error = useGlobalDataStore((state)=>state.error);
-  const screenLoading = useRef(false);
   const { t } = useTranslation();
 
   if (error) { return(
@@ -21,12 +19,8 @@ const ListGroups: React.FC = () => {
   )}
 
   if (!listRowsLoaded) { 
-    screenLoading.current = true;
-    return ( <Loading isOpen={screenLoading.current} message={t("general.loading_listgroups")}  />
-//    setIsOpen={() => {screenLoading.current = false}} />
+    return ( <Loading isOpen={!listRowsLoaded} message={t("general.loading_listgroups")}  />
   )}
-
-  screenLoading.current=false;
 
   return (
     <IonPage>

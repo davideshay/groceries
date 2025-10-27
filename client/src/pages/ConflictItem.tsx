@@ -2,7 +2,7 @@ import { IonContent,IonPage, IonButton, IonList,
   IonItem, IonLabel, IonFooter, IonTextarea, NavContext } from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useGetOneDoc} from '../components/Usehooks';
-import { useContext, useRef } from 'react';
+import { useContext } from 'react';
 import { isEqual, pull } from 'lodash-es';
 import { HistoryProps } from '../components/DataTypes';
 import { ConflictDoc } from '../components/DBSchema';
@@ -16,18 +16,15 @@ const ConflictItem: React.FC<HistoryProps> = () => {
   const { t } = useTranslation()
   const { doc: conflictDoc, loading: conflictLoading, dbError: conflictError } = useGetOneDoc(routeID);
   const {goBack} = useContext(NavContext);
-  const screenLoading = useRef(true);
 
   if (conflictError) { return (
     <ErrorPage errorText={t("error.loading_conflict_info") as string}></ErrorPage>
     )}
 
   if ( conflictLoading  )  {
-    return ( <Loading isOpen={screenLoading.current} message={t("general.loading_conflict_item")} /> )
-//    setIsOpen={() => {screenLoading.current = false}} /> )
+    return ( <Loading isOpen={conflictLoading} message={t("general.loading_conflict_item")} /> )
   };
   
-  screenLoading.current=false;
   const localDate = (new Date(conflictDoc.updatedAt)).toLocaleString();
   const winnerText = JSON.stringify(conflictDoc.winner,null,4);
   const losersText = JSON.stringify(conflictDoc.losers,null,4);

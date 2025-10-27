@@ -1,6 +1,5 @@
 import { IonContent, IonPage, IonList, IonItem, IonFab,
      IonFabButton, IonIcon } from '@ionic/react';
-import { useRef } from 'react';
 import { add } from 'ionicons/icons';
 import { HistoryProps } from '../components/DataTypes';
 import { CategoryDoc } from '../components/DBSchema';
@@ -15,7 +14,6 @@ const Categories: React.FC<HistoryProps> = () => {
   const error = useGlobalDataStore((state) => state.error);
   const loading = useGlobalDataStore((state) => state.isLoading);
   const categoryDocs = useGlobalDataStore((state) => state.categoryDocs);
-  const screenLoading=useRef(true);
   const { t } = useTranslation();
 
   if (error !== null) { return (
@@ -23,11 +21,8 @@ const Categories: React.FC<HistoryProps> = () => {
   )}
 
   if (loading) { 
-    return ( <Loading isOpen={screenLoading.current} message={t("general.loading_categories")}  /> )
-//    setIsOpen={() => {screenLoading.current = false}} /> )
+    return ( <Loading isOpen={loading} message={t("general.loading_categories")}  /> )
   }
-
-  screenLoading.current=false;
 
   (categoryDocs as CategoryDoc[]).sort(function(a,b) {
     return translatedCategoryName(a._id,a.name).toLocaleUpperCase().localeCompare(translatedCategoryName(b._id,b.name).toLocaleUpperCase())

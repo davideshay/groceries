@@ -68,7 +68,6 @@ const ListGroup: React.FC<HistoryProps> = () => {
   const { globalState, updateSettingKey } = useContext(GlobalStateContext);
   const { loading: listGroupLoading, doc: listGroupDoc, dbError: listGroupError } = useGetOneDoc(pageState.selectedListGroupID);
   const [presentAlert,dismissAlert] = useIonAlert();
-  const screenLoading = useRef(true);
   const history = useHistory();
   const { t } = useTranslation();
   
@@ -129,11 +128,8 @@ const ListGroup: React.FC<HistoryProps> = () => {
   }
 
   if (!listRowsLoaded || (listGroupLoading && pageState.selectedListGroupID !== null) ||(useFriendState !== UseFriendState.rowsLoaded && !remoteDBState.workingOffline) || isEmpty(pageState.listGroupDoc) || !pageState.usersLoaded || pageState.deletingDoc)  {
-    return ( <Loading isOpen={screenLoading.current} message={t('general.loading_list_group')}  /> )
-//    setIsOpen={() => {screenLoading.current = false}} /> )
+    return ( <Loading isOpen={true} message={t('general.loading_list_group')}  /> )
   };
-  
-  screenLoading.current=false;
 
   async function updateThisItem() {
     setFormErrors(FormErrorInit);

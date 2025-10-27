@@ -1,5 +1,4 @@
 import { IonContent,  IonPage, IonList, IonItem } from '@ionic/react';
-import { useRef } from 'react';
 import { HistoryProps } from '../components/DataTypes';
 import PageHeader from '../components/PageHeader';
 import { useTranslation } from 'react-i18next';
@@ -9,11 +8,8 @@ import { useTranslation } from 'react-i18next';
 // and status for active (on the list), and complete (on the list and checked off) )
 
 const ManageData: React.FC<HistoryProps> = () => {
-  const screenLoading = useRef(true);
   const { t } = useTranslation();
   
-  screenLoading.current = false;
-
   return (
     <IonPage>
       <PageHeader title={t("general.manage_data")} />

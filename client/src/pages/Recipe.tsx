@@ -68,7 +68,6 @@ const Recipe: React.FC<HistoryProps> = () => {
   const { dbError: itemError, itemRowsLoaded } = useItems({selectedListGroupID: null, isReady: true, 
         needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
   const {goBack} = useContext(NavContext);
-  const screenLoading = useRef(true);
   const { globalState } =useContext(GlobalStateContext);
   const { t } = useTranslation();
   const [ present] = useIonAlert();
@@ -97,11 +96,8 @@ const Recipe: React.FC<HistoryProps> = () => {
     )};
 
   if ( recipeLoading || loading || !pageState.recipeDoc || pageState.deletingRecipe || !listRowsLoaded || !itemRowsLoaded || pageState.addingInProcess)  {
-    return ( <Loading isOpen={screenLoading.current} message={t("general.loading_recipe")} />)
-//    setIsOpen={() => {screenLoading.current = false}} /> )
+    return ( <Loading isOpen={true} message={t("general.loading_recipe")} />)
   };
-  
-  screenLoading.current=false;
 
   async function updateThisRecipe() {
     setFormErrors(FormErrorInit);

@@ -28,41 +28,37 @@ import Status from "./Status";
 import UserData from './UserData';
 
 import { GlobalStateContext } from '../components/GlobalState';
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect,useSyncExternalStore } from 'react';
 import { ThemeType } from '../components/DBSchema';
 import ManageData from './ManageData';
 import { SafeArea } from '../plugins/safe-area';
 import log from '../components/logger';
 import { popoverController } from '@ionic/core';
 
+function useSystemDark() {
+    return useSyncExternalStore(
+        // Subscribe function
+        (callback) => {
+            if (typeof window === 'undefined') return () => {};
+            
+            const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+            mediaQuery.addEventListener('change', callback);
+            return () => mediaQuery.removeEventListener('change', callback);
+        },
+        // Get snapshot (client)
+        () => {
+            if (typeof window === 'undefined') return false;
+            return window.matchMedia('(prefers-color-scheme: dark)').matches;
+        },
+        // Get server snapshot
+        () => false
+    );
+}
 
 const AppContent: React.FC = () => {
     const { globalState} = useContext(GlobalStateContext);
-    const [systemDark, setSystemDark] = useState<boolean>(true);
+    const systemDark = useSystemDark()
     const history = useHistory();
-
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
-        // Create media query for dark mode
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-
-        // Set initial state
-        setSystemDark(mediaQuery.matches);
-
-        // Handler for media query changes
-        const handleChange = (e: MediaQueryListEvent) => {
-            log.debug("media query change, setting systemDark to:", e.matches);
-            setSystemDark(e.matches);
-        };
-
-        // Add event listener
-        mediaQuery.addEventListener('change', handleChange);
-
-        // Cleanup function
-        return () => {
-            mediaQuery.removeEventListener('change', handleChange);
-        };
-    }, []);
 
     useEffect( () => {
         const resetTheme = async () => {
