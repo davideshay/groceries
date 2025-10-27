@@ -57,18 +57,12 @@ export enum ItemSearchType {
 
   export interface SearchState {
     searchCriteria: string,
-    isOpen: boolean,
-    isFocused: boolean,
-    filteredSearchRows: Array<ItemSearch>,
-    dismissEvent: CustomEvent | undefined
+    filteredSearchRows: Array<ItemSearch>
   }
 
   export const SearchStateInit: SearchState  = {
     searchCriteria: "",
-    isOpen: false,
-    isFocused: false,
-    filteredSearchRows: [],
-    dismissEvent: undefined
+    filteredSearchRows: []
   }
 
   export interface PageState {

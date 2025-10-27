@@ -17,9 +17,9 @@ body::after {
 
 /* LIGHT MODE */
 
-body::before, ion-item, ion-list-header, ion-header, ion-toolbar, ion-list,
-ion-title.modal-title, #item-search-box, #items-page-header, .autocomplete-list,
-#items-page-header > ion-item, ion-select-popover, ion-menu ion-content {
+body::before, #item-search-autocomplete ion-item, ion-item, ion-list-header, ion-header, ion-toolbar, ion-list,
+ion-title.modal-title, #item-search-box, #item-autocomplete-list ion-list, items-page-header, #items-page-header > ion-item,
+ion-select-popover, ion-menu ion-content {
     --background: #fafafa;
     background: #fafafa;
 }
@@ -28,7 +28,8 @@ body::after {
     background-color: #ffffffaa;
 }
 
-ion-item:hover, ion-list-header:hover, ion-header:hover, ion-toolbar:hover  {
+ion-item:hover, ion-list-header:hover, ion-header:hover,
+#item-search-autocomplete:focus-within #item-search-box {
     --background: #f0f0f0;
     background: #f0f0f0;
     --background-activated: none;
@@ -58,16 +59,17 @@ ion-item-divider.uncategorized-color {
 /* DARK MODE */
 
 .ion-palette-dark {
-    body::before, ion-item, ion-list-header, ion-header, ion-toolbar, ion-list,
-    ion-title.modal-title, #item-search-box, #items-page-header,
-    #items-page-header > ion-item, ion-select-popover, ion-menu ion-content {
-        --background: #202020;
+    body::before, #item-search-autocomplete ion-item, ion-item, ion-list-header, ion-header, ion-toolbar, ion-list,
+    ion-title.modal-title, #item-search-box, #item-autocomplete-list ion-list, items-page-header, #items-page-header > ion-item,
+    ion-select-popover, ion-menu ion-content {
+        --background: #070606;
         background: #202020;
     }
     body::after {
         background-color: #000000aa;
     }
-    ion-item:hover, ion-list-header:hover, ion-header:hover, ion-toolbar:hover {
+    ion-item:hover, ion-list-header:hover, ion-header:hover,
+    #item-search-autocomplete:focus-within #item-search-box {
         --background: #2d2d2d;
         background: #2d2d2d;
         --background-activated: none;

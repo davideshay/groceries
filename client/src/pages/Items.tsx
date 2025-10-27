@@ -26,8 +26,8 @@ import { useGlobalDataStore } from '../components/GlobalData';
 
 const Items: React.FC<HistoryProps> = () => {
   const { mode: routeMode, id: routeListID  } = useParams<{mode: string, id: string}>();
-  const [searchRows,setSearchRows] = useState<ItemSearch[]>();
-  const [searchState,setSearchState] = useState<SearchState>(SearchStateInit);
+  const [searchRows, setSearchRows] = useState<ItemSearch[]>();
+  const [searchState, setSearchState] = useState<SearchState>(SearchStateInit);
   const [pageState, setPageState] = useState<PageState>({selectedListOrGroupID: routeListID,
           selectedListType: (routeMode === "list" ? RowType.list : RowType.listGroup) ,
           ignoreCheckOffWarning: false,
@@ -69,7 +69,7 @@ const Items: React.FC<HistoryProps> = () => {
   const history = useHistory();
   const listSelectRows = useListSelectRows();
 
-  const getGroupIDForList = useCallback( (listID: string | null) => {
+  const getGroupIDForList = useCallback((listID: string | null) => {
     if (routeMode === "group") { return pageState.selectedListOrGroupID};
     let retGID = null;
     for (let i = 0; i < listRows.length; i++) {
@@ -78,23 +78,23 @@ const Items: React.FC<HistoryProps> = () => {
     return retGID;
   },[pageState.selectedListOrGroupID,listRows,routeMode])
 
-  useEffect( () => {
-    if ( listRowsLoaded && listCombinedRows.filter(lcr => (lcr.listOrGroupID === routeListID)).length === 0) {
+  useEffect(() => {
+    if (listRowsLoaded && listCombinedRows.filter(lcr => (lcr.listOrGroupID === routeListID)).length === 0) {
       navigateToFirstListID(history, listRows, listCombinedRows, null);
     } else { 
       setPageState(prevState => ({...prevState,selectedListOrGroupID: routeListID, selectedListType: (routeMode === "group" ? RowType.listGroup : RowType.list)}))
     }
   },[routeListID,routeMode,listCombinedRows,listRows,listRowsLoaded,history])
 
-  useEffect( () => {
+  useEffect(() => {
     if (listRowsLoaded) {
       setPageState(prevState => ({...prevState,groupIDforSelectedList: getGroupIDForList(pageState.selectedListOrGroupID)}))
     }
   },[listRowsLoaded,pageState.selectedListOrGroupID,getGroupIDForList])
 
-  useEffect( () => {
+  useEffect(() => {
     if (baseItemRowsLoaded && listRowsLoaded && !isLoading) {
-      setPageState( (prevState) => {
+      setPageState((prevState) => {
         const [newItemRows,newCategoryRows] = getItemRows(baseItemDocs as ItemDocs, listCombinedRows, categoryDocs as CategoryDoc[], uomDocs as UomDoc[], pageState.selectedListType, pageState.selectedListOrGroupID, prevState.categoryRows, globalState.categoryColors)
         return (
         { ...prevState,
@@ -106,29 +106,22 @@ const Items: React.FC<HistoryProps> = () => {
   },[baseItemRowsLoaded, listRowsLoaded, isLoading, 
     uomDocs, baseItemDocs, listCombinedRows, categoryDocs, pageState.selectedListOrGroupID, pageState.selectedListType, globalState.categoryColors]);
 
-  useEffect( () => {
+  useEffect(() => {
     if (baseSearchItemRowsLoaded && !isLoading) {
-      setSearchState(prevState => ({...prevState,isOpen: false, isFocused: false}));
       setSearchRows(getAllSearchRows(baseSearchItemDocs as ItemDocs,pageState.selectedListOrGroupID, pageState.selectedListType, listDocs, globalItemDocs as GlobalItemDocs, globalState.settings));
     }
   },[baseSearchItemRowsLoaded, isLoading, globalItemDocs, baseSearchItemDocs, pageState.selectedListOrGroupID, pageState.selectedListType, listDocs, globalState.settings])
 
-  const filterAndCheckRows = useCallback((searchCriteria: string, setFocus : boolean) => {
-    const filterRows=filterSearchRows(searchRows, searchCriteria)
-    let toOpen=true;
-    if (filterRows.length === 0 || !setFocus) {
-      toOpen=false;
-    }
-    let toFocus=setFocus;
-    if (toOpen) { toFocus = true};
-    setSearchState(prevState => ({...prevState, searchCriteria: searchCriteria, filteredSearchRows: filterRows, isOpen: toOpen, isFocused: toFocus }));
-  },[searchRows])
+  const filterAndCheckRows = useCallback((searchCriteria: string) => {
+    const filterRows = filterSearchRows(searchRows, searchCriteria)
+    setSearchState({searchCriteria: searchCriteria, filteredSearchRows: filterRows});
+  }, [searchRows]);
 
-  useEffect( () => {
-    filterAndCheckRows(searchState.searchCriteria,searchState.isFocused);
-  },[searchRows,searchState.isFocused,searchState.searchCriteria,filterAndCheckRows])
+  useEffect(() => {
+    filterAndCheckRows(searchState.searchCriteria);
+  }, [searchRows, searchState.searchCriteria, filterAndCheckRows]);
 
-  const shouldBeActive = useCallback( (itemList: ItemList, newRow: boolean, allItemLists: ItemList[]): boolean => {
+  const shouldBeActive = useCallback((itemList: ItemList, newRow: boolean, allItemLists: ItemList[]): boolean => {
     if (!newRow && !itemList.stockedAt) {
       if (pageState.selectedListType === RowType.list && itemList.listID === pageState.selectedListOrGroupID) {
         return true;
@@ -278,7 +271,7 @@ const Items: React.FC<HistoryProps> = () => {
     return response;
     },[addNewItem,itemDocs,listRows,pageState.groupIDforSelectedList,presentAlert,shouldBeActive,t,updateItemInList])
 
-  const isItemAlreadyInList = useCallback( (itemName: string,completedOnly: boolean): [boolean,ItemDoc|null] => {
+  const isItemAlreadyInList = useCallback((itemName: string,completedOnly: boolean): [boolean,ItemDoc|null] => {
     if (itemName === "") {return [false,null];}
     const existingItem = (baseItemDocs as ItemDocs).find((el) => 
       (itemName.toLocaleUpperCase() === translatedItemName(String(el._id),el.name,el.pluralName,1).toLocaleUpperCase() ||
@@ -301,7 +294,7 @@ const Items: React.FC<HistoryProps> = () => {
     return [allCompleted,existingItem];
   },[baseItemDocs,pageState.selectedListOrGroupID,pageState.selectedListType])
 
-  const addNewItemToList = useCallback( async (itemName: string) => {
+  const addNewItemToList = useCallback(async (itemName: string) => {
       const [isItemAlreadyInListAsCompleted,compItem] = isItemAlreadyInList(itemName,true);
       if (isItemAlreadyInListAsCompleted && compItem !== null) {
         const itemSearch: ItemSearch = {
@@ -315,7 +308,7 @@ const Items: React.FC<HistoryProps> = () => {
           boughtCount: 0
         }
         const {success,errorHeader,errorMessage}  = await addExistingItemToList(itemSearch);
-        setSearchState(prevState => ({...prevState, searchCriteria: "", filteredSearchRows: [], isOpen: false, isFocused: false}));
+        setSearchState({searchCriteria: "", filteredSearchRows: []});
         if (!success) {
           setPageState(prevState => ({...prevState,showAlert: true, alertHeader: errorHeader, alertMessage: errorMessage}));
         }      
@@ -324,7 +317,7 @@ const Items: React.FC<HistoryProps> = () => {
       const [isItemAlreadyInListAtAll,] = isItemAlreadyInList(itemName,false); 
       if (isItemAlreadyInListAtAll) {
         setPageState(prevState => ({...prevState, showAlert: true, alertHeader: t("error.adding_to_list") , alertMessage: t("error.item_exists_current_list")}))
-        setSearchState(prevState => ({...prevState, isOpen: false, searchCriteria: "", filteredSearchRows: [], isFocused: false}))
+        setSearchState({searchCriteria: "", filteredSearchRows: []})
       } else {
         setGlobalStateInfo("itemMode","new");
         setGlobalStateInfo("callingListID",pageState.selectedListOrGroupID);
@@ -332,13 +325,13 @@ const Items: React.FC<HistoryProps> = () => {
         const [,globalItemID] = checkNameInGlobalItems(globalItemDocs,itemName,itemName);
         setGlobalStateInfo("newItemGlobalItemID",globalItemID)
         setGlobalStateInfo("newItemName",itemName);
-        setSearchState(prevState => ({...prevState, isOpen: false,searchCriteria:"",filteredSearchRows: [],isFocused: false}))
+        setSearchState({searchCriteria:"", filteredSearchRows: []})
         history.push("/item/new/");
       }
     }
-  ,[history,isItemAlreadyInList,addExistingItemToList,pageState.selectedListOrGroupID,pageState.selectedListType,setGlobalStateInfo,t,globalItemDocs])
+  , [history, isItemAlreadyInList, addExistingItemToList, pageState.selectedListOrGroupID, pageState.selectedListType, setGlobalStateInfo, t, globalItemDocs]);
   
-  useEffect( () => {
+  useEffect(() => {
     function beforeInputData(e:InputEvent) {
       if (e && e.data && e.data.includes("\n")) {
           enterKeyValueRef.current= e.data.trim().length > 1 ? e.data.trim() : "";
@@ -347,14 +340,14 @@ const Items: React.FC<HistoryProps> = () => {
     }
     if (searchRef && searchRef.current && (Capacitor.getPlatform() === "android")) {
       const localRef=searchRef.current;
-      localRef.addEventListener('beforeinput',beforeInputData,false)
+      localRef.addEventListener('beforeinput', beforeInputData, false)
       return () => {
-          localRef.removeEventListener('beforeinput',beforeInputData,false)
+          localRef.removeEventListener('beforeinput', beforeInputData, false)
       }
     }
-  },[addNewItemToList,searchState.searchCriteria])
+  }, [addNewItemToList, searchState.searchCriteria]);
 
-  const warnCheckingOffItemsInListGroup = useCallback( (): Promise<boolean> => {
+  const warnCheckingOffItemsInListGroup = useCallback((): Promise<boolean> => {
     return new Promise((resolve,) => {
       presentAlert({
         header: t("error.checking_items_list_group_header"),
@@ -367,7 +360,7 @@ const Items: React.FC<HistoryProps> = () => {
       })
   },[dismissAlert,presentAlert,t])    
   
-  const completeItemRow = useCallback( async(id: string, event: CustomEvent<CheckboxChangeEventDetail>) => {
+  const completeItemRow = useCallback(async(id: string, event: CustomEvent<CheckboxChangeEventDetail>) => {
     if (pageState.selectedListType === RowType.listGroup && !pageState.ignoreCheckOffWarning) {
       if (! (await warnCheckingOffItemsInListGroup())) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -408,7 +401,7 @@ const Items: React.FC<HistoryProps> = () => {
   },[baseItemDocs,globalState.settings.removeFromAllLists,pageState.ignoreCheckOffWarning,pageState.selectedListOrGroupID,
      pageState.selectedListType,presentToast,warnCheckingOffItemsInListGroup,t,updateItemInList])
 
-  const completeItemRowStub = useCallback( async (id: string, event: CustomEvent<CheckboxChangeEventDetail>) => {
+  const completeItemRowStub = useCallback(async (id: string, event: CustomEvent<CheckboxChangeEventDetail>) => {
     const completeRowFunc = debounce((did: string,devent: CustomEvent<CheckboxChangeEventDetail>) => completeItemRow(did,devent),350,{leading: true, trailing: false})
     completeRowFunc(id,event);
   },[completeItemRow])
@@ -420,7 +413,7 @@ const Items: React.FC<HistoryProps> = () => {
   )}
 
 /*   if (!baseItemRowsLoaded || !baseSearchItemRowsLoaded || !listRowsLoaded || categoryLoading || globalData.globalItemsLoading || uomLoading || pageState.doingUpdate )  {
-    return ( <Loading isOpen={screenLoading.current} message={t("general.loading_items")} /> )
+    return (<Loading isOpen={screenLoading.current} message={t("general.loading_items")} /> )
 //    setIsOpen={() => {screenLoading.current = false}} /> )
   };
  */
@@ -428,48 +421,41 @@ const Items: React.FC<HistoryProps> = () => {
 // Reduce states that cause showing of loading screen to reduce page blink effect when clicking on-off items
   
    if (!listRowsLoaded || isLoading )  {
-    return ( <Loading isOpen={screenLoading.current} message={t("general.loading_items")} /> )
+    return (<Loading isOpen={screenLoading.current} message={t("general.loading_items")} /> )
   };
   
   screenLoading.current=false;
 
   function updateSearchCriteria(event: CustomEvent) {
-    log.debug("UpdateSearchCriteria",event)
     if (event.detail.value !== enterKeyValueRef.current) {
-        setSearchState(prevState => ({...prevState, searchCriteria: event.detail.value, isFocused:true}));
-        filterAndCheckRows(event.detail.value,true)
-        enterKeyValueRef.current="";
+      setSearchState(prevState => ({...prevState, searchCriteria: event.detail.value}));
+      filterAndCheckRows(event.detail.value)
+      enterKeyValueRef.current="";
     } else {
-        setSearchState(prevState => ({...prevState,isFocused: false, isOpen: false, searchCriteria: ""}));
+      setSearchState(prevState => ({...prevState, searchCriteria: ""}));
     }
   }
 
+  function refocusSearch(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === "Enter" || event.key === "Tab" || event.key === "Shift") {
+      return;
+    }
+    if (event.key === "Esc") {
+      setSearchState({searchCriteria: "", filteredSearchRows: []});
+    }
+    searchRef.current?.setFocus();
+  }
+
   function searchKeyPress(event: KeyboardEvent<HTMLIonInputElement>) {
-    log.debug("SearchKeyPress:",event);
     if (event.key === "Enter") {
       addNewItemToList(searchState.searchCriteria.trim());
       enterKeyValueRef.current= searchState.searchCriteria.trim().length > 1 ? searchState.searchCriteria.trim() : "";
     }
   }
-
-  function leaveSearchBox() {
-    setSearchState(prevState => ({...prevState, isOpen: false, isFocused: false}));
-  }
-
-  function enterSearchBox(event: React.MouseEvent<HTMLIonInputElement, MouseEvent>) {
-    log.debug(event);
-    log.debug("EnterSearchBox");
-    if (listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length <=0) {
-      return;
-    }
-    let toOpen=true;
-    if (searchState.filteredSearchRows.length === 0) { toOpen = false}
-    setSearchState(prevState => ({...prevState, isFocused: true,isOpen: toOpen}));
-  }
     
   async function chooseSearchItem(item: ItemSearch) {
     const {success,errorHeader,errorMessage}  = await addExistingItemToList(item);
-    setSearchState(prevState => ({...prevState, searchCriteria: "", filteredSearchRows: [], isOpen: false, isFocused: false}));
+    setSearchState({searchCriteria: "", filteredSearchRows: []});
     if (!success) {
       setPageState(prevState => ({...prevState,showAlert: true, alertHeader: errorHeader, alertMessage: errorMessage}));
     }      
@@ -568,22 +554,23 @@ const Items: React.FC<HistoryProps> = () => {
           <SyncIndicator addPadding={false}/>
         </IonItem>
       </IonToolbar>
-      <div id="item-search-autocomplete">
+      <div id="item-search-autocomplete" onKeyDown= {(e) => refocusSearch(e)}>
         <IonItem>
           <IonIcon icon={searchOutline} slot="start"/>
           <IonInput id="item-search-box" className="ion-no-padding" aria-label="item search" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="text" enterkeyhint="enter"
-            disabled={listRows !== undefined ? listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length <=0 : true}
-            clearInput={true}  placeholder={t("general.search") as string} fill="solid"
+            disabled={listRows !== undefined ? listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length <= 0 : true}
+            clearInput={true} placeholder={t("general.search") as string} fill="solid"
             onKeyDown= {(e) => searchKeyPress(e)}
             onIonInput={(e) => updateSearchCriteria(e)}
-            onClick={(e) => enterSearchBox(e)}
             />
         </IonItem>
-        <IonList id="item-autocomplete-list" className={searchState.isOpen ? " autocomplete-list-open" : ""}>
-          {(searchState.filteredSearchRows).map((item: ItemSearch) => (
-            <IonItem button key={pageState.selectedListOrGroupID+"-poilist-"+item.itemID} onClick={() => {chooseSearchItem(item)}}>{item.itemName}</IonItem>
-          ))}
-        </IonList>
+        <div id="item-autocomplete-list">
+          <IonList>
+            {(searchState.filteredSearchRows).map((item: ItemSearch) => (
+              <IonItem button key={pageState.selectedListOrGroupID + "-poi-list-" + item.itemID} onClick={() => {chooseSearchItem(item)}}>{item.itemName}</IonItem>
+            ))}
+          </IonList>
+        </div>
       </div>
       {alertElem}
     </IonHeader>)
