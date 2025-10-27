@@ -452,9 +452,9 @@ const Items: React.FC<HistoryProps> = () => {
     }
   }
 
-  function leaveSearchBox() {
-    setSearchState(prevState => ({...prevState, isOpen: false, isFocused: false}));
-  }
+  // function leaveSearchBox() {
+  //   setSearchState(prevState => ({...prevState, isOpen: false, isFocused: false}));
+  // }
 
   function enterSearchBox(event: React.MouseEvent<HTMLIonInputElement, MouseEvent>) {
     log.debug(event);

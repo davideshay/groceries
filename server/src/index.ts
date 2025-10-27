@@ -39,29 +39,29 @@ async function startup() {
         app.use("/public",express.static("public"));
 
         app.post("/issuetoken", async (req: ExpressRequest<{},IssueTokenResponse,IssueTokenBody>,res: ExpressResponse<IssueTokenResponse>) => {
-            res.send(await issueToken(req,res))
+            res.send(await issueToken(req))
         })        
         app.post('/refreshtoken', authenticateJWT, async (req: ExpressRequest<{},RefreshTokenResponse,RefreshTokenBody>,res: ExpressResponse<RefreshTokenResponse>) => {
-            const {status,response} = await refreshToken(req,res);
+            const {status,response} = await refreshToken(req);
             log.debug("Status:",status," Response: ",response);
             res.status(status).send(response);
         });
         app.post('/logout', authenticateJWT, async (req: ExpressRequest,res: ExpressResponse) => 
                 { await logout(req,res); res.send(); } );          
         app.post('/checkuserexists', authenticateJWT, async (req: ExpressRequest<{},CheckUserExistsResponse,CheckUserExistsReqBody>, res: ExpressResponse<CheckUserExistsResponse>) => {
-            res.send(await checkUserExists(req,res));
+            res.send(await checkUserExists(req));
         });
         app.post('/checkuserbyemailexists', authenticateJWT, async (req: ExpressRequest<{},CheckUserByEmailExistsResponse,CheckUseEmailReqBody>,res: ExpressResponse<CheckUserByEmailExistsResponse>) => {
-            res.send(await checkUserByEmailExists(req,res));
+            res.send(await checkUserByEmailExists(req));
         })
         app.post('/registernewuser', async (req: ExpressRequest<{},NewUserReponse,NewUserReqBody>, res: ExpressResponse<NewUserReponse>) => {
-            res.send(await registerNewUser(req,res));
+            res.send(await registerNewUser(req));
         });
         app.post('/getusersinfo', authenticateJWT, async (req: ExpressRequest<{},GetUsersInfoResponse,GetUsersInfoRequestBody>, res: ExpressResponse<GetUsersInfoResponse>) => {
-            res.send(await getUsersInfo(req,res));
+            res.send(await getUsersInfo(req));
         });
         app.post('/updateuserinfo', authenticateJWT, async (req: ExpressRequest<{},UpdateUserInfoResponse,UserInfo>, res: ExpressResponse<UpdateUserInfoResponse>) => {
-            res.send(await updateUserInfo(req,res))
+            res.send(await updateUserInfo(req))
         });
         app.get('/createaccountui', async (req: ExpressRequest<{},{},{},CreateAccountParams>,res: ExpressResponse) => {
             res.send(eta.render("createaccount",await createAccountUIGet(req)));
@@ -85,13 +85,13 @@ async function startup() {
             log.debug("in resetpassword ui POST command, with request body:", JSON.stringify(req.body,null,3,));
             res.send(eta.render("resetpassword", await resetPasswordUIPost(req)));
         });
-        app.post('/triggerresolveconflicts', authenticateJWT, async (req: ExpressRequest<{},TriggerResponse,{}>, res: ExpressResponse<TriggerResponse>) => {
+        app.post('/triggerresolveconflicts', authenticateJWT, async (_: ExpressRequest, res: ExpressResponse<TriggerResponse>) => {
             res.send(await triggerResolveConflicts());
         });
-        app.post('/triggerdbcompact', authenticateJWT, async (req: ExpressRequest<{},TriggerResponse,{}>,res: ExpressResponse<TriggerResponse>) => {
+        app.post('/triggerdbcompact', authenticateJWT, async (_: ExpressRequest,res: ExpressResponse<TriggerResponse>) => {
             res.send(await triggerDBCompact());
         });
-        app.get('/isavailable', async (req: ExpressRequest<{},IsAvailableResponse,{}>, res: ExpressResponse<IsAvailableResponse>) => {
+        app.get('/isavailable', async (_: ExpressRequest, res: ExpressResponse<IsAvailableResponse>) => {
             res.send(await isAvailable());
         });
         let startupSuccess = await dbStartup();

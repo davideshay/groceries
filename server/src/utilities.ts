@@ -170,16 +170,14 @@ export async function updateUnregisteredFriends(req: ExpressRequest<{},NewUserRe
     let foundFriendDocs;
     try {foundFriendDocs =  await groceriesDBAsAdmin.find(emailq);}
     catch(err) {log.error("Could not find friend documents:",err); return false;}
-    let foundFriendDoc = undefined;
 //    if (foundFriendDocs.docs.length > 0) {foundFriendDoc = foundFriendDocs.docs[0]}
     (foundFriendDocs.docs as FriendDocs).forEach(async (doc) => {
         if (doc.friendStatus == "WAITREGISTER") {
             doc.friendID2 = req.body.username;
             doc.friendStatus = "PENDFROM1";
             doc.updatedAt = (new Date()).toISOString();
-            let update2success=true;
             try { await groceriesDBAsAdmin.insert(doc);} 
-            catch(e) {update2success = false;}
+            catch(e) {log.error("Unable to update/create friend document");}
         }
     });
 }
