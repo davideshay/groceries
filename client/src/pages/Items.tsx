@@ -4,7 +4,7 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem,
   useIonAlert, 
   CheckboxChangeEventDetail} from '@ionic/react';
 import { add,chevronUp,documentTextOutline,searchOutline } from 'ionicons/icons';
-import React, { useState, useEffect, useContext, useRef, KeyboardEvent, useCallback, JSX } from 'react';
+import React, { useState, useEffect, useContext, useRef, KeyboardEvent, MouseEvent, useCallback, JSX } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import './Items.css';
 import { useUpdateGenericDocument, useCreateGenericDocument, useItems } from '../components/Usehooks';
@@ -308,7 +308,7 @@ const Items: React.FC<HistoryProps> = () => {
           boughtCount: 0
         }
         const {success,errorHeader,errorMessage}  = await addExistingItemToList(itemSearch);
-        setSearchState({searchCriteria: "", filteredSearchRows: []});
+        clearSearchCriteria();
         if (!success) {
           setPageState(prevState => ({...prevState,showAlert: true, alertHeader: errorHeader, alertMessage: errorMessage}));
         }      
@@ -317,7 +317,7 @@ const Items: React.FC<HistoryProps> = () => {
       const [isItemAlreadyInListAtAll,] = isItemAlreadyInList(itemName,false); 
       if (isItemAlreadyInListAtAll) {
         setPageState(prevState => ({...prevState, showAlert: true, alertHeader: t("error.adding_to_list") , alertMessage: t("error.item_exists_current_list")}))
-        setSearchState({searchCriteria: "", filteredSearchRows: []})
+        clearSearchCriteria();
       } else {
         setGlobalStateInfo("itemMode","new");
         setGlobalStateInfo("callingListID",pageState.selectedListOrGroupID);
@@ -334,15 +334,15 @@ const Items: React.FC<HistoryProps> = () => {
   useEffect(() => {
     function beforeInputData(e:InputEvent) {
       if (e && e.data && e.data.includes("\n")) {
-          enterKeyValueRef.current= e.data.trim().length > 1 ? e.data.trim() : "";
-          addNewItemToList(searchState.searchCriteria);
+        enterKeyValueRef.current= e.data.trim().length > 1 ? e.data.trim() : "";
+        addNewItemToList(searchState.searchCriteria);
       }
     }
     if (searchRef && searchRef.current && (Capacitor.getPlatform() === "android")) {
-      const localRef=searchRef.current;
+      const localRef = searchRef.current;
       localRef.addEventListener('beforeinput', beforeInputData, false)
       return () => {
-          localRef.removeEventListener('beforeinput', beforeInputData, false)
+        localRef.removeEventListener('beforeinput', beforeInputData, false)
       }
     }
   }, [addNewItemToList, searchState.searchCriteria]);
@@ -425,6 +425,7 @@ const Items: React.FC<HistoryProps> = () => {
   };
   
   screenLoading.current=false;
+  
 
   function updateSearchCriteria(event: CustomEvent) {
     if (event.detail.value !== enterKeyValueRef.current) {
@@ -436,31 +437,68 @@ const Items: React.FC<HistoryProps> = () => {
     }
   }
 
+  function clearSearchCriteria() {
+    setSearchState({searchCriteria: "", filteredSearchRows: []});
+  }
+
   function refocusSearch(event: KeyboardEvent<HTMLDivElement>) {
     if (event.key === "Enter" || event.key === "Tab" || event.key === "Shift") {
       return;
     }
-    if (event.key === "Esc") {
-      setSearchState({searchCriteria: "", filteredSearchRows: []});
+    if (event.key === "Escape") {
+      clearSearchCriteria();
     }
     searchRef.current?.setFocus();
   }
 
+  function closeSearch(event: MouseEvent<HTMLDivElement>) {
+    // event.preventDefault()
+    console.log(event);
+    clearSearchCriteria();
+  }
+
   function searchKeyPress(event: KeyboardEvent<HTMLIonInputElement>) {
     if (event.key === "Enter") {
-      addNewItemToList(searchState.searchCriteria.trim());
-      enterKeyValueRef.current= searchState.searchCriteria.trim().length > 1 ? searchState.searchCriteria.trim() : "";
+      const trimmed = searchState.searchCriteria.trim();
+      addNewItemToList(trimmed);
+      enterKeyValueRef.current = trimmed.length > 1 ? trimmed : "";
     }
   }
     
   async function chooseSearchItem(item: ItemSearch) {
-    const {success,errorHeader,errorMessage}  = await addExistingItemToList(item);
-    setSearchState({searchCriteria: "", filteredSearchRows: []});
+    const {success,errorHeader,errorMessage} = await addExistingItemToList(item);
+    clearSearchCriteria();
     if (!success) {
       setPageState(prevState => ({...prevState,showAlert: true, alertHeader: errorHeader, alertMessage: errorMessage}));
     }      
   }
 
+  const autocompleteSearchBar = (
+    <div id="item-search-autocomplete" onKeyDown= {(e) => refocusSearch(e)}>
+      <IonItem>
+        <IonIcon icon={searchOutline} slot="start"/>
+        <IonInput id="item-search-box" className="ion-no-padding" aria-label="item search" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="text" enterkeyhint="enter"
+          disabled={listRows !== undefined ? listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length <= 0 : true}
+          clearInput={true} placeholder={t("general.search") as string} fill="solid"
+          onKeyDown= {(e) => searchKeyPress(e)}
+          onIonInput={(e) => updateSearchCriteria(e)}
+          />
+      </IonItem>
+      {searchState.searchCriteria.length > 0 ?
+        <div id="item-autocomplete-list">
+          <IonList>
+            {(searchState.filteredSearchRows).map((item: ItemSearch) => (
+              <IonItem button key={pageState.selectedListOrGroupID + "-poi-list-" + item.itemID} onClick={() => {chooseSearchItem(item)}}>{item.itemName}</IonItem>
+            ))}
+            <IonItem className="search-autocomplete-add-new" button onClick={() => {addNewItemToList(searchState.searchCriteria)}}>Add New Item...</IonItem>
+          </IonList>
+          <div id="item-autocomplete-backdrop" aria-hidden="true" onClick={(e) => closeSearch(e)}></div>
+        </div>
+        :
+        <></>
+      }
+    </div>
+  );
 
   function selectList(listOrGroupID: string) {
     if (listOrGroupID === "null" ) { return }
@@ -554,33 +592,16 @@ const Items: React.FC<HistoryProps> = () => {
           <SyncIndicator addPadding={false}/>
         </IonItem>
       </IonToolbar>
-      <div id="item-search-autocomplete" onKeyDown= {(e) => refocusSearch(e)}>
-        <IonItem>
-          <IonIcon icon={searchOutline} slot="start"/>
-          <IonInput id="item-search-box" className="ion-no-padding" aria-label="item search" debounce={5} ref={searchRef} value={searchState.searchCriteria} inputmode="text" enterkeyhint="enter"
-            disabled={listRows !== undefined ? listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length <= 0 : true}
-            clearInput={true} placeholder={t("general.search") as string} fill="solid"
-            onKeyDown= {(e) => searchKeyPress(e)}
-            onIonInput={(e) => updateSearchCriteria(e)}
-            />
-        </IonItem>
-        <div id="item-autocomplete-list">
-          <IonList>
-            {(searchState.filteredSearchRows).map((item: ItemSearch) => (
-              <IonItem button key={pageState.selectedListOrGroupID + "-poi-list-" + item.itemID} onClick={() => {chooseSearchItem(item)}}>{item.itemName}</IonItem>
-            ))}
-          </IonList>
-        </div>
-      </div>
+      {autocompleteSearchBar}
       {alertElem}
     </IonHeader>)
 
   const fabContent =  (
-      <IonFab key="fab" slot="fixed" vertical="bottom" horizontal="end">
-        <IonFabButton key="fabbutton" onClick={() => addNewItemToList("")}>
-          <IonIcon icon={add}></IonIcon>
-        </IonFabButton>
-      </IonFab>)
+    <IonFab key="fab" slot="fixed" vertical="bottom" horizontal="end">
+      <IonFabButton key="fabbutton" onClick={() => addNewItemToList(searchState.searchCriteria)}>
+        <IonIcon icon={add}></IonIcon>
+      </IonFabButton>
+    </IonFab>)
 
   if (listRows && listRows.filter(lr => (lr.listGroupID === pageState.groupIDforSelectedList)).length <=0) {return(
     <IonPage>
