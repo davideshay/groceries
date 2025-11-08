@@ -1,6 +1,6 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonList, IonItem, IonButtons, 
   IonMenuButton, IonButton } from '@ionic/react';
-import { useContext, useRef } from 'react';
+import { useContext } from 'react';
 import SyncIndicator from '../components/SyncIndicator';
 import { RemoteDBStateContext } from '../components/RemoteDBState';
 import { HistoryProps } from '../components/DataTypes';
@@ -14,7 +14,6 @@ import log from "../components/logger";
 const ConflictLog: React.FC<HistoryProps> = () => {
   const { setDBCredsValue } = useContext(RemoteDBStateContext);
   const { conflictsError, conflictDocs, conflictsLoading } = useConflicts();
-  const screenLoading = useRef(true);
   const { t } = useTranslation();
 
   if (conflictsError) { return (
@@ -22,12 +21,9 @@ const ConflictLog: React.FC<HistoryProps> = () => {
     )}
 
   if (conflictsLoading) { 
-    return ( <Loading isOpen={screenLoading.current} message={t("general.loading_conflict_log")} /> )
-//    setIsOpen={() => {screenLoading.current = false}} /> )
+    return ( <Loading isOpen={conflictsLoading} message={t("general.loading_conflict_log")} /> )
   }
   
-    screenLoading.current=false;
-
   function setConflictsAsViewed() {
     const curDateStr = (new Date()).toISOString();
     log.debug("setting conflicts viewed date to ",curDateStr);

@@ -1,5 +1,4 @@
 import { IonContent,  IonPage, IonList, IonItem } from '@ionic/react';
-import { useRef } from 'react';
 import { useItems } from '../components/Usehooks';
 import { HistoryProps, RowType} from '../components/DataTypes';
 import ErrorPage from './ErrorPage';
@@ -14,23 +13,16 @@ import { translatedItemName } from '../components/translationUtilities';
 
 const AllItems: React.FC<HistoryProps> = () => {
   const { dbError: itemError,  itemRowsLoaded, itemRows} = useItems({selectedListGroupID: null, isReady :true, needListGroupID: false, activeOnly: false, selectedListID: null, selectedListType: RowType.list});
-  const screenLoading = useRef(true);
   const { t } = useTranslation();
 
   if  (itemError) { return (
     <ErrorPage errorText={t("error.loading_item_info_restart") as string} ></ErrorPage>
     )}
 
-  if (itemRowsLoaded ) {
-    screenLoading.current = false;
-  } else {
-    screenLoading.current = true;
-    return ( <Loading isOpen={screenLoading.current} message={t("general.loading_all_items")} />
-//    setIsOpen={() => {screenLoading.current = false}} />
+  if (!itemRowsLoaded ) {
+    return ( <Loading isOpen={!itemRowsLoaded} message={t("general.loading_all_items")} />
   )}
   
-  screenLoading.current = false;
-
   return (
     <IonPage>
       <PageHeader title={t("general.all_items")} />

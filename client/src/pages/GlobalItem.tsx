@@ -2,7 +2,7 @@ import { IonContent, IonPage,IonButton, IonList, IonInput,
   IonItem, IonFooter, NavContext, IonIcon,
   } from '@ionic/react';
 import { useParams } from 'react-router-dom';
-import { useContext, useRef } from 'react';
+import { useContext } from 'react';
 import { useGetOneDoc } from '../components/Usehooks';
 import {  HistoryProps} from '../components/DataTypes';
 import { CategoryDoc, GlobalItemDoc, UomDoc } from '../components/DBSchema';
@@ -18,7 +18,6 @@ const GlobalItem: React.FC<HistoryProps> = () => {
   const { id: routeID } = useParams<{mode: string, id: string}>();
   const { doc: globalItemDoc, loading: globalItemLoading, dbError: globalItemError} = useGetOneDoc(routeID);
   const {goBack} = useContext(NavContext);
-  const screenLoading = useRef(true);
   const { t } = useTranslation();
   const error = useGlobalDataStore((state) => state.error);
   const isLoading = useGlobalDataStore((state) => state.isLoading);
@@ -30,11 +29,10 @@ const GlobalItem: React.FC<HistoryProps> = () => {
     )};
 
   if ( globalItemLoading || isLoading)  {
-    return ( <Loading isOpen={screenLoading.current} message={t("general.loading_global_item")}    /> )
+    return ( <Loading isOpen={globalItemLoading || isLoading} message={t("general.loading_global_item")}    /> )
 //    setIsOpen={() => {screenLoading.current = false}} /> )
 };
   
-  screenLoading.current=false;
   const curUOMItem : UomDoc | undefined = (uomDocs as UomDoc[]).find((uom) => (uom.listGroupID=== "system" && uom.name === globalItemDoc.defaultUOM));
   const curUOM = (curUOMItem === undefined) ? t("general.undefined")  :  translatedUOMName(curUOMItem._id as string ,curUOMItem.description, curUOMItem.pluralDescription);
   const curCategoryItem : CategoryDoc | undefined = (categoryDocs as CategoryDoc[]).find((cat) => (cat._id === globalItemDoc.defaultCategoryID));

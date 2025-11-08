@@ -1,6 +1,5 @@
 import { IonContent, IonPage, IonList, IonItem, IonFab,
      IonFabButton, IonIcon } from '@ionic/react';
-import { useRef } from 'react';
 import { add } from 'ionicons/icons';
 import { HistoryProps } from '../components/DataTypes';
 import ErrorPage from './ErrorPage';
@@ -14,7 +13,6 @@ const Uoms: React.FC<HistoryProps> = () => {
   const error = useGlobalDataStore((state) => state.error);
   const isLoading = useGlobalDataStore((state) => state.isLoading);
   const uomDocs = useGlobalDataStore((state) => state.uomDocs);
-  const screenLoading=useRef(true);
   const { t } = useTranslation();
 
   if (error) { return (
@@ -22,11 +20,8 @@ const Uoms: React.FC<HistoryProps> = () => {
   )}
 
   if (isLoading) { 
-    return ( <Loading isOpen={screenLoading.current} message={t("general.loading_uoms")}  /> )
-//    setIsOpen={() => {screenLoading.current = false}} /> )
+    return ( <Loading isOpen={isLoading} message={t("general.loading_uoms")}  /> )
   }
-
-  screenLoading.current=false;
 
   return (
     <IonPage>

@@ -1,7 +1,7 @@
 import { IonContent, IonPage, IonList, IonItem, IonLabel,
         IonButton, useIonToast, 
         IonFab, IonFabButton, IonIcon, IonInput, IonAlert, IonGrid, IonRow, IonCol, IonText, IonToolbar, IonButtons } from '@ionic/react';
-import { useState, useContext, Fragment, useRef, JSX } from 'react';
+import { useState, useContext, Fragment, JSX } from 'react';
 import { Clipboard } from '@capacitor/clipboard';
 import { CapacitorHttp, HttpOptions } from '@capacitor/core';
 import { v4 as uuidv4 } from 'uuid';
@@ -76,7 +76,6 @@ const Friends: React.FC<HistoryProps> = () => {
     registrationAlertSubheader: ""
   });
   const [presentToast] = useIonToast();
-  const screenLoading = useRef(true);
   const { t } = useTranslation();
 
   if ((!(remoteDBState.apiServerAvailable && remoteDBState.dbServerAvailable)) || useFriendState === UseFriendState.error ) {
@@ -86,11 +85,8 @@ const Friends: React.FC<HistoryProps> = () => {
   }
 
   if (useFriendState !== UseFriendState.rowsLoaded) {
-    return ( <Loading isOpen={screenLoading.current} message={t("general.loading_friends")}  /> )
-//    setIsOpen={() => {screenLoading.current = false}} /> )
+    return ( <Loading isOpen={true} message={t("general.loading_friends")}  /> )
   }
-
-  screenLoading.current=false;
 
   async function confirmFriend(friendRow: FriendRow) {
     const updatedDoc = cloneDeep(friendRow.friendDoc);

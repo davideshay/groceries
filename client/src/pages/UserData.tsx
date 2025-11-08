@@ -1,6 +1,6 @@
 import { IonContent, IonPage, IonList, IonItem,
     IonButton, IonInput, IonButtons, IonToolbar, IonText } from '@ionic/react';
-import { useContext, useEffect, useRef, useState } from 'react';        
+import { useContext, useEffect, useState } from 'react';        
 import './Settings.css';
 import { InitSettings } from '../components/DBSchema';
 import { GlobalStateContext } from '../components/GlobalState';
@@ -35,7 +35,6 @@ const UserData: React.FC<HistoryProps> = () => {
     const [userInfo, setUserInfo] = useState<UserInfo>(initUserInfo);
     const [errorInfo,setErrorInfo] = useState<ErrorInfo>(cloneDeep(ErrorInfoInit));
     const { t } = useTranslation();
-    const screenLoading = useRef(false);
 
     useEffect( () => {
     if (!localSettingsInitialized && globalState.settingsLoaded) {
@@ -46,7 +45,7 @@ const UserData: React.FC<HistoryProps> = () => {
     },[globalState.settings,localSettingsInitialized,globalState.settingsLoaded, remoteDBCreds.fullName, remoteDBCreds.email, remoteDBCreds.dbUsername])
 
     if ( settingsLoading || !globalState.settingsLoaded || !localSettingsInitialized)  {
-        return ( <Loading isOpen={screenLoading.current} message={t("general.loading")} />)
+        return ( <Loading isOpen={true} message={t("general.loading")} />)
     };
 
     async function doUpdateUserInfo() {
