@@ -66,6 +66,7 @@ const Items: React.FC<HistoryProps> = () => {
   const contentRef = useRef<HTMLIonContentElement>(null);
   const scrollTopRef = useRef(0);
   const shouldScroll = useRef(false);
+  const pendingScrollItemIDRef = useRef<string | null>(null);
   const history = useHistory();
   const listSelectRows = useListSelectRows();
 
@@ -128,6 +129,40 @@ const Items: React.FC<HistoryProps> = () => {
     filterAndCheckRows(searchState.searchCriteria,searchState.isFocused);
   },[searchRows,searchState.isFocused,searchState.searchCriteria,filterAndCheckRows])
 
+  useEffect(() => {
+      async function scrollToPendingItem() {
+          const pendingItemID = pendingScrollItemIDRef.current;
+          if (pendingItemID === null) {
+              return;
+          }
+
+          const pendingItemExists = pageState.itemRows.some((itemRow) => itemRow.itemID === pendingItemID);
+          if (!pendingItemExists) {
+              return;
+          }
+
+          const itemRowElem = document.getElementById("item-row-"+pendingItemID);
+          const content = contentRef.current;
+          if (itemRowElem === null || !content) {
+              return;
+          }
+
+          const scrollElem = await content.getScrollElement();
+          const rowRect = itemRowElem.getBoundingClientRect();
+          const scrollRect = scrollElem.getBoundingClientRect();
+          const targetY = Math.max(0, scrollElem.scrollTop + rowRect.top - scrollRect.top - 12);
+
+          try {
+              await content.scrollToPoint(0,targetY,300);
+          } catch {
+              log.debug("Error auto-scrolling to added item", pendingItemID);
+          } finally {
+              pendingScrollItemIDRef.current = null;
+          }
+      }
+      void scrollToPendingItem();
+  },[pageState.itemRows])
+
   const shouldBeActive = useCallback( (itemList: ItemList, newRow: boolean, allItemLists: ItemList[]): boolean => {
     if (!newRow && !itemList.stockedAt) {
       if (pageState.selectedListType === RowType.list && itemList.listID === pageState.selectedListOrGroupID) {
@@ -173,7 +208,7 @@ const Items: React.FC<HistoryProps> = () => {
     return false;
   },[globalState.settings.addListOption,listRows,pageState.selectedListOrGroupID,pageState.selectedListType])
 
-  const addExistingItemToList = useCallback(async (itemSearch: ItemSearch) : Promise<{success: boolean, errorHeader: string, errorMessage: string}> => {
+  const addExistingItemToList = useCallback(async (itemSearch: ItemSearch) : Promise<{success: boolean, errorHeader: string, errorMessage: string, itemID: string | null}> => {
 
     /*  scenarios:
       
@@ -190,7 +225,7 @@ const Items: React.FC<HistoryProps> = () => {
           * Add item, set to active based on listgroup mode/list selected -- data comes from global item if needed
  */
 
-    const response = { success: true, errorHeader: "", errorMessage: ""};
+    const response = { success: true, errorHeader: "", errorMessage: "", itemID: null as string | null};
 
     let testItemDoc: ItemDoc | undefined = undefined;
     testItemDoc = cloneDeep(itemDocs.find((item) => ((item._id === itemSearch.itemID && item.listGroupID === pageState.groupIDforSelectedList) || 
@@ -248,7 +283,9 @@ const Items: React.FC<HistoryProps> = () => {
         await presentAlert({header: t("error.header_warning_adding_item"), message: t("error.warning_none_set_active"), buttons: [t("general.ok")]})
       }
       const itemAdded = await addNewItem(newItem);
-      if (!itemAdded.successful) {
+      if (itemAdded.successful) {
+        response.itemID = itemAdded.pouchData.id ? String(itemAdded.pouchData.id) : null;
+      } else {
         response.success=false;
         response.errorHeader = t("error.header_adding_item");
         response.errorMessage = t("error.adding_item");
@@ -275,6 +312,7 @@ const Items: React.FC<HistoryProps> = () => {
         return response;
       }
     }
+    response.itemID = String(testItemDoc!._id);
     return response;
     },[addNewItem,itemDocs,listRows,pageState.groupIDforSelectedList,presentAlert,shouldBeActive,t,updateItemInList])
 
@@ -314,11 +352,13 @@ const Items: React.FC<HistoryProps> = () => {
           quantity: 1,
           boughtCount: 0
         }
-        const {success,errorHeader,errorMessage}  = await addExistingItemToList(itemSearch);
+        const {success,errorHeader,errorMessage,itemID}  = await addExistingItemToList(itemSearch);
         setSearchState(prevState => ({...prevState, searchCriteria: "", filteredSearchRows: [], isOpen: false, isFocused: false}));
         if (!success) {
           setPageState(prevState => ({...prevState,showAlert: true, alertHeader: errorHeader, alertMessage: errorMessage}));
-        }      
+        } else if (itemID !== null) {
+          pendingScrollItemIDRef.current = itemID;
+        }
         return;
       }
       const [isItemAlreadyInListAtAll,] = isItemAlreadyInList(itemName,false); 
@@ -464,10 +504,12 @@ const Items: React.FC<HistoryProps> = () => {
   }
     
   async function chooseSearchItem(item: ItemSearch) {
-    const {success,errorHeader,errorMessage}  = await addExistingItemToList(item);
+    const {success,errorHeader,errorMessage,itemID}  = await addExistingItemToList(item);
     setSearchState(prevState => ({...prevState, searchCriteria: "", filteredSearchRows: [], isOpen: false, isFocused: false}));
     if (!success) {
       setPageState(prevState => ({...prevState,showAlert: true, alertHeader: errorHeader, alertMessage: errorMessage}));
+    } else if (itemID !== null) {
+      pendingScrollItemIDRef.current = itemID;
     }      
   }
 
@@ -679,7 +721,7 @@ const Items: React.FC<HistoryProps> = () => {
     }
     const rowVisible = getCategoryExpanded(item.categoryID,Boolean(item.completed));
     currentRows.push(
-      <IonItem className={"itemrow-outer "+(rowVisible ? "itemrow-display" : "itemrow-hidden")} key={"itemouter"+pageState.itemRows[i].itemID} >
+      <IonItem id={"item-row-"+item.itemID} className={"itemrow-outer "+(rowVisible ? "itemrow-display" : "itemrow-hidden")} key={"itemouter"+pageState.itemRows[i].itemID} >
         <IonCheckbox key={"itemcheckbox"+pageState.itemRows[i].itemID} aria-label=""
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           onIonChange={(e: CustomEvent<CheckboxChangeEventDetail>) => {if (!doingUpdate.current) { (e.target as any).disabled = true; doingUpdate.current=true; completeItemRowStub(item.itemID,e)}}}
