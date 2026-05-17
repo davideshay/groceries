@@ -149,7 +149,7 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
             const categories: CategoryDocs = [];
             const lists: ListDocs = [];
             const recipes: RecipeDoc[] = [];
-            let settings: SettingsDoc = InitSettingsDoc;
+            let settings: SettingsDoc = structuredClone(InitSettingsDoc);
             const items: ItemDocs = [];
             const uoms: UomDoc[] = [];
             const friends: FriendDocs = [];
@@ -180,7 +180,9 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
                         recipes.push(doc);
                         break;
                     case 'settings':
-                        settings=structuredClone(doc);
+                        if (doc.username === remoteDBCreds.dbUsername) {
+                            settings = structuredClone(doc);
+                        }
                         break;
                     case 'item':
                         items.push(doc);
@@ -243,6 +245,9 @@ export const useGlobalDataStore = create<GlobalDataStore>() ((set,get) => ({
             if (!isEqual(filteredAndSortedCategories,get().categoryDocs)) {set({categoryDocs: filteredAndSortedCategories})};
             if (!isEqual(filteredLists,get().listDocs)) {set({listDocs: filteredLists})};
             if (!isEqual(filteredAndSortedRecipes,get().recipeDocs)) {set({recipeDocs: filteredAndSortedRecipes})};
+            if (!settings.username) {
+                settings.username = String(remoteDBCreds.dbUsername);
+            }
             if (!isEqual(settings,get().settingsDoc)) {set({settingsDoc: settings})};
             if (!isEqual(filteredItems,get().itemDocs)) {set({itemDocs: filteredItems})};
             if (!isEqual(filteredAndSortedUoms,get().uomDocs)) {set({uomDocs: filteredAndSortedUoms})};
