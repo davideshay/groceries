@@ -112,6 +112,13 @@ const Settings: React.FC<HistoryProps> = () => {
                 onIonChange={(e) => changeSetting("includeGlobalInSearch",e.detail.checked)}>
                     {t("general.include_globalitems_in_search")}
             </IonCheckbox>
+            </IonItem>
+          <IonItem className="shorter-item-no-padding settings-item" key="onlystockedinadded">
+            <IonCheckbox justify="space-between" labelPlacement="start"
+                checked={localSettings.newItemsOnlyStockedInAddedLists}
+                onIonChange={(e) => changeSetting("newItemsOnlyStockedInAddedLists",e.detail.checked)}>
+                {t("general.new_items_only_stocked_in_added_lists")}
+            </IonCheckbox>
           </IonItem>
           <IonItem className="shorter-item-no-padding settings-item" key="dayslog">
             <IonInput className="shorter-input shorter-input2" label={t("general.days_conflict_log_to_view") as string} labelPlacement="start" type="number" min="0" max="25" onIonInput={(e) => changeSetting("daysOfConflictLog", Number(e.detail.value))} value={Number(localSettings?.daysOfConflictLog)}></IonInput>

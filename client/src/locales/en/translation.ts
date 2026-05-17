@@ -207,6 +207,7 @@ export const en_translations =
         "shopping_uom": "Shopping UoM",
         "update_user_info": "Update User Info",
         "include_globalitems_in_search": "Include Global Items in Search",
+        "new_items_only_stocked_in_added_lists": "New items are only stocked in lists they were added to",
         "offline_cant_get_sharing_info": "Working offline, cannot retrieve or edit shared users",
         "logged_in": "Logged In",
         "working_offline": "Working Offline",
