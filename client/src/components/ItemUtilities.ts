@@ -301,8 +301,11 @@ export function getCommonKey(stateItemDoc: ItemDoc, key: string, listDocs: ListD
             if (!newListDoc.active) {newListDoc.categoryID = null;}
           }
         } else if (listRow.listDoc._id !== globalState.callingListID && globalState.callingListType !== RowType.listGroup) {
-          newListDoc.active = false;;
+          newListDoc.active = false;
           newListDoc.quantity = 0;
+          if (globalState.settings.newItemsOnlyStockedInAddedLists) {
+            newListDoc.stockedAt = false;
+          }
         }
         newItemLists.push(newListDoc);
       }
