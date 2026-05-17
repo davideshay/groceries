@@ -4,7 +4,7 @@ import { pick,cloneDeep,isEmpty } from "lodash-es";
 import { isJsonString } from "./Utilities";
 import { RowType } from "./DataTypes";
 import { GlobalSettings, AddListOptions, SettingsDoc, InitSettings, InitSettingsDoc, CategoryColors, LogLevelNumber } from "./DBSchema";
-import { useCreateGenericDocument, useUpdateGenericDocument } from "./Usehooks";
+import { useUpdateGenericDocument } from "./Usehooks";
 import { RemoteDBStateContext } from "./RemoteDBState";
 import log from "./logger";
 import { useGlobalDataStore } from "./GlobalData";
@@ -68,23 +68,44 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
     const error = useGlobalDataStore((state) => state.error)
     const globalDataLoaded = useGlobalDataStore((state) => state.listRowsLoaded);
     const updateSettingDoc = useUpdateGenericDocument();
-    const createSettingDoc = useCreateGenericDocument();
+
+    const getCurrentSettingsDoc = useCallback( () : SettingsDoc | null => {
+        const dbSettingsDoc: SettingsDoc = cloneDeep(settingsDoc) as SettingsDoc;
+        if (dbSettingsDoc === null || dbSettingsDoc === undefined) {return null;}
+        if (dbSettingsDoc.type !== "settings") {return null;}
+        if (isEmpty(dbSettingsDoc._id)) {return null;}
+        if (dbSettingsDoc.username !== String(remoteDBCreds.dbUsername)) {return null;}
+        return dbSettingsDoc;
+    },[remoteDBCreds.dbUsername,settingsDoc])
 
     const setStateInfo = useCallback((key: string,value: string | null | RowType) => {
         setGlobalState(prevState => ({ ...prevState, [key]: value}))
     },[])
 
     const updateSettingKey = useCallback(async (key: string, value: AddListOptions | boolean | number | string | null): Promise<boolean> => {
-        setGlobalState(prevState => ({...prevState,settings: {...prevState.settings, [key]: value}}))
-        const dbSettingsDoc: SettingsDoc = settingsDoc as SettingsDoc;
+        const dbSettingsDoc = getCurrentSettingsDoc();
+        if (dbSettingsDoc === null) {
+            log.error("Could not update setting key, no current settings doc available:",key);
+            return false;
+        }
+        setGlobalState(prevState => ({...prevState,settings: {...prevState.settings, [key]: value}}));
         const newSettingsDoc: SettingsDoc = {...dbSettingsDoc,settings: {...dbSettingsDoc.settings,[key]: value}};
-        await updateSettingDoc(newSettingsDoc);
+        const updateResponse = await updateSettingDoc(newSettingsDoc);
+        if (!updateResponse.successful) {
+            log.error("Failed updating settings key:", key, updateResponse.fullError);
+            setGlobalState(prevState => ({...prevState,settings: cloneDeep(dbSettingsDoc.settings)}));
+            return false;
+        }
         return true;
-    },[settingsDoc,updateSettingDoc])
+    },[getCurrentSettingsDoc,updateSettingDoc])
 
     async function updateCategoryColor(catID: string, color: string): Promise<boolean> {
         if (isEmpty(color) || isEmpty(catID)) { return false;}
-        const curSettingsDoc: SettingsDoc = settingsDoc as SettingsDoc;
+        const curSettingsDoc = getCurrentSettingsDoc();
+        if (curSettingsDoc === null) {
+            log.error("Could not update category color, no current settings doc available:",catID);
+            return false;
+        }
         let curCategoryColors: CategoryColors = {}
         if (curSettingsDoc.categoryColors) {
             curCategoryColors = curSettingsDoc.categoryColors;
@@ -97,7 +118,11 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
 
     async function deleteCategoryColor(catID: string): Promise<boolean> {
         if (isEmpty(catID)) { return false;}
-        const curSettingsDoc: SettingsDoc = settingsDoc as SettingsDoc;
+        const curSettingsDoc = getCurrentSettingsDoc();
+        if (curSettingsDoc === null) {
+            log.error("Could not delete category color, no current settings doc available:",catID);
+            return false;
+        }
         let curCategoryColors: CategoryColors = {}
         if (curSettingsDoc.categoryColors) {
             curCategoryColors = cloneDeep(curSettingsDoc.categoryColors);
@@ -157,8 +182,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
     }
 
     const getSettings = useCallback( async () => {
-        const dbSettingsExist = (settingsDoc !== null);
-        const dbSettingsDoc: SettingsDoc = cloneDeep(settingsDoc) as SettingsDoc;
+        const dbSettingsDoc = getCurrentSettingsDoc();
         let dbCategoryColors: CategoryColors = {};
         const { value: storageSettingsStr } = await Preferences.get({ key: 'settings'});
         let storageSettings: GlobalSettings = cloneDeep(InitSettings);
@@ -173,38 +197,42 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
             [storageSettings, ] = validateSettings(storageSettings);
         }
         let dbUpdated = false;
-        if (dbSettingsExist) {
+        if (dbSettingsDoc !== null) {
             [dbSettingsDoc.settings, dbUpdated] = validateSettings(dbSettingsDoc.settings);
             dbCategoryColors = isEmpty(dbSettingsDoc.categoryColors) ? {} : dbSettingsDoc.categoryColors! ;
         }
         let finalSettings: GlobalSettings = cloneDeep(InitSettings);
-        if (storageSettingsExist && !dbSettingsExist) {
+        if (storageSettingsExist && dbSettingsDoc === null) {
             const newSettingsDoc: SettingsDoc = cloneDeep(InitSettingsDoc);
+            newSettingsDoc._id = "user:settings:" + String(remoteDBCreds.dbUsername);
             newSettingsDoc.username = String(remoteDBCreds.dbUsername);
             newSettingsDoc.settings = cloneDeep(storageSettings);
             log.debug("Created Settings Doc: settings exist in localstorage, not on DB")
-            await createSettingDoc(newSettingsDoc);
+            const result = await updateSettingDoc(newSettingsDoc);
+            if (!result.successful) {log.error("Error creating settings doc from local storage:",result.fullError)}
             await Preferences.remove({ key: "settings"});
             finalSettings = cloneDeep(newSettingsDoc.settings);
-        } else if (!storageSettingsExist && !dbSettingsExist) {
+        } else if (!storageSettingsExist && dbSettingsDoc === null) {
             const newSettingsDoc: SettingsDoc = cloneDeep(InitSettingsDoc);
+            newSettingsDoc._id = "user:settings:" + String(remoteDBCreds.dbUsername);
             newSettingsDoc.username = String(remoteDBCreds.dbUsername);
             log.debug("Created Settings Doc: no settings exist at all");
-            await createSettingDoc(newSettingsDoc)
+            const result = await updateSettingDoc(newSettingsDoc);
+            if (!result.successful) {log.error("Error creating initial settings doc:",result.fullError)}
             finalSettings = cloneDeep(newSettingsDoc.settings);
-        } else if (storageSettingsExist && dbSettingsExist) {
+        } else if (storageSettingsExist && dbSettingsDoc !== null) {
             await Preferences.remove({key : "settings"});
             if (dbUpdated) {
-                const newSettingsDoc:SettingsDoc = cloneDeep(settingsDoc) as SettingsDoc;
+                const newSettingsDoc:SettingsDoc = cloneDeep(dbSettingsDoc);
                 newSettingsDoc.settings = cloneDeep(dbSettingsDoc.settings);
                 log.debug("Updating settings on DB")
                 await updateSettingDoc(newSettingsDoc)
             }
             finalSettings = cloneDeep(dbSettingsDoc.settings);
-        } else if (!storageSettingsExist && dbSettingsExist) {
+        } else if (!storageSettingsExist && dbSettingsDoc !== null) {
             finalSettings = dbSettingsDoc.settings;
             if (dbUpdated) {
-                const newSettingsDoc: SettingsDoc = cloneDeep(settingsDoc) as SettingsDoc;
+                const newSettingsDoc: SettingsDoc = cloneDeep(dbSettingsDoc);
                 newSettingsDoc.settings = dbSettingsDoc.settings;
                 await updateSettingDoc(newSettingsDoc)
             }
@@ -212,7 +240,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         setGlobalState(prevState => ({...prevState,settings: finalSettings, categoryColors: dbCategoryColors}))
         setGlobalState(prevState => ({...prevState,settingsLoaded: true}));
         return (finalSettings);
-    },[createSettingDoc,remoteDBCreds.dbUsername,settingsDoc,updateSettingDoc])
+    },[getCurrentSettingsDoc,remoteDBCreds.dbUsername,updateSettingDoc])
 
     useEffect( () => {
         if ((remoteDBState.initialSyncComplete || remoteDBState.workingOffline) && globalDataLoaded && (error === null)) {
@@ -231,6 +259,3 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         <GlobalStateContext.Provider value={value}>{props.children}</GlobalStateContext.Provider>
       );
 }
-
-
-
