@@ -36,13 +36,13 @@ export function getAllSearchRows(allItemDocs: ItemDocs, listID: string | null,li
         const list = itemDoc.lists.find((el) => el.listID === listID);
         if (list !== undefined) {
             searchRow.boughtCount = list.boughtCount;
-            if (list.active && !list.completed) {addRowToSearch=false}
+            if (!settings.includeExistingItemsInSearch && list.active && !list.completed) {addRowToSearch=false}
         }
       } else { // RowType is ListGroup
         if (itemDoc.listGroupID !== listID) {
             addRowToSearch=false
         } else {
-            if (itemDoc.lists.filter((il) => il.active && !il.completed).length > 0) {
+            if (!settings.includeExistingItemsInSearch && itemDoc.lists.filter((il) => il.active && !il.completed).length > 0) {
                 addRowToSearch=false
             }
         }

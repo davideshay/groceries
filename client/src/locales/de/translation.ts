@@ -207,6 +207,7 @@ export const de_translations =
         "shopping_uom": "Einkaufsmaßeinheit",
         "update_user_info": "Benutzerinformationen aktualisieren",
         "include_globalitems_in_search": "Globale Elemente in die Suche einbeziehen",
+        "include_existing_items_in_search": "Bereits existierende Elemente in die Suche einbeziehen",
         "offline_cant_get_sharing_info": "Arbeiten offline, kann geteilte Benutzer nicht abrufen oder bearbeiten",
         "logged_in": "Angemeldet",
         "working_offline": "Offline arbeiten",

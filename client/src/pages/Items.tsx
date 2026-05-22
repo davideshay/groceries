@@ -199,7 +199,7 @@ const Items: React.FC<HistoryProps> = () => {
     const addingNewItem = (testItemDoc === undefined);
 
     if (!addingNewItem) {
-      if (testItemDoc!.lists.filter(il => il.active && !il.completed).length === testItemDoc!.lists.length) {
+      if (testItemDoc!.lists.filter(il => il.active && !il.completed).length > 0) {
         response.success = false;
         response.errorHeader = t("error.header_adding_item");
         response.errorMessage = t("error.item_exists_current_list");
