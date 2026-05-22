@@ -42,7 +42,7 @@ export function getAllSearchRows(allItemDocs: ItemDocs, listID: string | null,li
         if (itemDoc.listGroupID !== listID) {
             addRowToSearch=false
         } else {
-            if (itemDoc.lists.filter((il) => il.active).length > 0) {
+            if (itemDoc.lists.filter((il) => il.active && !il.completed).length > 0) {
                 addRowToSearch=false
             }
         }
