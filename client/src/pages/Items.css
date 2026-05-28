@@ -31,6 +31,27 @@ ion-item.itemrow-outer {
     transition:padding-block 200ms ease-in-out;
 }
 
+ion-item.itemrow-outer.itemrow-important {
+    background: var(--color-itemrow-important-bg);
+}
+
+ion-item.itemrow-outer.itemrow-important::part(native) {
+    background: var(--color-itemrow-important-bg);
+}
+
+ion-item.itemrow-outer.itemrow-important ion-item.itemrow-inner {
+    background: var(--color-itemrow-important-bg);
+}
+
+ion-item.itemrow-outer.itemrow-important ion-item.itemrow-inner::part(native) {
+    background: var(--color-itemrow-important-bg);
+    color: #333;
+}
+
+.ion-palette-dark ion-item.itemrow-outer.itemrow-important {
+    background: var(--color-itemrow-important-bg);
+}
+
 ion-checkbox.item-on-list {
     margin-right: 1.25rem;
 }

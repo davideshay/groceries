@@ -1,4 +1,4 @@
-import { IonContent, IonPage, IonButton, IonList, IonInput, IonItem,
+import { IonContent, IonPage, IonButton, IonList, IonInput, IonCheckbox, IonItem,
   IonSelect, IonIcon, 
   IonSelectOption, useIonAlert,useIonToast, IonTextarea, IonGrid, IonRow, IonCol, IonText, IonCard,
   IonCardSubtitle, NavContext, IonButtons, IonToolbar, IonImg, IonFooter } from '@ionic/react';
@@ -500,6 +500,9 @@ const Item: React.FC = () => {
                     </IonCol>
                   </IonRow>
                 </IonGrid>
+              </IonItem>
+              <IonItem key="important">
+                <IonCheckbox aria-label="" labelPlacement="end" checked={getCommonKey(stateItemDoc,"important",listDocs)} onIonChange={(e) => updateAllKey("important",e.detail.checked)}>{t('general.important')}</IonCheckbox>
               </IonItem>
               <IonItem key="note">
                 <IonTextarea label={t("general.note") as string} labelPlacement="stacked" placeholder={t("general.item_note") as string} inputMode='text' debounce={100} rows={4} onIonInput={(ev) => updateAllKey("note",String(ev.detail.value))} value={getCommonKey(stateItemDoc,"note",listDocs)}>   

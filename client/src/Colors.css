@@ -14,7 +14,6 @@ ion-button.button-solid, ion-button.primary-button.ion-color::part(native), ion-
 body::after {
     backdrop-filter: blur(1px);
 }
-
 /* LIGHT MODE */
 
 body::before, ion-item, ion-list-header, ion-header, ion-toolbar, ion-list,
@@ -52,6 +51,11 @@ ion-item-divider.uncategorized-color {
     border-color: #000000;
 }
 
+:root {
+    --color-itemrow-important-bg: #f5bc09;
+}
+
+
 /* DARK MODE */
 
 .ion-palette-dark {
@@ -86,4 +90,8 @@ ion-item-divider.uncategorized-color {
     ion-item-divider.uncategorized-color {
         border-color: #ffffff;
     }
+}
+
+.ion-palette-dark {
+    --color-itemrow-important-bg: #edbf2e;
 }
