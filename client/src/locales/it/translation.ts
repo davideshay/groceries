@@ -207,6 +207,7 @@ export const it_translations =
         "shopping_uom": "UdM acquisto",
         "update_user_info": "Aggiorna informazioni utente",
         "include_globalitems_in_search": "Includi articoli globali nella ricerca",
+        "include_existing_items_in_search": "Includi articoli già presenti nella ricerca",
         "offline_cant_get_sharing_info": "Lavorando offline, impossibile recuperare o modificare gli utenti condivisi",
         "logged_in": "Accesso effettuato",
         "working_offline": "Lavorando offline",
