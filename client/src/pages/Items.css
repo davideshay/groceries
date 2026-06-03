@@ -36,7 +36,7 @@ ion-item.itemrow-outer.itemrow-important {
 }
 
 ion-item.itemrow-outer.itemrow-important::part(native) {
-    background: var(--color-itemrow-important-bg);
+    background: none;
 }
 
 ion-item.itemrow-outer.itemrow-important ion-item.itemrow-inner {
@@ -44,12 +44,27 @@ ion-item.itemrow-outer.itemrow-important ion-item.itemrow-inner {
 }
 
 ion-item.itemrow-outer.itemrow-important ion-item.itemrow-inner::part(native) {
-    background: var(--color-itemrow-important-bg);
     color: #333;
 }
 
 .ion-palette-dark ion-item.itemrow-outer.itemrow-important {
     background: var(--color-itemrow-important-bg);
+}
+
+ion-item.itemrow-outer.itemrow-important:hover {
+    background: var(--color-itemrow-important-bg-hover);
+    --background: var(--color-itemrow-important-bg-hover);
+    --background-activated: none;
+    --background-focused: none;
+    --background-hover: none;
+}
+
+ion-item.itemrow-outer.itemrow-important:hover ion-item.itemrow-inner {
+    background: var(--color-itemrow-important-bg-hover);
+    --background: var(--color-itemrow-important-bg-hover);
+    --background-activated: none;
+    --background-focused: none;
+    --background-hover: none;
 }
 
 ion-checkbox.item-on-list {
