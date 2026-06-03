@@ -23,6 +23,7 @@ export const en_translations =
         "quantity": "Quantity",
         "uom_abbrev": "UoM",  // Unit of Measure Abbreviation
         "no_uom": "No UoM", // No specified unit of measure
+        "important": "Important",
         "times": "times",
         "reset": "Reset",
         "note": "Note",

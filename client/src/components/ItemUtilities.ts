@@ -197,6 +197,18 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
             }
             itemRow.completed = allCompleted;
         }    
+        if (listType === RowType.list) {
+            itemRow.important = Object.prototype.hasOwnProperty.call(list, "important") ? list.important : false;
+        } else {
+            let anyImportant = false;
+            for (let i = 0; i < itemDoc.lists.length; i++) {
+                if (itemDoc.lists[i].important) {
+                    anyImportant=true;
+                    break;
+                }
+            }
+            itemRow.important = anyImportant;
+        }
         itemRows.push(itemRow);
     })
     itemRows.sort((a,b) => (
@@ -289,7 +301,8 @@ export function getCommonKey(stateItemDoc: ItemDoc, key: string, listDocs: ListD
           categoryID: (foundGlobalItem === undefined) ? null : foundGlobalItem.defaultCategoryID,
           active: true,
           completed: false,
-          stockedAt: true
+          stockedAt: true,
+          important: false
         };
         if (globalState.settings.addListOption === AddListOptions.addToAllListsAutomatically) {
           newListDoc.active = true;

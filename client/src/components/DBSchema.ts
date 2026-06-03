@@ -83,7 +83,8 @@ export interface ItemList {
     note: string,
     quantity: number,
     categoryID: string | null ,
-    uomName: string | null
+    uomName: string | null,
+    important: boolean
   }
   
 export const ItemListInit:ItemList = {
@@ -95,7 +96,8 @@ export const ItemListInit:ItemList = {
     note: "",
     quantity: 0,
     categoryID: null,
-    uomName: null
+    uomName: null,
+    important: false
   }
   
 type AttachmentData = string | Blob | Buffer;

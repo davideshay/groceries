@@ -23,6 +23,7 @@ export const es_translations =
         "quantity": "Cantidad",
         "uom_abbrev": "UdM", // Abreviatura de Unidad de Medida
         "no_uom": "Sin UdM", // No especificó unidad de medida
+        "important": "Importante",
         "times": "veces",
         "reset": "Reiniciar",
         "note": "Nota",

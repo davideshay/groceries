@@ -122,7 +122,8 @@ CHANGED Item  (now tied at a master level to listGroup, so Banana in "Copley Gro
             note: "At Acme, pickup the yellower bananas",
             quantity: 2
             categoryID: "xxx" // Produce
-            uomName: "BN" // bunch
+            uomName: "BN" // bunch,
+            important: "true"
         },
         {   listID: "yyy" // Giant Eagle
             active: "true"
@@ -132,7 +133,8 @@ CHANGED Item  (now tied at a master level to listGroup, so Banana in "Copley Gro
             note: "At Giant eagle, get the cheaper green bunch",
             quantity: 1
             categoryID: "yyy" // Fruit
-            uomName: "EA" // Each
+            uomName: "EA" // Each,
+            important: "false"
         }
     }
 

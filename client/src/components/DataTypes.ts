@@ -13,7 +13,8 @@ export interface ItemRow {
     uomDesc: string,
     quantityUOMDesc: string,
     hasNote: boolean,
-    completed: boolean | null
+    completed: boolean | null,
+    important: boolean
   }
 
 export type ItemRows = ItemRow[];
@@ -21,7 +22,7 @@ export type ItemRows = ItemRow[];
 export const initItemRow: ItemRow = {
     itemID: "", globalItemID: null, itemName: "",categoryID: null, categoryName: "",
     categorySeq: 0, categoryColor: DefaultColor, quantity: 0,
-    uomDesc: "", quantityUOMDesc: "", hasNote: false, completed: false
+    uomDesc: "", quantityUOMDesc: "", hasNote: false, completed: false, important: false
   }
 
 export interface CategoryRow {

@@ -23,6 +23,7 @@ export const de_translations =
         "quantity": "Menge",
         "uom_abbrev": "ME", // Abkürzung für Maßeinheit
         "no_uom": "Keine Maßeinheit", // Keine angegebene Maßeinheit
+        "important": "Wichtig",
         "times": "Mal",
         "reset": "Zurücksetzen",
         "note": "Notiz",

@@ -512,6 +512,7 @@ export function useAddListToAllItems() {
               newList.quantity = getCommonKey(item,"quantity",listDocs);
               newList.stockedAt = getCommonKey(item,"stockedAt",listDocs);
               newList.uomName = getCommonKey(item,"uomName",listDocs);
+              newList.important = getCommonKey(item,"important",listDocs);
               item.lists.push(newList);
               itemUpdated=true;
             }

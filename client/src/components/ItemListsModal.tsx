@@ -102,6 +102,11 @@ const ItemListsModal: React.FC<ModalProps> = (props: ModalProps) => {
             </IonCol>
           </IonRow>
           <IonRow>
+            <IonCol size="10">
+                <IonCheckbox aria-label="" labelPlacement="end" checked={props.modalState.itemList.important} onIonChange={(e) => props.setModalState(prevState =>({...prevState,itemList: {...prevState.itemList, important: e.detail.checked}}) )}>{t('general.important')}</IonCheckbox>
+            </IonCol>
+          </IonRow>
+          <IonRow>
             <IonCol size="9">
               <IonText>{t('itemtext.item_was_purchased_from_here')} {props.modalState.itemList.boughtCount} {t('general.times')}</IonText>
             </IonCol>
