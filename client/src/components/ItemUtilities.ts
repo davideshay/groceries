@@ -89,13 +89,14 @@ export function getAllSearchRows(allItemDocs: ItemDocs, listID: string | null,li
 export function filterSearchRows(searchRows: ItemSearch[] | undefined, searchCriteria: string) {
     const filteredSearchRows: ItemSearch[] = [];
     if (searchRows !== undefined) {
+        const normalizedCriteria = searchCriteria.toLocaleUpperCase().trim();
         searchRows.forEach(searchRow => {
-            if (searchRow.itemName.toLocaleUpperCase().includes(searchCriteria.toLocaleUpperCase())) {
+            if (searchRow.itemName.toLocaleUpperCase().includes(normalizedCriteria)) {
                 filteredSearchRows.push(searchRow);
             }    
         });
         filteredSearchRows.sort((a,b) => (
-            (Number(b.itemName.toLocaleUpperCase().startsWith(searchCriteria.toLocaleUpperCase())) - Number(a.itemName.toLocaleUpperCase().startsWith(searchCriteria.toLocaleUpperCase()))) 
+            (Number(b.itemName.toLocaleUpperCase().startsWith(normalizedCriteria)) - Number(a.itemName.toLocaleUpperCase().startsWith(normalizedCriteria)))
             || (b.boughtCount - a.boughtCount) ||
             (a.itemName.toLocaleUpperCase().localeCompare(b.itemName.toLocaleUpperCase()))
             ))        
