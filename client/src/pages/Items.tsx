@@ -95,7 +95,7 @@ const Items: React.FC<HistoryProps> = () => {
   useEffect( () => {
     if (baseItemRowsLoaded && listRowsLoaded && !isLoading) {
       setPageState( (prevState) => {
-        const [newItemRows,newCategoryRows] = getItemRows(baseItemDocs as ItemDocs, listCombinedRows, categoryDocs as CategoryDoc[], uomDocs as UomDoc[], pageState.selectedListType, pageState.selectedListOrGroupID, prevState.categoryRows, globalState.categoryColors)
+        const [newItemRows,newCategoryRows] = getItemRows(baseItemDocs as ItemDocs, listCombinedRows, categoryDocs as CategoryDoc[], uomDocs as UomDoc[], pageState.selectedListType, pageState.selectedListOrGroupID, prevState.categoryRows, globalState.categoryColors, globalState.uomShownAbbreviations)
         return (
         { ...prevState,
         doingUpdate: false,
@@ -104,7 +104,7 @@ const Items: React.FC<HistoryProps> = () => {
       });
     }
   },[baseItemRowsLoaded, listRowsLoaded, isLoading, 
-    uomDocs, baseItemDocs, listCombinedRows, categoryDocs, pageState.selectedListOrGroupID, pageState.selectedListType, globalState.categoryColors]);
+    uomDocs, baseItemDocs, listCombinedRows, categoryDocs, pageState.selectedListOrGroupID, pageState.selectedListType, globalState.categoryColors, globalState.uomShownAbbreviations]);
 
   useEffect( () => {
     if (baseSearchItemRowsLoaded && !isLoading) {
@@ -477,7 +477,7 @@ const Items: React.FC<HistoryProps> = () => {
     const combinedRow: ListCombinedRow | undefined = listCombinedRows.find(lcr => lcr.listOrGroupID === listOrGroupID);
     if (combinedRow === undefined) {return};
     const newListType: RowType = combinedRow.rowType;
-    const [newItemRows,newCategoryRows] = getItemRows(baseItemDocs as ItemDocs, listCombinedRows, categoryDocs as CategoryDoc[], uomDocs as UomDoc[], newListType, listOrGroupID, [], globalState.categoryColors)
+    const [newItemRows,newCategoryRows] = getItemRows(baseItemDocs as ItemDocs, listCombinedRows, categoryDocs as CategoryDoc[], uomDocs as UomDoc[], newListType, listOrGroupID, [], globalState.categoryColors, globalState.uomShownAbbreviations)
     setPageState({...pageState, selectedListOrGroupID: listOrGroupID, selectedListType: newListType, itemRows: newItemRows, categoryRows: newCategoryRows });
     updateSettingKey("savedListID",listOrGroupID);
     if (combinedRow.rowType === RowType.list) {

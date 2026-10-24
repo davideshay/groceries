@@ -360,6 +360,10 @@ export type CategoryColors = {
   [key: string]: string
 }
 
+export type UomShownAbbreviations = {
+  [key: string]: string
+}
+
 export type SettingsDoc = {
   _id?: string,
   _rev?: string,
@@ -367,6 +371,7 @@ export type SettingsDoc = {
   username: string,
   settings: GlobalSettings,
   categoryColors?: CategoryColors,
+  uomShownAbbreviations?: UomShownAbbreviations,
   updatedAt: string
 }
 
@@ -375,6 +380,7 @@ export const InitSettingsDoc : SettingsDoc = {
   username: "",
   settings: InitSettings,
   categoryColors: {},
+  uomShownAbbreviations: {},
   updatedAt: ""
 }
 

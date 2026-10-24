@@ -183,6 +183,8 @@ export const de_translations =
         "really_delete_uom": "Diese Maßeinheit wird von allen Zutaten und Rezepten entfernt. Möchten Sie wirklich löschen?",
         "all_uom_info_lost": "Alle Maßeinheit-Informationen gehen verloren.",
         "editing_uom": "Maßeinheit bearbeiten",
+        "display_abbreviation": "Anzuzeigende Abkürzung",
+        "alternate_abbreviations_hint": "Aktiviere eine Abkürzung, um sie in den Elementzeilen statt des vollständigen Einheitennamens anzuzeigen. Ist keine aktiviert, wird der vollständige Name angezeigt.",
         "alternate_abbreviations": "Alternativen Abkürzungen",
         "uom_code": "Code (ISO)",
         "add_recipe_to_list": "Rezept zur Liste hinzufügen",

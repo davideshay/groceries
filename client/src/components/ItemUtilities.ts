@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import {initItemRow, ItemRow, ItemSearch, ListCombinedRow, ListCombinedRows,
      ListRow, RowType, ItemSearchType, CategoryRows, CategoryRow, ItemRows, initCategoryRow, ListSelectRow, ListSelectRows} from './DataTypes';
 import { GlobalState } from "./GlobalState";
-import { AddListOptions, CategoryColors, DefaultColor, GlobalSettings } from './DBSchema';
+import { AddListOptions, CategoryColors, UomShownAbbreviations, DefaultColor, GlobalSettings } from './DBSchema';
 import { UomDoc, ItemDoc, ItemDocs, ItemList, ListDocs, ListDoc, CategoryDoc, GlobalItemDocs } from './DBSchema';
 import { cloneDeep, isEmpty } from 'lodash-es';
 import { t } from 'i18next';
@@ -130,7 +130,7 @@ function findRightList(itemDoc: ItemDoc, listType: RowType, listOrGroupID: strin
     if (list === undefined) { return undefined} else {return cloneDeep(list)}
 }
 
-export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRow[], categoryDocs: CategoryDoc[], uomDocs: UomDoc[], listType: RowType, listOrGroupID: string | null, curCategoryRows: CategoryRows, categoryColors: CategoryColors) : [ItemRows, CategoryRows] {
+export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRow[], categoryDocs: CategoryDoc[], uomDocs: UomDoc[], listType: RowType, listOrGroupID: string | null, curCategoryRows: CategoryRows, categoryColors: CategoryColors, uomShownAbbreviations: UomShownAbbreviations = {}) : [ItemRows, CategoryRows] {
     const itemRows: Array<ItemRow> =[];
     const categoryRows: Array<CategoryRow> = [];
     const listGroupID = getListGroupIDFromListOrGroupID(String(listOrGroupID), listCombinedRows);
@@ -177,7 +177,7 @@ export function getItemRows(itemDocs: ItemDocs, listCombinedRows: ListCombinedRo
         itemRow.quantity =  Object.prototype.hasOwnProperty.call(list, "quantity") ? list.quantity : 0;
         if (!isEmpty(list.note)) {itemRow.hasNote = true;}
         const uomName = Object.prototype.hasOwnProperty.call(list, "uomName") ? list.uomName : null;
-        const uomDesc=translatedUOMShortName(uomName,uomDocs,String(listGroupID),itemRow.quantity)
+        const uomDesc=translatedUOMShortName(uomName,uomDocs,String(listGroupID),itemRow.quantity,uomShownAbbreviations)
         itemRow.uomDesc = uomDesc;
 
         let quantityUOMDesc = "";
