@@ -1,5 +1,5 @@
 import { IonContent, IonPage, IonButton, IonList, IonInput, 
- IonItem, NavContext, IonIcon, useIonAlert, IonToolbar, IonButtons, IonItemDivider, IonGrid, IonRow, IonCol, IonText, IonFooter, IonSelect, IonSelectOption, useIonLoading} from '@ionic/react';
+ IonItem, NavContext, IonIcon, useIonAlert, IonToolbar, IonButtons, IonItemDivider, IonText, IonFooter, IonSelect, IonSelectOption, IonCheckbox, useIonLoading} from '@ionic/react';
 import { useParams } from 'react-router-dom';
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useUpdateGenericDocument, useCreateGenericDocument, useDeleteGenericDocument,
@@ -15,10 +15,12 @@ import { useTranslation } from 'react-i18next';
 import { translatedUOMName } from '../components/translationUtilities';
 import { useDeleteUomFromItems, useDeleteUomFromRecipes } from '../components/uomUtilities';
 import { useGlobalDataStore } from '../components/GlobalData';
+import { GlobalStateContext } from '../components/GlobalState';
 
 type PageState = {
   uomDoc: UomDoc,
   needInitUomDoc: boolean,
+  displayAbbreviation: string,
   deletingUom: boolean
 }
 
@@ -36,7 +38,7 @@ const Uom: React.FC<HistoryProps> = () => {
   const { mode, id: routeID } = useParams<{mode: string, id: string}>();
   const routeUomID : string|null = (mode === "new") ? null : routeID;
   const [pageState,setPageState] = useState<PageState>({
-    uomDoc: InitUomDoc, needInitUomDoc: true,
+    uomDoc: InitUomDoc, needInitUomDoc: true, displayAbbreviation: "",
     deletingUom: false
   })
   const [formErrors,setFormErrors] = useState(FormErrorInit);
@@ -58,18 +60,20 @@ const Uom: React.FC<HistoryProps> = () => {
   const {goBack} = useContext(NavContext);
   const screenLoading = useRef(true);
   const { t } = useTranslation();
+  const { globalState, updateUomShownAbbreviation } = useContext(GlobalStateContext);
 
   useEffect( () => {
-    if (!uomLoading && pageState.needInitUomDoc) {
+    if (!uomLoading && globalState.settingsLoaded && pageState.needInitUomDoc) {
       let newUomDoc: UomDoc 
       if (mode === "new") {
         newUomDoc = cloneDeep(InitUomDoc);
       } else {
         newUomDoc = uomDoc;
       }
-      setPageState(prevState => ({...prevState,needInitUomDoc: false, uomDoc: newUomDoc}))
+      const displayAbbreviation = (mode === "new") ? "" : (globalState.uomShownAbbreviations[String(newUomDoc._id)] ?? "");
+      setPageState(prevState => ({...prevState,needInitUomDoc: false, uomDoc: newUomDoc, displayAbbreviation: displayAbbreviation}))
     }
-  },[uomLoading,uomDoc,pageState.needInitUomDoc,mode]);
+  },[uomLoading,uomDoc,pageState.needInitUomDoc,mode,globalState.settingsLoaded,globalState.uomShownAbbreviations]);
 
   if ( error || itemError ) { return (
     <ErrorPage errorText={t("error.loading_uom") as string}></ErrorPage>
@@ -126,8 +130,8 @@ const Uom: React.FC<HistoryProps> = () => {
     }
 
     // check alt dups
-    const upperAlternates = pageState.uomDoc.alternates!.map(el => (el.replace(/\W|_/g, '').toUpperCase()))
-    const upperCustomAlternates = pageState.uomDoc.customAlternates!.map(el => (el.replace(/\W|_/g, '').toUpperCase()))
+    const upperAlternates = (pageState.uomDoc.alternates ?? []).map(el => (el.replace(/\W|_/g, '').toUpperCase()))
+    const upperCustomAlternates = (pageState.uomDoc.customAlternates ?? []).map(el => (el.replace(/\W|_/g, '').toUpperCase()))
     const combinedAlts = upperAlternates.concat(upperCustomAlternates);
     const combinedSet = new Set(combinedAlts);
     if (combinedAlts.length !== combinedSet.size) {
@@ -142,6 +146,9 @@ const Uom: React.FC<HistoryProps> = () => {
       result = await updateUom(pageState.uomDoc);
     }
     if (result.successful) {
+        const savedUomID = (mode === "new") ? String(result.pouchData.id) : String(pageState.uomDoc._id);
+        const availableAbbreviations = (pageState.uomDoc.alternates ?? []).concat(pageState.uomDoc.customAlternates ?? []);
+        await updateUomShownAbbreviation(savedUomID, availableAbbreviations.includes(pageState.displayAbbreviation) ? pageState.displayAbbreviation : null);
         goBack("/uoms");
     } else {
         setFormErrors(prevState => ({...prevState,[ErrorLocation.General]: {errorMessage: t("error.updating_uom")+" " + result.errorCode + " : " + result.errorText + ". " + (t("error.please_retry") as string), hasError: true }}));
@@ -206,6 +213,7 @@ const Uom: React.FC<HistoryProps> = () => {
     dismissDeleting();
     return false;
    }
+    await updateUomShownAbbreviation(String(pageState.uomDoc._id), null);
     dismissDeleting();
     goBack("/uoms");
     setPageState(prevState=>({...prevState,deletingUom: false }));
@@ -229,8 +237,14 @@ const Uom: React.FC<HistoryProps> = () => {
   
   function updateCustomAlternateUom(index: number, value: string) {
     const newAlternates=cloneDeep(pageState.uomDoc.customAlternates) as (string[])
+    const oldValue = newAlternates[index];
     newAlternates[index]=value;
-    setPageState(prevState=>({...prevState,uomDoc: {...prevState.uomDoc,customAlternates: newAlternates}}))
+    setPageState(prevState=>({...prevState,uomDoc: {...prevState.uomDoc,customAlternates: newAlternates},
+      displayAbbreviation: (oldValue !== "" && prevState.displayAbbreviation === oldValue) ? value : prevState.displayAbbreviation}))
+  }
+
+  function toggleDisplayAbbreviation(abbreviation: string, checked: boolean) {
+    setPageState(prevState=>({...prevState,displayAbbreviation: checked ? abbreviation : (prevState.displayAbbreviation === abbreviation ? "" : prevState.displayAbbreviation)}))
   }
 
   function addNewCustom() {
@@ -290,28 +304,25 @@ const Uom: React.FC<HistoryProps> = () => {
              </IonInput>
             </IonItem>
             <IonItemDivider>{t("general.alternate_abbreviations")}</IonItemDivider>
+            <IonItem className="shorter-item-some-padding" lines="none"><IonText color="medium"><small>{t("general.alternate_abbreviations_hint")}</small></IonText></IonItem>
               {formErrors[ErrorLocation.Alternate].hasError ? <IonItem className="shorter-item-some-padding" lines="none"><IonText color="danger">{formErrors[ErrorLocation.Alternate].errorMessage}</IonText></IonItem> : <></>}
             {
               pageState.uomDoc._id?.startsWith("system:uom") ?
               pageState.uomDoc.alternates?.map((alt,index) => (
                 <IonItem key={"altuom"+(index)}>
+                  <IonCheckbox slot="start" aria-label={t("general.display_abbreviation") as string} checked={pageState.displayAbbreviation === alt} onIonChange={(e) => toggleDisplayAbbreviation(alt,e.detail.checked)}></IonCheckbox>
                   <IonInput aria-label="" key={index+alt} disabled={pageState.uomDoc._id?.startsWith("system:uom")} type="text" placeholder={t("general.new_placeholder") as string} value={pageState.uomDoc.alternates![index]}></IonInput>
                 </IonItem>
               )) : <></>
             }
-            <IonGrid>
             { 
               pageState.uomDoc.customAlternates?.map((alt,index) => (
-                <IonRow key={"custaltuom"+(index)+alt}>
-                  <IonCol size="10">
-                    <IonInput aria-label="" type="text" placeholder={t("general.new_placeholder") as string} onIonInput={(e) => updateCustomAlternateUom(index,String(e.detail.value))}  value={pageState.uomDoc.customAlternates![index]}></IonInput>                  
-                  </IonCol>
-                  <IonCol size="2">
-                    <IonButton onClick={() => deleteCustom(index)}><IonIcon icon={trashOutline}></IonIcon></IonButton>
-                  </IonCol>
-                </IonRow>
+                <IonItem key={"custaltuom"+(index)+alt}>
+                  <IonCheckbox slot="start" aria-label={t("general.display_abbreviation") as string} disabled={isEmpty(alt)} checked={!isEmpty(alt) && pageState.displayAbbreviation === alt} onIonChange={(e) => toggleDisplayAbbreviation(alt,e.detail.checked)}></IonCheckbox>
+                  <IonInput aria-label="" type="text" placeholder={t("general.new_placeholder") as string} onIonInput={(e) => updateCustomAlternateUom(index,String(e.detail.value))}  value={pageState.uomDoc.customAlternates![index]}></IonInput>
+                  <IonButton slot="end" onClick={() => deleteCustom(index)}><IonIcon icon={trashOutline}></IonIcon></IonButton>
+                </IonItem>
               ))}
-            </IonGrid>  
             <IonItem>
               <IonButton onClick={() => addNewCustom()}><IonIcon icon={add}></IonIcon></IonButton>
             </IonItem>

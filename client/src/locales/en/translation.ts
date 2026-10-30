@@ -183,6 +183,8 @@ export const en_translations =
         "really_delete_uom": "This UOM will be removed from all items and recipes. Are you sure you want to delete?",
         "all_uom_info_lost": "All unit of measure info will be lost",
         "editing_uom": "Editing UOM",
+        "display_abbreviation": "Abbreviation to display",
+        "alternate_abbreviations_hint": "Check an abbreviation to show it instead of the full unit name in item rows. If none are checked, the full name is shown.",
         "alternate_abbreviations": "Alternate UoM Abbreviations",
         "uom_code": "Code (ISO)",
         "add_recipe_to_list": "Add Recipe To List",

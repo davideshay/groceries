@@ -3,7 +3,7 @@ import { Preferences } from '@capacitor/preferences';
 import { pick,cloneDeep,isEmpty } from "lodash-es";
 import { isJsonString } from "./Utilities";
 import { RowType } from "./DataTypes";
-import { GlobalSettings, AddListOptions, SettingsDoc, InitSettings, InitSettingsDoc, CategoryColors, LogLevelNumber } from "./DBSchema";
+import { GlobalSettings, AddListOptions, SettingsDoc, InitSettings, InitSettingsDoc, CategoryColors, UomShownAbbreviations, LogLevelNumber } from "./DBSchema";
 import { useCreateGenericDocument, useUpdateGenericDocument } from "./Usehooks";
 import { RemoteDBStateContext } from "./RemoteDBState";
 import log from "./logger";
@@ -17,6 +17,7 @@ export type GlobalState = {
     callingListType: RowType,
     settings: GlobalSettings,
     categoryColors: CategoryColors,
+    uomShownAbbreviations: UomShownAbbreviations,
     settingsLoaded: boolean,
     initialLoadCompleted: boolean,
 }
@@ -28,7 +29,8 @@ export interface GlobalStateContextType {
     setStateInfo: (key: string, value: string | null | RowType) => void,
     updateSettingKey: (key: string, value: AddListOptions | boolean | number | string | null | LogLevelNumber) => Promise<boolean>,
     updateCategoryColor: (catID: string, color: string) => Promise<boolean>,
-    deleteCategoryColor: (catID: string) => Promise<boolean>
+    deleteCategoryColor: (catID: string) => Promise<boolean>,
+    updateUomShownAbbreviation: (uomID: string, abbreviation: string | null) => Promise<boolean>
 }
 
 
@@ -40,6 +42,7 @@ export const initialGlobalState: GlobalState = {
     callingListType: RowType.list,
     settings: InitSettings,
     categoryColors: {},
+    uomShownAbbreviations: {},
     settingsLoaded: false,
     initialLoadCompleted: false
 }
@@ -51,7 +54,8 @@ const initialContext: GlobalStateContextType = {
     setStateInfo: () => {},
     updateSettingKey: async () => {return false},
     updateCategoryColor: async () => {return false},
-    deleteCategoryColor: async () => {return false}
+    deleteCategoryColor: async () => {return false},
+    updateUomShownAbbreviation: async () => {return false}
 }
 
 export const GlobalStateContext = createContext(initialContext)
@@ -110,6 +114,22 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         return true;
     }
 
+    async function updateUomShownAbbreviation(uomID: string, abbreviation: string | null): Promise<boolean> {
+        if (isEmpty(uomID)) { return false;}
+        const curSettingsDoc: SettingsDoc = settingsDoc as SettingsDoc;
+        const curUomShownAbbreviations: UomShownAbbreviations = cloneDeep(curSettingsDoc.uomShownAbbreviations ?? {});
+        if (isEmpty(abbreviation)) {
+            if (!Object.prototype.hasOwnProperty.call(curUomShownAbbreviations, uomID)) { return true;}
+            delete curUomShownAbbreviations[uomID];
+        } else {
+            if (curUomShownAbbreviations[uomID] === abbreviation) { return true;}
+            curUomShownAbbreviations[uomID] = abbreviation as string;
+        }
+        curSettingsDoc.uomShownAbbreviations = curUomShownAbbreviations;
+        await updateSettingDoc(curSettingsDoc);
+        return true;
+    }
+
     function validateSettings(settings: GlobalSettings) : [GlobalSettings, boolean] {
         let updated = false; let newSettings: GlobalSettings = cloneDeep(settings);
         if (newSettings == null) {newSettings = cloneDeep(InitSettings); updated = true;}
@@ -160,6 +180,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         const dbSettingsExist = (settingsDoc !== null);
         const dbSettingsDoc: SettingsDoc = cloneDeep(settingsDoc) as SettingsDoc;
         let dbCategoryColors: CategoryColors = {};
+        let dbUomShownAbbreviations: UomShownAbbreviations = {};
         const { value: storageSettingsStr } = await Preferences.get({ key: 'settings'});
         let storageSettings: GlobalSettings = cloneDeep(InitSettings);
         let storageSettingsExist = false;
@@ -176,6 +197,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
         if (dbSettingsExist) {
             [dbSettingsDoc.settings, dbUpdated] = validateSettings(dbSettingsDoc.settings);
             dbCategoryColors = isEmpty(dbSettingsDoc.categoryColors) ? {} : dbSettingsDoc.categoryColors! ;
+            dbUomShownAbbreviations = isEmpty(dbSettingsDoc.uomShownAbbreviations) ? {} : dbSettingsDoc.uomShownAbbreviations! ;
         }
         let finalSettings: GlobalSettings = cloneDeep(InitSettings);
         if (storageSettingsExist && !dbSettingsExist) {
@@ -209,7 +231,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
                 await updateSettingDoc(newSettingsDoc)
             }
         }
-        setGlobalState(prevState => ({...prevState,settings: finalSettings, categoryColors: dbCategoryColors}))
+        setGlobalState(prevState => ({...prevState,settings: finalSettings, categoryColors: dbCategoryColors, uomShownAbbreviations: dbUomShownAbbreviations}))
         setGlobalState(prevState => ({...prevState,settingsLoaded: true}));
         return (finalSettings);
     },[createSettingDoc,remoteDBCreds.dbUsername,settingsDoc,updateSettingDoc])
@@ -226,7 +248,7 @@ export const GlobalStateProvider: React.FC<GlobalStateProviderProps> = (props: G
     },[globalState.settings.loggingLevel])
 
 
-    const value: GlobalStateContextType = {globalState, setGlobalState, setStateInfo, updateSettingKey, updateCategoryColor, deleteCategoryColor, settingsLoading: loading};
+    const value: GlobalStateContextType = {globalState, setGlobalState, setStateInfo, updateSettingKey, updateCategoryColor, deleteCategoryColor, updateUomShownAbbreviation, settingsLoading: loading};
     return (
         <GlobalStateContext.Provider value={value}>{props.children}</GlobalStateContext.Provider>
       );

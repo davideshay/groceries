@@ -25,7 +25,7 @@ ion-item.item-search ion-icon {
 ion-item.itemrow-outer {
     max-height: 8rem;
     height: min-content;
-    padding-inline: 1rem;
+    padding-inline: 1rem 0;
     border-bottom: 1px solid;
     transition:max-height 200ms ease-in-out;
     transition:padding-block 200ms ease-in-out;

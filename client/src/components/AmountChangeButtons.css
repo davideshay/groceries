@@ -1,0 +1,20 @@
+div.amount-change-buttons {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    margin-inline: 0.5rem 0.25rem;
+    /* the buttons are taller than the text; the negative margin keeps them from stretching the row */
+    margin-block: -0.5rem;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
+}
+
+ion-button.amount-change-button {
+    margin: 0;
+    height: 2rem;
+    --color: var(--ion-text-color);
+    --padding-start: 0.35rem;
+    --padding-end: 0.35rem;
+}

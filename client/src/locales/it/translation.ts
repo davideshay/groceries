@@ -183,6 +183,8 @@ export const it_translations =
         "really_delete_uom": "Questa UdM sarà rimossa da tutti gli elementi e ricette. Sei sicuro di voler eliminare?",
         "all_uom_info_lost": "Tutte le informazioni sull'unità di misura saranno perse",
         "editing_uom": "Modifica UdM",
+        "display_abbreviation": "Abbreviazione da mostrare",
+        "alternate_abbreviations_hint": "Seleziona un'abbreviazione per mostrarla nelle righe degli articoli al posto del nome completo dell'unità. Se nessuna è selezionata, viene mostrato il nome completo.",
         "alternate_abbreviations": "Abbreviazioni alternative UdM",
         "uom_code": "Codice (ISO)",
         "add_recipe_to_list": "Aggiungi ricetta alla lista",

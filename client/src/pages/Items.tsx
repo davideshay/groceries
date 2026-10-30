@@ -21,8 +21,9 @@ import { useTranslation } from 'react-i18next';
 import log from "../components/logger";
 import { navigateToFirstListID } from '../components/RemoteUtilities';
 import { Capacitor } from '@capacitor/core';
-import { translatedItemName } from '../components/translationUtilities';
+import { translatedItemName, translatedItemNameWithUOM, translatedUOMShortName } from '../components/translationUtilities';
 import { useGlobalDataStore } from '../components/GlobalData';
+import AmountChangeButtons from '../components/AmountChangeButtons';
 
 const Items: React.FC<HistoryProps> = () => {
   const { mode: routeMode, id: routeListID  } = useParams<{mode: string, id: string}>();
@@ -95,7 +96,7 @@ const Items: React.FC<HistoryProps> = () => {
   useEffect( () => {
     if (baseItemRowsLoaded && listRowsLoaded && !isLoading) {
       setPageState( (prevState) => {
-        const [newItemRows,newCategoryRows] = getItemRows(baseItemDocs as ItemDocs, listCombinedRows, categoryDocs as CategoryDoc[], uomDocs as UomDoc[], pageState.selectedListType, pageState.selectedListOrGroupID, prevState.categoryRows, globalState.categoryColors)
+        const [newItemRows,newCategoryRows] = getItemRows(baseItemDocs as ItemDocs, listCombinedRows, categoryDocs as CategoryDoc[], uomDocs as UomDoc[], pageState.selectedListType, pageState.selectedListOrGroupID, prevState.categoryRows, globalState.categoryColors, globalState.uomShownAbbreviations)
         return (
         { ...prevState,
         doingUpdate: false,
@@ -104,7 +105,7 @@ const Items: React.FC<HistoryProps> = () => {
       });
     }
   },[baseItemRowsLoaded, listRowsLoaded, isLoading, 
-    uomDocs, baseItemDocs, listCombinedRows, categoryDocs, pageState.selectedListOrGroupID, pageState.selectedListType, globalState.categoryColors]);
+    uomDocs, baseItemDocs, listCombinedRows, categoryDocs, pageState.selectedListOrGroupID, pageState.selectedListType, globalState.categoryColors, globalState.uomShownAbbreviations]);
 
   useEffect( () => {
     if (baseSearchItemRowsLoaded && !isLoading) {
@@ -408,6 +409,44 @@ const Items: React.FC<HistoryProps> = () => {
   },[baseItemDocs,globalState.settings.removeFromAllLists,pageState.ignoreCheckOffWarning,pageState.selectedListOrGroupID,
      pageState.selectedListType,presentToast,warnCheckingOffItemsInListGroup,t,updateItemInList])
 
+  // quantities changed via the row buttons, shown until the database update has been saved
+  const [pendingQuantities,setPendingQuantities] = useState<Record<string,number>>({});
+
+  // keep showing the changed quantity until the refreshed rows contain it, to avoid flickering back to the old value
+  useEffect(() => {
+    setPendingQuantities(prevState => {
+      const ids = Object.keys(prevState);
+      if (ids.length === 0) {return prevState;}
+      const rest = {...prevState};
+      ids.forEach(id => {
+        const row = pageState.itemRows.find(ir => ir.itemID === id);
+        if (row === undefined || row.quantity === prevState[id]) {delete rest[id];}
+      });
+      return Object.keys(rest).length === ids.length ? prevState : rest;
+    });
+  },[pageState.itemRows])
+
+  const changeItemQuantity = useCallback( async (id: string, newQuantity: number) => {
+    const baseDoc = baseItemDocs.find(element => (element._id === id));
+    if (baseDoc === undefined) {return;}
+    const itemDoc: ItemDoc = cloneDeep(baseDoc) as ItemDoc;
+    itemDoc.lists.forEach((list: ItemList) => {
+      if (pageState.selectedListType === RowType.listGroup || list.listID === pageState.selectedListOrGroupID) {
+        list.quantity = newQuantity;
+      }
+    });
+    const response = await updateItemInList(itemDoc);
+    if (!response.successful) {
+      presentToast({message: t("error.updating_item"), duration: 1500, position: "middle"})
+      // the stored value didn't change, so drop the displayed one
+      setPendingQuantities(prevState => {
+        const rest = {...prevState};
+        delete rest[id];
+        return rest;
+      });
+    }
+  },[baseItemDocs,pageState.selectedListOrGroupID,pageState.selectedListType,presentToast,t,updateItemInList])
+
   const completeItemRowStub = useCallback( async (id: string, event: CustomEvent<CheckboxChangeEventDetail>) => {
     const completeRowFunc = debounce((did: string,devent: CustomEvent<CheckboxChangeEventDetail>) => completeItemRow(did,devent),350,{leading: true, trailing: false})
     completeRowFunc(id,event);
@@ -477,7 +516,7 @@ const Items: React.FC<HistoryProps> = () => {
     const combinedRow: ListCombinedRow | undefined = listCombinedRows.find(lcr => lcr.listOrGroupID === listOrGroupID);
     if (combinedRow === undefined) {return};
     const newListType: RowType = combinedRow.rowType;
-    const [newItemRows,newCategoryRows] = getItemRows(baseItemDocs as ItemDocs, listCombinedRows, categoryDocs as CategoryDoc[], uomDocs as UomDoc[], newListType, listOrGroupID, [], globalState.categoryColors)
+    const [newItemRows,newCategoryRows] = getItemRows(baseItemDocs as ItemDocs, listCombinedRows, categoryDocs as CategoryDoc[], uomDocs as UomDoc[], newListType, listOrGroupID, [], globalState.categoryColors, globalState.uomShownAbbreviations)
     setPageState({...pageState, selectedListOrGroupID: listOrGroupID, selectedListType: newListType, itemRows: newItemRows, categoryRows: newCategoryRows });
     updateSettingKey("savedListID",listOrGroupID);
     if (combinedRow.rowType === RowType.list) {
@@ -678,6 +717,19 @@ const Items: React.FC<HistoryProps> = () => {
       lastCategoryFinished=item.completed;
     }
     const rowVisible = getCategoryExpanded(item.categoryID,Boolean(item.completed));
+    const rowQuantity = Object.prototype.hasOwnProperty.call(pendingQuantities,item.itemID) ? pendingQuantities[item.itemID] : item.quantity;
+    let rowName = item.itemName;
+    let rowUomDesc = item.uomDesc;
+    if (rowQuantity !== item.quantity) {
+      // quantity was just changed, so singular/plural names have to follow it before the rows are rebuilt
+      const itemDoc = baseItemDocs.find(element => (element._id === item.itemID));
+      const itemList = itemDoc?.lists.find(il => il.listID === pageState.selectedListOrGroupID) ?? itemDoc?.lists[0];
+      if (itemDoc !== undefined && itemList !== undefined) {
+        rowName = translatedItemNameWithUOM(itemDoc.globalItemID,itemDoc.name,itemDoc.pluralName,rowQuantity,itemList.uomName);
+        rowUomDesc = translatedUOMShortName(itemList.uomName,uomDocs as UomDoc[],String(itemDoc.listGroupID),rowQuantity,globalState.uomShownAbbreviations);
+      }
+    }
+    const quantityUOMDesc = (rowQuantity !== 0 && (rowQuantity > 1 || rowUomDesc !== "")) ? rowQuantity.toString() + (rowUomDesc === "" ? "" : " " + rowUomDesc) : "";
     currentRows.push(
       <IonItem className={"itemrow-outer "+(rowVisible ? "itemrow-display" : "itemrow-hidden")} key={"itemouter"+pageState.itemRows[i].itemID} >
         <IonCheckbox key={"itemcheckbox"+pageState.itemRows[i].itemID} aria-label=""
@@ -686,10 +738,14 @@ const Items: React.FC<HistoryProps> = () => {
           color={"medium"} disabled={doingUpdate.current}
           checked={Boolean(item.completed)} className={"item-on-list "+ (item.completed ? "item-completed" : "")}>
         </IonCheckbox>
-        <IonItem className={"itemrow-inner"+(item.completed ? " item-completed": "")} routerLink={"/item/edit/"+item.itemID}
+        <IonItem className={"itemrow-inner"+(item.completed ? " item-completed": "")} button={true} detail={false} onClick={() => history.push("/item/edit/"+item.itemID)}
           key={"iteminner"+pageState.itemRows[i].itemID}>
-            {item.itemName + (item.quantityUOMDesc === "" ? "" : " ("+ item.quantityUOMDesc+")")}
+            {rowName + (quantityUOMDesc === "" ? "" : " ("+ quantityUOMDesc+")")}
             {item.hasNote ? <IonIcon key={"itemnoteicon"+pageState.itemRows[i].itemID} className="note-icon" icon={documentTextOutline}></IonIcon> : <></>}
+            {item.completed ? <></> :
+              <AmountChangeButtons key={"itemamount"+item.itemID} amount={rowQuantity}
+                onChange={(q) => setPendingQuantities(prevState => ({...prevState, [item.itemID]: q}))}
+                onCommit={(q) => changeItemQuantity(item.itemID,q)} />}
         </IonItem>
       </IonItem>);
     if (lastCategoryFinished && !createdFinished) {
